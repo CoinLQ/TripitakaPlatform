@@ -1,0 +1,8 @@
+*/migrations
+__pycache__
+.idea
+.vscode
+venv
+.env
+static/js
+static/css

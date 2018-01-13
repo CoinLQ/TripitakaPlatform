@@ -1,0 +1,32 @@
+.reel-text-region {
+    position: fixed;
+    overflow: scroll;
+    height: 580px;
+}
+.reel-text-compare {
+    font-size: 18px;
+    height: 580px;
+}
+.reel-textarea {
+    font-size: 18px;
+    width: 400px;
+    height: 400px;
+}
+.page-img {
+    position: fixed;
+    overflow: scroll;
+    width: 750px;
+    height: 400px;
+}
+.page-img-bg {
+    height: 400px;
+}
+.deletedtext {
+    background-color: #fdd;
+}
+.addedtext {
+    background-color: #cfc;
+}
+.seg-row {
+    font-size: 20px;
+}

@@ -28,6 +28,7 @@ pip install -U autopep8
 
 
 ### 修改配置为本机IP
+sudo apt install net-tools
 ifconfig
 
 将utils/init.sh中的192.168.2.196改为本机IP

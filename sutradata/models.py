@@ -85,14 +85,12 @@ class Reel(models.Model):
         if text == '':
             return None
         pages = text.split('\np\n')
-        print(len(pages))
         if pages[0].startswith('p\n'):
             pages[0] = pages[0][2:]
         separators = []
         pos = 0
         page_index = 0
         page_count = len(pages)
-        print(pages[0][0:20])
         while page_index < page_count:
             lines = pages[page_index].split('\n')
             line_cnt = len(lines)

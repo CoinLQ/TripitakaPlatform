@@ -20,6 +20,8 @@ pip install psycopg2
 
 pip install django-extensions
 
+pip install django-bootstrap3
+
 pip install -U pylint
 
 pip install -U autopep8

@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ task.reel }}文字校对{% endblock %}
 {% block content %}
+<div class="container">
+  <form action="" method="POST">
+      {{ csrf_input }}
 <div class="container col-md-8">
   <div class="row">
     <div class="page-img">
@@ -11,8 +14,7 @@
     <div class="page-img-bg"></div>
     <div class="">
       <b>与底本比对有差异的文本段</b>
-      <form action="" method="POST">
-        {{ csrf_input }}
+      
         <table class="table table-bordered table-condensed">
           <thead>
             <tr>
@@ -35,8 +37,6 @@
             {% endfor %}
           </tbody>
         </table>
-        <button type="submit" class="btn btn-primary">暂存</button>
-      </form>
     </div>
   </div>
 </div>
@@ -51,7 +51,7 @@
           <a class="nav-link" data-toggle="tab" href="#panel2" role="tab">卷文本</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" data-toggle="tab" href="#panel3" role="tab">CBeta</a>
+          <a class="nav-link" data-toggle="tab" href="#panel3" role="tab">CBETA</a>
         </li>
       </ul>
       <div class="tab-content">
@@ -59,13 +59,13 @@
           <div id="reel-text-compare" class="reel-text-compare"></div>
         </div>
         <div class="tab-pane" id="panel2" role="tabpanel">
-          <form action="/correct/{{ task.id }}/reeltext" method="POST">
-            {{ csrf_input }}
+          <!-- <form action="/correct/{{ task.id }}/reeltext" method="POST">
+            {{ csrf_input }} -->
             <div class="form-group">
               <textarea id="reel-text" name="reel_text" class="reel-textarea"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary">提交卷文本</button>
-          </form>
+            <!-- <button type="submit" class="btn btn-primary">提交卷文本</button>
+          </form> -->
         </div>
         <div class="tab-pane" id="panel3" role="tabpanel">
           <div id="reel-basetext" class="reel-basetext"></div>
@@ -73,8 +73,16 @@
       </div>
     </div>
   </div>
+  <div class="row">
+    <div class="correct-submit">
+      <input type="hidden" id="input-finished" name="finished" value="0" />
+      <button type="submit" class="btn btn-primary">暂存</button>
+      <button type="submit" class="btn btn-primary" id="finished-task">完成</button>
+    </div>
+    </form>
+  </div>
 </div>
-
+</div>
 {% endblock %}
 {% block foot_script %}
 <script>
@@ -97,6 +105,11 @@
       while (s.length < size) s = "0" + s;
       return s;
     }
+
+    $('#finished-task').click(function(e) {
+      $('#input-finished').val('1');
+    });
+
     function setImg(img_url, x, y, w, h) {
       console.log('setImg: ', x, y, w, h);
       var canvas = document.getElementById("page-canvas");

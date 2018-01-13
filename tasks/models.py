@@ -75,13 +75,19 @@ class Task(models.Model, TripiMixin):
         (2, '乙'),
     )
 
+    STATUS_NOT_READY = 1
+    STATUS_READY = 2
+    STATUS_PROCESSING = 3
+    STATUS_FINISHED = 4
+    STATUS_REMINDED = 5
+    STATUS_REVOKED = 6
     STATUS_CHOICES = (
-        (1, '未就绪'),
-        (2, '待领取'),
-        (3, '进行中'),
-        (4, '已完成'),
-        (5, '已催单'),
-        (6, '已回收'),
+        (STATUS_NOT_READY, '未就绪'),
+        (STATUS_READY, '待领取'),
+        (STATUS_PROCESSING, '进行中'),
+        (STATUS_FINISHED, '已完成'),
+        (STATUS_REMINDED, '已催单'),
+        (STATUS_REVOKED, '已回收'),
     )
 
     batch_task = models.ForeignKey(BatchTask, on_delete=models.CASCADE)
@@ -113,6 +119,8 @@ class CorrectSeg(models.Model):
     compare_seg = models.ForeignKey(CompareSeg, on_delete=models.CASCADE)
     selected_text = models.TextField('修正文本', default='', blank=True)
     position = models.IntegerField('在校正本中的位置')
+    #用于文字校对审定，0表示甲乙结果一致并且选择了此一致的结果，1表示选择甲的结果，2表示选择乙的结果，3表示新结果
+    diff_flag = models.SmallIntegerField('甲乙差异标记', default=0)
 
 # 校勘判取相关
 class ReelDiff(models.Model):

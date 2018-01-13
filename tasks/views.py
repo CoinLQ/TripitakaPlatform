@@ -61,7 +61,14 @@ def do_correct_task(request, task_id):
                     seg_id = int(k[8:])
                     d[seg_id].selected_text = v
                     d[seg_id].save()
-        
+            reel_text = request.POST.get('reel_text').replace('\r\n', '\n')
+            if reel_text:
+                separators = Reel.extract_page_line_separators(reel_text)
+                separators_json = json.dumps(separators, separators=(',', ':'))
+                Task.objects.filter(id=task_id).update(result=reel_text, separators=separators_json)
+            finished = request.POST.get('finished')
+            if finished == '1':
+                Task.objects.filter(id=task_id).update(status=Task.STATUS_FINISHED)
         return redirect('do_correct_task', task_id=task_id)
 
 def update_correct_task_result(request, task_id):

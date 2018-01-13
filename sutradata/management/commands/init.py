@@ -129,6 +129,13 @@ class Command(BaseCommand):
         task2.reel = huayan_yb_1
         #task2.base_reel = huayan_gl_1
         task2.save()
+
+        task3 = Task(batch_task=batch_task, typ=2, base_reel=huayan_gl_1, task_no=0, status=2,
+        publisher=admin)
+        task3.compare_reel = compare_reel
+        #task3.separators = separators_json
+        task3.reel = huayan_yb_1
+        task3.save()
         
         diff_lst = generate_compare_reel(huayan_gl_1.text, huayan_yb_1.text)
         #compare_segs = []

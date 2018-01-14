@@ -26,11 +26,14 @@
           <tbody>
             {% for seg in segs %}
             {% if seg.ocr_text != seg.base_text %}
-            <tr class="seg-row" id="seg-{{ seg.id }}" seg-id="{{ seg.id }}">
+            <tr class="seg-row" id="seg-{{ seg.id }}" seg-index="{{ loop.index0 }}" seg-id="{{ seg.id }}">
               <td class="ocr-text">{{ seg.ocr_text }}</td>
               <td class="base-text">{{ seg.base_text }}</td>
               <td class="selected-text">
                 <textarea class="segtext" rows="1" name="segtext_{{ seg.id }}" index="{{ loop.index0 }}">{{ seg.selected_text }}</textarea>
+                <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value="" />
+                <input type="hidden" name="segline_{{ seg.id }}" id="segline_{{ seg.id }}" value="" />
+                <input type="hidden" name="segchar_{{ seg.id }}" id="segchar_{{ seg.id }}" value="" />
               </td>
             </tr>
             {% endif %}
@@ -87,83 +90,13 @@
 {% block foot_script %}
 <script>
   $(function(){
-    var base_reel_text = '{{ base_reel_text|safe }}';
+    var base_text = '{{ base_text|safe }}';
     var segs = {{ segs_json|safe }};
     var separators = {{ task.separators|safe }};
-
-    function count_ch(s, ch) {
-      var count = 0;
-      for (var i = 0; i < s.length; ++i) {
-        if (s[i] == ch) {
-          ++count;
-        }
-      }
-      return count;
-    };
-    function pad(num, size) {
-      var s = num+"";
-      while (s.length < size) s = "0" + s;
-      return s;
-    }
 
     $('#finished-task').click(function(e) {
       $('#input-finished').val('1');
     });
-
-    function setImg(img_url, x, y, w, h) {
-      console.log('setImg: ', x, y, w, h);
-      var canvas = document.getElementById("page-canvas");
-      var context = canvas.getContext("2d");
-      var image = new Image();
-      image.onload = function() {
-        canvas.width = canvas.width;
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(image, 0, 0, 800, 1080);
-        var xratio = 800/image.width;
-        var yratio = 1080/image.height;
-        x = parseInt(x * xratio);
-        y = parseInt(y * yratio);
-        w = parseInt(w * xratio);
-        h = parseInt(h * yratio);
-        console.log('x, y, w, h: ', x, y, w, h);
-        context.moveTo(x,y);
-        context.lineTo(x+w,y);
-        context.lineTo(x+w,y+h);
-        context.lineTo(x,y+h);
-        context.lineTo(x,y);
-        //设置样式
-        context.lineWidth = 1;
-        context.strokeStyle = "#F5270B";
-        //绘制
-        context.stroke();
-      };
-      image.src = img_url;
-    }
-
-    var extract_separators = function(text) {
-      var pages = text.replace(/\r\n/g, '\n').split('\np\n');
-      if (pages[0].substr(0, 2) == 'p\n') {
-        pages[0] = pages[0].substr(2);
-      }
-      var new_separators = [];
-      var pos = 0;
-      var page_index = 0;
-      while (page_index < pages.length) {
-        var lines = pages[page_index].split('\n');
-        var i = 0;
-        while (i < lines.length) {
-          pos += lines[i].length;
-          if (i == (lines.length -1) && page_index != (pages.length - 1)) {
-            new_separators.push( [pos, 'p'] );
-          } else {
-            new_separators.push( [pos, '\n'] );
-          }
-          ++i;
-        }
-        ++page_index;
-      }
-      separators = new_separators;
-    };
 
     $('#reel-text').keydown(function(e) {
       console.log(e.which);
@@ -172,14 +105,14 @@
       }
     });
     $('#reel-text').change(function(e){
-      extract_separators($(this).val());
+      separators = extract_separators($(this).val());
       load_reel_text();
     })
 
     var load_reel_text = function() {
       var cmptexts = [];
       var reeltexts = ['p\n'];
-      var base_reel_length = base_reel_text.length;
+      var base_length = base_text.length;
       var seg_idx = 0;
       var sep_idx = 0;
       var page_no = 1;
@@ -188,17 +121,18 @@
 
       var base_pos = 0;
       var pos = 0;
-      while (seg_idx < segs.length) {
+      while (seg_idx <= segs.length) {
         // 找到下一个需要处理的seg
         while (seg_idx < segs.length && segs[seg_idx].selected_text == segs[seg_idx].base_text) {
           segs[seg_idx].page_no = page_no;
+          $('#segpage_' + segs[seg_idx].id).val(page_no);
           ++seg_idx;
         }
-        var next_base_pos = base_reel_length;
+        var next_base_pos = base_length;
         if (seg_idx < segs.length) {
           next_base_pos = segs[seg_idx].base_pos;
         }
-        var str = base_reel_text.substr(base_pos, next_base_pos-base_pos);
+        var str = base_text.substr(base_pos, next_base_pos-base_pos);
         var str_len = next_base_pos - base_pos;
         var insert_len = 0;
         while (insert_len < str_len) {
@@ -243,7 +177,10 @@
           segs[seg_idx].page_no = page_no;
           segs[seg_idx].line_no = line_no;
           segs[seg_idx].char_no = char_no;
-          cmptexts.push('<span class="seg-compare" id="seg-compare-' + segs[seg_idx].id + '">');
+          $('#segpage_' + segs[seg_idx].id).val(page_no);
+          $('#segline_' + segs[seg_idx].id).val(line_no);
+          $('#segchar_' + segs[seg_idx].id).val(char_no);
+          cmptexts.push('<span class="seg-diff" id="seg-diff-' + segs[seg_idx].id + '">');
           if (segs[seg_idx].base_text != '') {
             cmptexts.push('<span class="deletedtext"><del>' + segs[seg_idx].base_text + '</del></span>');
             base_pos += segs[seg_idx].base_text.length;
@@ -255,17 +192,18 @@
             pos += selected_text.length;
           }
           cmptexts.push('</span>');
-          ++seg_idx;
         }
+
+        ++seg_idx;
       }
 
       $('#reel-text-compare').html(cmptexts.join(''));
       $('#reel-text').val(reeltexts.join(''));
     };
-    $('.segtext').change(function() {
-      var index = $(this).attr('index');
+
+    var segtext_change = function(index, newtext) {
       var old_length = segs[index].selected_text.length;
-      var new_length = $(this).val().length;
+      var new_length = newtext.length;
       var length_diff = new_length - old_length;
       if (new_length != old_length) { // 需要将当前seg后的所有seg的位置更新，并更新后面的分隔符的位置
         for (var i = index + 1; i < segs.length; ++i) {
@@ -278,20 +216,25 @@
           }
         }
       }
-      segs[index].selected_text = $(this).val();
+      segs[index].selected_text = newtext;
+    };
+
+    $('.segtext').change(function() {
+      var index = $(this).attr('index');
+      segtext_change(index, $(this).val());
       load_reel_text();
     });
     $('.ocr-text').dblclick(function() {
-      var textarea = $(this).next().next().children();
+      var textarea = $(this).next().next().children('textarea');
       var index = textarea.attr('index');
-      segs[index].selected_text = segs[index].ocr_text;
-      textarea.val(segs[index].selected_text);
+      segtext_change(index, segs[index].ocr_text);
+      textarea.val(segs[index].selected_text);      
       load_reel_text();
     });
     $('.base-text').dblclick(function() {
-      var textarea = $(this).next().children()
+      var textarea = $(this).next().children('textarea');
       var index = textarea.attr('index');
-      segs[index].selected_text = segs[index].base_text;
+      segtext_change(index, segs[index].base_text);
       textarea.val(segs[index].selected_text);
       load_reel_text();
     });
@@ -309,18 +252,17 @@
           }
         });
       });
-      //$('#page-image').attr('src', url);
-    }
+    };
     $('.seg-row').click(function() {
       var seg_id = $(this).attr('seg-id');
-      $('.seg-compare').removeAttr('style');
-      $('#seg-compare-' + seg_id).attr('style', 'color:red;');
-      var textarea = $(this).find('textarea');
-      var index = textarea.attr('index');
+      $('.seg-diff').removeAttr('style');
+      $('#seg-diff-' + seg_id).attr('style', 'color:red;');
+      var index = $(this).attr('seg-index');
       load_page_image(index);
     });
     load_reel_text();
     load_page_image(0);
+    $('#reel-basetext').html(base_text.replace(/^p\n/, '').replace(/\np\n/g, '<br />').replace(/\n/g, '<br />'))
   });
 </script>
 {% endblock %}

@@ -32,6 +32,9 @@
 .addedtext {
     background-color: #cfc;
 }
+.difftext {
+    background-color: #fdd;
+}
 .seg-row {
     font-size: 20px;
 }

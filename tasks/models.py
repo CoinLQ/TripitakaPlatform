@@ -58,30 +58,54 @@ class BatchTask(models.Model, TripiMixin):
      self.created_at.minute, self.created_at.second, self.created_at.microsecond)
 
 class Task(models.Model, TripiMixin):
+    TYPE_CORRECT = 1
+    TYPE_CORRECT_VERIFY = 2
+    TYPE_JUDGE = 3
+    TYPE_JUDGE_VERIFY = 4
+    TYPE_PUNCT = 5
+    TYPE_PUNCT_VERIFY = 6
+    TYPE_LQPUNCT = 7
+    TYPE_LQPUNCT_VERIFY = 8
+    TYPE_MARK = 9
+    TYPE_MARK_VERIFY = 10
+    TYPE_LQMARK = 11
+    TYPE_LQMARK_VERIFY = 12
     TYPE_CHOICES = (
-        (1, '文字校对'),
-        (2, '文字校对审定'),
-        (3, '校勘判取'),
-        (4, '校勘判取审定'),
-        (5, '标点'),
-        (6, '标点审定'),
-        (7, '格式标注'),
-        (8, '格式标注审定'),
+        (TYPE_CORRECT, '文字校对'),
+        (TYPE_CORRECT_VERIFY, '文字校对审定'),
+        (TYPE_JUDGE, '校勘判取'),
+        (TYPE_JUDGE_VERIFY, '校勘判取审定'),
+        (TYPE_PUNCT, '基础标点'),
+        (TYPE_PUNCT_VERIFY, '基础标点审定'),
+        (TYPE_LQPUNCT, '定本标点'),
+        (TYPE_LQPUNCT_VERIFY, '定本标点审定'),
+        (TYPE_MARK, '基础格式标注'),
+        (TYPE_MARK_VERIFY, '基础格式标注审定'),
+        (TYPE_LQMARK, '定本格式标注'),
+        (TYPE_LQMARK_VERIFY, '定本格式标注审定'),
     )
 
     TASK_NO_CHOICES = (
         (0, '无序号'),
         (1, '甲'),
         (2, '乙'),
+        (3, '丙'),
+        (4, '丁'),
     )
 
+    STATUS_NOT_READY = 1
+    STATUS_READY = 2
+    STATUS_PROCESSING = 3
+    STATUS_FINISHED = 4
+    STATUS_REMINDED = 5
+    STATUS_REVOKED = 6
     STATUS_CHOICES = (
-        (1, '未就绪'),
-        (2, '待领取'),
-        (3, '进行中'),
-        (4, '已完成'),
-        (5, '已催单'),
-        (6, '已回收'),
+        (STATUS_NOT_READY, '未就绪'),
+        (STATUS_READY, '待领取'),
+        (STATUS_PROCESSING, '进行中'),
+        (STATUS_FINISHED, '已完成'),
+        (STATUS_REMINDED, '已催单'),
+        (STATUS_REVOKED, '已回收'),
     )
 
     batch_task = models.ForeignKey(BatchTask, on_delete=models.CASCADE)
@@ -112,7 +136,12 @@ class CorrectSeg(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     compare_seg = models.ForeignKey(CompareSeg, on_delete=models.CASCADE)
     selected_text = models.TextField('修正文本', default='', blank=True)
-    position = models.IntegerField('在校正本中的位置')
+    position = models.IntegerField('在校正本中的位置', default=0)
+    page_no = models.SmallIntegerField('卷中页序号', default=-1)
+    line_no = models.SmallIntegerField('页中行序号', default=-1)
+    char_no = models.SmallIntegerField('行中字序号', default=-1)
+    #用于文字校对审定，0表示甲乙结果一致并且选择了此一致的结果，1表示选择甲的结果，2表示选择乙的结果，-1表示新结果
+    diff_flag = models.SmallIntegerField('甲乙差异标记', default=-1)
 
 # 校勘判取相关
 class ReelDiff(models.Model):

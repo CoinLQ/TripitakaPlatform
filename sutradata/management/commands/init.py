@@ -17,8 +17,8 @@ def generate_compare_reel(text1, text2):
     用于文字校对前的文本比对
     text1是基础本，不包含换行符和换页标记；text2是要比对的版本，包含换行符和换页标记。
     """
-    SEPARATORS = re.compile('[p\n]')
-    text2 = SEPARATORS.sub('', text2)
+    SEPARATORS_PATTERN = re.compile('[p\n]')
+    text2 = SEPARATORS_PATTERN.sub('', text2)
     diff_lst = []
     base_pos = 0
     pos = 0
@@ -115,20 +115,27 @@ class Command(BaseCommand):
         compare_reel = CompareReel(reel=huayan_yb_1, base_reel=huayan_gl_1)
         compare_reel.save()
 
-        task1 = Task(batch_task=batch_task, typ=1, base_reel=huayan_gl_1, task_no=1, status=2,
+        task1 = Task(batch_task=batch_task, typ=1, base_reel=huayan_gl_1, task_no=1, status=Task.STATUS_READY,
         publisher=admin)
         task1.compare_reel = compare_reel
         task1.separators = separators_json
         task1.reel = huayan_yb_1
         task1.save()
 
-        task2 = Task(batch_task=batch_task, typ=1, base_reel=huayan_gl_1, task_no=2, status=2,
+        task2 = Task(batch_task=batch_task, typ=1, base_reel=huayan_gl_1, task_no=2, status=Task.STATUS_READY,
         publisher=admin)
         task2.compare_reel = compare_reel
         task2.separators = separators_json
         task2.reel = huayan_yb_1
         #task2.base_reel = huayan_gl_1
         task2.save()
+
+        task3 = Task(batch_task=batch_task, typ=2, base_reel=huayan_gl_1, task_no=0, status=Task.STATUS_NOT_READY,
+        publisher=admin)
+        task3.compare_reel = compare_reel
+        #task3.separators = separators_json
+        task3.reel = huayan_yb_1
+        task3.save()
         
         diff_lst = generate_compare_reel(huayan_gl_1.text, huayan_yb_1.text)
         #compare_segs = []

@@ -3,6 +3,11 @@
     overflow: scroll;
     height: 580px;
 }
+.correct-submit {
+    position: fixed;
+    top: 600px;
+    margin: 20px 20px;
+}
 .reel-text-compare {
     font-size: 18px;
     height: 580px;
@@ -26,6 +31,9 @@
 }
 .addedtext {
     background-color: #cfc;
+}
+.difftext {
+    background-color: #fdd;
 }
 .seg-row {
     font-size: 20px;

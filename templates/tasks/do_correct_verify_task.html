@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}{{ task.reel }}文字校对审定{% endblock %}
+{% block content %}
+<div class="container">
+  <form action="" method="POST">
+    {{ csrf_input }}
+    <div class="col-md-8">
+      <div class="row">
+        <div class="page-img">
+          <canvas id="page-canvas" width="800" height="1080"></canvas>
+        </div>
+      </div>
+      <div class="row">
+        <div class="page-img-bg"></div>
+        <div class="">
+          <b>文字校对有差异的文本段</b>            
+          <table class="table table-bordered table-condensed">
+            <thead>
+              <tr>
+                {% for i in range(correct_count) %}
+                <th>{{ i + 1 }}校</th>
+                {% endfor %}
+                <th>审定</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for seg in segs %}
+              <tr class="seg-row" id="seg-{{ seg.id }}" seg-index="{{ loop.index0 }}" seg-id="{{ seg.id }}">
+                {% for correct_text in seg.correct_texts %}
+                <td class="correct-text" correct-index="{{ loop.index0 }}">{{ correct_text }}</td>
+                {% endfor %}
+                <td class="correct-verify-text">
+                  <textarea class="segtext" rows="1" name="segtext_{{ seg.id }}">{{ seg.selected_text }}</textarea>
+                  <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value="" />
+                  <input type="hidden" name="segline_{{ seg.id }}" id="segline_{{ seg.id }}" value="" />
+                  <input type="hidden" name="segchar_{{ seg.id }}" id="segchar_{{ seg.id }}" value="" />
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div> <!-- col-md-8 -->
+    <div class="col-md-4">
+      <div class="row">
+        <div class="reel-text-region">
+          <ul class="nav nav-tabs">
+            <li class="nav-item">
+              <a class="nav-link active" data-toggle="tab" href="#panel_compare" role="tab">比对结果</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-toggle="tab" href="#panel0" role="tab">审定结果</a>
+            </li>
+            {% for i in range(correct_count) %}
+            <li class="nav-item">
+              <a class="nav-link" data-toggle="tab" href="#panel{{ i + 1 }}" role="tab">{{ i+1 }}校结果</a>
+            </li>
+            {% endfor %}
+            
+          </ul>
+          <div class="tab-content">
+            <div class="tab-pane active" id="panel_compare" role="tabpanel">
+              <div id="reel-text-compare" class="reel-text-compare"></div>
+            </div>
+            <div class="tab-pane" id="panel0" role="tabpanel">
+              <div class="form-group">
+                <textarea id="reel-text" name="reel_text" class="reel-textarea"></textarea>
+              </div>
+            </div>
+            {% for i in range(correct_count) %}
+            <div class="tab-pane" id="panel{{ i + 1 }}" role="tabpanel">
+              <div class="correct-text">{{ correct_tasks[i].result.replace('\n', '<br />')|safe }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="correct-submit">
+          <input type="hidden" id="input-finished" name="finished" value="0" />
+          <button type="submit" class="btn btn-primary">暂存</button>
+          <button type="submit" class="btn btn-primary" id="finished-task">完成</button>
+        </div>
+        </form>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block foot_script %}
+<script>
+  $(function(){
+    var base_text = '{{ base_text|safe }}';
+    var segs = {{ segs_json|safe }};
+    var separators = {{ task.separators|safe }};
+
+    $('#finished-task').click(function(e) {
+      $('#input-finished').val('1');
+    });
+
+    var load_reel_text = function() {
+      var cmptexts = [];
+      var reeltexts = ['p\n'];
+      var base_length = base_text.length;
+      var seg_idx = 0;
+      var sep_idx = 0;
+      var page_no = 1;
+      var line_no = 1;
+      var char_no = 1;
+
+      var base_pos = 0;
+      var pos = 0;
+      while (seg_idx <= segs.length) {
+        // 找到下一个需要处理的seg
+        // while (seg_idx < segs.length && segs[seg_idx].selected_text == segs[seg_idx]['correct_texts'][0]) {
+        //   segs[seg_idx].page_no = page_no;
+        //   $('#segpage_' + segs[seg_idx].id).val(page_no);
+        //   ++seg_idx;
+        // }
+        var next_base_pos = base_length;
+        if (seg_idx < segs.length) {
+          next_base_pos = segs[seg_idx].base_pos;
+        }
+        var str = base_text.substr(base_pos, next_base_pos-base_pos);
+        var str_len = next_base_pos - base_pos;
+        var insert_len = 0;
+        while (insert_len < str_len) {
+          if (sep_idx < separators.length && separators[sep_idx][0] <= (pos + str_len-insert_len)) { // 下一个需要处理的separator
+            // 插入文本长为 separators[sep_idx][0] - pos
+            var cur_insert_len = separators[sep_idx][0] - pos;
+            cmptexts.push(str.substr(insert_len, cur_insert_len));
+            reeltexts.push(str.substr(insert_len, cur_insert_len));
+            char_no += cur_insert_len;
+            insert_len += cur_insert_len;
+            base_pos += cur_insert_len;
+            pos += cur_insert_len;
+
+            // 处理separator
+            var sep_str = '';
+            if (separators[sep_idx][1] == 'p') {
+              cmptexts.push('<br /><br />');
+              reeltexts.push('\np\n');
+              ++page_no;
+              line_no = 1;
+              char_no = 1;
+            } else {
+              cmptexts.push('<br />');
+              reeltexts.push('\n');
+              line_no += 1;
+              char_no = 1;
+            }
+            ++sep_idx;
+          } else {
+            var remained_len = str_len - insert_len;
+            cmptexts.push(str.substr(insert_len));
+            reeltexts.push(str.substr(insert_len));
+            char_no += remained_len;
+            base_pos += remained_len;
+            pos += remained_len;
+            insert_len = str_len;
+          }
+        }
+
+        // 处理seg
+        if (seg_idx < segs.length) {
+          segs[seg_idx].page_no = page_no;
+          segs[seg_idx].line_no = line_no;
+          segs[seg_idx].char_no = char_no;
+          $('#segpage_' + segs[seg_idx].id).val(page_no);
+          $('#segline_' + segs[seg_idx].id).val(line_no);
+          $('#segchar_' + segs[seg_idx].id).val(char_no);
+          cmptexts.push('<span class="seg-diff" id="seg-diff-' + segs[seg_idx].id + '">');
+
+          if (segs[seg_idx]['correct_texts'][0] != '') {
+            base_pos += segs[seg_idx]['correct_texts'][0].length;
+          }
+          var selected_text = segs[seg_idx].selected_text;
+          if (selected_text != '') {
+            cmptexts.push('<span class="difftext">' + selected_text + '</span>');
+            reeltexts.push(selected_text);
+            pos += selected_text.length;
+          }
+          cmptexts.push('</span>');
+        }
+        console.log(seg_idx);
+        ++seg_idx;
+      }
+
+      $('#reel-text-compare').html(cmptexts.join(''));
+      console.log(cmptexts.join(''))
+      $('#reel-text').val(reeltexts.join(''));
+    };
+    var segtext_change = function(index, newtext) {
+      if (segs[index].selected_text == newtext) {
+        return ;
+      }
+      var old_length = segs[index].selected_text.length;
+      var new_length = newtext.length;
+      var length_diff = new_length - old_length;
+      if (new_length != old_length) { // 需要将当前seg后的所有seg的位置更新，并更新后面的分隔符的位置
+        for (var i = index + 1; i < segs.length; ++i) {
+          segs[i].pos += length_diff;
+        }
+        var pos = segs[index].pos;
+        for (var i = 0; i < separators.length; ++i) {
+          if (separators[i][0] > pos) {
+            separators[i][0] += length_diff;
+          }
+        }
+      }
+      segs[index].selected_text = newtext;
+      load_reel_text();
+    };
+
+    var load_page_image = function(index) {
+      var vol_page_no = {{ start_vol_page }} + segs[index].page_no - 1;
+      var page_code = pad(vol_page_no, 4) + '0';
+      var url = 'https://s3.cn-north-1.amazonaws.com.cn/lqcharacters-images/{{ sid[0:2] }}/{{ sid[2:] }}/v{{ start_vol }}/{{ sid }}v{{ start_vol }}p' + page_code + '.jpg';
+      var cutline_url = 'https://s3.cn-north-1.amazonaws.com.cn/lqcharacters-images/{{ sid[0:2] }}/{{ sid[2:] }}/v{{ start_vol }}/{{ sid }}v{{ start_vol }}p' + page_code + '.cut';
+      var cid = '{{ sid }}v{{ start_vol }}p' + page_code + pad(segs[index].line_no, 2) + 'n' + pad(segs[index].char_no, 2);
+      console.log(url);
+      $.getJSON(cutline_url, function(data) {
+        $.each(data['char_data'], function(k, v){
+          if (v['char_id'] == cid) {
+            setImg(url, v['x'], v['y'], v['w'], v['h']);
+          }
+        });
+      });
+    };
+
+    $('#reel-text').change(function(e){
+      separators = extract_separators($(this).val());
+    });
+
+    $('.segtext').change(function() {
+      var tr = $(this).parent().parent();
+      var index = tr.attr('seg-index');
+      segtext_change(index, $(this).val());
+    });
+    $('td.correct-text').dblclick(function(e) {
+      var tr = $(this).parent();
+      var correct_index = $(this).attr('correct-index');
+      var index = tr.attr('seg-index');
+      var seg_id = tr.attr('seg-id');
+      segtext_change(index, segs[index]['correct_texts'][correct_index]);
+      tr.find('textarea').val(segs[index].selected_text);
+    });
+
+    $('.seg-row').click(function() {
+      var seg_id = $(this).attr('seg-id');
+      $('.seg-diff').removeAttr('style');
+      $('#seg-diff-' + seg_id).attr('style', 'color:red;');
+      var index = $(this).attr('seg-index');
+      load_page_image(index);
+    });
+    load_reel_text();
+    load_page_image(0);
+  });
+</script>
+{% endblock %}

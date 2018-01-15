@@ -21,19 +21,38 @@
                 <th>{{ i + 1 }}校</th>
                 {% endfor %}
                 <th>审定</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {% for seg in segs %}
-              <tr class="seg-row" id="seg-{{ seg.id }}" seg-index="{{ loop.index0 }}" seg-id="{{ seg.id }}">
-                {% for correct_text in seg.correct_texts %}
-                <td class="correct-text" correct-index="{{ loop.index0 }}">{{ correct_text }}</td>
+              <tr class="seg-row" id="segrow_{{ seg.id }}" seg-index="{{ loop.index0 }}" seg-id="{{ seg.id }}">
+                {% for correct_seg in seg.correct_segs %}
+                <td class="correct-text{% if correct_seg['doubt_comment'] %} doubt{% endif %}" correct-index="{{ loop.index0 }}" {% if correct_seg['doubt_comment'] %} title="{{ correct_seg['doubt_comment'] }}"{% endif %}>{{ correct_seg['selected_text'] }}</td>
                 {% endfor %}
                 <td class="correct-verify-text">
-                  <textarea class="segtext" rows="1" name="segtext_{{ seg.id }}">{{ seg.selected_text }}</textarea>
+                  <textarea class="segtext{% if seg.doubt_comment %} doubt{% endif %}" rows="1" id="segtext_{{ seg.id }}" name="segtext_{{ seg.id }}">{{ seg.selected_text }}</textarea>
                   <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value="" />
                   <input type="hidden" name="segline_{{ seg.id }}" id="segline_{{ seg.id }}" value="" />
                   <input type="hidden" name="segchar_{{ seg.id }}" id="segchar_{{ seg.id }}" value="" />
+                </td>
+                <td>
+                  <a class="btn btn-default doubt-btn" data-toggle="modal" data-target="#doubt-modal-{{ seg.id }}">存疑</a>
+                  <div class="modal" id="doubt-modal-{{seg.id}}" tabindex="-1" role="dialog" aria-labelledby="modalLabel">
+                    <div class="modal-dialog" role="document">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h4 class="modal-title">存疑意见</h4>
+                        </div>
+                        <div class="modal-body">
+                          <textarea class="doubt-textarea" name="segdoubt_{{ seg.id }}" id="segdoubt_{{ seg.id }}" rows="3" cols="40">{{ seg.doubt_comment }}</textarea>
+                        </div>
+                        <div class="modal-footer">
+                          <a type="button" class="btn btn-primary doubt-ok" seg-id="{{ seg.id }}" data-dismiss="modal">确定</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </td>
               </tr>
               {% endfor %}
@@ -113,7 +132,7 @@
       var pos = 0;
       while (seg_idx <= segs.length) {
         // 找到下一个需要处理的seg
-        // while (seg_idx < segs.length && segs[seg_idx].selected_text == segs[seg_idx]['correct_texts'][0]) {
+        // while (seg_idx < segs.length && segs[seg_idx].selected_text == segs[seg_idx]['correct_segs'][0].selected_text) {
         //   segs[seg_idx].page_no = page_no;
         //   $('#segpage_' + segs[seg_idx].id).val(page_no);
         //   ++seg_idx;
@@ -172,8 +191,8 @@
           $('#segchar_' + segs[seg_idx].id).val(char_no);
           cmptexts.push('<span class="seg-diff" id="seg-diff-' + segs[seg_idx].id + '">');
 
-          if (segs[seg_idx]['correct_texts'][0] != '') {
-            base_pos += segs[seg_idx]['correct_texts'][0].length;
+          if (segs[seg_idx]['correct_segs'][0].selected_text != '') {
+            base_pos += segs[seg_idx]['correct_segs'][0].selected_text.length;
           }
           var selected_text = segs[seg_idx].selected_text;
           if (selected_text != '') {
@@ -243,8 +262,8 @@
       var correct_index = $(this).attr('correct-index');
       var index = tr.attr('seg-index');
       var seg_id = tr.attr('seg-id');
-      segtext_change(index, segs[index]['correct_texts'][correct_index]);
-      tr.find('textarea').val(segs[index].selected_text);
+      segtext_change(index, segs[index]['correct_segs'][correct_index].selected_text);
+      tr.find('textarea.segtext').val(segs[index].selected_text);
     });
 
     $('.seg-row').click(function() {
@@ -254,6 +273,18 @@
       var index = $(this).attr('seg-index');
       load_page_image(index);
     });
+    $('.doubt-ok').click(function(e) {
+      var seg_id = $(this).attr('seg-id');
+      var index = $('#segrow_' + seg_id).attr('seg-index');
+
+      segs[index].doubt_comment = $('#segdoubt_' + seg_id).val();
+      if (segs[index].doubt_comment) {
+        $('#segtext_' + seg_id).addClass('doubt');
+      } else {
+        $('#segtext_' + seg_id).removeClass('doubt');
+      }
+    });
+
     load_reel_text();
     load_page_image(0);
   });

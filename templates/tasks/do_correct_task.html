@@ -21,19 +21,38 @@
               <th width="40%">OCR</th>
               <th width="40%">比对本</th>
               <th>我的选择</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {% for seg in segs %}
             {% if seg.ocr_text != seg.base_text %}
-            <tr class="seg-row" id="seg-{{ seg.id }}" seg-index="{{ loop.index0 }}" seg-id="{{ seg.id }}">
+            <tr class="seg-row" id="segrow_{{ seg.id }}" seg-index="{{ loop.index0 }}" seg-id="{{ seg.id }}">
               <td class="ocr-text">{{ seg.ocr_text }}</td>
               <td class="base-text">{{ seg.base_text }}</td>
               <td class="selected-text">
-                <textarea class="segtext" rows="1" name="segtext_{{ seg.id }}" index="{{ loop.index0 }}">{{ seg.selected_text }}</textarea>
+                <textarea class="segtext{% if seg.doubt_comment %} doubt{% endif %}" rows="1" id="segtext_{{ seg.id }}" name="segtext_{{ seg.id }}" index="{{ loop.index0 }}">{{ seg.selected_text }}</textarea>
                 <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value="" />
                 <input type="hidden" name="segline_{{ seg.id }}" id="segline_{{ seg.id }}" value="" />
                 <input type="hidden" name="segchar_{{ seg.id }}" id="segchar_{{ seg.id }}" value="" />
+              </td>
+              <td>
+                <a class="btn btn-default doubt-btn" data-toggle="modal" data-target="#doubt-modal-{{ seg.id }}">存疑</a>
+                <div class="modal" id="doubt-modal-{{seg.id}}" tabindex="-1" role="dialog" aria-labelledby="modalLabel">
+                  <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h4 class="modal-title">存疑意见</h4>
+                      </div>
+                      <div class="modal-body">
+                        <textarea class="doubt-textarea" name="segdoubt_{{ seg.id }}" id="segdoubt_{{ seg.id }}" rows="3" cols="40">{{ seg.doubt_comment }}</textarea>
+                      </div>
+                      <div class="modal-footer">
+                        <a type="button" class="btn btn-primary doubt-ok" seg-id="{{ seg.id }}" data-dismiss="modal">确定</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </td>
             </tr>
             {% endif %}
@@ -62,13 +81,9 @@
           <div id="reel-text-compare" class="reel-text-compare"></div>
         </div>
         <div class="tab-pane" id="panel2" role="tabpanel">
-          <!-- <form action="/correct/{{ task.id }}/reeltext" method="POST">
-            {{ csrf_input }} -->
             <div class="form-group">
               <textarea id="reel-text" name="reel_text" class="reel-textarea"></textarea>
             </div>
-            <!-- <button type="submit" class="btn btn-primary">提交卷文本</button>
-          </form> -->
         </div>
         <div class="tab-pane" id="panel3" role="tabpanel">
           <div id="reel-basetext" class="reel-basetext"></div>
@@ -225,14 +240,14 @@
       load_reel_text();
     });
     $('.ocr-text').dblclick(function() {
-      var textarea = $(this).next().next().children('textarea');
+      var textarea = $(this).next().next().children('textarea.segtext');
       var index = textarea.attr('index');
       segtext_change(index, segs[index].ocr_text);
       textarea.val(segs[index].selected_text);      
       load_reel_text();
     });
     $('.base-text').dblclick(function() {
-      var textarea = $(this).next().children('textarea');
+      var textarea = $(this).next().children('textarea.segtext');
       var index = textarea.attr('index');
       segtext_change(index, segs[index].base_text);
       textarea.val(segs[index].selected_text);
@@ -260,6 +275,17 @@
       var index = $(this).attr('seg-index');
       load_page_image(index);
     });
+    $('.doubt-ok').click(function(e) {
+      var seg_id = $(this).attr('seg-id');
+      var index = $('#segrow_' + seg_id).attr('seg-index');
+      segs[index].doubt_comment = $('#segdoubt_' + seg_id).val();
+      if (segs[index].doubt_comment) {
+        $('#segtext_' + seg_id).addClass('doubt');
+      } else {
+        $('#segtext_' + seg_id).removeClass('doubt');
+      }
+    });
+
     load_reel_text();
     load_page_image(0);
     $('#reel-basetext').html(base_text.replace(/^p\n/, '').replace(/\np\n/g, '<br />').replace(/\n/g, '<br />'))

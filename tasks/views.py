@@ -45,6 +45,7 @@ def do_correct_task(request, task_id):
                 'ocr_text': compareseg.ocr_text,
                 'base_text': compareseg.base_text,
                 'selected_text': correctsegs[0].selected_text,
+                'doubt_comment': correctsegs[0].doubt_comment,
                 'pos': correctsegs[0].position,
             }
             segs.append(seg)
@@ -77,6 +78,9 @@ def do_correct_task(request, task_id):
             elif k.startswith('segchar_'):
                 seg_id = int(k[8:])
                 d[seg_id].char_no = int(v)
+            elif k.startswith('segdoubt_'):
+                seg_id = int(k[9:])
+                d[seg_id].doubt_comment = v
         with transaction.atomic():
             for seg_id in save_seg_ids:
                 d[seg_id].save()
@@ -169,15 +173,19 @@ def do_correct_verify_task(request, task_id):
             seg['pos'] = seg_verify.position
             correctsegs = list(CorrectSeg.objects.filter(compare_seg=seg_verify.compare_seg, task_id__in=correct_task_ids))
             correctsegs.sort(key=attrgetter('task_id'))
-            correct_texts = []
+            correct_segs = []
             for correctseg in correctsegs:
-                correct_texts.append(correctseg.selected_text)
+                correct_segs.append({
+                    'selected_text': correctseg.selected_text,
+                    'doubt_comment': correctseg.doubt_comment,
+                })
             seg['base_pos'] = correctsegs[0].position
-            seg['correct_texts'] = correct_texts
+            seg['correct_segs'] = correct_segs
             seg['selected_text'] = seg_verify.selected_text
             seg['page_no'] = seg_verify.page_no
             seg['line_no'] = seg_verify.line_no
             seg['char_no'] = seg_verify.char_no
+            seg['doubt_comment'] = seg_verify.doubt_comment
             segs.append(seg)
         base_text = SEPARATORS_PATTERN.sub('', correct_tasks[0].result)
         correct_count = len(correct_tasks)
@@ -213,6 +221,9 @@ def do_correct_verify_task(request, task_id):
             elif k.startswith('segchar_'):
                 seg_id = int(k[8:])
                 d[seg_id].char_no = int(v)
+            elif k.startswith('segdoubt_'):
+                seg_id = int(k[9:])
+                d[seg_id].doubt_comment = v
         with transaction.atomic():
             for seg_id in save_seg_ids:
                 d[seg_id].save()

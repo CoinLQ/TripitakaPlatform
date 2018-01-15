@@ -48,6 +48,7 @@
                         <textarea class="doubt-textarea" name="segdoubt_{{ seg.id }}" id="segdoubt_{{ seg.id }}" rows="3" cols="40">{{ seg.doubt_comment }}</textarea>
                       </div>
                       <div class="modal-footer">
+                        <a type="button" class="btn btn-primary doubt-cancel" seg-id="{{ seg.id }}" data-dismiss="modal">取消</a>
                         <a type="button" class="btn btn-primary doubt-ok" seg-id="{{ seg.id }}" data-dismiss="modal">确定</a>
                       </div>
                     </div>
@@ -138,11 +139,11 @@
       var pos = 0;
       while (seg_idx <= segs.length) {
         // 找到下一个需要处理的seg
-        while (seg_idx < segs.length && segs[seg_idx].selected_text == segs[seg_idx].base_text) {
-          segs[seg_idx].page_no = page_no;
-          $('#segpage_' + segs[seg_idx].id).val(page_no);
-          ++seg_idx;
-        }
+        // while (seg_idx < segs.length && segs[seg_idx].selected_text == segs[seg_idx].base_text) {
+        //   segs[seg_idx].page_no = page_no;
+        //   $('#segpage_' + segs[seg_idx].id).val(page_no);
+        //   ++seg_idx;
+        // }
         var next_base_pos = base_length;
         if (seg_idx < segs.length) {
           next_base_pos = segs[seg_idx].base_pos;
@@ -196,15 +197,25 @@
           $('#segline_' + segs[seg_idx].id).val(line_no);
           $('#segchar_' + segs[seg_idx].id).val(char_no);
           cmptexts.push('<span class="seg-diff" id="seg-diff-' + segs[seg_idx].id + '">');
-          if (segs[seg_idx].base_text != '') {
-            cmptexts.push('<span class="deletedtext"><del>' + segs[seg_idx].base_text + '</del></span>');
-            base_pos += segs[seg_idx].base_text.length;
-          }
-          var selected_text = segs[seg_idx].selected_text;
-          if (selected_text != '') {
-            cmptexts.push('<span class="addedtext">' + selected_text + '</span>');
+          if (segs[seg_idx].selected_text == segs[seg_idx].base_text) {
+            var selected_text = segs[seg_idx].selected_text;
+            cmptexts.push(selected_text);
             reeltexts.push(selected_text);
+            char_no += selected_text.length;
+            base_pos += selected_text.length;
             pos += selected_text.length;
+          } else {
+            if (segs[seg_idx].base_text != '') {
+              cmptexts.push('<span class="deletedtext"><del>' + segs[seg_idx].base_text + '</del></span>');
+              base_pos += segs[seg_idx].base_text.length;
+            }
+            var selected_text = segs[seg_idx].selected_text;
+            if (selected_text != '') {
+              cmptexts.push('<span class="addedtext">' + selected_text + '</span>');
+              reeltexts.push(selected_text);
+              char_no += selected_text.length;
+              pos += selected_text.length;
+            }
           }
           cmptexts.push('</span>');
         }
@@ -274,6 +285,10 @@
       $('#seg-diff-' + seg_id).attr('style', 'color:red;');
       var index = $(this).attr('seg-index');
       load_page_image(index);
+      var offset = $('#seg-diff-' + seg_id).position().top - 60;
+      $('div.reel-text-region').animate({
+       scrollTop: offset + $('div.reel-text-region').scrollTop()
+      }, 500);
     });
     $('.doubt-ok').click(function(e) {
       var seg_id = $(this).attr('seg-id');
@@ -284,6 +299,13 @@
       } else {
         $('#segtext_' + seg_id).removeClass('doubt');
       }
+    });
+    $('.doubt-cancel').click(function(e) {
+      var seg_id = $(this).attr('seg-id');
+      var index = $('#segrow_' + seg_id).attr('seg-index');
+      segs[index].doubt_comment = '';
+      $('#segdoubt_' + seg_id).val('');
+      $('#segtext_' + seg_id).removeClass('doubt');
     });
 
     load_reel_text();

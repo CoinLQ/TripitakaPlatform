@@ -97,12 +97,14 @@ class Task(models.Model, TripiMixin):
     STATUS_READY = 2
     STATUS_PROCESSING = 3
     STATUS_FINISHED = 4
-    STATUS_REMINDED = 5
-    STATUS_REVOKED = 6
+    STATUS_PAUSED = 5
+    STATUS_REMINDED = 6
+    STATUS_REVOKED = 7
     STATUS_CHOICES = (
         (STATUS_NOT_READY, '未就绪'),
         (STATUS_READY, '待领取'),
         (STATUS_PROCESSING, '进行中'),
+        (STATUS_PAUSED, '已暂停'),
         (STATUS_FINISHED, '已完成'),
         (STATUS_REMINDED, '已催单'),
         (STATUS_REVOKED, '已回收'),
@@ -142,6 +144,8 @@ class CorrectSeg(models.Model):
     char_no = models.SmallIntegerField('行中字序号', default=-1)
     #用于文字校对审定，0表示甲乙结果一致并且选择了此一致的结果，1表示选择甲的结果，2表示选择乙的结果，-1表示新结果
     diff_flag = models.SmallIntegerField('甲乙差异标记', default=-1)
+    #存疑相关
+    doubt_comment = models.TextField('存疑意见', default='')
 
 # 校勘判取相关
 class ReelDiff(models.Model):
@@ -234,10 +238,13 @@ class LQMarkUnit(MarkUnitBase):
     lqmark = models.ForeignKey(LQMark, on_delete=models.CASCADE)
 
 class DoubtBase(models.Model):
+    STATUS_UNPROCESSED = 1
+    STATUS_APPROVED = 2
+    STATUS_DISAPPROVED = 3
     STATUS_CHOICES = (
-        (1, '未处理'),
-        (2, '同意'),
-        (3, '不同意'),
+        (STATUS_UNPROCESSED, '未处理'),
+        (STATUS_APPROVED, '同意'),
+        (STATUS_DISAPPROVED, '不同意'),
     )
 
     comment = models.TextField('意见')
@@ -246,7 +253,7 @@ class DoubtBase(models.Model):
     created_at = models.DateTimeField('创建时间', default=timezone.now)
     processor = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='processed_%(class)s', on_delete=models.SET_NULL, null=True,
     verbose_name='处理用户')
-    processed_at = models.DateTimeField('处理时间', default=timezone.now)
+    processed_at = models.DateTimeField('处理时间', null=True)
     status = models.SmallIntegerField('状态', choices=STATUS_CHOICES)
 
     class Meta:

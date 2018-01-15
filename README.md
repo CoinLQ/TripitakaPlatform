@@ -22,6 +22,8 @@ pip install django-extensions
 
 pip install django-bootstrap3
 
+pip install ipython
+
 pip install -U pylint
 
 pip install -U autopep8

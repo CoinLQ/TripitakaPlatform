@@ -10,7 +10,7 @@ from sutradata.models import *
 from .models import *
 
 import json, re
-from operator import attrgetter
+from operator import attrgetter, itemgetter
 
 SEPARATORS_PATTERN = re.compile('[p\n]')
 
@@ -47,15 +47,27 @@ def do_correct_task(request, task_id):
                 'selected_text': correctsegs[0].selected_text,
                 'doubt_comment': correctsegs[0].doubt_comment,
                 'pos': correctsegs[0].position,
-            }
+                }
             segs.append(seg)
-        return render(request, 'tasks/do_correct_task.html', {'task': task,
-    'base_text': compare_reel.base_reel.text,
-    'segs': segs, 'segs_json': json.dumps(segs),
-    'sid': task.reel.sutra.sid,
-    'start_vol': '%03d' % task.reel.start_vol,
-    'start_vol_page': task.reel.start_vol_page,
-    })
+        context = {
+            'task': task,
+            'base_text': compare_reel.base_reel.text,
+            'segs': segs,
+            'segs_json': json.dumps(segs),
+            'sid': task.reel.sutra.sid,
+            'start_vol': '%03d' % task.reel.start_vol,
+            'start_vol_page': task.reel.start_vol_page,
+            }
+        sort_index_lst = []
+        if request.GET.get('order_by', '') == 'char' :
+            i = 0
+            segs_len = len(segs)
+            while i < segs_len:
+                sort_index_lst.append( (i, segs[i]['selected_text'][:1]) )
+                i += 1
+            sort_index_lst.sort(key=itemgetter(1))
+            context['sort_index_lst'] = sort_index_lst
+        return render(request, 'tasks/do_correct_task.html', context)
     else:
         if task.status == Task.STATUS_FINISHED:
             return redirect('do_correct_task', task_id=task_id)

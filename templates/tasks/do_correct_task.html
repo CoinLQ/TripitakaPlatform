@@ -25,13 +25,50 @@
             </tr>
           </thead>
           <tbody>
+            {% if sort_index_lst %}
+            <a href="/correct/{{ task.id }}/">按位置排序</a>
+            {% for seg_index, ch in sort_index_lst %}
+            {% set seg=segs[seg_index] %}
+            <tr class="seg-row" id="segrow_{{ seg.id }}" seg-index="{{ seg_index }}" seg-id="{{ seg.id }}">
+              <td class="ocr-text">{{ seg.ocr_text }}</td>
+              <td class="base-text">{{ seg.base_text }}</td>
+              <td class="selected-text">
+                <textarea class="segtext{% if seg.doubt_comment %} doubt{% endif %}" rows="1" id="segtext_{{ seg.id }}" name="segtext_{{ seg.id }}" index="{{ seg_index }}">{{ seg.selected_text }}</textarea>
+                <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value="" />
+                <input type="hidden" name="segline_{{ seg.id }}" id="segline_{{ seg.id }}" value="" />
+                <input type="hidden" name="segchar_{{ seg.id }}" id="segchar_{{ seg.id }}" value="" />
+                <input type="hidden" name="segpos_{{ seg.id }}" id="segpos_{{ seg.id }}" value="" />
+              </td>
+              <td>
+                <a class="btn btn-default doubt-btn" data-toggle="modal" data-target="#doubt-modal-{{ seg.id }}">存疑</a>
+                <div class="modal" id="doubt-modal-{{seg.id}}" tabindex="-1" role="dialog" aria-labelledby="modalLabel">
+                  <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h4 class="modal-title">存疑意见</h4>
+                      </div>
+                      <div class="modal-body">
+                        <textarea class="doubt-textarea" name="segdoubt_{{ seg.id }}" id="segdoubt_{{ seg.id }}" rows="3" cols="40">{{ seg.doubt_comment }}</textarea>
+                      </div>
+                      <div class="modal-footer">
+                        <a type="button" class="btn btn-primary doubt-cancel" seg-id="{{ seg.id }}" data-dismiss="modal">取消</a>
+                        <a type="button" class="btn btn-primary doubt-ok" seg-id="{{ seg.id }}" data-dismiss="modal">确定</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <a href="/correct/{{ task.id }}/?order_by=char">按字排序</a>
             {% for seg in segs %}
             {% if seg.ocr_text != seg.base_text %}
             <tr class="seg-row" id="segrow_{{ seg.id }}" seg-index="{{ loop.index0 }}" seg-id="{{ seg.id }}">
               <td class="ocr-text">{{ seg.ocr_text }}</td>
               <td class="base-text">{{ seg.base_text }}</td>
               <td class="selected-text">
-                <textarea class="segtext{% if seg.doubt_comment %} doubt{% endif %}" rows="1" id="segtext_{{ seg.id }}" name="segtext_{{ seg.id }}" index="{{ loop.index0 }}">{{ seg.selected_text }}</textarea>
+                <textarea class="segtext{% if seg.doubt_comment %} doubt{% endif %}" rows="1" id="segtext_{{ seg.id }}" name="segtext_{{ seg.id }}">{{ seg.selected_text }}</textarea>
                 <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value="" />
                 <input type="hidden" name="segline_{{ seg.id }}" id="segline_{{ seg.id }}" value="" />
                 <input type="hidden" name="segchar_{{ seg.id }}" id="segchar_{{ seg.id }}" value="" />
@@ -59,6 +96,7 @@
             </tr>
             {% endif %}
             {% endfor %}
+            {% endif %}
           </tbody>
         </table>
     </div>
@@ -248,20 +286,20 @@
     };
 
     $('.segtext').change(function() {
-      var index = parseInt($(this).attr('index'));
+      var index = parseInt($(this).parent().parent().attr('seg-index'));
       segtext_change(index, $(this).val());
       load_reel_text();
     });
     $('.ocr-text').dblclick(function() {
-      var textarea = $(this).next().next().children('textarea.segtext');
-      var index = parseInt(textarea.attr('index'));
+      var textarea = $(this).parent().find('textarea.segtext');
+      var index = parseInt($(this).parent().attr('seg-index'));
       segtext_change(index, segs[index].ocr_text);
       textarea.val(segs[index].selected_text);      
       load_reel_text();
     });
     $('.base-text').dblclick(function() {
-      var textarea = $(this).next().children('textarea.segtext');
-      var index = parseInt(textarea.attr('index'));
+      var textarea = $(this).parent().find('textarea.segtext');
+      var index = parseInt($(this).parent().attr('seg-index'));
       segtext_change(index, segs[index].base_text);
       textarea.val(segs[index].selected_text);
       load_reel_text();

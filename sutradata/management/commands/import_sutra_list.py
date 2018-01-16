@@ -9,24 +9,25 @@ class Command(BaseCommand):
     def read_sutra_list(self, sutra_list_file, tripitaka_code):
         print('process: %s' % sutra_list_file)
         with open(sutra_list_file, 'r') as f:
-            heads = f.readline().strip().split('\t')
+            line = f.readline().strip()
+            heads = line.split('\t')
             try:
                 name_idx = heads.index('实体经名')
             except ValueError:
                 try:
                     name_idx = heads.index('實體經名')
-                except:
+                except ValueError:
                     name_idx = heads.index('经文名称')
             code_idx = 3 - name_idx
             for line in f.readlines():
                 try:
                     line = line.rstrip().replace('—', '-')
                     params = line.split('\t')
+                    if name_idx >= len(params):
+                        continue
                     lqcode = params[0]
                     code = params[code_idx]
                     name = params[name_idx]
-                    if name != '大方廣佛華嚴經':
-                        continue
                     if len(params) >= 5:
                         total_reels_1 = params[3]
                         total_reels_2 = params[4]
@@ -35,18 +36,27 @@ class Command(BaseCommand):
                         total_reels_2 = '0'
                     if len(lqcode) == 0 or len(code) == 0 or \
                     lqcode == '#N/A' or code == '#N/A' or name == '#N/A':
-                        print('EXCEPT: %s' % line)
+                        #print('EXCEPT: %s' % line)
                         continue
                     lqcode = lqcode[2:]
-                    lqvariant_code = 0
-                    if '-' in lqcode:
-                        pos = lqcode.find('-')
-                        lqvariant_code = lqcode[pos+1:]
-                        lqvariant_code_num = int(lqvariant_code)
-                        if lqvariant_code_num >= 10:
-                            lqvariant_code = chr( (lqvariant_code_num - 10) + ord('a') )
-                        lqcode = lqcode[:pos]
-                    lqcode = int(lqcode)
+                    if lqcode:
+                        lqvariant_code = 0
+                        if '-' in lqcode:
+                            pos = lqcode.find('-')
+                            lqvariant_code = lqcode[pos+1:]
+                            lqvariant_code_num = int(lqvariant_code)
+                            if lqvariant_code_num >= 10:
+                                lqvariant_code = chr( (lqvariant_code_num - 10) + ord('a') )
+                            lqcode = lqcode[:pos]
+                        lqcode = int(lqcode)
+                        lqcode_str = 'LQ%05d%s' % (lqcode, lqvariant_code)
+                        try:
+                            lqsutra = LQSutra.objects.get(sid=lqcode_str)
+                        except:
+                            lqsutra = LQSutra(sid=lqcode_str, name=name, total_reels=total_reels)
+                            lqsutra.save()
+                    else:
+                        lqsutra = None
 
                     code = code.lstrip('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
                     variant_code = 0
@@ -62,15 +72,17 @@ class Command(BaseCommand):
                         total_reels = int(total_reels_2)
                     except:
                         total_reels = 0
-                    lqcode_str = 'LQ%05d%s' % (lqcode, lqvariant_code)
-                    lqsutra = LQSutra(sid=lqcode_str, name=name, total_reels=total_reels)
-                    lqsutra.save()
-                    tripitaka = Tripitaka.objects.get(pk=tripitaka_code)
+                    
+                    tripitaka = Tripitaka.objects.get(code=tripitaka_code)
                     code_str = '%05d' % code
-                    sutra = Sutra(sid='%s%s%s' % (tripitaka_code, code_str, variant_code),
-                    tripitaka=tripitaka, code=code_str, variant_code=variant_code,
-                    name=name, lqsutra=lqsutra, total_reels=total_reels)
-                    sutra.save()
+                    sid='%s%s%s' % (tripitaka_code, code_str, variant_code)
+                    try:
+                        sutra = Sutra.objects.get(sid=sid)
+                    except:
+                        sutra = Sutra(sid=sid,
+                        tripitaka=tripitaka, code=code_str, variant_code=variant_code,
+                        name=name, lqsutra=lqsutra, total_reels=total_reels)
+                        sutra.save()
                 except Exception:
                     print(line)
                     traceback.print_exc()
@@ -84,7 +96,7 @@ class Command(BaseCommand):
             fullname = join(dirpath, filename)
             if isfile(fullname):
                 ext = filename[-3:]
-                if ext != 'csv':
+                if ext != 'txt':
                     continue
                 tripitaka_code = filename[:2]
                 self.read_sutra_list(fullname, tripitaka_code)

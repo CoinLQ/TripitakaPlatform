@@ -2,6 +2,7 @@
     position: fixed;
     overflow: scroll;
     height: 580px;
+    margin: 20px;
 }
 .correct-submit {
     position: fixed;
@@ -20,7 +21,7 @@
 .page-img {
     position: fixed;
     overflow: scroll;
-    width: 750px;
+    width: 760px;
     height: 400px;
 }
 .page-img-bg {

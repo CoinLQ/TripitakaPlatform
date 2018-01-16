@@ -35,6 +35,7 @@
                 <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value="" />
                 <input type="hidden" name="segline_{{ seg.id }}" id="segline_{{ seg.id }}" value="" />
                 <input type="hidden" name="segchar_{{ seg.id }}" id="segchar_{{ seg.id }}" value="" />
+                <input type="hidden" name="segpos_{{ seg.id }}" id="segpos_{{ seg.id }}" value="" />
               </td>
               <td>
                 <a class="btn btn-default doubt-btn" data-toggle="modal" data-target="#doubt-modal-{{ seg.id }}">存疑</a>
@@ -196,6 +197,7 @@
           $('#segpage_' + segs[seg_idx].id).val(page_no);
           $('#segline_' + segs[seg_idx].id).val(line_no);
           $('#segchar_' + segs[seg_idx].id).val(char_no);
+          $('#segpos_' + segs[seg_idx].id).val(segs[seg_idx].pos);
           cmptexts.push('<span class="seg-diff" id="seg-diff-' + segs[seg_idx].id + '">');
           if (segs[seg_idx].selected_text == segs[seg_idx].base_text) {
             var selected_text = segs[seg_idx].selected_text;
@@ -246,20 +248,20 @@
     };
 
     $('.segtext').change(function() {
-      var index = $(this).attr('index');
+      var index = parseInt($(this).attr('index'));
       segtext_change(index, $(this).val());
       load_reel_text();
     });
     $('.ocr-text').dblclick(function() {
       var textarea = $(this).next().next().children('textarea.segtext');
-      var index = textarea.attr('index');
+      var index = parseInt(textarea.attr('index'));
       segtext_change(index, segs[index].ocr_text);
       textarea.val(segs[index].selected_text);      
       load_reel_text();
     });
     $('.base-text').dblclick(function() {
       var textarea = $(this).next().children('textarea.segtext');
-      var index = textarea.attr('index');
+      var index = parseInt(textarea.attr('index'));
       segtext_change(index, segs[index].base_text);
       textarea.val(segs[index].selected_text);
       load_reel_text();
@@ -283,7 +285,7 @@
       var seg_id = $(this).attr('seg-id');
       $('.seg-diff').removeAttr('style');
       $('#seg-diff-' + seg_id).attr('style', 'color:red;');
-      var index = $(this).attr('seg-index');
+      var index = parseInt($(this).attr('seg-index'));
       load_page_image(index);
       var offset = $('#seg-diff-' + seg_id).position().top - 60;
       $('div.reel-text-region').animate({
@@ -292,7 +294,7 @@
     });
     $('.doubt-ok').click(function(e) {
       var seg_id = $(this).attr('seg-id');
-      var index = $('#segrow_' + seg_id).attr('seg-index');
+      var index = parseInt($('#segrow_' + seg_id).attr('seg-index'));
       segs[index].doubt_comment = $('#segdoubt_' + seg_id).val();
       if (segs[index].doubt_comment) {
         $('#segtext_' + seg_id).addClass('doubt');
@@ -302,7 +304,7 @@
     });
     $('.doubt-cancel').click(function(e) {
       var seg_id = $(this).attr('seg-id');
-      var index = $('#segrow_' + seg_id).attr('seg-index');
+      var index = parseInt($('#segrow_' + seg_id).attr('seg-index'));
       segs[index].doubt_comment = '';
       $('#segdoubt_' + seg_id).val('');
       $('#segtext_' + seg_id).removeClass('doubt');

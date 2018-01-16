@@ -38,7 +38,7 @@ def do_correct_task(request, task_id):
         comparesegs = [seg for seg in compare_reel.compareseg_set.all()]
         segs = []
         for compareseg in comparesegs:
-            correctsegs = CorrectSeg.objects.filter(task=task, compare_seg=compareseg)
+            correctsegs = CorrectSeg.objects.filter(task=task, compare_seg=compareseg).order_by('position')
             seg = {
                 'id': correctsegs[0].id,
                 'base_pos': compareseg.base_pos,
@@ -78,6 +78,9 @@ def do_correct_task(request, task_id):
             elif k.startswith('segchar_'):
                 seg_id = int(k[8:])
                 d[seg_id].char_no = int(v)
+            elif k.startswith('segpos_'):
+                seg_id = int(k[7:])
+                d[seg_id].position = int(v)
             elif k.startswith('segdoubt_'):
                 seg_id = int(k[9:])
                 d[seg_id].doubt_comment = v
@@ -166,7 +169,7 @@ def do_correct_verify_task(request, task_id):
         correct_tasks = Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT)
         correct_task_ids = [task.id for task in correct_tasks]
         segs = []
-        for seg_verify in CorrectSeg.objects.filter(task=task).filter(~Q(diff_flag=0)).all():
+        for seg_verify in CorrectSeg.objects.filter(task=task).filter(~Q(diff_flag=0)).order_by('position'):
             #print(seg_verify.id)
             seg = {}
             seg['id'] = seg_verify.id
@@ -221,6 +224,9 @@ def do_correct_verify_task(request, task_id):
             elif k.startswith('segchar_'):
                 seg_id = int(k[8:])
                 d[seg_id].char_no = int(v)
+            elif k.startswith('segpos_'):
+                seg_id = int(k[7:])
+                d[seg_id].position = int(v)
             elif k.startswith('segdoubt_'):
                 seg_id = int(k[9:])
                 d[seg_id].doubt_comment = v

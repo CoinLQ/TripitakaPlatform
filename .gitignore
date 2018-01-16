@@ -6,3 +6,4 @@ venv
 .env
 static/js
 static/css
+.pyc

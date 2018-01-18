@@ -4,6 +4,9 @@ from django.utils import timezone
 
 from sutradata.models import *
 
+from difflib import SequenceMatcher
+import re
+
 class TripiMixin(object):
     def __str__(self):
         return self.name
@@ -15,6 +18,39 @@ class CompareReel(models.Model):
     class Meta:
         verbose_name = '卷文字比对'
         verbose_name_plural = '卷文字比对'
+
+    @classmethod
+    def generate_compare_reel(cls, text1, text2):
+        """
+        用于文字校对前的文本比对
+        text1是基础本；text2是要比对的版本。
+        """
+        SEPARATORS_PATTERN = re.compile('[p\n]')
+        text1 = SEPARATORS_PATTERN.sub('', text1)
+        text2 = SEPARATORS_PATTERN.sub('', text2)
+        diff_lst = []
+        base_pos = 0
+        pos = 0
+        opcodes = SequenceMatcher(None, text1, text2, False).get_opcodes()
+        for tag, i1, i2, j1, j2 in opcodes:
+            if tag == 'equal':
+                base_pos += (i2 - i1)
+                pos += (i2 - i1)
+            elif tag == 'insert':
+                base_text = ''
+                diff_lst.append( (2, base_pos, pos, base_text, text2[j1:j2]) )
+                pos += (j2 - j1)
+            elif tag == 'replace':
+                diff_lst.append( (3, base_pos, pos, text1[i1:i2], text2[j1:j2]) )
+                base_pos += (i2 - i1)
+                pos += (j2 - j1)
+            elif tag == 'delete':
+                if base_pos > 0 and i1 > 0:
+                    diff_lst.append( (1, base_pos-1, pos-1, text1[i1-1:i2], text2[j1-1:j1]) )
+                else:
+                    diff_lst.append( (1, base_pos, pos, text1[i1:i2], '') )
+                base_pos += (i2 - i1)
+        return diff_lst
 
 class CompareSeg(models.Model):
     compare_reel = models.ForeignKey(CompareReel, on_delete=models.CASCADE)

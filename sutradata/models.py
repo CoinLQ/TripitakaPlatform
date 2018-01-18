@@ -85,7 +85,7 @@ class Reel(models.Model):
         if text == '':
             return None
         pages = text.split('\np\n')
-        if pages[0].startswith('p\n'):
+        if pages[0].startswith('p\n'): # 去掉最前面的p
             pages[0] = pages[0][2:]
         separators = []
         pos = 0
@@ -97,8 +97,9 @@ class Reel(models.Model):
             i = 0
             while i < line_cnt:
                 pos += len(lines[i])
-                if i == (line_cnt - 1) and page_index != (page_count - 1):
-                    separators.append( (pos, 'p') )
+                if i == (line_cnt - 1): # 一页中最后一行
+                    if page_index != (page_count - 1): # 非最后一页
+                        separators.append( (pos, 'p') )
                 else:
                     separators.append( (pos, '\n') )
                 i += 1

@@ -1,3 +1,4 @@
+## 配置环境
 ### 安装数据库
 sudo apt install postgresql
 
@@ -11,6 +12,7 @@ sudo -u postgres createuser -d -P dzj
 ### 创建Python虚拟环境
 virtualenv -p /usr/bin/python3 venv
 
+### 进入Python虚拟环境
 source venv/bin/activate
 
 ### 在Python虚拟环境下安装python包
@@ -27,14 +29,6 @@ pip install ipython
 pip install -U pylint
 
 pip install -U autopep8
-
-
-### 修改配置为本机IP
-sudo apt install net-tools
-
-ifconfig
-
-将utils/init.sh中的192.168.2.196改为本机IP
 
 ### 在Python虚拟环境下运行
 ./utils/init.sh

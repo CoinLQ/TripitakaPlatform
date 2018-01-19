@@ -16,13 +16,7 @@ virtualenv -p /usr/bin/python3 venv
 source venv/bin/activate
 
 ### 在Python虚拟环境下安装python包
-pip install django==2.0.1
-
-pip install psycopg2 
-
-pip install django-extensions
-
-pip install django-bootstrap3
+pip install -r requirements.txt
 
 pip install ipython
 

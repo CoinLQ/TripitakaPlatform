@@ -11,5 +11,5 @@ rm tasks/migrations/000*
 ./manage.py migrate
 ./manage.py import_tripitaka_list
 ./manage.py init
-./manage.py runserver 192.168.2.196:8000
+./manage.py runserver 0.0.0.0:8000
 

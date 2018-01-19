@@ -1,0 +1,5 @@
+django==2.0.1
+psycopg2
+django-extensions
+django-bootstrap3
+django-background-tasks

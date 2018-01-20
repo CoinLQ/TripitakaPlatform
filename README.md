@@ -20,9 +20,8 @@ pip install -r requirements.txt
 
 pip install ipython
 
-pip install -U pylint
-
-pip install -U autopep8
+### 下载static文件
+./utils/download_static.sh
 
 ### 在Python虚拟环境下运行
 ./utils/init.sh

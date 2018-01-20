@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils import timezone
+from .common import get_accurate_cut, fetch_cut_file
+import json
 
 class TripiMixin(object):
     def __str__(self):
@@ -71,6 +73,7 @@ class Reel(models.Model):
     f_end_line_no = models.IntegerField('终止页行序号', default=-1)
     f_end_char_no = models.IntegerField('终止页的行中字序号', default=-1)
     f_text = models.TextField('调整经文', default='', null=True)
+    correct_text = models.TextField('文字校对后的经文', default='') #按实际行加了换行符，换页标记为p\n
 
     class Meta:
         verbose_name = '实体藏经卷'
@@ -106,12 +109,35 @@ class Reel(models.Model):
             page_index += 1
         return separators
 
+    def compute_accurate_cut(self):
+        sid = self.sutra.sid
+        pagetexts = self.text[2:].split('\np\n')
+        correct_pagetexts = self.correct_text[2:].split('\np\n')
+        page_count = len(pagetexts)
+        for i in range(page_count):
+            page_no = self.start_vol_page + i
+            pid = '%sv%03dp%04d0' % (sid, self.start_vol, page_no)
+            cut_file = fetch_cut_file(pid)
+            char_lst = get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
+            cut_info = {
+                #'page_code': pid,  # TODO: delete
+                'reel_no': '%sr%03d' % (sid, self.reel_no),  # TODO: delete
+                'char_data': char_lst,
+            }
+            cut_info_json = json.dumps(cut_info, indent=None)
+            page = Page(pid=pid, reel_id=self.id, reel_page_no=i+1, vol_no=self.start_vol, page_no=page_no,
+            text=correct_pagetexts[i], cut_info=cut_info_json)
+            page.save()
+
 class Page(models.Model):
-    pid = models.CharField('页ID', editable=True, max_length=18) #YB000011v001p00010
+    pid = models.CharField('页ID', editable=True, max_length=18, primary_key=True) #YB000011v001p00010
     reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)
+    reel_page_no = models.SmallIntegerField('卷中页序号')
     vol_no = models.SmallIntegerField('册序号')
     page_no = models.SmallIntegerField('页序号') 
-    text = models.TextField('经文')
+    text = models.TextField('经文') # 文字校对后的经文
+    cut_info = models.TextField('切分信息')
+    cut_updated_at = models.DateTimeField('更新时间', null=True)
 
     class Meta:
         verbose_name = '实体藏经页'

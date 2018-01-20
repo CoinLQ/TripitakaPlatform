@@ -253,5 +253,6 @@ def do_correct_verify_task(request, task_id):
             finished = request.POST.get('finished')
             if finished == '1':
                 Task.objects.filter(id=task_id).update(status=Task.STATUS_FINISHED)
+                task.reel.update(correct_text=reel_text)
 
         return redirect('do_correct_verify_task', task_id=task_id)

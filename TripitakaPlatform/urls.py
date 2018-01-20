@@ -18,6 +18,7 @@ from django.conf.urls.static import static
 from django.urls import include, path
 
 from tasks.views import *
+from sutradata.views import *
 
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
@@ -27,4 +28,5 @@ urlpatterns = [
     path('correct/<int:task_id>/', do_correct_task, name='do_correct_task'),
     path('correct/<int:task_id>/reeltext', update_correct_task_result, name='update_correct_task_result'),
     path('correct_verify/<int:task_id>/', do_correct_verify_task, name='do_correct_verify_task'),
+    path('pages/<pid>/cut', page_cut_info, name='page_cut_info'),
 ]

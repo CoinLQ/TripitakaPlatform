@@ -118,15 +118,18 @@ class Reel(models.Model):
             page_no = self.start_vol_page + i
             pid = '%sv%03dp%04d0' % (sid, self.start_vol, page_no)
             cut_file = fetch_cut_file(pid)
-            char_lst = get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
+            char_lst, cut_add_count, cut_wrong_count, cut_confirm_count = get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
+            cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
             cut_info = {
-                #'page_code': pid,  # TODO: delete
-                'reel_no': '%sr%03d' % (sid, self.reel_no),  # TODO: delete
+                'page_code': pid,
+                'reel_no': '%sr%03d' % (sid, self.reel_no),
                 'char_data': char_lst,
             }
             cut_info_json = json.dumps(cut_info, indent=None)
             page = Page(pid=pid, reel_id=self.id, reel_page_no=i+1, vol_no=self.start_vol, page_no=page_no,
-            text=correct_pagetexts[i], cut_info=cut_info_json)
+            text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
+            cut_add_count=cut_add_count, cut_wrong_count=cut_wrong_count, cut_confirm_count=cut_confirm_count,
+            cut_verify_count=cut_verify_count)
             page.save()
 
 class Page(models.Model):
@@ -138,6 +141,10 @@ class Page(models.Model):
     text = models.TextField('经文') # 文字校对后的经文
     cut_info = models.TextField('切分信息')
     cut_updated_at = models.DateTimeField('更新时间', null=True)
+    cut_add_count = models.SmallIntegerField('切分信息增加字数', default=0)
+    cut_wrong_count = models.SmallIntegerField('切分信息识别错的字数', default=0)
+    cut_confirm_count = models.SmallIntegerField('切分信息需要确认的字数', default=0)
+    cut_verify_count = models.SmallIntegerField('切分信息需要确认的字数', default=0)
 
     class Meta:
         verbose_name = '实体藏经页'

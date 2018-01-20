@@ -28,5 +28,7 @@ urlpatterns = [
     path('correct/<int:task_id>/', do_correct_task, name='do_correct_task'),
     path('correct/<int:task_id>/reeltext', update_correct_task_result, name='update_correct_task_result'),
     path('correct_verify/<int:task_id>/', do_correct_verify_task, name='do_correct_verify_task'),
+    path('pages/cutlist', page_cut_list, name='page_cut_list'),
+    path('pages/verify_cutlist', page_verify_cut_list, name='page_verify_cut_list'),
     path('pages/<pid>/cut', page_cut_info, name='page_cut_info'),
 ]

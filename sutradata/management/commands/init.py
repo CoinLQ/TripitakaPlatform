@@ -41,8 +41,8 @@ class Command(BaseCommand):
         huayan_yb_1.save()
         try:
             huayan_yb_1.compute_accurate_cut()
-        except:
-            pass
+        except Exception:
+            traceback.print_exc()
 
         # create LQReel
         lqreel = LQReel(lqsutra=lqsutra, reel_no=1)

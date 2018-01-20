@@ -129,8 +129,15 @@ def get_accurate_cut(text1, text2, cut_json, pid):
             line_char_count[line_no] += 1
         else:
             line_char_count[line_no] = 1
+    add_count = 0
+    wrong_count = 0
+    confirm_count = 0
     for char_data in char_lst:
-        if 'added' in char_data:
+        if 'old_char' in char_data:
+            wrong_count += 1
+        elif 'need_confirm' in char_data:
+            confirm_count += 1
+        elif 'added' in char_data:
             line_no = char_data['line_no']
             char_no = char_data['char_no']
             prev_line_no = line_no - 1
@@ -154,7 +161,7 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                 s = '%02dn%02d' % (line_no, char_no - 1)
             char_data['x'] = char_map[s]['x']
             char_data['w'] = char_map[s]['w']
-    return char_lst
+    return char_lst, add_count, wrong_count, confirm_count
 
 def fetch_cut_file(pid):
     t_code = pid[:2]

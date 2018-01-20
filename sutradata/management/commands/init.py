@@ -34,19 +34,15 @@ class Command(BaseCommand):
         filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_yb.sid)
         with open(filename, 'r') as f:
             huayan_yb_1.text = f.read()
+
+        filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
+        with open(filename, 'r') as f:
+            huayan_yb_1.correct_text = f.read()
         huayan_yb_1.save()
-
-        page_texts = huayan_yb_1.text.split('p\n')
-        page_count = len(page_texts)
-
-        vol_no = 27
-        page_no = 1
-        while page_no < page_count:
-            pid = '%sv%03dp%04d0' % (huayan_yb.sid, vol_no, page_no)
-            page = Page(pid=pid, reel=huayan_yb_1, vol_no=vol_no,
-            page_no=page_no, text=page_texts[page_no])
-            page.save()
-            page_no += 1
+        try:
+            huayan_yb_1.compute_accurate_cut()
+        except:
+            pass
 
         # create LQReel
         lqreel = LQReel(lqsutra=lqsutra, reel_no=1)

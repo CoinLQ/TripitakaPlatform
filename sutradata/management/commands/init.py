@@ -16,7 +16,6 @@ import re, json
 class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
-
         try:
             admin = User.objects.get(username='admin')
         except:

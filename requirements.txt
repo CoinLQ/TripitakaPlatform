@@ -3,3 +3,4 @@ psycopg2
 django-extensions
 django-bootstrap3
 django-background-tasks
+Jinja2

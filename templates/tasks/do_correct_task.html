@@ -168,99 +168,156 @@
       var cmptexts = [];
       var reeltexts = ['p\n'];
       var base_length = base_text.length;
+
+      var text_lst = [];
+      var base_pos = 0;
+      // 先将seg与base_text合并
       var seg_idx = 0;
+      while (seg_idx < segs.length) {
+        // seg前的文本
+        //console.log('seg: ', segs[seg_idx], seg_idx);
+        if (segs[seg_idx].base_pos > base_pos) {
+          var length = segs[seg_idx].base_pos - base_pos;
+          text_lst.push( {
+            'type': 'equal',
+            'selected_text': base_text.substr(base_pos, length)
+          });
+        }
+        
+        // 处理当前seg
+        text_lst.push( {
+          'type': 'diff',
+          'base_text': segs[seg_idx].base_text,
+          'selected_text': segs[seg_idx].selected_text,
+          'seg_index': seg_idx
+        });
+        base_pos = segs[seg_idx].base_pos + segs[seg_idx].base_text.length;
+        ++seg_idx;
+      }
+
+      console.log(text_lst);
+
+      // 将separators与text_lst合并
       var sep_idx = 0;
+      var pos = 0;
+      var new_text_lst = [];
+      var text_idx = 0;
+      while (text_idx < text_lst.length) {
+        if (sep_idx < separators.length) {
+          console.log(pos, separators[sep_idx][0]);
+          while (pos < separators[sep_idx][0]) {
+            //插入separator位置前的文本
+            var next_pos = pos + text_lst[text_idx].selected_text.length;
+            if (next_pos <= separators[sep_idx][0]) { // 直接插入
+              new_text_lst.push( text_lst[text_idx] );
+              ++text_idx;
+              pos = next_pos;
+            } else {
+              var cut_length = separators[sep_idx][0] - pos; // 插入前一部分
+              if (text_lst[text_idx].type == 'equal') {
+                new_text_lst.push( {
+                  'type': 'equal',
+                  'selected_text': text_lst[text_idx].selected_text.substr(0, cut_length)
+                });
+                text_lst[text_idx].selected_text = text_lst[text_idx].selected_text.substr(cut_length);
+              } else {
+                var cut_base_length = cut_length;
+                var new_base_text = '';
+                var cut_base_text = '';
+                if (text_lst[text_idx].base_text.length < cut_base_length) {
+                  cut_base_length = text_lst[text_idx].base_text.length;
+                  cut_base_text = text_lst[text_idx].base_text;
+                } else {
+                  new_base_text = text_lst[text_idx].base_text.substr(cut_base_length);
+                  cut_base_text = text_lst[text_idx].base_text.substr(0, cut_base_length);
+                }
+                new_text_lst.push( {
+                  'type': 'diff',
+                  'base_text': cut_base_text,
+                  'selected_text': text_lst[text_idx].selected_text.substr(0, cut_length),
+                  'seg_index': text_lst[text_idx].seg_index
+                });
+                text_lst[text_idx].base_text = new_base_text;
+                text_lst[text_idx].selected_text = text_lst[text_idx].selected_text.substr(cut_length);
+              }
+              pos = pos + cut_length;
+            }            
+          }
+          //插入separator
+          new_text_lst.push({
+            'type': separators[sep_idx][1]
+          });
+          ++sep_idx;
+        } else { //已没有separator
+          while (text_idx < text_lst.length) {
+            new_text_lst.push( text_lst[text_idx] );
+            ++text_idx;
+          }
+        }
+      }
+      console.log(new_text_lst);
+
       var page_no = 1;
       var line_no = 1;
       var char_no = 1;
-
-      var base_pos = 0;
-      var pos = 0;
-      while (seg_idx <= segs.length) {
-        // 找到下一个需要处理的seg
-        // while (seg_idx < segs.length && segs[seg_idx].selected_text == segs[seg_idx].base_text) {
-        //   segs[seg_idx].page_no = page_no;
-        //   $('#segpage_' + segs[seg_idx].id).val(page_no);
-        //   ++seg_idx;
-        // }
-        var next_base_pos = base_length;
-        if (seg_idx < segs.length) {
-          next_base_pos = segs[seg_idx].base_pos;
+      pos = 0;
+      var last_text_type = 'equal';
+      var last_seg_index = 0;
+      for (var i = 0; i <= new_text_lst.length; ++i) {
+        var type = '';
+        if (i < new_text_lst.length) {
+          type = new_text_lst[i].type;
         }
-        var str = base_text.substr(base_pos, next_base_pos-base_pos);
-        var str_len = next_base_pos - base_pos;
-        var insert_len = 0;
-        while (insert_len < str_len) {
-          if (sep_idx < separators.length && separators[sep_idx][0] <= (pos + str_len-insert_len)) { // 下一个需要处理的separator
-            // 插入文本长为 separators[sep_idx][0] - pos
-            var cur_insert_len = separators[sep_idx][0] - pos;
-            cmptexts.push(str.substr(insert_len, cur_insert_len));
-            reeltexts.push(str.substr(insert_len, cur_insert_len));
-            char_no += cur_insert_len;
-            insert_len += cur_insert_len;
-            base_pos += cur_insert_len;
-            pos += cur_insert_len;
+        if (type == 'diff') {
+          if (last_text_type != 'diff') {
+            cmptexts.push('<span class="seg-diff" id="seg-diff-' + segs[new_text_lst[i].seg_index].id + '">');
+            last_text_type = 'diff';
+          }
 
-            // 处理separator
-            var sep_str = '';
-            if (separators[sep_idx][1] == 'p') {
-              cmptexts.push('<br /><br />');
-              reeltexts.push('\np\n');
-              ++page_no;
-              line_no = 1;
-              char_no = 1;
-            } else {
-              cmptexts.push('<br />');
-              reeltexts.push('\n');
-              line_no += 1;
-              char_no = 1;
-            }
-            ++sep_idx;
-          } else {
-            var remained_len = str_len - insert_len;
-            cmptexts.push(str.substr(insert_len));
-            reeltexts.push(str.substr(insert_len));
-            char_no += remained_len;
-            base_pos += remained_len;
-            pos += remained_len;
-            insert_len = str_len;
+          if (new_text_lst[i].base_text != '') {
+            cmptexts.push('<span class="deletedtext"><del>' + new_text_lst[i].base_text + '</del></span>');
+          }
+          if (new_text_lst[i].selected_text != '') {
+            cmptexts.push('<span class="addedtext">' + new_text_lst[i].selected_text + '</span>');
+            reeltexts.push(new_text_lst[i].selected_text);
+            char_no += new_text_lst[i].selected_text.length;
+            pos += new_text_lst[i].selected_text.length;
+          }
+          last_seg_index = new_text_lst[i].seg_index;
+        } else {
+          if (last_text_type == 'diff') {
+            //console.log(last_seg_index);
+            segs[last_seg_index].page_no = page_no;
+            segs[last_seg_index].line_no = line_no;
+            segs[last_seg_index].char_no = char_no;
+            segs[last_seg_index].pos = pos;
+            var last_seg_id = segs[last_seg_index].id;
+            $('#segpage_' + last_seg_id).val(page_no);
+            $('#segline_' + last_seg_id).val(line_no);
+            $('#segchar_' + last_seg_id).val(char_no);
+            $('#segpos_' + last_seg_id).val(segs[last_seg_index].pos);
+            cmptexts.push('</span>');
+          }
+
+          if (type == 'p') {
+            cmptexts.push('<br /><br />');
+            reeltexts.push('\np\n');
+            ++page_no;
+            line_no = 1;
+            char_no = 1;
+          } else if (type == '\n') {
+            cmptexts.push('<br />');
+            reeltexts.push('\n');
+            line_no += 1;
+            char_no = 1;
+          } else if (type == 'equal') {
+            cmptexts.push(new_text_lst[i].selected_text);
+            reeltexts.push(new_text_lst[i].selected_text);
+            char_no += new_text_lst[i].selected_text.length;
+            pos += new_text_lst[i].selected_text.length;
+            last_text_type = type;
           }
         }
-
-        // 处理seg
-        if (seg_idx < segs.length) {
-          segs[seg_idx].page_no = page_no;
-          segs[seg_idx].line_no = line_no;
-          segs[seg_idx].char_no = char_no;
-          $('#segpage_' + segs[seg_idx].id).val(page_no);
-          $('#segline_' + segs[seg_idx].id).val(line_no);
-          $('#segchar_' + segs[seg_idx].id).val(char_no);
-          $('#segpos_' + segs[seg_idx].id).val(segs[seg_idx].pos);
-          cmptexts.push('<span class="seg-diff" id="seg-diff-' + segs[seg_idx].id + '">');
-          if (segs[seg_idx].selected_text == segs[seg_idx].base_text) {
-            var selected_text = segs[seg_idx].selected_text;
-            cmptexts.push(selected_text);
-            reeltexts.push(selected_text);
-            char_no += selected_text.length;
-            base_pos += selected_text.length;
-            pos += selected_text.length;
-          } else {
-            if (segs[seg_idx].base_text != '') {
-              cmptexts.push('<span class="deletedtext"><del>' + segs[seg_idx].base_text + '</del></span>');
-              base_pos += segs[seg_idx].base_text.length;
-            }
-            var selected_text = segs[seg_idx].selected_text;
-            if (selected_text != '') {
-              cmptexts.push('<span class="addedtext">' + selected_text + '</span>');
-              reeltexts.push(selected_text);
-              char_no += selected_text.length;
-              pos += selected_text.length;
-            }
-          }
-          cmptexts.push('</span>');
-        }
-
-        ++seg_idx;
       }
 
       $('#reel-text-compare').html(cmptexts.join(''));

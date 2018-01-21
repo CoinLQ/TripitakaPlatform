@@ -31,8 +31,9 @@ class CompareReel(models.Model):
         diff_lst = []
         base_pos = 0
         pos = 0
-        opcodes = SequenceMatcher(None, text1, text2, False).get_opcodes()
+        opcodes = SequenceMatcher(None, text1, text2, True).get_opcodes()
         for tag, i1, i2, j1, j2 in opcodes:
+            print(tag, text1[i1:i2], text2[j1:j2])
             if tag == 'equal':
                 base_pos += (i2 - i1)
                 pos += (i2 - i1)

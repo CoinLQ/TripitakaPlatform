@@ -49,9 +49,10 @@ def do_correct_task(request, task_id):
                 'pos': correctsegs[0].position,
                 }
             segs.append(seg)
+        base_text = SEPARATORS_PATTERN.sub('', compare_reel.base_reel.text)
         context = {
             'task': task,
-            'base_text': compare_reel.base_reel.text,
+            'base_text': base_text,
             'segs': segs,
             'segs_json': json.dumps(segs),
             'sid': task.reel.sutra.sid,

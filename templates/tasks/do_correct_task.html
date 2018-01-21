@@ -262,15 +262,19 @@
       var char_no = 1;
       pos = 0;
       var last_text_type = 'equal';
-      var last_seg_index = 0;
+      var last_seg_index = -1;
       for (var i = 0; i <= new_text_lst.length; ++i) {
         var type = '';
         if (i < new_text_lst.length) {
           type = new_text_lst[i].type;
         }
         if (type == 'diff') {
-          if (last_text_type != 'diff') {
-            var seg_idx = new_text_lst[i].seg_index;
+          var seg_idx = new_text_lst[i].seg_index;
+          if (seg_idx != last_seg_index) {
+            if (last_seg_index != -1) {
+              cmptexts.push('</span>');
+              last_seg_index = seg_idx;
+            }
             cmptexts.push('<span class="seg-diff" id="seg-diff-' + segs[seg_idx].id + '">');
             last_text_type = 'diff';
             segs[seg_idx].page_no = page_no;
@@ -294,11 +298,6 @@
           }
           last_seg_index = new_text_lst[i].seg_index;
         } else {
-          if (last_text_type == 'diff') {
-            //console.log(last_seg_index);
-            cmptexts.push('</span>');
-          }
-
           if (type == 'p') {
             cmptexts.push('<br /><br />');
             reeltexts.push('\np\n');
@@ -311,6 +310,11 @@
             line_no += 1;
             char_no = 1;
           } else if (type == 'equal') {
+            if (last_text_type == 'diff') {
+              cmptexts.push('</span>');
+              last_seg_index = -1;
+            }
+
             cmptexts.push(new_text_lst[i].selected_text);
             reeltexts.push(new_text_lst[i].selected_text);
             char_no += new_text_lst[i].selected_text.length;

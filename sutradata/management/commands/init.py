@@ -17,12 +17,20 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
 
-        admin = User.objects.create_superuser('admin', 'admin@example.com', 'longquan')
-        # create LQSutra
-        lqsutra = LQSutra(sid='LQ003100', name='大方廣佛華嚴經', total_reels=60)
-        lqsutra.save()
+        try:
+            admin = User.objects.get(username='admin')
+        except:
+            admin = User.objects.create_superuser('admin', 'admin@example.com', 'longquan')
+
+        try:
+            lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
+        except:
+            # create LQSutra
+            lqsutra = LQSutra(sid='LQ003100', name='大方廣佛華嚴經', total_reels=60)
+            lqsutra.save()
 
         # create Sutra
+        Sutra.objects.all().delete()
         YB = Tripitaka.objects.get(code='YB')
         huayan_yb = Sutra(sid='YB000860', tripitaka=YB, code='00086', variant_code='0',
         name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)
@@ -39,14 +47,11 @@ class Command(BaseCommand):
         with open(filename, 'r') as f:
             huayan_yb_1.correct_text = f.read()
         huayan_yb_1.save()
-        try:
-            huayan_yb_1.compute_accurate_cut()
-        except Exception:
-            traceback.print_exc()
-
-        # create LQReel
-        lqreel = LQReel(lqsutra=lqsutra, reel_no=1)
-        lqreel.save()
+        # 得到精确的切分数据
+        # try:
+        #     huayan_yb_1.compute_accurate_cut()
+        # except Exception:
+        #     traceback.print_exc()
 
         # 高丽第1卷
         GL = Tripitaka.objects.get(code='GL')
@@ -61,6 +66,7 @@ class Command(BaseCommand):
         huayan_gl_1.save()
 
         # create BatchTask
+        BatchTask.objects.all().delete()
         priority = 2
         CORRECT_TIMES = 2
         CORRECT_VERIFY_TIMES = 1
@@ -78,14 +84,14 @@ class Command(BaseCommand):
         compare_reel = CompareReel(reel=huayan_yb_1, base_reel=huayan_gl_1)
         compare_reel.save()
 
-        task1 = Task(batch_task=batch_task, typ=1, base_reel=huayan_gl_1, task_no=1, status=Task.STATUS_READY,
+        task1 = Task(id=1, batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_gl_1, task_no=1, status=Task.STATUS_READY,
         publisher=admin)
         task1.compare_reel = compare_reel
         task1.separators = separators_json
         task1.reel = huayan_yb_1
         task1.save()
 
-        task2 = Task(batch_task=batch_task, typ=1, base_reel=huayan_gl_1, task_no=2, status=Task.STATUS_READY,
+        task2 = Task(id=2, batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_gl_1, task_no=2, status=Task.STATUS_READY,
         publisher=admin)
         task2.compare_reel = compare_reel
         task2.separators = separators_json
@@ -93,7 +99,7 @@ class Command(BaseCommand):
         #task2.base_reel = huayan_gl_1
         task2.save()
 
-        task3 = Task(batch_task=batch_task, typ=2, base_reel=huayan_gl_1, task_no=0, status=Task.STATUS_NOT_READY,
+        task3 = Task(id=3, batch_task=batch_task, typ=Task.TYPE_CORRECT_VERIFY, base_reel=huayan_gl_1, task_no=0, status=Task.STATUS_NOT_READY,
         publisher=admin)
         task3.compare_reel = compare_reel
         #task3.separators = separators_json

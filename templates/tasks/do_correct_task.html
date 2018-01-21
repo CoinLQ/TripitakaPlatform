@@ -270,8 +270,17 @@
         }
         if (type == 'diff') {
           if (last_text_type != 'diff') {
-            cmptexts.push('<span class="seg-diff" id="seg-diff-' + segs[new_text_lst[i].seg_index].id + '">');
+            var seg_idx = new_text_lst[i].seg_index;
+            cmptexts.push('<span class="seg-diff" id="seg-diff-' + segs[seg_idx].id + '">');
             last_text_type = 'diff';
+            segs[seg_idx].page_no = page_no;
+            segs[seg_idx].line_no = line_no;
+            segs[seg_idx].char_no = char_no;
+            segs[seg_idx].pos = pos;
+            $('#segpage_' + segs[seg_idx].id).val(page_no);
+            $('#segline_' + segs[seg_idx].id).val(line_no);
+            $('#segchar_' + segs[seg_idx].id).val(char_no);
+            $('#segpos_' + segs[seg_idx].id).val(pos);
           }
 
           if (new_text_lst[i].base_text != '') {
@@ -287,15 +296,6 @@
         } else {
           if (last_text_type == 'diff') {
             //console.log(last_seg_index);
-            segs[last_seg_index].page_no = page_no;
-            segs[last_seg_index].line_no = line_no;
-            segs[last_seg_index].char_no = char_no;
-            segs[last_seg_index].pos = pos;
-            var last_seg_id = segs[last_seg_index].id;
-            $('#segpage_' + last_seg_id).val(page_no);
-            $('#segline_' + last_seg_id).val(line_no);
-            $('#segchar_' + last_seg_id).val(char_no);
-            $('#segpos_' + last_seg_id).val(segs[last_seg_index].pos);
             cmptexts.push('</span>');
           }
 

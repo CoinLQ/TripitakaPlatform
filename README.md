@@ -2,12 +2,8 @@
 ### 安装数据库
 sudo apt install postgresql
 
-### 创建数据库相关用户
-sudo useradd -m dzj
-
-sudo -u postgres createuser -d -P dzj
-
-输入密码dzj
+### 配置数据库
+sudo -u postgres psql -f utils/setup_db.sql
 
 ### 创建Python虚拟环境
 virtualenv -p /usr/bin/python3 venv

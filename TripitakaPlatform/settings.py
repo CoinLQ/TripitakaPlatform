@@ -102,8 +102,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'tripitaka_platform',
-        'USER': 'dzj',
-        'PASSWORD': 'dzj',
+        'USER': 'lqzj',
+        'PASSWORD': 'lqdzjsql',
         #'HOST': '192.168.2.10'
         'HOST': 'localhost'
     }

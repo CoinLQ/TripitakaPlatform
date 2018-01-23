@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+上图为根据文字校对修正后的切分数据，下图为OCR引擎给出的原始切分数据。
+<div class="container col-ld-6">
+    <div class="row">
+        <div class="fixed-page-img">
+            <canvas id="page-canvas" width="800" height="1080"></canvas>
+        </div>
+    </div>
+</div>
+<div class="container col-ld-6">
+    <div class="row">
+        <div class="fixed-page-img">
+            <canvas id="page-canvas2" width="800" height="1080"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block foot_script %}
+<script>
+$(function(){
+    var load_page_image = function(canvas_id, img_url, cutline_url, all) {
+      var canvas = document.getElementById(canvas_id);
+      var context = canvas.getContext("2d");
+      var image = new Image();
+      image.crossOrigin = "Anonymous";
+      image.onload = function () {
+          canvas.width = canvas.width;
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(image, 0, 0, 800, 1080);
+          var xratio = 800 / image.width;
+          var yratio = 1080 / image.height;
+
+          var first = true;
+          $.getJSON(cutline_url, function(data) {
+            $.each(data['char_data'], function(k, v){
+              var cid = v['char_id'];
+              var color = "#F5270B";
+              var x = v['x'];
+              var y = v['y'];
+              var w = v['w'];
+              var h = v['h'];
+              x = parseInt(x * xratio);
+              y = parseInt(y * yratio);
+              w = parseInt(w * xratio);
+              h = parseInt(h * yratio);
+
+              var to_draw = false;
+              
+              if ('added' in v) {
+                context.font = "10px SimSun";
+                context.fillText(v['char'], x+w, y + h/2);
+
+                //设置样式
+                context.lineWidth = 1;
+                context.strokeStyle = color;
+                context.stroke();
+                color = 'ForestGreen';
+                to_draw = true;
+              } else if ('old_char' in v) {
+                color = 'blue';
+                to_draw = true;
+              } else {
+                if (all) {
+                  to_draw = true;
+                }
+              }
+              if (to_draw) {
+                context.beginPath();
+                context.moveTo(x, y);
+                context.lineTo(x + w, y);
+                context.lineTo(x + w, y + h);
+                context.lineTo(x, y + h);
+                context.lineTo(x, y);
+                //设置样式
+                context.lineWidth = 1;
+                context.strokeStyle = color;
+                context.stroke();
+              }
+            });
+            
+            //绘制
+            //context.stroke();
+          });
+      };
+      image.src = img_url;
+    };
+
+    var img_url = 'https://s3.cn-north-1.amazonaws.com.cn/lqcharacters-images/{{ page.pid[0:2] }}/{{ page.pid[2:8] }}/v{{ '%03d' % page.vol_no }}/{{ page.pid }}.jpg';
+    var cutline_url = '/pages/{{ page.pid }}/cut';
+    load_page_image('page-canvas', img_url, cutline_url, true);
+    cutline_url = img_url.replace('.jpg', '.cut')
+    load_page_image('page-canvas2', img_url, cutline_url, true);
+});
+</script>
+{% endblock %}

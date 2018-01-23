@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+{% if page_list %}
+<ul>
+    {% for page in page_list %}
+      <li><a href="/tools/cutfixed_pages/{{ page.pid }}/">{{ page.pid }}</a></li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>无</p>
+{% endif %}
+{% endblock %}

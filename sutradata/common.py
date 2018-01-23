@@ -1,6 +1,7 @@
 from difflib import SequenceMatcher
-import json
+import re, json
 import urllib.request
+import traceback
 
 def get_accurate_cut(text1, text2, cut_json, pid):
     """
@@ -114,6 +115,7 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                     char_no += 1
 
     # 给增加的字加上切分坐标
+    line_count = 0
     char_map = {}
     line_char_count = {}
     for char_data in char_lst:
@@ -129,6 +131,9 @@ def get_accurate_cut(text1, text2, cut_json, pid):
             line_char_count[line_no] += 1
         else:
             line_char_count[line_no] = 1
+        if line_no > line_count:
+            line_count = line_no
+
     add_count = 0
     wrong_count = 0
     confirm_count = 0
@@ -138,29 +143,40 @@ def get_accurate_cut(text1, text2, cut_json, pid):
         elif 'need_confirm' in char_data:
             confirm_count += 1
         elif 'added' in char_data:
-            line_no = char_data['line_no']
-            char_no = char_data['char_no']
-            prev_line_no = line_no - 1
-            next_line_no = line_no + 1
-            cur_line_char_count = line_char_count[line_no]
-            if line_char_count.get(prev_line_no, 0) == cur_line_char_count:
-                s = '%02dn%02d' % (prev_line_no, char_no)
-            elif line_char_count.get(next_line_no, 0) == cur_line_char_count:
-                s = '%02dn%02d' % (next_line_no, char_no)
-            if not s:
-                if prev_line_no > 0:
+            try:
+                line_no = char_data['line_no']
+                char_no = char_data['char_no']
+                prev_line_no = line_no - 1
+                next_line_no = line_no + 1
+                cur_line_char_count = line_char_count[line_no]
+                s = None
+                if line_char_count.get(prev_line_no, 0) == cur_line_char_count:
                     s = '%02dn%02d' % (prev_line_no, char_no)
-                else:
+                elif line_char_count.get(next_line_no, 0) == cur_line_char_count:
                     s = '%02dn%02d' % (next_line_no, char_no)
-            char_data['y'] = char_map[s]['y']
-            char_data['h'] = char_map[s]['h']
+                if not s:
+                    if prev_line_no > 0:
+                        s = '%02dn%02d' % (prev_line_no, char_no)
+                    else:
+                        s = '%02dn%02d' % (next_line_no, char_no)
+                char_data['y'] = char_map[s]['y']
+                char_data['h'] = char_map[s]['h']
 
-            if char_no == 1:
-                s = '%02dn%02d' % (line_no, char_no + 1)
-            else:
-                s = '%02dn%02d' % (line_no, char_no - 1)
-            char_data['x'] = char_map[s]['x']
-            char_data['w'] = char_map[s]['w']
+                if char_no == 1:
+                    s = '%02dn%02d' % (line_no, char_no + 1)
+                else:
+                    s = '%02dn%02d' % (line_no, char_no - 1)
+                if s in char_map and 'x' in char_map[s]:
+                    char_data['x'] = char_map[s]['x']
+                    char_data['w'] = char_map[s]['w']
+                else:
+                    s1 = '%02dn%02d' % (line_no - 1, char_no)
+                    s2 = '%02dn%02d' % (line_no + 1, char_no)
+                    if char_map[s1]['x'] - char_map[s2]['x'] < 200:
+                        char_data['x'] = (char_map[s1]['x'] + char_map[s2]['x'])/2
+                        char_data['w'] = (char_map[s1]['w'] + char_map[s2]['w'])/2
+            except:
+                print('get_accurate_cut except: ', json.dumps(char_data))
     return char_lst, add_count, wrong_count, confirm_count
 
 def fetch_cut_file(pid):
@@ -171,3 +187,42 @@ def fetch_cut_file(pid):
     with urllib.request.urlopen(url) as f:
         data = f.read()
         return data
+
+SUTRA_CLEAN_PATTERN = re.compile('[「」　 \r]')
+def clean_sutra_text(text):
+    text = text.replace('\r\n', '\n').replace('\n\n', '\n')
+    return SUTRA_CLEAN_PATTERN.sub('', text)
+
+PUNCT_CHARACTERS = '：，。；、\n'
+def extract_punct(text):
+    pos = 0
+    punct_lst = []
+    text_lst = []
+    for ch in text:
+        if ch in PUNCT_CHARACTERS:
+            punct_lst.append( (pos, ch) )
+        else:
+            text_lst.append(ch)
+            pos += 1
+    return (punct_lst, ''.join(text_lst))
+
+def judge_merge_text_punct(text, punct_lst):
+    i = 0
+    punct_idx = 0
+    text_length = len(text)
+    punct_lst_length = len(punct_lst)
+    result_lst = []
+    line = []
+    while i < text_length and punct_idx < punct_lst_length:
+        if punct_lst[punct_idx][0] <= i:
+            s = punct_lst[punct_idx][1]
+            if s == '\n':
+                result_lst.append(''.join(line))
+                line = []
+            else:
+                line.append(s)
+            punct_idx += 1
+        elif punct_lst[punct_idx][0] > i:
+            line.append(text[i])
+            i += 1
+    return result_lst

@@ -39,3 +39,9 @@ def cutfixed_pages(request):
 def cutfixed_page_detail(request, pid):
     page = get_object_or_404(Page, pid=pid)
     return render(request, 'sutradata/cutfixed_page_detail.html', {'page': page})
+
+def sutra_page_detail(request, pid):
+    page = get_object_or_404(Page, pid=pid)
+    cid = request.GET.get('cid', '')
+    print(cid)
+    return render(request, 'sutradata/sutra_page_detail.html', {'page': page, 'cid': cid})

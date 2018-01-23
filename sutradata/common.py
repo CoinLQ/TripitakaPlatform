@@ -177,7 +177,27 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                         char_data['w'] = (char_map[s1]['w'] + char_map[s2]['w'])/2
             except:
                 print('get_accurate_cut except: ', json.dumps(char_data))
-    return char_lst, add_count, wrong_count, confirm_count
+
+    # 得到字框顶点中最小和最大的x, y
+    min_x = 10000
+    min_y = 10000
+    max_x = 0
+    max_y = 0
+    for char_data in char_lst:
+        x = char_data.get('x', None)
+        y = char_data.get('y', None)
+        w = char_data.get('w', 0)
+        h = char_data.get('h', 0)
+        if x and y:
+            if x < min_x:
+                min_x = x
+            if (x + w) > max_x:
+                max_x = x + w
+            if y < min_y:
+                min_y = y
+            if (y + h) > max_y:
+                max_y = y + h
+    return char_lst, add_count, wrong_count, confirm_count, min_x, min_y, max_x, max_y
 
 def fetch_cut_file(pid):
     t_code = pid[:2]

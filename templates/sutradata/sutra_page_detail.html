@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="fixed-page-img">
+                <canvas id="page-canvas" width="500" height="675"></canvas>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div>{{ page.text.replace('\n', '<br />')|safe }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block foot_script %}
+<script>
+$(function(){
+    var load_page_image = function(canvas_id, img_url, cutline_url, all, mark_cid) {
+        var canvas = document.getElementById(canvas_id);
+        var context = canvas.getContext("2d");
+        var image = new Image();
+        image.crossOrigin = "Anonymous";
+        image.onload = function () {
+            var first = true;
+            $.getJSON(cutline_url, function(data) {
+            var sx = 0;
+            var sy = 0;
+            var sw = canvas.width;
+            var sh = canvas.height;
+            if ('min_x' in data) {
+                sx = data['min_x'] - 100;
+                sy = data['min_y'] - 100;
+                sw = data['max_x'] + 100 - sx;
+                sh = data['max_y'] + 100 - sy;
+                if (data['min_y'] < data['max_y'] * 2 / 3) {
+                    if (sy > 200) {
+                        sy = 100;
+                    }
+                    sh = data['max_y'] + 100 - sy;
+                }
+            }
+            canvas.width = canvas.width;
+            canvas.height = canvas.width / sw * sh;
+            console.log(canvas.width, canvas.height)
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+            var xratio = canvas.width / sw;
+            var yratio = canvas.height / sh;
+            $.each(data['char_data'], function(k, v){
+                var cid = '';
+                if ('char_id' in v) {
+                    cid = v['char_id']; 
+                } else {
+                    cid = '{{ page.pid }}' + pad(v['line_no'], 2) + 'n' + pad(v['char_no'], 2);
+                }
+                var color = "#F5270B";
+                var x = v['x'] - sx;
+                var y = v['y'] - sy;
+                var w = v['w'];
+                var h = v['h'];
+                x = parseInt(x * xratio);
+                y = parseInt(y * yratio);
+                w = parseInt(w * xratio);
+                h = parseInt(h * yratio);
+
+                var to_draw = false;
+                
+                if ('added' in v) {
+                    context.font = "10px SimSun";
+                    context.fillText(v['char'], x+w, y + h/2);
+
+                    //设置样式
+                    context.lineWidth = 1;
+                    context.strokeStyle = color;
+                    context.stroke();
+                    color = 'ForestGreen';
+                    to_draw = true;
+                } else if ('old_char' in v) {
+                    color = 'blue';
+                    to_draw = true;
+                } else {
+                    if (all) {
+                        to_draw = true;
+                    }
+                }
+                if (cid == mark_cid) {
+                    color = '#ff00ff';
+                }
+                if (to_draw) {
+                context.beginPath();
+                context.moveTo(x, y);
+                context.lineTo(x + w, y);
+                context.lineTo(x + w, y + h);
+                context.lineTo(x, y + h);
+                context.lineTo(x, y);
+                //设置样式
+                context.lineWidth = 1;
+                context.strokeStyle = color;
+                context.stroke();
+                }
+            });
+            
+            //绘制
+            //context.stroke();
+            });
+        };
+        image.src = img_url;
+    };
+
+    var img_url = 'https://s3.cn-north-1.amazonaws.com.cn/lqcharacters-images/{{ page.pid[0:2] }}/{{ page.pid[2:8] }}/v{{ '%03d' % page.vol_no }}/{{ page.pid }}.jpg';
+    var cutline_url = '/pages/{{ page.pid }}/cut';
+    load_page_image('page-canvas', img_url, cutline_url, true, '{{ cid }}');
+});
+</script>
+{% endblock %}

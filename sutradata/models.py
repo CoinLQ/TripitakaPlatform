@@ -1,7 +1,26 @@
 from django.db import models
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from .common import get_accurate_cut, fetch_cut_file
 import json
+
+class SutraTextField(models.TextField):
+
+    description = '存储经文内容，换行用\n，每页前有换页标记p\n'
+
+    def __init__(self, *args, **kwargs):
+        kwargs['blank'] = True
+        super().__init__(*args, **kwargs)
+
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+        del kwargs["blank"]
+        return name, path, args, kwargs
+
+    def get_prep_value(self, value):
+        value = value.replace('\r\n', '\n')
+        value = super().get_prep_value(value)
+        return self.to_python(value)
 
 class TripiMixin(object):
     def __str__(self):
@@ -10,6 +29,7 @@ class TripiMixin(object):
 class Tripitaka(models.Model, TripiMixin):
     code = models.CharField(verbose_name='实体藏经版本编码', max_length=2, blank=False)
     name = models.CharField(verbose_name='实体藏经名称', max_length=32, blank=False)
+    shortname = models.CharField(verbose_name='实体藏经简称（用于校勘记）', max_length=32, blank=False)
 
     class Meta:
         verbose_name = '实体藏经'
@@ -50,7 +70,7 @@ class Sutra(models.Model, TripiMixin):
 class LQReel(models.Model):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', on_delete=models.CASCADE)
     reel_no = models.SmallIntegerField('卷序号')
-    text = models.TextField('经文', default='')
+    text = SutraTextField('经文', default='')
 
     class Meta:
         verbose_name = '龙泉藏经卷'
@@ -64,16 +84,17 @@ class Reel(models.Model):
     start_vol_page = models.SmallIntegerField('起始册的页序号')
     end_vol = models.SmallIntegerField('终止册')
     end_vol_page = models.SmallIntegerField('终止册的页序号')
-    text = models.TextField('经文', default='') #按实际行加了换行符，换页标记为p\n
+    text = SutraTextField('经文', default='') #按实际行加了换行符，换页标记为p\n
     fixed = models.BooleanField('是否有调整', default=False)
-    f_start_page = models.CharField('起始页ID', max_length=18, default='')
+    f_start_page = models.CharField('起始页ID', max_length=18, default='', blank=True, null=True)
     f_start_line_no = models.IntegerField('起始页行序号', default=-1)
     f_start_char_no = models.IntegerField('起始页的行中字序号', default=-1)
-    f_end_page = models.CharField('终止页ID', max_length=18, default='')
+    f_end_page = models.CharField('终止页ID', max_length=18, default='', blank=True, null=True)
     f_end_line_no = models.IntegerField('终止页行序号', default=-1)
     f_end_char_no = models.IntegerField('终止页的行中字序号', default=-1)
-    f_text = models.TextField('调整经文', default='', null=True)
-    correct_text = models.TextField('文字校对后的经文', default='') #按实际行加了换行符，换页标记为p\n
+    f_text = SutraTextField('调整经文', default='', blank=True, null=True)
+    correct_text = SutraTextField('文字校对后的经文', default='') #按实际行加了换行符，换页标记为p\n
+    punctuation = models.TextField('标点') # [[5,'，'], [15,'。']]
 
     class Meta:
         verbose_name = '实体藏经卷'
@@ -118,11 +139,15 @@ class Reel(models.Model):
             page_no = self.start_vol_page + i
             pid = '%sv%03dp%04d0' % (sid, self.start_vol, page_no)
             cut_file = fetch_cut_file(pid)
-            char_lst, cut_add_count, cut_wrong_count, cut_confirm_count = get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
+            char_lst, cut_add_count, cut_wrong_count, cut_confirm_count, min_x, min_y, max_x, max_y = get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
             cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
             cut_info = {
                 'page_code': pid,
                 'reel_no': '%sr%03d' % (sid, self.reel_no),
+                'min_x': min_x,
+                'min_y': min_y,
+                'max_x': max_x,
+                'max_y': max_y,
                 'char_data': char_lst,
             }
             cut_info_json = json.dumps(cut_info, indent=None)
@@ -138,7 +163,7 @@ class Page(models.Model):
     reel_page_no = models.SmallIntegerField('卷中页序号')
     vol_no = models.SmallIntegerField('册序号')
     page_no = models.SmallIntegerField('页序号') 
-    text = models.TextField('经文') # 文字校对后的经文
+    text = SutraTextField('经文') # 文字校对后的经文
     cut_info = models.TextField('切分信息')
     cut_updated_at = models.DateTimeField('更新时间', null=True)
     cut_add_count = models.SmallIntegerField('切分信息增加字数', default=0)
@@ -151,7 +176,7 @@ class Page(models.Model):
         verbose_name_plural = '实体藏经页'
 
     def __str__(self):
-        return '第%s册第%s页' % (self.vol_no, self.page_no)
+        return '%s第%s册第%s页' % (self.reel, self.vol_no, self.page_no)
 
 
 # class Character(models.Model):

@@ -47,10 +47,10 @@ class Command(BaseCommand):
             huayan_yb_1.correct_text = f.read()
         huayan_yb_1.save()
         # 得到精确的切分数据
-        # try:
-        #     huayan_yb_1.compute_accurate_cut()
-        # except Exception:
-        #     traceback.print_exc()
+        try:
+            huayan_yb_1.compute_accurate_cut()
+        except Exception:
+            traceback.print_exc()
 
         # 高丽第1卷
         GL = Tripitaka.objects.get(code='GL')
@@ -62,6 +62,7 @@ class Command(BaseCommand):
         filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_gl.sid)
         with open(filename, 'r') as f:
             huayan_gl_1.text = f.read()
+            huayan_gl_1.correct_text = huayan_gl_1.text
         huayan_gl_1.save()
 
         # create BatchTask

@@ -30,4 +30,7 @@ urlpatterns = [
     path('pages/cutlist', page_cut_list, name='page_cut_list'),
     path('pages/verify_cutlist', page_verify_cut_list, name='page_verify_cut_list'),
     path('pages/<pid>/cut', page_cut_info, name='page_cut_info'),
+
+    path('tools/cutfixed_pages/', cutfixed_pages, name='cutfixed_pages'),
+    path('tools/cutfixed_pages/<pid>/', cutfixed_page_detail, name='cutfixed_page_detail'),
 ]

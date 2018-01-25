@@ -283,25 +283,10 @@ function judge_merge_text_punct(text, diffseg_pos_lst, punct_lst) {
     return result;
 }
 
-function diffsegtexts_join(diffsegtexts) {
-    var i = 0;
-    var lst = [];
-    while (i < diffsegtexts.length) {
-        var s = '';
-        if (diffsegtexts[i].pid != '') {
-            s = '<a href="/sutra_pages/' + diffsegtexts[i].pid + '/view?cid=' + diffsegtexts[i].start_cid + '" target="_blank">' + diffsegtexts[i].tname + '</a>';
-        } else {
-            s = diffsegtexts[i].tname;
-        }
-        lst.push(s);
-        ++i;
-    }
-    return lst.join('/');
-}
-
 // judge
 axios.defaults.xsrfHeaderName = "X-CSRFTOKEN";
 axios.defaults.xsrfCookieName = "csrftoken";
+
 Vue.component('diffseg-box', {
     props: ['diffseg', 'segindex', 'sharedata'],
     template: '\
@@ -319,9 +304,6 @@ Vue.component('diffseg-box', {
         <span v-else-if="diffseg.selected == 1 && diffseg.doubt == 1">{{ diffseg.selected_tname }}为正，已存疑，{{ diffseg.doubt_comment }}。</span>\
         </div>\
     </div>',
-    created: function() {
-        
-    },
     methods: {
         click: function() {
             this.sharedata.segid = this.diffseg.id;
@@ -329,6 +311,21 @@ Vue.component('diffseg-box', {
         doJudge: function(segindex) {
             this.sharedata.segindex = segindex;
             this.sharedata.judgeDialogVisible = true;
+        },
+        diffsegtexts_join: function(diffsegtexts) {
+            var i = 0;
+            var lst = [];
+            while (i < diffsegtexts.length) {
+                var s = '';
+                if (diffsegtexts[i].pid != '') {
+                    s = '<a href="/sutra_pages/' + diffsegtexts[i].pid + '/view?cid=' + diffsegtexts[i].start_cid + '" target="_blank">' + diffsegtexts[i].tname + '</a>';
+                } else {
+                    s = diffsegtexts[i].tname;
+                }
+                lst.push(s);
+                ++i;
+            }
+            return lst.join('/');
         }
     }
 })
@@ -445,7 +442,7 @@ Vue.component('judge-dialog', {
             diffsegtexts.forEach(function(e) {
                 tnames.push(e.tname);                
             });
-            return tnames.join('/')
+            return tnames.join('/');
         }
     }
 })

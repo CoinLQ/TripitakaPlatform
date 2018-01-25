@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
 <div id="judge">
-  {{ message }}
   <div class="container">
     <div class="row">
       <div class="judge-base-text" id="judge-base-text">
@@ -30,7 +29,6 @@
       </ul>
     </div>
     <div class="row">
-      <el-button type="text" @click="sharedata.judgeDialogVisible = true">Dialog</el-button>
       <div is="judge-dialog" :sharedata="sharedata"></div>
     </div>
   </div>

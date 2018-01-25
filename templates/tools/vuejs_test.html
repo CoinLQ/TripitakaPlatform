@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="app">
+    {{ message }}
+</div>
+{% endblock %}
+{% block foot_script %}
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            message: 'Hello Vue!'
+        }
+    });
+</script>
+{% endblock %}

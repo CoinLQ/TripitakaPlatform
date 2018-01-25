@@ -6,7 +6,8 @@ from .models import *
 # Create your views here.
 def page_cut_info(request, pid):
     page = get_object_or_404(Page, pid=pid)
-    return HttpResponse(page.cut_info, content_type='text/plain')
+    response = HttpResponse(page.cut_info, content_type='text/plain')
+    return response
 
 def page_cut_list(request):
     queryset = Page.objects.exclude(cut_updated_at__isnull=True).values_list('pid', 'cut_updated_at', named=True)
@@ -43,5 +44,4 @@ def cutfixed_page_detail(request, pid):
 def sutra_page_detail(request, pid):
     page = get_object_or_404(Page, pid=pid)
     cid = request.GET.get('cid', '')
-    print(cid)
     return render(request, 'sutradata/sutra_page_detail.html', {'page': page, 'cid': cid})

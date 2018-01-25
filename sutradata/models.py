@@ -1,7 +1,6 @@
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from .common import get_accurate_cut, fetch_cut_file
 import json
 
 class SutraTextField(models.TextField):
@@ -103,59 +102,6 @@ class Reel(models.Model):
 
     def __str__(self):
         return '%s (第%s卷)' % (self.sutra, self.reel_no)
-
-    @classmethod
-    def extract_page_line_separators(cls, text):
-        if text == '':
-            return None
-        pages = text.split('\np\n')
-        if pages[0].startswith('p\n'): # 去掉最前面的p
-            pages[0] = pages[0][2:]
-        separators = []
-        pos = 0
-        page_index = 0
-        page_count = len(pages)
-        while page_index < page_count:
-            lines = pages[page_index].split('\n')
-            line_cnt = len(lines)
-            i = 0
-            while i < line_cnt:
-                pos += len(lines[i])
-                if i == (line_cnt - 1): # 一页中最后一行
-                    if page_index != (page_count - 1): # 非最后一页
-                        separators.append( (pos, 'p') )
-                else:
-                    separators.append( (pos, '\n') )
-                i += 1
-            page_index += 1
-        return separators
-
-    def compute_accurate_cut(self):
-        sid = self.sutra.sid
-        pagetexts = self.text[2:].split('\np\n')
-        correct_pagetexts = self.correct_text[2:].split('\np\n')
-        page_count = len(pagetexts)
-        for i in range(page_count):
-            page_no = self.start_vol_page + i
-            pid = '%sv%03dp%04d0' % (sid, self.start_vol, page_no)
-            cut_file = fetch_cut_file(pid)
-            char_lst, cut_add_count, cut_wrong_count, cut_confirm_count, min_x, min_y, max_x, max_y = get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
-            cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
-            cut_info = {
-                'page_code': pid,
-                'reel_no': '%sr%03d' % (sid, self.reel_no),
-                'min_x': min_x,
-                'min_y': min_y,
-                'max_x': max_x,
-                'max_y': max_y,
-                'char_data': char_lst,
-            }
-            cut_info_json = json.dumps(cut_info, indent=None)
-            page = Page(pid=pid, reel_id=self.id, reel_page_no=i+1, vol_no=self.start_vol, page_no=page_no,
-            text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
-            cut_add_count=cut_add_count, cut_wrong_count=cut_wrong_count, cut_confirm_count=cut_confirm_count,
-            cut_verify_count=cut_verify_count)
-            page.save()
 
 class Page(models.Model):
     pid = models.CharField('页ID', editable=True, max_length=18, primary_key=True) #YB000011v001p00010

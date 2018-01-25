@@ -54,7 +54,7 @@ class CompareReel(models.Model):
 
 class CompareSeg(models.Model):
     compare_reel = models.ForeignKey(CompareReel, on_delete=models.CASCADE)
-    base_pos = models.IntegerField('基础本文本段位置') # pos=0表示在第1个字前，pos>0表示在第pos个字后
+    base_pos = models.IntegerField('基础本文本段位置') # base_pos=0表示在第1个字前，base_pos>0表示在第base_pos个字后
     ocr_text = models.TextField('识别文本', default='')
     base_text = models.TextField('基础本文本', default='')
 
@@ -151,13 +151,13 @@ class Task(models.Model, TripiMixin):
     blank=True, null=True)
     lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE, blank=True, null=True)
     typ = models.SmallIntegerField('任务类型', choices=TYPE_CHOICES)
-    base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本')
+    base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本') # TODO: 是否需要？
     task_no = models.SmallIntegerField('组合任务序号', choices=TASK_NO_CHOICES)
     status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1)
     
     compare_reel = models.ForeignKey(CompareReel, on_delete=models.SET_NULL, null=True)
     separators = models.TextField('页行分隔符')
-    result = models.TextField('结果')
+    result = SutraTextField('结果')
     
     started_at = models.DateTimeField('开始时间', blank=True, null=True)
     finished_at = models.DateTimeField('完成时间', blank=True, null=True)
@@ -181,12 +181,15 @@ class CorrectSeg(models.Model):
     #用于文字校对审定，0表示甲乙结果一致并且选择了此一致的结果，1表示选择甲的结果，2表示选择乙的结果，-1表示新结果
     diff_flag = models.SmallIntegerField('甲乙差异标记', default=-1)
     #存疑相关
-    doubt_comment = models.TextField('存疑意见', default='')
+    doubt_comment = models.TextField('存疑意见', default='', blank=True)
 
 # 校勘判取相关
 class ReelDiff(models.Model):
-    lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE, blank=True, null=True)
+    lqsutra = models.ForeignKey(LQSutra, on_delete=models.CASCADE, blank=True, null=True)
+    reel_no = models.SmallIntegerField('卷序号')
+    base_sutra = models.ForeignKey(Sutra, on_delete=models.SET_NULL, blank=True, null=True)
     task = models.OneToOneField(Task, on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始比对结果，不为null表示校勘判取任务和校勘判取审定任务的结果
+    base_text = SutraTextField('基准文本', blank=True, null=True)
     published_at = models.DateTimeField('发布时间', blank=True, null=True)
     publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
     verbose_name='发布用户')
@@ -195,8 +198,13 @@ class DiffSeg(models.Model):
     """
     各版本比对结果的差异文本段
     """
-    reel_diff = models.ForeignKey(ReelDiff, on_delete=models.CASCADE)
-    selected_text = models.TextField('判取文本', default='', blank=True)
+    reel_diff = models.ForeignKey(ReelDiff, on_delete=models.CASCADE, null=True)
+    selected_text = models.TextField('判取文本', blank=True, null=True)
+    base_pos = models.IntegerField('在基准文本中位置', default=0) # base_pos=0表示在第1个字前，base_pos>0表示在第base_pos个字后
+    base_length = models.IntegerField('基准文本中对应文本段长度', default=0)
+    status = models.SmallIntegerField('状态', default=0) #　0, 1, 2 -- 未判取，已判取，已判取并存疑
+    #存疑相关
+    doubt_comment = models.TextField('存疑意见', default='', blank=True)
 
 class DiffSegText(models.Model):
     """
@@ -205,8 +213,9 @@ class DiffSegText(models.Model):
     diff_seg = models.ForeignKey(DiffSeg, on_delete=models.CASCADE)
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE)
     text = models.TextField('文本', default='', blank=True)
-    start_cid = models.CharField('起始经字号', max_length=23)
-    end_cid = models.CharField('结束经字号', max_length=23)
+    position = models.IntegerField('在卷文本中的位置（前有几个字）', default=0)
+    start_cid = models.CharField('起始经字号', max_length=32, default='') # cid长度为23
+    end_cid = models.CharField('结束经字号', max_length=32, default='')
 
 # 标点相关
 class PunctResultBase(object):

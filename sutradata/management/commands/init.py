@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 from sutradata.models import *
 from tasks.models import *
+from sutradata.common import *
 
 import TripitakaPlatform.settings
 
@@ -48,7 +49,7 @@ class Command(BaseCommand):
         huayan_yb_1.save()
         # 得到精确的切分数据
         try:
-            huayan_yb_1.compute_accurate_cut()
+            compute_accurate_cut(huayan_yb_1)
         except Exception:
             traceback.print_exc()
 
@@ -77,7 +78,7 @@ class Command(BaseCommand):
 
         # create Tasks
         # Correct Task
-        separators = Reel.extract_page_line_separators(huayan_yb_1.text)
+        separators = extract_page_line_separators(huayan_yb_1.text)
         separators_json = json.dumps(separators, separators=(',', ':'))
 
         # 文字校对

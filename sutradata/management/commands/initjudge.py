@@ -310,7 +310,7 @@ class Command(BaseCommand):
         JUDGE_TIMES = 2
         JUDGE_VERIFY_TIMES = 1
         reel_no = 1
-        batch_task = BatchTask.objects.get(pk=1)
+        batch_task = BatchTask.objects.all()[0]
 
         huayan_gl = Sutra.objects.get(sid='GL000800')
         huayan_gl_1 = Reel.objects.get(sutra=huayan_gl, reel_no=1)

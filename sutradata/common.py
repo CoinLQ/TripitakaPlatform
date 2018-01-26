@@ -17,8 +17,8 @@ def get_accurate_cut(text1, text2, cut_json, pid):
     old_char_lst = cut['char_data']
     old_char_lst_length = len(old_char_lst)
     for char_data in old_char_lst:
-        char_data['line_no'] = int(char_data['char_id'][18:20])
-        char_data['char_no'] = int(char_data['char_id'][21:23])
+        char_data['line_no'] = int(char_data['line_no']) #int(char_data['char_id'][18:20])
+        char_data['char_no'] = int(char_data['char_no']) #int(char_data['char_id'][21:23])
 
     char_lst = []
 
@@ -178,9 +178,24 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                 else:
                     s1 = '%02dn%02d' % (line_no - 1, char_no)
                     s2 = '%02dn%02d' % (line_no + 1, char_no)
-                    if char_map[s1]['x'] - char_map[s2]['x'] < 200:
-                        char_data['x'] = (char_map[s1]['x'] + char_map[s2]['x'])/2
-                        char_data['w'] = (char_map[s1]['w'] + char_map[s2]['w'])/2
+                    if (s1 in char_map) and (s2 in char_map):
+                        if char_map[s1]['x'] - char_map[s2]['x'] < 200:
+                            char_data['x'] = (char_map[s1]['x'] + char_map[s2]['x'])/2
+                            char_data['w'] = (char_map[s1]['w'] + char_map[s2]['w'])/2
+                        elif line_no <= (line_count/2):
+                            char_data['x'] = char_map[s1]['x']
+                            char_data['w'] = char_map[s1]['w']
+                        else:
+                            char_data['x'] = char_map[s2]['x']
+                            char_data['w'] = char_map[s2]['w']
+                    elif (s1 in char_map):
+                        char_data['x'] = char_map[s1]['x']
+                        char_data['w'] = char_map[s1]['w']
+                    elif (s2 in char_map):
+                        char_data['x'] = char_map[s2]['x']
+                        char_data['w'] = char_map[s2]['w']
+                    else:
+                        print('no adjacent line:', char_data)
             except:
                 print('get_accurate_cut except: ', json.dumps(char_data))
 
@@ -205,7 +220,7 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                 max_y = y + h
     return char_lst, add_count, wrong_count, confirm_count, min_x, min_y, max_x, max_y
 
-def fetch_cut_file(pid):
+def fetch_cut_file_old(pid):
     t_code = pid[:2]
     s_code = pid[2:8]
     volstr = pid[8:12]
@@ -213,32 +228,59 @@ def fetch_cut_file(pid):
     with urllib.request.urlopen(url) as f:
         data = f.read()
         return data
+    
+def fetch_cut_file(sid, vol_no, page_no, vol_prefix='v'):
+    cut_url = 'https://s3.cn-north-1.amazonaws.com.cn/lqcharacters-images/%s/%03d/%s%s%03dp%04d0.cut' %\
+    (
+        sid[:2],
+        vol_no,
+        sid[:2],
+        vol_prefix,
+        vol_no,
+        page_no
+    )
+    with urllib.request.urlopen(cut_url) as f:
+        print('fetch done: %s, vol: %s, page: %s' % (sid, vol_no, page_no))
+        data = f.read()
+        return data
 
 def compute_accurate_cut(reel):
     sid = reel.sutra.sid
     pagetexts = reel.text[2:].split('\np\n')
     correct_pagetexts = reel.correct_text[2:].split('\np\n')
+    print('page_count: ', len(pagetexts), len(correct_pagetexts))
     page_count = len(pagetexts)
+    correct_page_count = len(correct_pagetexts)
     for i in range(page_count):
         page_no = reel.start_vol_page + i
         pid = '%sv%03dp%04d0' % (sid, reel.start_vol, page_no)
-        cut_file = fetch_cut_file(pid)
-        char_lst, cut_add_count, cut_wrong_count, cut_confirm_count, min_x, min_y, max_x, max_y = get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
-        cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
-        cut_info = {
-            'page_code': pid,
-            'reel_no': '%sr%03d' % (sid, reel.reel_no),
-            'min_x': min_x,
-            'min_y': min_y,
-            'max_x': max_x,
-            'max_y': max_y,
-            'char_data': char_lst,
-        }
-        cut_info_json = json.dumps(cut_info, indent=None)
-        page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, vol_no=reel.start_vol, page_no=page_no,
-        text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
-        cut_add_count=cut_add_count, cut_wrong_count=cut_wrong_count, cut_confirm_count=cut_confirm_count,
-        cut_verify_count=cut_verify_count)
+        cut_file = fetch_cut_file(sid, reel.start_vol, page_no)
+        if i < correct_page_count:
+            char_lst, cut_add_count, cut_wrong_count, cut_confirm_count, min_x, min_y, max_x, max_y = get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
+            cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
+            cut_info = {
+                'page_code': pid,
+                'reel_no': '%sr%03d' % (sid, reel.reel_no),
+                'min_x': min_x,
+                'min_y': min_y,
+                'max_x': max_x,
+                'max_y': max_y,
+                'char_data': char_lst,
+            }
+            cut_info_json = json.dumps(cut_info, indent=None)
+            page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, vol_no=reel.start_vol, page_no=page_no,
+            text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
+            cut_add_count=cut_add_count, cut_wrong_count=cut_wrong_count, cut_confirm_count=cut_confirm_count,
+            cut_verify_count=cut_verify_count)
+        else:
+            cut_info = {
+                'page_code': pid,
+                'reel_no': '%sr%03d' % (sid, reel.reel_no),
+                'char_data': [],
+            }
+            cut_info_json = json.dumps(cut_info, indent=None)
+            page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, vol_no=reel.start_vol, page_no=page_no,
+            text='', cut_info=cut_info_json, cut_updated_at=timezone.now())
         page.save()
 
 SUTRA_CLEAN_PATTERN = re.compile('[「」　 \r]')
@@ -282,7 +324,7 @@ def judge_merge_text_punct(text, punct_lst):
 
 def extract_page_line_separators(text):
     if text == '':
-        return None
+        return []
     pages = text.split('\np\n')
     if pages[0].startswith('p\n'): # 去掉最前面的p
         pages[0] = pages[0][2:]
@@ -368,3 +410,28 @@ class ReelText(object):
         start_cid = CID_FORMAT % (self.sid, self.vol_no, start_page, start_line_no, start_char_no)
         end_cid = CID_FORMAT % (self.sid, self.vol_no, end_page, end_line_no, end_char_no)
         return (start_cid, end_cid)
+
+def get_reel_text(sid, reel_no, vol_no, start_vol_page, end_vol_page, vol_prefix='v'):
+    pages = []
+    for vol_page_no in range(start_vol_page, end_vol_page+1):
+        data = fetch_cut_file(sid, vol_no, vol_page_no)
+        if not data:
+            return ''
+        json_data = json.loads(data)
+        chars = ['p\n']
+        last_line_no = 1
+        last_char_no = 0
+        for char_data in json_data['char_data']:
+            line_no = int(char_data['line_no'])
+            char_no = int(char_data['char_no'])
+            if line_no != last_line_no:
+                chars.append('\n')
+                last_char_no = 0
+            if char_no != last_char_no + 1:
+                print('%s char_no error: ' % sid, vol_no, vol_page_no, line_no, char_no)
+                return ''
+            chars.append(char_data['char'])
+            last_line_no = line_no
+            last_char_no = char_no
+        pages.append( ''.join(chars) )
+    return '\n'.join(pages)

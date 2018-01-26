@@ -41,5 +41,4 @@ urlpatterns = [
 
     path('tools/cutfixed_pages/', cutfixed_pages, name='cutfixed_pages'),
     path('tools/cutfixed_pages/<pid>/', cutfixed_page_detail, name='cutfixed_page_detail'),
-    path('tools/vuejs_test/', vuejs_test, name='vuejs_test'),
 ]

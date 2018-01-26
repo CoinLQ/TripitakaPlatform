@@ -93,7 +93,7 @@ class Reel(models.Model):
     f_end_char_no = models.IntegerField('终止页的行中字序号', default=-1)
     f_text = SutraTextField('调整经文', default='', blank=True, null=True)
     correct_text = SutraTextField('文字校对后的经文', default='') #按实际行加了换行符，换页标记为p\n
-    punctuation = models.TextField('标点') # [[5,'，'], [15,'。']]
+    punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
 
     class Meta:
         verbose_name = '实体藏经卷'

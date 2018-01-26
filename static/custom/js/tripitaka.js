@@ -293,15 +293,14 @@ Vue.component('diffseg-box', {
     <div class="diffseg-box" @click.stop.prevent="click">\
         <div>{{ diffseg.base_text }}</div>\
         <span v-for="(text_diffsegtexts, index) in diffseg.text_diffsegtexts_map">\
-            <span v-html="diffsegtexts_join(text_diffsegtexts.diffsegtexts)"></span>\
+            <span v-html="diffsegtextsJoin(text_diffsegtexts.diffsegtexts)"></span>\
             <span v-if="text_diffsegtexts.text">：{{ text_diffsegtexts.text }}</span>\
             <span v-else>为空</span>\
             <span v-if="index < (diffseg.text_diffsegtexts_map.length - 1)">；</span>\
             <span v-else>。</span>\
         </span>\
         <div><a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)">判取</a><a href="#" class="diffseg-btn">存疑</a><a href="#" class="diffseg-btn">合并</a><a href="#" class="diffseg-btn">拆分</a></div>\
-        <div>处理结果：<span v-if="diffseg.selected == 1 && diffseg.doubt == 0">已判取，{{ diffseg.selected_tname }}为正。</span>\
-        <span v-else-if="diffseg.selected == 1 && diffseg.doubt == 1">{{ diffseg.selected_tname }}为正，已存疑，{{ diffseg.doubt_comment }}。</span>\
+        <div>处理结果：{{ getResult(diffseg) }}\
         </div>\
     </div>',
     methods: {
@@ -312,7 +311,7 @@ Vue.component('diffseg-box', {
             this.sharedata.segindex = segindex;
             this.sharedata.judgeDialogVisible = true;
         },
-        diffsegtexts_join: function(diffsegtexts) {
+        diffsegtextsJoin: function(diffsegtexts) {
             var i = 0;
             var lst = [];
             while (i < diffsegtexts.length) {
@@ -326,6 +325,18 @@ Vue.component('diffseg-box', {
                 ++i;
             }
             return lst.join('/');
+        },
+        getResult: function(diffseg) {
+            var s = '';
+            if (diffseg.selected == 1) {
+                if (diffseg.doubt == 0) {
+                    s = '已判取，' + diffseg.selected_tname + '为正。'
+                } else if (diffseg.doubt == 1) {
+                    s = diffseg.selected_tname + '为正，已存疑，'
+                    + diffseg.doubt_comment + '。'
+                }
+            }
+            return s;
         }
     }
 })
@@ -400,10 +411,10 @@ Vue.component('judge-dialog', {
     ',
     data: function () {
         return {
-            diffseg_id: this.sharedata.diffseg_lst[this.sharedata.segindex].id,
-            selected_text: this.sharedata.diffseg_lst[this.sharedata.segindex].selected_text,
-            doubt: this.sharedata.diffseg_lst[this.sharedata.segindex].doubt,
-            doubt_comment: this.sharedata.diffseg_lst[this.sharedata.segindex].doubt_comment,
+            diffseg_id: '',
+            selected_text: '',
+            doubt: '',
+            doubt_comment: '',
             error: null
         }
     },

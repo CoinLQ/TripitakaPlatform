@@ -28,7 +28,7 @@ class TripiMixin(object):
 class Tripitaka(models.Model, TripiMixin):
     code = models.CharField(verbose_name='实体藏经版本编码', max_length=2, blank=False)
     name = models.CharField(verbose_name='实体藏经名称', max_length=32, blank=False)
-    shortname = models.CharField(verbose_name='实体藏经简称（用于校勘记）', max_length=32, blank=False)
+    shortname = models.CharField(verbose_name='简称（用于校勘记）', max_length=32, blank=False)
 
     class Meta:
         verbose_name = '实体藏经'
@@ -90,6 +90,16 @@ class LQReel(models.Model):
         unique_together = (('lqsutra', 'reel_no'),)
 
 class Reel(models.Model):
+    EDITION_TYPE_UNKNOWN = 0 # 未选择
+    EDITION_TYPE_BASE = 1 # 底本
+    EDITION_TYPE_CHECKED = 2 # 对校本
+    EDITION_TYPE_PROOF = 3 # 参校本
+    EDITION_TYPE_CHOICES = (
+        (EDITION_TYPE_UNKNOWN, '未选择'),
+        (EDITION_TYPE_BASE, '底本'),
+        (EDITION_TYPE_CHECKED, '对校本'),
+        (EDITION_TYPE_PROOF, '参校本'),
+    )
     sutra = models.ForeignKey(Sutra, verbose_name='实体藏经', on_delete=models.CASCADE)
     reel_no = models.SmallIntegerField('卷序号')
     start_vol = models.SmallIntegerField('起始册')
@@ -107,6 +117,8 @@ class Reel(models.Model):
     f_text = SutraTextField('调整经文', default='', blank=True, null=True)
     correct_text = SutraTextField('文字校对后的经文', default='') #按实际行加了换行符，换页标记为p\n
     punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
+    edition_type = models.SmallIntegerField('版本类型', choices=EDITION_TYPE_CHOICES, default=0)
+    comment = models.CharField(verbose_name='备注', max_length=1024, default='')
 
     class Meta:
         verbose_name = '实体藏经卷'

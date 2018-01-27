@@ -36,6 +36,7 @@ urlpatterns = [
 
     path('api/judge/<int:task_id>/diffsegs', api_judge_diffsegs, name='api_judge_diffsegs'),
     path('api/judge/<int:task_id>/diffseg_pos_list', api_judge_diffseg_pos_list, name='api_judge_diffseg_pos_list'),
+    path('api/judge/<int:task_id>/is_all_selected', api_judge_is_all_selected, name='api_judge_is_all_selected'),
     path('api/judge/<int:task_id>/diffsegs/<int:diffseg_id>/select', api_judge_diffseg_select, name='api_judge_diffseg_select'),
     path('api/judge/<int:task_id>/diffsegs/merge', api_judge_diffseg_merge, name='api_judge_diffseg_merge'),
     path('api/judge/<int:task_id>/diffsegs/<int:diffseg_id>/merge_list', api_judge_get_merge_list, name='api_judge_get_merge_list'),

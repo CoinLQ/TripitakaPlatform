@@ -397,6 +397,21 @@ def api_judge_diffseg_pos_list(request, task_id):
         })
     return JsonResponse({'result': 'ok', 'diffseg_pos_lst': diffseg_pos_lst})
 
+def api_judge_is_all_selected(request, task_id):
+    task = get_object_or_404(Task, pk=task_id)
+    if task.status == Task.STATUS_NOT_READY:
+        return JsonResponse({'result': 'not ready'})
+    reeldiff = task.reeldiff
+    diffsegs = list(DiffSeg.objects.filter(reel_diff=reeldiff))
+    all_selected = True
+    doubt_count = 0
+    for diffseg in diffsegs:
+        if diffseg.status == 0:
+            all_selected = False
+        elif diffseg.status == 2:
+            doubt_count += 1
+    return JsonResponse({'result': 'ok', 'all_selected': all_selected, 'doubt_count': doubt_count})
+
 def api_judge_diffseg_select(request, task_id, diffseg_id):
     '''
     格式如下：

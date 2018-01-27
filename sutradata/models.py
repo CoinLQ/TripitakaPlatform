@@ -37,6 +37,18 @@ class Tripitaka(models.Model, TripiMixin):
     def __str__(self):
         return '{} ({})'.format(self.name, self.code)
 
+class Volume(models.Model):
+    tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE)
+    vol_no = models.SmallIntegerField(verbose_name='册序号')
+    page_count = models.IntegerField(verbose_name='册页数')
+
+    class Meta:
+        verbose_name = u"实体册"
+        verbose_name_plural = u"实体册"
+
+    def __str__(self):
+        return '%s: 第%s册' % (self.tripitaka.name, self.vol_no)
+
 class LQSutra(models.Model, TripiMixin):
     sid = models.CharField(verbose_name='龙泉经目经号编码', max_length=8) #（为"LQ"+ 经序号 + 别本号）
     name = models.CharField(verbose_name='龙泉经目名称', max_length=64, blank=False)
@@ -58,6 +70,7 @@ class Sutra(models.Model, TripiMixin):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', null=True, 
     blank=True, on_delete=models.SET_NULL) #（为"LQ"+ 经序号 + 别本号）
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
+    comment = models.CharField(verbose_name='备注', max_length=1024, default='')
 
     class Meta:
         verbose_name = '实体经目'
@@ -123,21 +136,4 @@ class Page(models.Model):
 
     def __str__(self):
         return '%s第%s册第%s页' % (self.reel, self.vol_no, self.page_no)
-
-
-# class Character(models.Model):
-#     cid = models.CharField('经字号', max_length=23, primary_key=True)
-#     sutra = models.ForeignKey(Sutra, on_delete=models.CASCADE)
-#     reel_no = models.SmallIntegerField('卷序号')
-#     vol_no = models.SmallIntegerField('册序号')
-#     page_no = models.SmallIntegerField('页序号') 
-#     line_no = models.SmallIntegerField('行号')
-#     char_no = models.SmallIntegerField('字号')
-#     ch = models.CharField('文字', max_length=2)
-#     c_conf = models.FloatField('识别置信度', default=0.0)
-#     updated_at = models.DateTimeField('更新时间', default=timezone.now)
-
-#     class Meta:
-#         verbose_name = '字信息'
-#         verbose_name_plural = '字信息'
 

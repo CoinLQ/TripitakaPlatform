@@ -29,7 +29,9 @@
       </ul>
     </div>
     <div class="row">
-      <div is="judge-dialog" :sharedata="sharedata"></div>
+      <div is="judge-dialog" :sharedata="sharedata" v-on:reload="reloadDiffsegs(diffseg_curpage)"></div>
+      <div is="merge-dialog" :sharedata="sharedata" v-on:reload="mergeSplitDone(diffseg_curpage)"></div>
+      <div is="split-dialog" :sharedata="sharedata" v-on:reload="mergeSplitDone(diffseg_curpage)"></div>
     </div>
   </div>
 </div>
@@ -49,11 +51,10 @@
       diffseg_page_count: {{ diffseg_page_count }},
       diffseg_curpage: 1,
       merged_base_text: [],
-      sharedata: {task_id: {{ task.id }}, judgeDialogVisible: false, segindex: 0, segid: '', diffseg_lst: {{ diffseg_lst|safe }}  }
+      sharedata: {task_id: {{ task.id }}, judgeDialogVisible: false, mergeDialogVisible: false, splitDialogVisible: false, segindex: 0, segid: '', diffseg_lst: {{ diffseg_lst|safe }}  }
     },
     created: function() {
-      // 加载底本经文
-      this.merged_base_text = judge_merge_text_punct(this.base_text, this.diffseg_pos_lst, this.punct_lst);
+      this.loadSutraText();
       //console.log(lines);
       //this.merged_base_text = lines.join('<br />');
       //console.log(this.merged_base_text);
@@ -79,16 +80,15 @@
     },
     watch: {
       diffseg_curpage: function (newPage, oldPage) {
-        var vm = this
-        axios.get('/api/judge/4/diffsegs?p=' + newPage)
-        .then(function(response) {
-          vm.sharedata.diffseg_lst = response.data.diffsegs;
-        })
+        this.reloadDiffsegs(newPage);
       }        
     },
     methods: {
+      loadSutraText: function() {
+        // 加载底本经文
+        this.merged_base_text = judge_merge_text_punct(this.base_text, this.diffseg_pos_lst, this.punct_lst);
+      },
       prevPage: function() {
-        console.log(this.sharedata)
         if (this.diffseg_curpage > 1) {
           --this.diffseg_curpage;
         }
@@ -99,12 +99,27 @@
           ++this.diffseg_curpage;
         }
       },
+      reloadDiffsegs: function(newPage) {
+        var vm = this
+        axios.get('/api/judge/' + vm.sharedata.task_id + '/diffsegs?p=' + newPage)
+        .then(function(response) {
+          vm.sharedata.diffseg_lst = response.data.diffsegs;
+        })
+      },
+      reloadDiffSegPositionList: function() {
+        var vm = this
+        axios.get('/api/judge/' + vm.sharedata.task_id + '/diffseg_pos_list')
+        .then(function(response) {
+          vm.diffseg_pos_lst = response.data.diffseg_pos_lst;
+          vm.loadSutraText();
+        })
+      },
       setCurrentSeg: function (diffseg_id) {
         this.current_diffseg_id = diffseg_id;
-        console.log(this.current_diffseg_id)
       },
-      openJudgeDialog: function () {
-        this.message = "judgeDialog";
+      mergeSplitDone: function(newPage) {
+        this.reloadDiffsegs(newPage);
+        this.reloadDiffSegPositionList();
       }
     }
   });

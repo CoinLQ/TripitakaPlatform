@@ -31,6 +31,13 @@ def batchtask_list(request):
     context = {'batchtask_lst': batchtask_lst}
     return render(request, 'tasks/batchtask_list.html', context)
 
+def get_reeltext(lqsutra, tripitaka_id, reel_no):
+    sutra = Sutra.objects.get(lqsutra=lqsutra, tripitaka_id=tripitaka_id)
+    reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
+    reeltext = ReelText(text=reel.correct_text, tripitaka_id=tripitaka_id,
+    sid=sutra.sid, vol_no=reel.start_vol, start_vol_page=reel.start_vol_page)
+    return reeltext
+
 # TODO: 检查权限
 #@login_required
 def do_correct_task(request, task_id):
@@ -350,6 +357,7 @@ def get_diffseg_lst(diffsegs, base_tripitaka):
             seg['doubt'] = 0
         seg['doubt_comment'] = diffseg.doubt_comment
         seg['id'] = diffseg.id
+        seg['base_pos'] = diffseg.base_pos
         if diffseg.selected_text is not None:
             seg['selected'] = 1
             seg['selected_text'] = diffseg.selected_text
@@ -373,6 +381,21 @@ def api_judge_diffsegs(request, task_id):
     diffsegs = list(DiffSeg.objects.filter(reel_diff=reeldiff).order_by('base_pos')[(p-1)*5: p*5])
     diffseg_lst = get_diffseg_lst(diffsegs, base_tripitaka)
     return JsonResponse({'result': 'ok', 'diffsegs': diffseg_lst})
+
+def api_judge_diffseg_pos_list(request, task_id):
+    task = get_object_or_404(Task, pk=task_id)
+    if task.status == Task.STATUS_NOT_READY:
+        return JsonResponse({'result': 'not ready'})
+    reeldiff = task.reeldiff
+    diffsegs = list(DiffSeg.objects.filter(reel_diff=reeldiff).order_by('base_pos'))
+    diffseg_pos_lst = []
+    for diffseg in diffsegs:
+        diffseg_pos_lst.append({
+            'diffseg_id': diffseg.id,
+            'base_pos': diffseg.base_pos,
+            'base_length': diffseg.base_length,
+        })
+    return JsonResponse({'result': 'ok', 'diffseg_pos_lst': diffseg_pos_lst})
 
 def api_judge_diffseg_select(request, task_id, diffseg_id):
     '''
@@ -405,6 +428,25 @@ def api_judge_diffseg_select(request, task_id, diffseg_id):
     doubt_comment = json_obj.get('doubt_comment', '')
     DiffSeg.objects.filter(id=diffseg_id).update(selected_text=selected_text, status=status, doubt_comment=doubt_comment)
     return JsonResponse({'result': 'ok'})
+
+def api_judge_get_merge_list(request, task_id, diffseg_id):
+    task = get_object_or_404(Task, pk=task_id)
+    if task.status == Task.STATUS_NOT_READY:
+        return JsonResponse({'result': 'not ready'})
+
+    reeldiff = task.reeldiff
+    base_tripitaka = reeldiff.base_sutra.tripitaka
+    if 'base_pos' not in request.GET:
+        return JsonResponse({'result': 'no base_pos'})
+    try:
+        base_pos = int(request.GET['base_pos'])
+    except:
+        return JsonResponse({'result': 'bad base_pos'})
+    diffsegs = list(reversed(DiffSeg.objects.filter(reel_diff=reeldiff, base_pos__lte=base_pos).order_by('-base_pos')[0:3]))
+    diffsegs_next = list(DiffSeg.objects.filter(reel_diff=reeldiff, base_pos__gt=base_pos).order_by('base_pos')[0:2])
+    diffsegs.extend(diffsegs_next)
+    diffseg_lst = get_diffseg_lst(diffsegs, base_tripitaka)
+    return JsonResponse({'result': 'ok', 'diffsegs': diffseg_lst})
 
 def api_judge_diffseg_merge(request, task_id):
     '''
@@ -446,8 +488,6 @@ def api_judge_diffseg_merge(request, task_id):
         return JsonResponse({'result': 'bad data'})
 
     # 开始合并
-    selected_text = ''
-    selected_text_lst = []
     last_base_pos = start_base_pos
     base_pos = start_base_pos
     base_length = end_base_pos - start_base_pos
@@ -468,8 +508,7 @@ def api_judge_diffseg_merge(request, task_id):
         diffsegtexts = list(diffseg.diffsegtext_set.all())
 
         if last_base_pos == diffseg.base_pos:
-            selected_text_lst.append(diffseg.selected_text)
-            last_base_pos = diffseg.base_pos + diffseg.base_length
+            last_base_pos += diffseg.base_length
             for diffsegtext in diffsegtexts:
                 if diffsegtext.tripitaka_id not in tripitaka_segtext_map:
                     tripitaka_segtext_map[diffsegtext.tripitaka_id] = {
@@ -483,35 +522,42 @@ def api_judge_diffseg_merge(request, task_id):
                     tripitaka_segtext_map[diffsegtext.tripitaka_id]['text'] += diffsegtext.text
         elif last_base_pos < diffseg.base_pos: # 还需要插入底本的文本
             s = reeldiff.base_text[last_base_pos:diffseg.base_pos]
-            selected_text_lst.append( s )
             last_base_pos = diffseg.base_pos
             for tripitaka_id, v in tripitaka_segtext_map.items():
                 v['text'] += s
+            last_base_pos += diffseg.base_length
+            for diffsegtext in diffsegtexts:
+                tripitaka_segtext_map[diffsegtext.tripitaka_id]['text'] += diffsegtext.text
         else:
             return JsonResponse({'result': 'bad data'})
-    selected_text = ''.join(selected_text_lst)
-
     if doubt_comment_lst:
         doubt_comment = ' '.join(doubt_comment_lst)
     
     # 数据库操作
-    base_reel = Reel.objects.get(sutra=reeldiff.base_sutra, reel_no=reeldiff.reel_no)
-    reeltext = ReelText(text=reeldiff.base_text, tripitaka_id=reeldiff.base_sutra.tripitaka_id,
-    sid=reeldiff.base_sutra.sid, vol_no=base_reel.start_vol, start_vol_page=base_reel.start_vol_page)
-
-    new_diffseg = DiffSeg(reel_diff=None, selected_text=selected_text, base_pos=base_pos,
+    new_diffseg = DiffSeg(reel_diff=None, selected_text=None, base_pos=base_pos,
     base_length=base_length, status=status, doubt_comment=doubt_comment)
     new_diffseg.save()
     
     for tripitaka_id, v in tripitaka_segtext_map.items():
+        end_cid = ''
         if v['text'] != v['old_text']: # 重新计算end_cid
+            sutra = Sutra.objects.get(lqsutra=reeldiff.lqsutra, tripitaka_id=tripitaka_id)
+            reel = Reel.objects.get(sutra=sutra, reel_no=reeldiff.reel_no)
+            reeltext = ReelText(text=reel.correct_text, tripitaka_id=tripitaka_id,
+            sid=sutra.sid, vol_no=reel.start_vol, start_vol_page=reel.start_vol_page)
             start_cid, end_cid = reeltext.get_cid_range(v['position'], v['position'] + len(v['text']))
+        else:
+            end_cid = v['end_cid']
         diffsegtext = DiffSegText(diff_seg=new_diffseg, tripitaka_id=tripitaka_id, text=v['text'], position=v['position'],
         start_cid=v['start_cid'], end_cid=end_cid)
         diffsegtext.save()
     with transaction.atomic(): # 事务操作，设置新DiffSeg的reel_diff，并删除老的DiffSeg
-        DiffSeg.filter(id=new_diffseg.id).update(reel_diff=reeldiff)
-        DiffSeg.objects.filter(id__in=diffseg_ids).delete()
+        diffsegs = list(DiffSeg.objects.filter(id__in=diffseg_ids).all())
+        if len(diffsegs) == len(diffseg_ids):
+            DiffSeg.objects.filter(id=new_diffseg.id).update(reel_diff=reeldiff)
+            DiffSeg.objects.filter(id__in=diffseg_ids).delete()
+        else: # 可能已经是在重复操作
+            DiffSeg.objects.filter(id=new_diffseg.id).delete()
 
     return JsonResponse({'result': 'ok'})
 
@@ -519,11 +565,13 @@ def api_judge_diffseg_split(request, task_id, diffseg_id):
     '''
     格式如下：
     {
-        "split_count": 2,
-        "split_items": [
-            {"tripitaka_id": 1, "texts": ["ab", "c"]},
-            {"tripitaka_id": 2, "texts": ["a", "bc"]},
-            {"tripitaka_id": 3, "texts": ["a", "bc"]}
+        "split_count": 4,
+        "tripitaka_ids": [1, 2, 3],
+        "segtexts_lst": [
+            ["a", "a", "A"],
+            ["b", "b", "b"],
+            ["c", "", ""],
+            ["d", "D", "d"]
         ]
     }
     '''
@@ -539,67 +587,110 @@ def api_judge_diffseg_split(request, task_id, diffseg_id):
     split_count = json_obj.get('split_count', 0)
     if not split_count:
         return JsonResponse({'result': 'bad data'})
+    tripitaka_ids = json_obj.get('tripitaka_ids', [])
+    if not tripitaka_ids:
+        return JsonResponse({'result': 'bad data'})
+    tripitaka_count = len(tripitaka_ids)
 
     diffseg = get_object_or_404(DiffSeg, id=diffseg_id)
     diffsegtexts = list(diffseg.diffsegtext_set.all())
+    if len(diffsegtexts) != tripitaka_count:
+        return JsonResponse({'result': 'bad data'})
 
     reeldiff = task.reeldiff
     reel_no = reeldiff.reel_no
     lqsutra = reeldiff.lqsutra
+    base_tripitaka_id = reeldiff.base_sutra.tripitaka_id
+    try:
+        base_tripitaka_index = tripitaka_ids.index(base_tripitaka_id)
+    except:
+        return JsonResponse({'result': 'bad data'})
 
-    split_items = json_obj.get('split_items', [])
-    if len(split_items) != len(diffsegtexts):
+    segtexts_lst = json_obj.get('segtexts_lst', [])
+    if len(segtexts_lst) != split_count:
         return JsonResponse({'result': 'bad data'})
 
     # 校验数据
     tripitakaid_to_texts = {}
-    for split_item in split_items:
-        tripitaka_id = split_item['tripitaka_id']
-        texts = split_item['texts']
-        if len(texts) != split_count:
+    tripitakaid_to_mergetext = {}
+    for t_idx in range(tripitaka_count):
+        tripitakaid_to_texts[ tripitaka_ids[t_idx] ] = []
+    for i in range(split_count):
+        segtexts = segtexts_lst[i]
+        if len(segtexts) != tripitaka_count:
             return JsonResponse({'result': 'bad data'})
-        merge_text = ''.join(texts)
-        i = 0
-        while i < len(diffsegtexts):
-            if diffsegtexts[i].tripitaka_id == tripitaka_id:
-                break
-        if diffsegtexts[i].text != merge_text:
+        for t_idx in range(tripitaka_count):
+            tripitakaid_to_texts[ tripitaka_ids[t_idx] ].append( segtexts[t_idx] )
+    for t_idx in range(tripitaka_count):
+        tripitakaid_to_mergetext[ tripitaka_ids[t_idx] ] = ''.join(tripitakaid_to_texts[ tripitaka_ids[t_idx] ])
+
+    for diffsegtext in diffsegtexts:
+        if tripitakaid_to_mergetext[ diffsegtext.tripitaka_id ] != diffsegtext.text:
             return JsonResponse({'result': 'bad data'})
-        tripitakaid_to_texts[tripitaka_id] = texts
+    # 校验数据结束
 
     tripitakaid_to_position = {}
     for diffsegtext in diffsegtexts:
-        tripitakaid_to_postion[diffsegtext.tripitaka_id] = diffsegtext.position
+        tripitakaid_to_position[diffsegtext.tripitaka_id] = diffsegtext.position
+    tripitaka_to_reeltext = {}
     new_diffseg_lst = []
     base_pos = diffseg.base_pos
     for i in range(split_count):
-        new_diffseg = DiffSeg(reel_diff=None)
-        new_diffseg.save()
-        new_diffseg_lst.append(new_diffseg)
-        for split_item in split_items:
-            tripitaka_id = split_item['tripitaka_id']
-            texts = split_item['texts']
-            diffsegtext = DiffSegText(diff_seg=new_diffseg, tripitaka_id=tripitaka_id,
-            text=texts[i], position=tripitakaid_to_position[tripitaka_id])
-            # 重新计算start_cid, end_cid
-            sutra = Sutra.objects.get(lqsutra=lqsutra, tripitaka_id=tripitaka_id)
-            reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
-            reeltext = ReelText(text=reel.correct_text, tripitaka_id=tripitaka_id,
-            sid=sutra.sid, vol_no=reel.start_vol, start_vol_page=reel.start_vol_page)
-            diffsegtext.start_cid, diffsegtext.end_cid = reeltext.get_cid_range(
-                diffsegtext.position,
-                diffsegtext.position + len(diffsegtext.text))
-            diffsegtext.save()
-            if tripitaka_id == reeldiff.base_sutra.tripitaka_id:
-                DiffSeg.objects.filter(id=new_diffseg.id).update(base_pos=diffsegtext.position, base_length=len(texts[i]))
-            tripitakaid_to_position[tripitaka_id] += len(texts[i])
+        segtexts = segtexts_lst[i]
+        all_equal = True
+        for t_idx in range(tripitaka_count-1):
+            if segtexts[t_idx] != segtexts[t_idx+1]:
+                all_equal = False
+                break
+        if all_equal: # 不创建DiffSeg
+            # 更新position
+            for t_idx in range(tripitaka_count):
+                tripitaka_id = tripitaka_ids[t_idx]
+                tripitakaid_to_position[tripitaka_id] += len(segtexts[t_idx])
+                if tripitaka_id == base_tripitaka_id:
+                    base_pos = tripitakaid_to_position[tripitaka_id]
+        else:
+            base_length = 0
+            diffsegtext_lst = []
+            new_diffseg = DiffSeg(
+                reel_diff=None,
+                base_pos=tripitakaid_to_position[base_tripitaka_id],
+                base_length=len(segtexts[base_tripitaka_index]))
+            new_diffseg.save()
+            new_diffseg_lst.append(new_diffseg)
+            for t_idx in range(tripitaka_count):
+                tripitaka_id = tripitaka_ids[t_idx]
+                diffsegtext = DiffSegText(
+                    diff_seg=new_diffseg,
+                    tripitaka_id=tripitaka_id,
+                    text=segtexts[t_idx],
+                    position=tripitakaid_to_position[tripitaka_id])
+                diffsegtext_lst.append(diffsegtext)
+                # 重新计算start_cid, end_cid
+                # 得到reeltext
+                if tripitaka_id in tripitaka_to_reeltext:
+                    reeltext = tripitaka_to_reeltext[tripitaka_id]
+                else:
+                    reeltext = get_reeltext(lqsutra, tripitaka_id, reel_no)
+                    tripitaka_to_reeltext[tripitaka_id] = reeltext
+                diffsegtext.start_cid, diffsegtext.end_cid = reeltext.get_cid_range(
+                    diffsegtext.position,
+                    diffsegtext.position + len(diffsegtext.text))
+                diffsegtext.save()
+                # 更新position
+                tripitakaid_to_position[tripitaka_id] += len(segtexts[t_idx])
 
     # 最后设置新增加的DiffSeg的reel_diff，并将原DiffSeg删除
     new_diffseg_ids = []
     for new_diffseg in new_diffseg_lst:
         new_diffseg_ids.append(new_diffseg.id)    
     with transaction.atomic():
-        DiffSeg.objects.filter(id__in=new_diffseg_ids).update(reel_diff=reeldiff)
-        DiffSeg.filter(id=diffseg.id).delete()
+        diffsegs = list(DiffSeg.objects.filter(id=diffseg.id).all())
+        print(len(diffsegs))
+        if len(diffsegs) == 1:
+            DiffSeg.objects.filter(id__in=new_diffseg_ids).update(reel_diff=reeldiff)
+            DiffSeg.objects.filter(id=diffseg.id).delete()
+        else: # 不处理重复请求
+            DiffSeg.objects.filter(id__in=new_diffseg_ids).delete()
 
     return JsonResponse({'result': 'ok'})

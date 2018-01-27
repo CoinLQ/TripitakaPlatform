@@ -27,9 +27,12 @@
         <li>/ {{ diffseg_page_count }}</li>
         <li :class="{ disabled: (diffseg_curpage == diffseg_page_count) }"><a href="#" @click.stop.prevent="nextPage">&gt;</a></li>
       </ul>
+      <div class="text-center">
+        <button class="btn btn-primary" :disabled="not_all_selected">提交</button>
+      </div>
     </div>
     <div class="row">
-      <div is="judge-dialog" :sharedata="sharedata" v-on:reload="reloadDiffsegs(diffseg_curpage)"></div>
+      <div is="judge-dialog" :sharedata="sharedata" v-on:reload="judgeDone(diffseg_curpage)"></div>
       <div is="merge-dialog" :sharedata="sharedata" v-on:reload="mergeSplitDone(diffseg_curpage)"></div>
       <div is="split-dialog" :sharedata="sharedata" v-on:reload="mergeSplitDone(diffseg_curpage)"></div>
     </div>
@@ -51,10 +54,12 @@
       diffseg_page_count: {{ diffseg_page_count }},
       diffseg_curpage: 1,
       merged_base_text: [],
+      not_all_selected: true,
       sharedata: {task_id: {{ task.id }}, judgeDialogVisible: false, mergeDialogVisible: false, splitDialogVisible: false, segindex: 0, segid: '', diffseg_lst: {{ diffseg_lst|safe }}  }
     },
     created: function() {
       this.loadSutraText();
+      this.checkAllSelected();
       //console.log(lines);
       //this.merged_base_text = lines.join('<br />');
       //console.log(this.merged_base_text);
@@ -114,12 +119,24 @@
           vm.loadSutraText();
         })
       },
+      checkAllSelected: function() {
+        var vm = this
+        axios.get('/api/judge/' + vm.sharedata.task_id + '/is_all_selected')
+        .then(function(response) {
+          vm.not_all_selected = ! response.data.all_selected;
+        })
+      },
       setCurrentSeg: function (diffseg_id) {
         this.current_diffseg_id = diffseg_id;
+      },
+      judgeDone: function(newPage) {
+        this.reloadDiffsegs(newPage);
+        this.checkAllSelected();
       },
       mergeSplitDone: function(newPage) {
         this.reloadDiffsegs(newPage);
         this.reloadDiffSegPositionList();
+        this.checkAllSelected();
       }
     }
   });

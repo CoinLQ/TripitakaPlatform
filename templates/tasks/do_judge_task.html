@@ -28,7 +28,7 @@
         <li :class="{ disabled: (diffseg_curpage == diffseg_page_count) }"><a href="#" @click.stop.prevent="nextPage">&gt;</a></li>
       </ul>
       <div class="text-center">
-        <button class="btn btn-primary" :disabled="not_all_selected">提交</button>
+        <button class="btn btn-primary" :disabled="not_all_selected" title="请判取完再提交">提交</button>
       </div>
     </div>
     <div class="row">

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="judge">
+  <div class="container">
+    <div class="row">
+      <div class="judge-base-text" id="judge-base-text">
+        <span v-for="e in merged_base_text">
+            <span is="sutra-unit" :data="e" :sharedata="sharedata"></span>
+        </span>
+      </div>
+      <!--<div>选择标点：
+        <select>
+          <option>CBETA</option>
+          <option>高丽藏</option>
+        </select>
+      </div>-->
+    </div>
+    <div class="row">
+      <ul class="diffseg-region">
+        <li v-for="(diffseg, index) in sharedata.diffseg_lst">
+          <div is="diffseg-box" :diffseg="diffseg" :segindex="index" :sharedata="sharedata"></div>
+        </li>
+      </ul>
+      <ul class="pager">
+        <li :class="{ disabled: (diffseg_curpage == 1) }"><a href="#" @click.stop.prevent="prevPage">&lt;</a></li>
+        <li><input v-model="diffseg_curpage"></li>
+        <li>/ {{ diffseg_page_count }}</li>
+        <li :class="{ disabled: (diffseg_curpage == diffseg_page_count) }"><a href="#" @click.stop.prevent="nextPage">&gt;</a></li>
+      </ul>
+    </div>
+    <div class="row">
+      <div is="judge-dialog" :sharedata="sharedata" v-on:reload="reloadDiffsegs(diffseg_curpage)"></div>
+      <div is="merge-dialog" :sharedata="sharedata" v-on:reload="mergeSplitDone(diffseg_curpage)"></div>
+      <div is="split-dialog" :sharedata="sharedata" v-on:reload="mergeSplitDone(diffseg_curpage)"></div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+{% block foot_script %}
+
+<script>
+  var app = new Vue({
+    el: '#judge',
+    data: {
+      message: 'hi',
+      base_text: '{{ base_text }}',
+      diffseg_pos_lst: {{ diffseg_pos_lst|safe }},
+      punct_lst: {{ punct_lst|safe }},
+      diffseg_page_count: {{ diffseg_page_count }},
+      diffseg_curpage: 1,
+      merged_base_text: [],
+      sharedata: {task_id: {{ task.id }}, judgeDialogVisible: false, mergeDialogVisible: false, splitDialogVisible: false, segindex: 0, segid: '', diffseg_lst: {{ diffseg_lst|safe }}  }
+    },
+    created: function() {
+      this.loadSutraText();
+      //console.log(lines);
+      //this.merged_base_text = lines.join('<br />');
+      //console.log(this.merged_base_text);
+      //var lines = judge_merge_text_punct1(this.base_text, this.diffseg_pos_lst, this.punct_lst);
+      //$('#judge-base-text2').html(lines.join('<br />'));
+
+      // 点击每个校勘记区域时，将底本经文中对应的文本段置为红色，并进入可视区。
+      // $('.diffseg-box').click(function(e){
+      //   var diffseg_id = $(this).attr('diffseg-id');
+      //   var tag = $('#diffseg-tag-' + diffseg_id);
+      //   var offset = tag.position().top - 60;
+      //   $('.diffseg-tag').removeClass('diffseg-tag-selected');
+      //   $('.diffseg-tag').removeClass('diffseg-tag-notext-selected');
+      //   if (tag.hasClass('diffseg-tag-notext')) {
+      //     tag.addClass('diffseg-tag-notext-selected');
+      //   } else {
+      //     tag.addClass('diffseg-tag-selected');
+      //   }
+      //   $('div.judge-base-text').animate({
+      //     scrollTop: offset + $('div.judge-base-text').scrollTop()
+      //   }, 500);
+      // });
+    },
+    watch: {
+      diffseg_curpage: function (newPage, oldPage) {
+        this.reloadDiffsegs(newPage);
+      }        
+    },
+    methods: {
+      loadSutraText: function() {
+        // 加载底本经文
+        this.merged_base_text = judge_merge_text_punct(this.base_text, this.diffseg_pos_lst, this.punct_lst);
+      },
+      prevPage: function() {
+        if (this.diffseg_curpage > 1) {
+          --this.diffseg_curpage;
+        }
+        return false;
+      },
+      nextPage: function() {
+        if (this.diffseg_curpage < this.diffseg_page_count) {
+          ++this.diffseg_curpage;
+        }
+      },
+      reloadDiffsegs: function(newPage) {
+        var vm = this
+        axios.get('/api/judge/' + vm.sharedata.task_id + '/diffsegs?p=' + newPage)
+        .then(function(response) {
+          vm.sharedata.diffseg_lst = response.data.diffsegs;
+        })
+      },
+      reloadDiffSegPositionList: function() {
+        var vm = this
+        axios.get('/api/judge/' + vm.sharedata.task_id + '/diffseg_pos_list')
+        .then(function(response) {
+          vm.diffseg_pos_lst = response.data.diffseg_pos_lst;
+          vm.loadSutraText();
+        })
+      },
+      setCurrentSeg: function (diffseg_id) {
+        this.current_diffseg_id = diffseg_id;
+      },
+      mergeSplitDone: function(newPage) {
+        this.reloadDiffsegs(newPage);
+        this.reloadDiffSegPositionList();
+      }
+    }
+  });
+</script>
+{% endblock %}

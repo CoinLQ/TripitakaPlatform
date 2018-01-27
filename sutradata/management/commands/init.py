@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 from sutradata.models import *
 from tasks.models import *
+from sutradata.common import *
 
 import TripitakaPlatform.settings
 
@@ -29,40 +30,55 @@ class Command(BaseCommand):
             lqsutra.save()
 
         # create Sutra
-        Sutra.objects.all().delete()
+        # Sutra.objects.all().delete()
         YB = Tripitaka.objects.get(code='YB')
-        huayan_yb = Sutra(sid='YB000860', tripitaka=YB, code='00086', variant_code='0',
-        name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)
-        huayan_yb.save()
+        try:
+            huayan_yb = Sutra.objects.get(sid='YB000860')
+        except:
+            huayan_yb = Sutra(sid='YB000860', tripitaka=YB, code='00086', variant_code='0',
+            name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)
+            huayan_yb.save()
 
         # 永乐北藏第1卷的文本
-        huayan_yb_1 = Reel(sutra=huayan_yb, reel_no=1, start_vol=27,
-        start_vol_page=1, end_vol=27, end_vol_page=23)
-        filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_yb.sid)
-        with open(filename, 'r') as f:
-            huayan_yb_1.text = f.read()
+        try:
+            huayan_yb_1 = Reel.objects.get(sutra=huayan_yb, reel_no=1)
+        except:
+            huayan_yb_1 = Reel(sutra=huayan_yb, reel_no=1, start_vol=27,
+            start_vol_page=1, end_vol=27, end_vol_page=23)
+            filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_yb.sid)
+            with open(filename, 'r') as f:
+                huayan_yb_1.text = f.read()
+            huayan_yb_1.save()
 
         filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
         with open(filename, 'r') as f:
             huayan_yb_1.correct_text = f.read()
-        huayan_yb_1.save()
+        Reel.objects.filter(id=huayan_yb_1.id).update(correct_text=huayan_yb_1.correct_text)
+
         # 得到精确的切分数据
-        # try:
-        #     huayan_yb_1.compute_accurate_cut()
-        # except Exception:
-        #     traceback.print_exc()
+        try:
+            compute_accurate_cut(huayan_yb_1)
+        except Exception:
+            traceback.print_exc()
 
         # 高丽第1卷
         GL = Tripitaka.objects.get(code='GL')
-        huayan_gl = Sutra(sid='GL000800', tripitaka=GL, code='00080', variant_code='0',
-        name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)
-        huayan_gl.save()
-        huayan_gl_1 = Reel(sutra=huayan_gl, reel_no=1, start_vol=14,
-        start_vol_page=31, end_vol=14, end_vol_page=37)
-        filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_gl.sid)
-        with open(filename, 'r') as f:
-            huayan_gl_1.text = f.read()
-        huayan_gl_1.save()
+        try:
+            huayan_gl = Sutra.objects.get(sid='GL000800')
+        except:
+            huayan_gl = Sutra(sid='GL000800', tripitaka=GL, code='00080', variant_code='0',
+            name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)
+            huayan_gl.save()
+        try:
+            huayan_gl_1 = Reel.objects.get(sutra=huayan_gl, reel_no=1)
+        except:
+            huayan_gl_1 = Reel(sutra=huayan_gl, reel_no=1, start_vol=14,
+            start_vol_page=31, end_vol=14, end_vol_page=37)
+            filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_gl.sid)
+            with open(filename, 'r') as f:
+                huayan_gl_1.text = f.read()
+            huayan_gl_1.correct_text = huayan_gl_1.text
+            huayan_gl_1.save()
 
         # create BatchTask
         BatchTask.objects.all().delete()
@@ -76,7 +92,7 @@ class Command(BaseCommand):
 
         # create Tasks
         # Correct Task
-        separators = Reel.extract_page_line_separators(huayan_yb_1.text)
+        separators = extract_page_line_separators(huayan_yb_1.text)
         separators_json = json.dumps(separators, separators=(',', ':'))
 
         # 文字校对

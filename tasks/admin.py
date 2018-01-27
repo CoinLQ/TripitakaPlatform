@@ -1,14 +1,12 @@
 from django.contrib import admin
 
-from .models import CompareReel, CompareSeg, BatchTask, Task, CorrectSeg
+from .models import CompareReel, CompareSeg, BatchTask, Task, CorrectSeg, ReelDiff, DiffSeg, DiffSegText
 
 admin.site.register(CompareReel)
 admin.site.register(CompareSeg)
 admin.site.register(BatchTask)
 admin.site.register(Task)
 admin.site.register(CorrectSeg)
-# admin.site.register(SkipCharacter)
-# admin.site.register(SutraText)
-# admin.site.register(PunctResult)
-# admin.site.register(CharFeedback)
-# admin.site.register(JudgementFeedback)
+admin.site.register(ReelDiff)
+admin.site.register(DiffSeg)
+admin.site.register(DiffSegText)

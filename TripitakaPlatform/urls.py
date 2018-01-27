@@ -17,8 +17,10 @@ from django.contrib import admin
 from django.conf.urls.static import static
 from django.urls import include, path
 
-from tasks.views import *
 from sutradata.views import *
+from tasks.views.tasks import *
+from tasks.views.correct import *
+from tasks.views.judge import *
 from tools.views import *
 
 urlpatterns = [

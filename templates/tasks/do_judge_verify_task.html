@@ -14,11 +14,14 @@
           <option>高丽藏</option>
         </select>
       </div>-->
+      <div>
+        <input type="checkbox" v-model="show_all" id="show_all" /><label for="show_all">显示所有</label>
+      </div>
     </div>
     <div class="row">
       <ul class="diffseg-region">
         <li v-for="(diffsegresult, index) in sharedata.diffsegresults">
-          <div is="diffseg-box" :diffsegresult="diffsegresult" :segindex="index" :sharedata="sharedata"></div>
+          <div is="diffseg-box-verify" :diffsegresult="diffsegresult" :segindex="index" :sharedata="sharedata"></div>
         </li>
       </ul>
       <ul class="pager">
@@ -47,6 +50,7 @@
   var app = new Vue({
     el: '#judge',
     data: {
+      show_all: false,
       base_text: '',
       diffseg_pos_lst: [],
       punct_lst: '',
@@ -54,8 +58,8 @@
       diffseg_curpage: 1,
       merged_base_text: [],
       not_all_selected: true,
-      submit_title: '',
-      sharedata: {task_id: {{ task_id }}, status: 0, base_tripitaka_id: null, judgeDialogVisible: false, mergeDialogVisible: false, splitDialogVisible: false, segindex: -1, diffseg_no: 0, diffsegresults: []  }
+      submit_title: 'aa',
+      sharedata: {task_id: {{ task_id }}, judge_task_ids: {{ judge_task_ids }}, status: 0, base_tripitaka_id: null, judgeDialogVisible: false, mergeDialogVisible: false, splitDialogVisible: false, segindex: -1, diffseg_no: 0, diffsegresults: []  }
     },
     created: function() {
       var vm = this
@@ -74,34 +78,15 @@
         }
       });
       this.reloadDiffsegs(1);      
-      this.checkAllSelected(); 
-      //console.log(lines);
-      //this.merged_base_text = lines.join('<br />');
-      //console.log(this.merged_base_text);
-      //var lines = judge_merge_text_punct1(this.base_text, this.diffseg_pos_lst, this.punct_lst);
-      //$('#judge-base-text2').html(lines.join('<br />'));
-
-      // 点击每个校勘记区域时，将底本经文中对应的文本段置为红色，并进入可视区。
-      // $('.diffseg-box').click(function(e){
-      //   var diffseg_id = $(this).attr('diffseg-id');
-      //   var tag = $('#diffseg-tag-' + diffseg_id);
-      //   var offset = tag.position().top - 60;
-      //   $('.diffseg-tag').removeClass('diffseg-tag-selected');
-      //   $('.diffseg-tag').removeClass('diffseg-tag-notext-selected');
-      //   if (tag.hasClass('diffseg-tag-notext')) {
-      //     tag.addClass('diffseg-tag-notext-selected');
-      //   } else {
-      //     tag.addClass('diffseg-tag-selected');
-      //   }
-      //   $('div.judge-base-text').animate({
-      //     scrollTop: offset + $('div.judge-base-text').scrollTop()
-      //   }, 500);
-      // });
+      this.checkAllSelected();
     },
     watch: {
       diffseg_curpage: function (newPage, oldPage) {
         this.reloadDiffsegs(newPage);
-      }        
+      },
+      show_all: function(newValue, oldValue) {
+        this.reloadDiffsegs(1);
+      }
     },
     methods: {
       loadSutraText: function() {
@@ -120,13 +105,21 @@
         }
       },
       reloadDiffsegs: function(newPage) {
-        var vm = this
-        axios.get('/api/judge/' + vm.sharedata.task_id + '/diffsegresults/?page=' + newPage)
+        var vm = this;
+        var url = '';
+        if (this.show_all) {
+          url = '/api/judge/' + vm.sharedata.task_id + '/diffsegresults/?page=' + newPage;
+        } else {
+          url = '/api/judge/' + vm.sharedata.task_id + '/diffsegresults/?all_equal=0&page=' + newPage;
+        }
+        axios.get(url)
         .then(function(response) {
           var diffseg_count = response.data.count;
           if (diffseg_count > 1) {
             vm.diffseg_page_count = parseInt((diffseg_count - 1) / 5) + 1;
           }
+          
+          var diffseg_ids = [];
           var diffsegresults = response.data.results;
           for (var i = 0; i < diffsegresults.length; ++i) {
             var diffsegtexts = diffsegresults[i].diffseg.diffsegtexts;
@@ -143,9 +136,34 @@
             }
             diffsegresults[i].text_to_diffsegtexts = text_to_diffsegtexts;
             diffsegresults[i].text_count = text_count;
+            diffseg_ids.push(diffsegresults[i].diffseg.id);
           }
-          vm.sharedata.diffsegresults = diffsegresults;
-          vm.sharedata.segindex = 0;
+
+          var diffseg_id_to_judge_results = {};
+          for (var i = 0; i < vm.sharedata.judge_task_ids.length; ++i) {
+            var task_id = vm.sharedata.judge_task_ids[i];
+            url = '/api/judge/' + task_id + '/diffsegresults/?diffseg_id=' + diffseg_ids.join(',');
+            axios.get(url).then(function(response) {
+              var results = response.data.results;
+              for (var j = 0; j < results.length; ++j) {
+                var diffseg_id = results[j].diffseg.id;
+                var diffsegresult = results[j];
+                if (diffseg_id in diffseg_id_to_judge_results) {
+                  diffseg_id_to_judge_results[diffseg_id].push(diffsegresult);
+                } else {
+                  diffseg_id_to_judge_results[diffseg_id] = [diffsegresult];
+                }
+              }
+
+              for (var i = 0; i < diffsegresults.length; ++i) {
+                var diffseg_id = diffsegresults[i].diffseg.id;
+                diffsegresults[i].judge_results = diffseg_id_to_judge_results[diffseg_id];
+              }
+
+              vm.sharedata.diffsegresults = diffsegresults;
+              vm.sharedata.segindex = 0;
+            });
+          }
         });
       },
       checkAllSelected: function() {
@@ -168,7 +186,7 @@
       },
       finishJudgeTask: function() {
         var vm = this;
-        axios.post('/api/judge/' + this.sharedata.task_id + '/finish/s')
+        axios.post('/api/judge/' + this.sharedata.task_id + '/finish/')
         .then(function(response) {
           alert('提交成功！');
         })

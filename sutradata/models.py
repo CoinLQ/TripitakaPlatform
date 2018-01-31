@@ -94,6 +94,9 @@ class LQReel(models.Model):
         verbose_name_plural = '龙泉藏经卷'
         unique_together = (('lqsutra', 'reel_no'),)
 
+    def __str__(self):
+        return '%s (第%s卷)' % (self.lqsutra, self.reel_no)
+
 class Reel(models.Model):
     EDITION_TYPE_UNKNOWN = 0 # 未选择
     EDITION_TYPE_BASE = 1 # 底本

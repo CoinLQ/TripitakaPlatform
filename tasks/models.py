@@ -154,11 +154,14 @@ class Task(models.Model, TripiMixin):
     base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本') # TODO: 是否需要？
     task_no = models.SmallIntegerField('组合任务序号', choices=TASK_NO_CHOICES)
     status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1)
-    
+
+    # 文字校对相关
     compare_reel = models.ForeignKey(CompareReel, on_delete=models.SET_NULL, null=True)
     separators = models.TextField('页行分隔符')
+    # 校勘判取相关
+    reeldiff = models.ForeignKey('ReelDiff', on_delete=models.SET_NULL, null=True)
+   
     result = SutraTextField('结果')
-    
     started_at = models.DateTimeField('开始时间', blank=True, null=True)
     finished_at = models.DateTimeField('完成时间', blank=True, null=True)
     created_at = models.DateTimeField('创建时间', default=timezone.now)
@@ -183,39 +186,101 @@ class CorrectSeg(models.Model):
     #存疑相关
     doubt_comment = models.TextField('存疑意见', default='', blank=True)
 
+class ReelCorrectText(models.Model):
+    reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)
+    text = SutraTextField('经文') # 文字校对或文字校对审定后得到的经文
+    task = models.ForeignKey(Task, on_delete=models.SET_NULL, blank=True, null=True, default=None)
+    created_at = models.DateTimeField('创建时间', default=timezone.now)
+
+    class Meta:
+        verbose_name = '文字校对得到的卷经文'
+        verbose_name_plural = '文字校对得到的卷经文'
+
 # 校勘判取相关
 class ReelDiff(models.Model):
     lqsutra = models.ForeignKey(LQSutra, on_delete=models.CASCADE, blank=True, null=True)
     reel_no = models.SmallIntegerField('卷序号')
     base_sutra = models.ForeignKey(Sutra, on_delete=models.SET_NULL, blank=True, null=True)
-    task = models.OneToOneField(Task, on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始比对结果，不为null表示校勘判取任务和校勘判取审定任务的结果
+    # task = models.OneToOneField(Task, on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始比对结果，不为null表示校勘判取任务和校勘判取审定任务的结果
     base_text = SutraTextField('基准文本', blank=True, null=True)
     published_at = models.DateTimeField('发布时间', blank=True, null=True)
     publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
     verbose_name='发布用户')
+    correct_texts = models.ManyToManyField(ReelCorrectText)
+    diffseg_pos_lst = models.TextField('DiffSeg位置信息')
 
 class DiffSeg(models.Model):
     """
     各版本比对结果的差异文本段
     """
-    reel_diff = models.ForeignKey(ReelDiff, on_delete=models.CASCADE, null=True)
-    selected_text = models.TextField('判取文本', blank=True, null=True)
+    reeldiff = models.ForeignKey(ReelDiff, on_delete=models.CASCADE, null=True)
+    diffseg_no = models.SmallIntegerField('序号', default=0)
+    #selected_text = models.TextField('判取文本', blank=True, null=True) # del
     base_pos = models.IntegerField('在基准文本中位置', default=0) # base_pos=0表示在第1个字前，base_pos>0表示在第base_pos个字后
     base_length = models.IntegerField('基准文本中对应文本段长度', default=0)
-    status = models.SmallIntegerField('状态', default=0) #　0, 1, 2 -- 未判取，已判取，已判取并存疑
+    #status = models.SmallIntegerField('状态', default=0) #　0, 1, 2 -- 未判取，已判取，已判取并存疑 # del
     #存疑相关
-    doubt_comment = models.TextField('存疑意见', default='', blank=True)
+    #doubt_comment = models.TextField('存疑意见', default='', blank=True) # del
+    recheck = models.BooleanField('待复查', default=False)
+    recheck_desc = models.TextField('待复查说明', default='')
 
 class DiffSegText(models.Model):
     """
     各版本比对结果的差异文本段中各版本的文本
     """
-    diff_seg = models.ForeignKey(DiffSeg, on_delete=models.CASCADE)
+    diffseg = models.ForeignKey(DiffSeg, on_delete=models.CASCADE, related_name='diffsegtexts')
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE)
     text = models.TextField('文本', default='', blank=True)
     position = models.IntegerField('在卷文本中的位置（前有几个字）', default=0)
     start_cid = models.CharField('起始经字号', max_length=32, default='') # cid长度为23
     end_cid = models.CharField('结束经字号', max_length=32, default='')
+
+class DiffSegResult(models.Model):
+    '''
+    校勘判取用户对每个DiffSeg操作后得到的结果
+    '''
+    TYPE_SELECT = 1
+    TYPE_SPLIT = 2
+    TYPE_CHOICES = (
+        (TYPE_SELECT, '选择'),
+        (TYPE_SPLIT, '拆分'),
+    )
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    diffseg = models.ForeignKey(DiffSeg, on_delete=models.CASCADE, related_name='diffsegresults')
+    typ = models.SmallIntegerField('结果类型', choices=TYPE_CHOICES, default=1, editable=True)
+    selected_text = models.TextField('判取文本', blank=True, null=True)
+    merged_diffsegresults = models.ManyToManyField("self", blank=True)
+    split_info = models.TextField('拆分信息', blank=True, null=True, default='{}')
+    selected = models.SmallIntegerField('是否判取', blank=True, default=0) #　0, 1 -- 未判取，已判取
+    doubt = models.SmallIntegerField('是否存疑', blank=True, default=0) # 0, 1 -- 无存疑，有存疑
+    #存疑相关
+    doubt_comment = models.TextField('存疑意见', default='', blank=True)
+    all_equal = models.BooleanField('校勘判取结果都一致', default=False)
+
+    class Meta:
+        verbose_name = '校勘判取结果'
+        verbose_name_plural = '校勘判取结果'
+        unique_together = (('task', 'diffseg'),)
+
+    def is_equal(self, obj):
+        print('doubt: ', self.doubt, obj.doubt)
+        if self.doubt or obj.doubt:
+            return False
+        print('diffseg_id: ', self.diffseg_id, obj.diffseg_id)
+        if self.diffseg_id != obj.diffseg_id:
+            return False
+        print('typ: ', self.typ, obj.typ)
+        if self.typ != obj.typ:
+            return False
+        print('selected_text: ', self.selected_text, obj.selected_text)
+        if self.selected_text != obj.selected_text:
+            return False
+        if len(list(self.merged_diffsegresults.all())) or len(list(obj.merged_diffsegresults.all())):
+            return False
+        print('split_info: ', self.split_info, obj.split_info)
+        if self.split_info != obj.split_info:
+            return False
+        return True
 
 # 标点相关
 class PunctResultBase(object):
@@ -312,7 +377,7 @@ class CorrectDoubt(DoubtBase):
         verbose_name_plural = '文字校对存疑'
 
 class JudgeDoubt(DoubtBase):
-    diff_seg = models.ForeignKey(DiffSeg, on_delete=models.CASCADE)
+    diffseg = models.ForeignKey(DiffSeg, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = '校勘判取存疑'

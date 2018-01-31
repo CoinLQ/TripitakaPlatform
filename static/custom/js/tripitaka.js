@@ -262,7 +262,7 @@ function judge_merge_text_punct(text, diffseg_pos_lst, punct_lst) {
                 }
                 if (pos == diffseg_endpos) {
                     obj = {
-                        'diffseg_id': diffseg_pos_lst[diffseg_idx].diffseg_id,
+                        'diffseg_no': diffseg_pos_lst[diffseg_idx].diffseg_no,
                         'type': SEG_NOTEXT
                     };
                     result.push(obj);
@@ -270,7 +270,7 @@ function judge_merge_text_punct(text, diffseg_pos_lst, punct_lst) {
                     diffseg_endpos = text.length + 1;
                 } else {
                     obj = {
-                        'diffseg_id': diffseg_pos_lst[diffseg_idx].diffseg_id,
+                        'diffseg_no': diffseg_pos_lst[diffseg_idx].diffseg_no,
                         'type': SEG_TEXT,
                         'text': []
                     };
@@ -288,31 +288,55 @@ axios.defaults.xsrfHeaderName = "X-CSRFTOKEN";
 axios.defaults.xsrfCookieName = "csrftoken";
 
 Vue.component('diffseg-box', {
-    props: ['diffseg', 'segindex', 'sharedata'],
+    props: ['diffsegresult', 'segindex', 'sharedata'],
     template: '\
     <div class="diffseg-box" @click.stop.prevent="click">\
-        <div>{{ diffseg.base_text }}</div>\
-        <span v-for="(text_diffsegtexts, index) in diffseg.text_diffsegtexts_map">\
-            <span v-html="diffsegtextsJoin(text_diffsegtexts.diffsegtexts)"></span>\
-            <span v-if="text_diffsegtexts.text">：{{ text_diffsegtexts.text }}</span>\
+        <div><span>{{ base_text }}</span>\
+        </div>\
+        <span v-for="(diffsegtexts, text, index) in diffsegresult.text_to_diffsegtexts">\
+            <span v-html="diffsegtextsJoin(diffsegtexts)"></span>\
+            <span v-if="text">：{{ text }}</span>\
             <span v-else>为空</span>\
-            <span v-if="index < (diffseg.text_diffsegtexts_map.length - 1)">；</span>\
+            <span v-if="index < (diffsegresult.text_count - 1)">；</span>\
             <span v-else>。</span>\
         </span>\
         <div>\
-            <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)">判取</a>\
-            <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)">存疑</a>\
+            <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>\
+            <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">存疑</a>\
             <a href="#" class="diffseg-btn" @click.stop.prevent="doMerge(segindex)">合并</a>\
-            <a href="#" class="diffseg-btn" @click.stop.prevent="doSplit(segindex)">拆分</a>\
+            <a href="#" class="diffseg-btn" v-if="diffsegresult.merged_diffsegresults.length == 0" @click.stop.prevent="doSplit(segindex)">拆分</a>\
         </div>\
-        <div>处理结果：{{ getResult(diffseg) }}\
+        <div>处理结果：{{ getResult(diffsegresult) }}\
         </div>\
     </div>',
+    computed: {
+        base_text: function() {
+            var base_tripitaka_id = this.sharedata.base_tripitaka_id;
+            var length = this.diffsegresult.diffseg.diffsegtexts.length;
+            var text = '';
+            for (var i = 0; i < length; ++i) {
+                var diffsegtext = this.diffsegresult.diffseg.diffsegtexts[i];
+                if (diffsegtext.tripitaka.id == base_tripitaka_id) {
+                    text = diffsegtext.text;
+                    break;
+                }
+            }
+            if (text == '') {
+                text = '底本为空';
+            }
+            return text;
+        }
+    },
     methods: {
         click: function() {
-            this.sharedata.segid = this.diffseg.id;
+            this.sharedata.diffseg_no = this.diffsegresult.diffseg.diffseg_no;
+            this.$emit('segfocus');
+            console.log('emit segfocus')
         },
         doJudge: function(segindex) {
+            if (this.diffsegresult.typ == 2) {
+                return ;
+            }
             this.sharedata.segindex = segindex;
             this.sharedata.judgeDialogVisible = true;
         },
@@ -329,25 +353,175 @@ Vue.component('diffseg-box', {
             var lst = [];
             while (i < diffsegtexts.length) {
                 var s = '';
-                if (diffsegtexts[i].pid != '') {
-                    s = '<a href="/sutra_pages/' + diffsegtexts[i].pid + '/view?cid=' + diffsegtexts[i].start_cid + '" target="_blank">' + diffsegtexts[i].tname + '</a>';
+                var cid = diffsegtexts[i].start_cid;
+                if (cid != null && cid != '') {
+                    var pid = cid.substr(0, 18);
+                    s = '<a href="/sutra_pages/' + pid + '/view?cid='
+                    + cid + '" target="_blank">'
+                    + diffsegtexts[i].tripitaka.shortname + '</a>';
                 } else {
-                    s = diffsegtexts[i].tname;
+                    s = diffsegtexts[i].tripitaka.shortname;
                 }
                 lst.push(s);
                 ++i;
             }
             return lst.join('/');
         },
-        getResult: function(diffseg) {
+        getResult: function(diffsegresult) {
             var s = '';
-            if (diffseg.selected == 1) {
-                if (diffseg.doubt == 0) {
-                    s = '已判取，' + diffseg.selected_tname + '为正。'
-                } else if (diffseg.doubt == 1) {
-                    s = diffseg.selected_tname + '为正，已存疑，'
-                    + diffseg.doubt_comment + '。'
+            var merged_length = diffsegresult.merged_diffsegresults.length;
+            if (diffsegresult.typ == 1) {
+                var little_count = 0;
+                var great_count = 0;
+                for (var i = 0; i < merged_length; ++i) {
+                    var id = diffsegresult.merged_diffsegresults[i];
+                    if (id < diffsegresult.id) {
+                        little_count++;
+                    } else if (id > diffsegresult.id) {
+                        great_count++;
+                    }
                 }
+                if (little_count != 0 || great_count != 0) {
+                    var texts = [];
+                    if (little_count != 0) {
+                        texts.push('前' + little_count + '条');
+                    }
+                    if (great_count != 0) {
+                        texts.push('后' + great_count + '条');
+                    }
+                    s = '已与' + texts.join('、') + '合并；';
+                }
+            } else if (diffsegresult.typ == 2) {
+                s = '已作拆分；'
+            }
+            if (diffsegresult.selected == 0) {
+                s += '未判取';
+            } else if (diffsegresult.doubt == 0) {
+                s += '判取文本：' + diffsegresult.selected_text;
+            } else if (diffsegresult.doubt == 1) {
+                s += '判取文本：' + diffsegresult.selected_text + '。存疑，' + diffsegresult.doubt_comment + '。';
+            }
+            return s;
+        }
+    }
+})
+
+Vue.component('diffseg-box-verify', {
+    props: ['diffsegresult', 'segindex', 'sharedata'],
+    template: '\
+    <div class="diffseg-box" @click.stop.prevent="click">\
+        <div><span>{{ base_text }}</span>\
+        </div>\
+        <span v-for="(diffsegtexts, text, index) in diffsegresult.text_to_diffsegtexts">\
+            <span v-html="diffsegtextsJoin(diffsegtexts)"></span>\
+            <span v-if="text">：{{ text }}</span>\
+            <span v-else>为空</span>\
+            <span v-if="index < (diffsegresult.text_count - 1)">；</span>\
+            <span v-else>。</span>\
+        </span>\
+        <div v-for="(judge_result, index) in diffsegresult.judge_results">\
+        <div>判取{{ index + 1 }}：{{ getResult(judge_result) }}</div>\
+        </div>\
+        <div>\
+            <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>\
+            <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">存疑</a>\
+            <a href="#" class="diffseg-btn" @click.stop.prevent="doMerge(segindex)">合并</a>\
+            <a href="#" class="diffseg-btn" v-if="diffsegresult.merged_diffsegresults.length == 0" @click.stop.prevent="doSplit(segindex)">拆分</a>\
+        </div>\
+        <div>处理结果：{{ getResult(diffsegresult) }}\
+        </div>\
+    </div>',
+    computed: {
+        base_text: function() {
+            var base_tripitaka_id = this.sharedata.base_tripitaka_id;
+            var length = this.diffsegresult.diffseg.diffsegtexts.length;
+            var text = '';
+            for (var i = 0; i < length; ++i) {
+                var diffsegtext = this.diffsegresult.diffseg.diffsegtexts[i];
+                if (diffsegtext.tripitaka.id == base_tripitaka_id) {
+                    text = diffsegtext.text;
+                    break;
+                }
+            }
+            if (text == '') {
+                text = '底本为空';
+            }
+            return text;
+        }
+    },
+    methods: {
+        click: function() {
+            this.sharedata.diffseg_no = this.diffsegresult.diffseg.diffseg_no;
+            this.$emit('segfocus');
+            console.log('emit segfocus1')
+        },
+        doJudge: function(segindex) {
+            if (this.diffsegresult.typ == 2) {
+                return ;
+            }
+            this.sharedata.segindex = segindex;
+            this.sharedata.judgeDialogVisible = true;
+        },
+        doMerge: function(segindex) {
+            this.sharedata.segindex = segindex;
+            this.sharedata.mergeDialogVisible = true;
+        },
+        doSplit: function(segindex) {
+            this.sharedata.segindex = segindex;
+            this.sharedata.splitDialogVisible = true;
+        },
+        diffsegtextsJoin: function(diffsegtexts) {
+            var i = 0;
+            var lst = [];
+            while (i < diffsegtexts.length) {
+                var s = '';
+                var cid = diffsegtexts[i].start_cid;
+                if (cid != null && cid != '') {
+                    var pid = cid.substr(0, 18);
+                    s = '<a href="/sutra_pages/' + pid + '/view?cid='
+                    + cid + '" target="_blank">'
+                    + diffsegtexts[i].tripitaka.shortname + '</a>';
+                } else {
+                    s = diffsegtexts[i].tripitaka.shortname;
+                }
+                lst.push(s);
+                ++i;
+            }
+            return lst.join('/');
+        },
+        getResult: function(diffsegresult) {
+            var s = '';
+            var merged_length = diffsegresult.merged_diffsegresults.length;
+            if (diffsegresult.typ == 1) {
+                var little_count = 0;
+                var great_count = 0;
+                for (var i = 0; i < merged_length; ++i) {
+                    var id = diffsegresult.merged_diffsegresults[i];
+                    if (id < diffsegresult.id) {
+                        little_count++;
+                    } else if (id > diffsegresult.id) {
+                        great_count++;
+                    }
+                }
+                if (little_count != 0 || great_count != 0) {
+                    var texts = [];
+                    if (little_count != 0) {
+                        texts.push('前' + little_count + '条');
+                    }
+                    if (great_count != 0) {
+                        texts.push('后' + great_count + '条');
+                    }
+                    s = '已与' + texts.join('、') + '合并；';
+                }
+            } else if (diffsegresult.typ == 2) {
+                s = '已作拆分；'
+            }
+            if (diffsegresult.selected == 0) {
+                s += '未判取';
+            } else if (diffsegresult.doubt == 0) {
+                s += '判取文本：' + diffsegresult.selected_text;
+            } else if (diffsegresult.doubt == 1) {
+                s += '判取文本：' + diffsegresult.selected_text + '。存疑，' + diffsegresult.doubt_comment + '。';
             }
             return s;
         }
@@ -361,10 +535,10 @@ Vue.component('sutra-unit', {
     <span>\
         <span v-if="data.type == 0">{{ data.text }}</span>\
         <span v-else-if="data.type == 1" tag="br"><br /></span>\
-        <span v-else-if="data.type == 2"><a href="#" :diffsegid="data.diffseg_id" :class="className"><span class="diffseg-tag-white"></span></a></span>\
-        <span v-else-if="data.type == 3"><a href="#" :diffsegid="data.diffseg_id" :class="className">{{ data.text }}</a></span>\
+        <span v-else-if="data.type == 2"><a href="#" :diffsegno="data.diffseg_no" :class="className"><span class="diffseg-tag-white"></span></a></span>\
+        <span v-else-if="data.type == 3"><a href="#" :diffsegno="data.diffseg_no" :class="className">{{ data.text }}</a></span>\
         <span v-else>\
-            <a href="#" :diffsegid="data.diffseg_id" :class="className">\
+            <a href="#" :diffsegno="data.diffseg_no" :class="className">\
                 <span v-for="(line, index) in data.lines" tag="seg">{{ line }}<br v-if="index < data.lines.length-1" /></span>\
             </a>\
         </span>\
@@ -373,13 +547,13 @@ Vue.component('sutra-unit', {
     computed: {
         className: function() {
             if (this.data.type == 2) {
-                if (this.sharedata.segid == this.data.diffseg_id) {
+                if (this.sharedata.diffseg_no == this.data.diffseg_no) {
                     return 'diffseg-tag-notext-selected';
                 } else {
                     return 'diffseg-tag-notext';
                 }
             } else if (this.data.type == 3) {
-                if (this.sharedata.segid == this.data.diffseg_id) {
+                if (this.sharedata.diffseg_no == this.data.diffseg_no) {
                     return 'diffseg-tag-selected';
                 }
             }
@@ -396,13 +570,13 @@ Vue.component('judge-dialog', {
             <thead>\
             <tr><th>判取</th><th>版本</th><th>用字</th></tr>\
             </thead>\
-            <tbody>\
-            <tr v-for="item in sharedata.diffseg_lst[sharedata.segindex].text_diffsegtexts_map">\
+            <tbody v-if="sharedata.segindex >= 0">\
+            <tr v-for="(diffsegtexts, text) in sharedata.diffsegresults[sharedata.segindex].text_to_diffsegtexts">\
                 <td>\
-                    <input type="radio" v-bind:value="item.text" v-model="selected_text" />\
+                    <input type="radio" v-bind:value="text" v-model="selected_text" />\
                 </td>\
-                <td>{{ joinTnames(item.diffsegtexts) }}</td>\
-                <td>{{ item.text }}</td>\
+                <td>{{ joinTnames(diffsegtexts) }}</td>\
+                <td>{{ text }}</td>\
             </tr>\
             </tbody>\
         </table>\
@@ -424,7 +598,7 @@ Vue.component('judge-dialog', {
     ',
     data: function() {
         return {
-            diffseg_id: '',
+            diffsegresult_id: '',
             selected_text: '',
             doubt: '',
             doubt_comment: '',
@@ -433,23 +607,27 @@ Vue.component('judge-dialog', {
     },
     methods: {
         handleOpen: function() {
-            this.diffseg_id = this.sharedata.diffseg_lst[this.sharedata.segindex].id;
-            this.selected_text = this.sharedata.diffseg_lst[this.sharedata.segindex].selected_text;
-            this.doubt = this.sharedata.diffseg_lst[this.sharedata.segindex].doubt;
-            this.doubt_comment = this.sharedata.diffseg_lst[this.sharedata.segindex].doubt_comment;
+            this.diffsegresult_id = this.sharedata.diffsegresults[this.sharedata.segindex].id;
+            this.selected_text = this.sharedata.diffsegresults[this.sharedata.segindex].selected_text;
+            this.doubt = this.sharedata.diffsegresults[this.sharedata.segindex].doubt;
+            this.doubt_comment = this.sharedata.diffsegresults[this.sharedata.segindex].doubt_comment;
         },
         handleOK: function() {
             var vm = this;
-            var url = '/api/judge/' + this.sharedata.task_id + '/diffsegs/' + this.diffseg_id + '/select';
-            axios.post(url, {
+            var url = '/api/judge/' + this.sharedata.task_id + '/diffsegresults/' + this.diffsegresult_id + '/';
+            axios.put(url, {
+                typ: 1,
                 selected_text: vm.selected_text,
+                selected: 1, 
                 doubt: vm.doubt,
-                doubt_comment: vm.doubt_comment
+                doubt_comment: vm.doubt_comment,
+                split_info: '{}'
             })
             .then(function(response) {
-                vm.sharedata.diffseg_lst[vm.sharedata.segindex].selected_text = vm.selected_text;
-                vm.sharedata.diffseg_lst[vm.sharedata.segindex].doubt = vm.doubt;
-                vm.sharedata.diffseg_lst[vm.sharedata.segindex].doubt_comment = vm.doubt_comment;
+                vm.sharedata.diffsegresults[vm.sharedata.segindex].selected_text = vm.selected_text;
+                vm.sharedata.diffsegresults[vm.sharedata.segindex].selected = vm.selected;
+                vm.sharedata.diffsegresults[vm.sharedata.segindex].doubt = vm.doubt;
+                vm.sharedata.diffsegresults[vm.sharedata.segindex].doubt_comment = vm.doubt_comment;
                 vm.$emit('reload');
                 vm.sharedata.judgeDialogVisible = false;
             })
@@ -463,8 +641,8 @@ Vue.component('judge-dialog', {
         },
         joinTnames: function(diffsegtexts) {
             var tnames = [];
-            diffsegtexts.forEach(function(e) {
-                tnames.push(e.tname);
+            diffsegtexts.forEach(function(diffsegtext) {
+                tnames.push(diffsegtext.tripitaka.shortname);
             });
             return tnames.join('/');
         }
@@ -477,9 +655,9 @@ Vue.component('merge-dialog', {
     <el-dialog title="合并" :visible.sync="sharedata.mergeDialogVisible" width="30%" @open="handleOpen" :before-close="handleCancel">\
         <p>选择待合并的校勘记</p>\
         <ul>\
-            <li v-for="diffseg in diffsegs">\
-            <input type="checkbox" :id="diffseg.id" :value="diffseg.id" v-model="diffseg_ids" />\
-            <label :for="diffseg.id">{{ diffseg.base_text }}</label>\
+            <li v-for="diffsegresult in diffsegresults">\
+            <input type="checkbox" :id="diffsegresult.id" :value="diffsegresult.id" v-model="diffsegresult_ids" />\
+            <label :for="diffsegresult.id">{{ getBaseText(diffsegresult) }}</label>\
             </li>\
         </ul>\
         <span slot="footer" class="dialog-footer">\
@@ -491,31 +669,59 @@ Vue.component('merge-dialog', {
     ',
     data: function() {
         return {
-            diffseg_id: '',
+            diffsegresult_id: '',
             base_pos: 0,
-            diffsegs: [],
-            diffseg_ids: [],
+            diffsegresults: [],
+            diffsegresult_ids: [],
             error: null
         }
     },
     methods: {
+        getBaseText: function(diffsegresult) {
+            var diffsegtexts = diffsegresult.diffseg.diffsegtexts;
+            var length = diffsegtexts.length;
+            var text = '';
+            for (var i = 0; i < length; ++i) {
+                if (diffsegtexts[i].tripitaka.id == this.sharedata.base_tripitaka_id) {
+                    text = diffsegtexts[i].text;
+                    break;
+                }
+            }
+            if (text == '') {
+                text = '底本为空';
+            }
+            return text;
+        },
         handleOpen: function() {
-            this.diffseg_id = this.sharedata.diffseg_lst[this.sharedata.segindex].id;
-            this.diffseg_ids = [this.diffseg_id];
-            console.log(this.diffseg_ids);
-            this.base_pos = this.sharedata.diffseg_lst[this.sharedata.segindex].base_pos;
+            var diffsegresult = this.sharedata.diffsegresults[this.sharedata.segindex];
+            this.diffsegresult_id = diffsegresult.id;
+            this.diffsegresult_ids = [this.diffsegresult_id];
+            for (var i = 0; i < diffsegresult.merged_diffsegresults.length; ++i) {
+                this.diffsegresult_ids.push(diffsegresult.merged_diffsegresults[i]);
+            }
             var vm = this;
             axios.get('/api/judge/' + this.sharedata.task_id +
-            '/diffsegs/' + this.diffseg_id + '/merge_list?base_pos=' + this.base_pos)
+            '/diffsegresults/' + this.diffsegresult_id + '/mergelist/')
             .then(function(response) {
-                vm.diffsegs = response.data.diffsegs;
+                console.log(response.data)
+                vm.diffsegresults = response.data;
             })
         },
         handleOK: function() {
             var vm = this;
-            var url = '/api/judge/' + this.sharedata.task_id + '/diffsegs/merge';
-            axios.post(url, {
-                diffseg_ids: vm.diffseg_ids
+            var merged_diffsegresults = [];
+            for (var i = 0; i < this.diffsegresult_ids.length; ++i) {
+                var id = this.diffsegresult_ids[i];
+                if (id != this.diffsegresult_id) {
+                    merged_diffsegresults.push(id);
+                }
+            }
+            var url = '/api/judge/' + this.sharedata.task_id + 
+            '/diffsegresults/' + this.diffsegresult_id + '/';
+            axios.put(url, {
+                typ: 1,
+                merged_diffsegresults: merged_diffsegresults,
+                split_info: '{}'
             })
             .then(function(response) {
                 vm.$emit('reload');
@@ -537,19 +743,23 @@ Vue.component('split-dialog', {
     template: '\
     <el-dialog title="拆分" :visible.sync="sharedata.splitDialogVisible" width="50%" @open="handleOpen" :before-close="handleCancel">\
         <button class="btn" @click="incrementSplitCount">新增</button>\
-        <button class="btn" @click="decrementSplitCount">减少</button>\
+        <button class="btn" @click="decrementSplitCount">减少</button><span>减少到1将取消原先的拆分。</span>\
         <table class="table table-bordered table-condensed">\
             <thead>\
                 <tr>\
                     <th></th>\
                     <th v-for="tname in tname_lst">{{ tname }}</th>\
+                    <th>我的选择</th>\
                 </tr>\
             </thead>\
             <tbody>\
             <tr v-for="(title, index) in title_lst">\
                 <td>{{ title }}</td>\
                 <td v-for="(tripitaka_id, tripitaka_index) in tripitaka_ids">\
-                    <textarea cols="5" v-model="segtexts_lst[index][tripitaka_index]" @input="verifyData"></textarea>\
+                    <textarea cols="5" v-model="tripitaka_id_to_texts[tripitaka_id][index]" @input="verifyData"></textarea>\
+                </td>\
+                <td>\
+                    <textarea cols="5" v-model="selected_lst[index]" @input="verifyData"></textarea>\
                 </td>\
             </tr>\
             </tbody>\
@@ -563,14 +773,15 @@ Vue.component('split-dialog', {
     ',
     data: function () {
         return {
-            diffseg_id: '',
+            diffsegresult_id: '',
             split_count: 2,
             title_lst: [],
             tripitaka_ids: [],
             tname_lst: [],
             tripitaka_id_to_oldtext: {},
-            segtexts_lst: {},
-            okDisabled: false,
+            tripitaka_id_to_texts: {},
+            selected_lst: [],
+            okDisabled: true,
             error: null
         }
     },
@@ -589,28 +800,51 @@ Vue.component('split-dialog', {
             return textseg_lst;
         },
         generateSplitItems: function() {
-            this.title_lst = [];
-            this.tripitaka_ids = [];
-            this.tname_lst = [];
-            this.tripitaka_id_to_oldtext = {};
-            this.segtexts_lst = [];
-            for (var i = 1; i <= this.split_count; ++i) {
-                this.title_lst.push(i.toString());
-                this.segtexts_lst.push([]);
-            }
-            var length = this.sharedata.diffseg_lst[this.sharedata.segindex].text_diffsegtexts_map.length;
-            for (var i = 0; i < length; ++i) {
-                var text_diffsegtexts = this.sharedata.diffseg_lst[this.sharedata.segindex].text_diffsegtexts_map[i];
-                var text_lst = this.splitText(text_diffsegtexts.text, this.split_count);
-                for (var j = 0; j < text_diffsegtexts.diffsegtexts.length; ++j) {
-                    var tripitaka_id = text_diffsegtexts.diffsegtexts[j].tripitaka_id;
-                    var tname = text_diffsegtexts.diffsegtexts[j].tname;
+            var diffsegresult = this.sharedata.diffsegresults[this.sharedata.segindex];
+            if (diffsegresult.typ == 2) {
+                var split_info = JSON.parse(diffsegresult.split_info);
+                this.split_count = split_info.split_count;
+                this.tripitaka_id_to_texts = split_info.tripitaka_id_to_texts;
+                this.selected_lst = split_info.selected_lst;
+                this.title_lst = [];
+                this.tripitaka_ids = [];
+                this.tname_lst = [];
+                this.tripitaka_id_to_oldtext = {};
+                for (var i = 1; i <= this.split_count; ++i) {
+                    this.title_lst.push(i.toString());
+                }
+                var diffsegtexts = this.sharedata.diffsegresults[this.sharedata.segindex].diffseg.diffsegtexts;
+                var length = diffsegtexts.length;
+                for (var i = 0; i < length; ++i) {
+                    var text_lst = this.splitText(diffsegtexts[i].text, this.split_count);
+                    var tripitaka_id = diffsegtexts[i].tripitaka.id;
+                    var tname = diffsegtexts[i].tripitaka.shortname;
                     this.tripitaka_ids.push(tripitaka_id);
                     this.tname_lst.push(tname);
-                    this.tripitaka_id_to_oldtext[tripitaka_id] = text_diffsegtexts.text;
-                    for (var k = 0; k < this.split_count; ++k) {
-                        this.segtexts_lst[k].push( text_lst[k] );
-                    }
+                    this.tripitaka_id_to_oldtext[tripitaka_id] = diffsegtexts[i].text;
+                }
+            } else {
+                this.split_count = 2;
+                this.title_lst = [];
+                this.tripitaka_ids = [];
+                this.tname_lst = [];
+                this.tripitaka_id_to_oldtext = {};
+                this.tripitaka_id_to_texts = {};
+                this.selected_lst = [];
+                for (var i = 1; i <= this.split_count; ++i) {
+                    this.title_lst.push(i.toString());
+                    this.selected_lst.push('');
+                }
+                var diffsegtexts = this.sharedata.diffsegresults[this.sharedata.segindex].diffseg.diffsegtexts;
+                var length = diffsegtexts.length;
+                for (var i = 0; i < length; ++i) {
+                    var text_lst = this.splitText(diffsegtexts[i].text, this.split_count);
+                    var tripitaka_id = diffsegtexts[i].tripitaka.id;
+                    var tname = diffsegtexts[i].tripitaka.shortname;
+                    this.tripitaka_ids.push(tripitaka_id);
+                    this.tname_lst.push(tname);
+                    this.tripitaka_id_to_oldtext[tripitaka_id] = diffsegtexts[i].text;
+                    this.tripitaka_id_to_texts[tripitaka_id] = text_lst;              
                 }
             }
         },
@@ -619,16 +853,29 @@ Vue.component('split-dialog', {
             var j = 0;
             for (var i = 0; i < this.tripitaka_ids.length; ++i) {
                 var tripitaka_id = this.tripitaka_ids[i];
-                var texts = [];
-                for (var j = 0; j < this.split_count; ++j) {
-                    texts.push(this.segtexts_lst[j][i]);
-                }
-                var mergetext = texts.join('');
+                var mergetext = this.tripitaka_id_to_texts[tripitaka_id].join('');
                 if (mergetext != this.tripitaka_id_to_oldtext[tripitaka_id]) {
                     this.okDisabled = true;
                     return true;
                 }
             }
+            for (var i = 0; i < this.split_count; ++i) {
+                if (this.selected_lst[i] == undefined) {
+                    this.selected_lst[i] = '';
+                }
+                var match = false;
+                for (var j = 0; j < this.tripitaka_ids.length; ++j) {
+                    var tripitaka_id = this.tripitaka_ids[j];
+                    if (this.tripitaka_id_to_texts[tripitaka_id][i] == this.selected_lst[i]) {
+                        match = true;
+                    }
+                }
+                if (!match) {
+                    this.okDisabled = true;
+                    return true;
+                }
+            }
+
             this.okDisabled = false;
             return false;
         },
@@ -645,18 +892,35 @@ Vue.component('split-dialog', {
             }
         },
         handleOpen: function () {
-            this.diffseg_id = this.sharedata.diffseg_lst[this.sharedata.segindex].id;
-            this.split_count = 2;
+            this.diffsegresult_id = this.sharedata.diffsegresults[this.sharedata.segindex].id;
             this.generateSplitItems();
         },
         handleOK: function () {
             var vm = this;
-            var url = '/api/judge/' + this.sharedata.task_id + '/diffsegs/' + this.diffseg_id + '/split';
-            axios.post(url, {
-                split_count: vm.split_count,
-                tripitaka_ids: vm.tripitaka_ids,
-                segtexts_lst: vm.segtexts_lst
-            })
+            var url = '/api/judge/' + this.sharedata.task_id + '/diffsegresults/' + this.diffsegresult_id + '/';
+            var data = '';
+            if (this.split_count == 1) {
+                data = {
+                    typ: 1,
+                    split_info: '{}',
+                    merged_diffsegresults: []
+                }
+            } else {
+                var split_info = JSON.stringify({
+                    split_count: this.split_count,
+                    tripitaka_id_to_texts: this.tripitaka_id_to_texts,
+                    selected_lst: this.selected_lst
+                });
+                data = {
+                    typ: 2,
+                    split_info: split_info,
+                    selected: 1,
+                    selected_text: this.selected_lst.join(''),
+                    merged_diffsegresults: []
+                }
+            }
+            
+            axios.put(url, data)
             .then(function(response) {
                 vm.$emit('reload');
                 vm.sharedata.splitDialogVisible = false;

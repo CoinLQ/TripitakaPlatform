@@ -16,16 +16,19 @@ Including another URLconf
 from django.contrib import admin
 from django.conf.urls.static import static
 from django.urls import include, path
+from django.conf.urls import url
 
-from tasks.views import *
 from sutradata.views import *
+from tasks.views.task_controller import *
+from tasks.views.correct import *
+from tasks.views.judge import *
 from tools.views import *
 
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
-    path('batchtasks/', batchtask_list),
-    path('batchtasks/create', BatchTaskCreate.as_view(), name='batchtasks_create'),
+    url(r'^api-auth/', include('rest_framework.urls')),
+    url(r'^api/', include('api.urls')),
     path('correct/<int:task_id>/', do_correct_task, name='do_correct_task'),
     path('correct_verify/<int:task_id>/', do_correct_verify_task, name='do_correct_verify_task'),
     path('pages/cutlist', page_cut_list, name='page_cut_list'),
@@ -33,14 +36,7 @@ urlpatterns = [
     path('pages/<pid>/cut', page_cut_info, name='page_cut_info'),
     path('sutra_pages/<pid>/view', sutra_page_detail, name='sutra_page_detail'),
     path('judge/<int:task_id>/', do_judge_task, name='do_judge_task'),
-
-    path('api/judge/<int:task_id>/diffsegs', api_judge_diffsegs, name='api_judge_diffsegs'),
-    path('api/judge/<int:task_id>/diffseg_pos_list', api_judge_diffseg_pos_list, name='api_judge_diffseg_pos_list'),
-    path('api/judge/<int:task_id>/is_all_selected', api_judge_is_all_selected, name='api_judge_is_all_selected'),
-    path('api/judge/<int:task_id>/diffsegs/<int:diffseg_id>/select', api_judge_diffseg_select, name='api_judge_diffseg_select'),
-    path('api/judge/<int:task_id>/diffsegs/merge', api_judge_diffseg_merge, name='api_judge_diffseg_merge'),
-    path('api/judge/<int:task_id>/diffsegs/<int:diffseg_id>/merge_list', api_judge_get_merge_list, name='api_judge_get_merge_list'),
-    path('api/judge/<int:task_id>/diffsegs/<int:diffseg_id>/split', api_judge_diffseg_split, name='api_judge_diffseg_split'),
+    path('judge_verify/<int:task_id>/', do_judge_verify_task, name='do_judge_verify_task'),
 
     path('tools/cutfixed_pages/', cutfixed_pages, name='cutfixed_pages'),
     path('tools/cutfixed_pages/<pid>/', cutfixed_page_detail, name='cutfixed_page_detail'),

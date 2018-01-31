@@ -57,6 +57,10 @@ ul.diffseg-region {
     padding: 10px;
     margin: 10px 0px 0px 0px;
 }
+.recheck-tag {
+    background-color: yellow;
+    margin-left: 10px;
+}
 .diffseg-tag-notext {
     background: #337ab7;
 }

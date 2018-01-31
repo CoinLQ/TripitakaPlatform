@@ -10,9 +10,7 @@ import os, sys
 from os.path import isfile, join
 import traceback
 
-from difflib import SequenceMatcher
 import re, json
-
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
@@ -44,22 +42,22 @@ class Command(BaseCommand):
             huayan_yb_1 = Reel.objects.get(sutra=huayan_yb, reel_no=1)
         except:
             huayan_yb_1 = Reel(sutra=huayan_yb, reel_no=1, start_vol=27,
-            start_vol_page=1, end_vol=27, end_vol_page=23)
+            start_vol_page=1, end_vol=27, end_vol_page=23, edition_type=Reel.EDITION_TYPE_CHECKED)
             filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_yb.sid)
             with open(filename, 'r') as f:
                 huayan_yb_1.text = f.read()
             huayan_yb_1.save()
 
-        filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
-        with open(filename, 'r') as f:
-            huayan_yb_1.correct_text = f.read()
-        Reel.objects.filter(id=huayan_yb_1.id).update(correct_text=huayan_yb_1.correct_text)
+        # filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
+        # with open(filename, 'r') as f:
+        #     text = f.read()
+        #     ReelCorrectText(reel=huayan_yb_1, text=text).save()
 
-        # 得到精确的切分数据
-        try:
-            compute_accurate_cut(huayan_yb_1)
-        except Exception:
-            traceback.print_exc()
+        # # 得到精确的切分数据
+        # try:
+        #     compute_accurate_cut(huayan_yb_1)
+        # except Exception:
+        #     traceback.print_exc()
 
         # 高丽第1卷
         GL = Tripitaka.objects.get(code='GL')
@@ -73,12 +71,12 @@ class Command(BaseCommand):
             huayan_gl_1 = Reel.objects.get(sutra=huayan_gl, reel_no=1)
         except:
             huayan_gl_1 = Reel(sutra=huayan_gl, reel_no=1, start_vol=14,
-            start_vol_page=31, end_vol=14, end_vol_page=37)
+            start_vol_page=31, end_vol=14, end_vol_page=37, edition_type=Reel.EDITION_TYPE_CHECKED)
             filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_gl.sid)
-            with open(filename, 'r') as f:
-                huayan_gl_1.text = f.read()
-            huayan_gl_1.correct_text = huayan_gl_1.text
             huayan_gl_1.save()
+            with open(filename, 'r') as f:
+                text = f.read()
+                ReelCorrectText(reel=huayan_gl_1, text=text).save()
 
         # create BatchTask
         BatchTask.objects.all().delete()

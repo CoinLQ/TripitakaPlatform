@@ -6,7 +6,7 @@ import traceback
 from sutradata.models import *
 from tasks.models import *
 
-SEPARATORS_PATTERN = re.compile('[p\n]')
+SEPARATORS_PATTERN = re.compile('[pb\n]')
 CID_FORMAT = '%sv%03dp%04d0%02dn%02d'
 
 def get_accurate_cut(text1, text2, cut_json, pid):
@@ -91,13 +91,13 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                         char_index += 1
                         char_data['line_no'] = line_no
                         char_data['char_no'] = char_no
-                        char_data['char'] = ch
-                        char_data['old_char'] = text2[(i-i1)+j1]
+                        char_data['ch'] = ch
+                        char_data['old_ch'] = text2[(i-i1)+j1]
                     else:
                         char_data = {
                             'line_no': line_no,
                             'char_no': char_no,
-                            'char': ch,
+                            'ch': ch,
                             'added': 1,
                         }
                     char_lst.append(char_data)
@@ -114,7 +114,7 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                     char_data = {
                         'line_no': line_no,
                         'char_no': char_no,
-                        'char': ch,
+                        'ch': ch,
                         'added': 1,
                     }
                     char_lst.append(char_data)
@@ -247,7 +247,11 @@ def fetch_cut_file(sid, vol_no, page_no, vol_prefix='v'):
 def compute_accurate_cut(reel):
     sid = reel.sutra.sid
     pagetexts = reel.text[2:].split('\np\n')
-    correct_pagetexts = reel.correct_text[2:].split('\np\n')
+    reel_correct_texts = list(ReelCorrectText.objects.filter(reel=reel).order_by('-id')[0:1])
+    if not reel_correct_texts:
+        return None
+    reel_correct_text = reel_correct_texts[0]
+    correct_pagetexts = reel_correct_text.text[2:].split('\np\n')
     print('page_count: ', len(pagetexts), len(correct_pagetexts))
     page_count = len(pagetexts)
     correct_page_count = len(correct_pagetexts)
@@ -349,7 +353,6 @@ def extract_page_line_separators(text):
 
 class ReelText(object):
     def __init__(self, text, tripitaka_id, sid, vol_no, start_vol_page, separators_json=None):
-        #text = text.replace(' ', '') # TODO: delete
         self.text = SEPARATORS_PATTERN.sub('', text)
         self.tripitaka_id = tripitaka_id
         self.tripitaka = Tripitaka.objects.get(id=tripitaka_id)
@@ -359,7 +362,6 @@ class ReelText(object):
         self.page_no = 1
         self.line_no = 1
         self.char_no = 1
-        self.position = 0
         if separators_json:
             self.separators = json.loads(separators_json)
         else:
@@ -430,7 +432,7 @@ def get_reel_text(sid, reel_no, vol_no, start_vol_page, end_vol_page, vol_prefix
             if char_no != last_char_no + 1:
                 print('%s char_no error: ' % sid, vol_no, vol_page_no, line_no, char_no)
                 return ''
-            chars.append(char_data['char'])
+            chars.append(char_data['ch'])
             last_line_no = line_no
             last_char_no = char_no
         pages.append( ''.join(chars) )

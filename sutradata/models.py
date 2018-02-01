@@ -27,14 +27,9 @@ class TripiMixin(object):
         return self.name
 
 class Tripitaka(models.Model, TripiMixin):
-    MARK_CHOICES=(
-        ('v', 'v: 表示册'),
-        ('r', 'r: 表示卷')
-    )
     code = models.CharField(verbose_name='实体藏经版本编码', max_length=2, blank=False)
     name = models.CharField(verbose_name='实体藏经名称', max_length=32, blank=False)
     shortname = models.CharField(verbose_name='简称（用于校勘记）', max_length=32, blank=False)
-    vol_reel_mark = models.CharField('册/卷标记符号', max_length=1, default='v', choices=MARK_CHOICES)
 
     class Meta:
         verbose_name = '实体藏经'
@@ -77,6 +72,7 @@ class Sutra(models.Model, TripiMixin):
     blank=True, on_delete=models.SET_NULL) #（为"LQ"+ 经序号 + 别本号）
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
     comment = models.CharField(verbose_name='备注', max_length=1024, default='')
+    author = models.CharField('作译者', max_length=32, default='')
 
     class Meta:
         verbose_name = '实体经目'

@@ -168,7 +168,7 @@
       },
       finishJudgeTask: function() {
         var vm = this;
-        axios.post('/api/judge/' + this.sharedata.task_id + '/finish/s')
+        axios.post('/api/judge/' + this.sharedata.task_id + '/finish/')
         .then(function(response) {
           alert('提交成功！');
         })

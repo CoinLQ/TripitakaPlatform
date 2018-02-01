@@ -154,3 +154,5 @@ STATICFILES_DIRS = [
 ]
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
+IMAGE_URL_PREFIX = 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image'

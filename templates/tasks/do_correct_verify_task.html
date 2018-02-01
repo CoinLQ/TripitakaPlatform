@@ -237,14 +237,15 @@
 
     var load_page_image = function(index) {
       var vol_page_no = {{ start_vol_page }} + segs[index].page_no - 1;
-      var page_code = pad(vol_page_no, 4) + '0';
-      var url = 'https://s3.cn-north-1.amazonaws.com.cn/lqcharacters-images/{{ sid[0:2] }}/{{ sid[2:] }}/v{{ start_vol }}/{{ sid }}v{{ start_vol }}p' + page_code + '.jpg';
-      var cutline_url = 'https://s3.cn-north-1.amazonaws.com.cn/lqcharacters-images/{{ sid[0:2] }}/{{ sid[2:] }}/v{{ start_vol }}/{{ sid }}v{{ start_vol }}p' + page_code + '.cut';
-      var cid = '{{ sid }}v{{ start_vol }}p' + page_code + pad(segs[index].line_no, 2) + 'n' + pad(segs[index].char_no, 2);
-      console.log(url);
+      var page_code = vol_page_no.toString();
+      var url_prefix = '{{ task.reel.url_prefix() }}';
+      var url = url_prefix + page_code + '.jpg';
+      var cutline_url = url_prefix + page_code + '.cut';
       $.getJSON(cutline_url, function(data) {
         $.each(data['char_data'], function(k, v){
-          if (v['char_id'] == cid) {
+          var line_no = parseInt(v['line_no']);
+          var char_no = parseInt(v['char_no']);
+          if (line_no == segs[index].line_no && char_no == segs[index].char_no) {
             setImg(url, v['x'], v['y'], v['w'], v['h']);
           }
         });

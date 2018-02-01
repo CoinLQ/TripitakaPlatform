@@ -14,6 +14,7 @@ class TripiMixin(object):
 class CompareReel(models.Model):
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE, related_name='compare_set')
     base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本')
+    base_text = models.TextField('基础本文本', default='') # 可能会截断最后的一部分
 
     class Meta:
         verbose_name = '卷文字比对'
@@ -28,11 +29,18 @@ class CompareReel(models.Model):
         SEPARATORS_PATTERN = re.compile('[p\n]')
         text1 = SEPARATORS_PATTERN.sub('', text1)
         text2 = SEPARATORS_PATTERN.sub('', text2)
+        base_text_lst = []
         diff_lst = []
         base_pos = 0
         pos = 0
         opcodes = SequenceMatcher(None, text1, text2, False).get_opcodes()
+        opcode_count = len(opcodes)
         for tag, i1, i2, j1, j2 in opcodes:
+            if ((i2-i1) - (j2-j1) > 30):
+                base_text = ''
+            else:
+                base_text = text1[i1:i2]
+                base_text_lst.append(text1[i1:i2])
             if tag == 'equal':
                 base_pos += (i2 - i1)
                 pos += (i2 - i1)
@@ -41,16 +49,16 @@ class CompareReel(models.Model):
                 diff_lst.append( (2, base_pos, pos, base_text, text2[j1:j2]) )
                 pos += (j2 - j1)
             elif tag == 'replace':
-                diff_lst.append( (3, base_pos, pos, text1[i1:i2], text2[j1:j2]) )
+                diff_lst.append( (3, base_pos, pos, base_text, text2[j1:j2]) )
                 base_pos += (i2 - i1)
                 pos += (j2 - j1)
             elif tag == 'delete':
                 if base_pos > 0 and i1 > 0:
-                    diff_lst.append( (1, base_pos-1, pos-1, text1[i1-1:i2], text2[j1-1:j1]) )
+                    diff_lst.append( (1, base_pos-1, pos-1, text1[i1-1:i1] + base_text, text2[j1-1:j1]) )
                 else:
-                    diff_lst.append( (1, base_pos, pos, text1[i1:i2], '') )
+                    diff_lst.append( (1, base_pos, pos, base_text, '') )
                 base_pos += (i2 - i1)
-        return diff_lst
+        return diff_lst, ''.join(base_text_lst)
 
 class CompareSeg(models.Model):
     compare_reel = models.ForeignKey(CompareReel, on_delete=models.CASCADE)
@@ -246,8 +254,8 @@ class DiffSegText(models.Model):
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE)
     text = models.TextField('文本', default='', blank=True)
     position = models.IntegerField('在卷文本中的位置（前有几个字）', default=0)
-    start_cid = models.CharField('起始经字号', max_length=32, default='') # cid长度为23
-    end_cid = models.CharField('结束经字号', max_length=32, default='')
+    start_char_pos = models.CharField('起始经字位置', max_length=32, default='')
+    end_char_pos = models.CharField('结束经字位置', max_length=32, default='')
 
 class DiffSegResult(models.Model):
     '''
@@ -300,7 +308,7 @@ class Punct(models.Model):
     created_at = models.DateTimeField('创建时间', blank=True, null=True)
 
 class LQPunct(models.Model):
-    lqreel = models.ForeignKey(LQReel,　verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
+    lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
     reeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
     punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始标点结果，不为null表示标点任务和标点审定任务的结果
@@ -328,7 +336,7 @@ class MarkUnit(MarkUnitBase):
     mark = models.ForeignKey(Mark, on_delete=models.CASCADE)
     
 class LQMark(models.Model):
-    lqreel = models.ForeignKey(LQReel,　verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
+    lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
     reeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始格式标注结果，不为null表示格式标注任务和格式标注审定任务的结果
     publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')

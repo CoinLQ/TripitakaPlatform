@@ -42,16 +42,19 @@ class Command(BaseCommand):
             huayan_yb_1 = Reel.objects.get(sutra=huayan_yb, reel_no=1)
         except:
             huayan_yb_1 = Reel(sutra=huayan_yb, reel_no=1, start_vol=27,
-            start_vol_page=1, end_vol=27, end_vol_page=23, edition_type=Reel.EDITION_TYPE_CHECKED)
-            filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_yb.sid)
-            with open(filename, 'r') as f:
-                huayan_yb_1.text = f.read()
+            start_vol_page=1, end_vol=27, end_vol_page=23, edition_type=Reel.EDITION_TYPE_CHECKED,
+            path1='27')
+            text = get_reel_text(huayan_yb_1)
+            #filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_yb.sid)
+            #with open(filename, 'r') as f:
+            #    huayan_yb_1.text = f.read()
+            huayan_yb_1.text = text
             huayan_yb_1.save()
 
-        # filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
-        # with open(filename, 'r') as f:
-        #     text = f.read()
-        #     ReelCorrectText(reel=huayan_yb_1, text=text).save()
+        filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
+        with open(filename, 'r') as f:
+            text = f.read()
+            ReelCorrectText(reel=huayan_yb_1, text=text).save()
 
         # # 得到精确的切分数据
         # try:
@@ -71,11 +74,13 @@ class Command(BaseCommand):
             huayan_gl_1 = Reel.objects.get(sutra=huayan_gl, reel_no=1)
         except:
             huayan_gl_1 = Reel(sutra=huayan_gl, reel_no=1, start_vol=14,
-            start_vol_page=31, end_vol=14, end_vol_page=37, edition_type=Reel.EDITION_TYPE_CHECKED)
+            start_vol_page=31, end_vol=14, end_vol_page=37, edition_type=Reel.EDITION_TYPE_CHECKED,
+            path1='80', path2='1')
             filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_gl.sid)
-            huayan_gl_1.save()
             with open(filename, 'r') as f:
                 text = f.read()
+                huayan_gl_1.text = text
+                huayan_gl_1.save()
                 reelcorrecttext = ReelCorrectText(reel=huayan_gl_1, text=text)
                 reelcorrecttext.save()
 
@@ -95,7 +100,8 @@ class Command(BaseCommand):
         separators_json = json.dumps(separators, separators=(',', ':'))
 
         # 文字校对
-        compare_reel = CompareReel(reel=huayan_yb_1, base_reel=huayan_gl_1)
+        diff_lst, base_text = CompareReel.generate_compare_reel(reelcorrecttext.text, huayan_yb_1.text)
+        compare_reel = CompareReel(reel=huayan_yb_1, base_reel=huayan_gl_1, base_text=base_text)
         compare_reel.save()
 
         task1 = Task(id=1, batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_gl_1, task_no=1, status=Task.STATUS_READY,
@@ -120,22 +126,30 @@ class Command(BaseCommand):
         task3.reel = huayan_yb_1
         task3.save()
         
-        diff_lst = CompareReel.generate_compare_reel(huayan_gl_1.text, huayan_yb_1.text)
-        #compare_segs = []
+        compare_segs = []
+        correct_segs_lst = []
         for tag, base_pos, pos, base_text, ocr_text in diff_lst:
             compare_seg = CompareSeg(compare_reel=compare_reel,
             base_pos=base_pos,
             ocr_text=ocr_text, base_text=base_text)
-            compare_seg.save()
-            correct_seg = CorrectSeg(task=task1, compare_seg=compare_seg)
+            compare_segs.append(compare_seg)
+            correct_segs = []
+            correct_seg = CorrectSeg(task=task1)
             correct_seg.selected_text = compare_seg.ocr_text
             correct_seg.position = pos
-            correct_seg.save()
-            correct_seg = CorrectSeg(task=task2, compare_seg=compare_seg)
+            correct_segs.append(correct_seg)
+            correct_seg = CorrectSeg(task=task2)
             correct_seg.selected_text = compare_seg.ocr_text
             correct_seg.position = pos
-            correct_seg.save()
-            #compare_segs.append(compare_seg)
+            correct_segs.append(correct_seg)
+            correct_segs_lst.append(correct_segs)
+        CompareSeg.objects.bulk_create(compare_segs)
+        correct_seg_lst = []
+        for i in range(len(compare_segs)):
+            for correct_seg in correct_segs_lst[i]:
+                correct_seg.compare_seg = compare_segs[i]
+                correct_seg_lst.append(correct_seg)
+        CorrectSeg.objects.bulk_create(correct_seg_lst)
 
 
 

@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse, JsonResponse
+from django.conf import settings
 from sutradata.models import *
 
 def cutfixed_pages(request):
@@ -12,4 +13,5 @@ def cutfixed_pages(request):
 
 def cutfixed_page_detail(request, pid):
     page = get_object_or_404(Page, pid=pid)
-    return render(request, 'tools/cutfixed_page_detail.html', {'page': page})
+    image_url = '%s%s%s.jpg' % (settings.IMAGE_URL_PREFIX, page.reel.url_prefix(), page.page_no)
+    return render(request, 'tools/cutfixed_page_detail.html', {'page': page, 'image_url': image_url})

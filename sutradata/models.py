@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -114,6 +115,9 @@ class Reel(models.Model):
     start_vol_page = models.SmallIntegerField('起始册的页序号')
     end_vol = models.SmallIntegerField('终止册')
     end_vol_page = models.SmallIntegerField('终止册的页序号')
+    path1 = models.CharField('存储层次1', max_length=16, default='')
+    path2 = models.CharField('存储层次2', max_length=16, default='')
+    path3 = models.CharField('存储层次3', max_length=16, default='')
     text = SutraTextField('经文', default='') #按实际行加了换行符，换页标记为p\n
     fixed = models.BooleanField('是否有调整', default=False)
     f_start_page = models.CharField('起始页ID', max_length=18, default='', blank=True, null=True)
@@ -135,8 +139,35 @@ class Reel(models.Model):
     def __str__(self):
         return '%s (第%s卷)' % (self.sutra, self.reel_no)
 
+    def url_prefix(self):
+        tcode = self.sutra.sid[0:2]
+        path_lst = []
+        if self.path1:
+            path_lst.append(self.path1)
+            if self.path2:
+                path_lst.append(self.path2)
+                if self.path3:
+                    path_lst.append(self.path3)
+        path_str = '/'.join(path_lst)
+        filename_str = '_'.join(path_lst)
+        s = '/%s/%s/%s_%s_' % (tcode, path_str, tcode, filename_str)
+        return s
+
+    def image_prefix(self):
+        tcode = self.sutra.sid[0:2]
+        path_lst = []
+        if self.path1:
+            path_lst.append(self.path1)
+            if self.path2:
+                path_lst.append(self.path2)
+                if self.path3:
+                    path_lst.append(self.path3)
+        filename_str = '_'.join(path_lst)
+        s = '%s_%s_' % (tcode, filename_str)
+        return s
+
 class Page(models.Model):
-    pid = models.CharField('页ID', editable=True, max_length=18, primary_key=True) #YB000011v001p00010
+    pid = models.CharField('页ID', editable=True, max_length=13, primary_key=True) #sid + 3位卷号 + 2位页序号，页序号从1计数。如：YB00086000101
     reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)
     reel_page_no = models.SmallIntegerField('卷中页序号')
     vol_no = models.SmallIntegerField('册序号')

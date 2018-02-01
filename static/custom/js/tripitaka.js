@@ -353,11 +353,11 @@ Vue.component('diffseg-box', {
             var lst = [];
             while (i < diffsegtexts.length) {
                 var s = '';
-                var cid = diffsegtexts[i].start_cid;
-                if (cid != null && cid != '') {
-                    var pid = cid.substr(0, 18);
-                    s = '<a href="/sutra_pages/' + pid + '/view?cid='
-                    + cid + '" target="_blank">'
+                var start_char_pos = diffsegtexts[i].start_char_pos;
+                if (start_char_pos != null && start_char_pos != '') {
+                    var page_id = start_char_pos.substr(0, 13);
+                    s = '<a href="/sutra_pages/' + page_id + '/view?char_pos='
+                    + start_char_pos + '" target="_blank">'
                     + diffsegtexts[i].tripitaka.shortname + '</a>';
                 } else {
                     s = diffsegtexts[i].tripitaka.shortname;

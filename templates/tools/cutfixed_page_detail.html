@@ -86,7 +86,7 @@ $(function(){
       image.src = img_url;
     };
 
-    var img_url = 'https://s3.cn-north-1.amazonaws.com.cn/lqcharacters-images/{{ page.pid[0:2] }}/{{ page.pid[2:8] }}/v{{ '%03d' % page.vol_no }}/{{ page.pid }}.jpg';
+    var img_url = '{{ image_url|safe }}';
     var cutline_url = '/pages/{{ page.pid }}/cut';
     load_page_image('page-canvas', img_url, cutline_url, true);
     cutline_url = img_url.replace('.jpg', '.cut')

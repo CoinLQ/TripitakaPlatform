@@ -151,7 +151,7 @@ class Task(models.Model, TripiMixin):
     blank=True, null=True)
     lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE, blank=True, null=True)
     typ = models.SmallIntegerField('任务类型', choices=TYPE_CHOICES)
-    base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本') # TODO: 是否需要？
+    base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本', blank=True, null=True)
     task_no = models.SmallIntegerField('组合任务序号', choices=TASK_NO_CHOICES)
     status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1)
 
@@ -160,6 +160,8 @@ class Task(models.Model, TripiMixin):
     separators = models.TextField('页行分隔符')
     # 校勘判取相关
     reeldiff = models.ForeignKey('ReelDiff', on_delete=models.SET_NULL, null=True)
+    # 标点相关
+    reeltext = models.ForeignKey('ReelCorrectText', related_name='punct_tasks', on_delete=models.SET_NULL, blank=True, null=True)
    
     result = SutraTextField('结果')
     started_at = models.DateTimeField('开始时间', blank=True, null=True)
@@ -189,12 +191,24 @@ class CorrectSeg(models.Model):
 class ReelCorrectText(models.Model):
     reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)
     text = SutraTextField('经文') # 文字校对或文字校对审定后得到的经文
-    task = models.ForeignKey(Task, on_delete=models.SET_NULL, blank=True, null=True, default=None)
+    task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True, default=None)
+    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', default=timezone.now)
 
     class Meta:
         verbose_name = '文字校对得到的卷经文'
         verbose_name_plural = '文字校对得到的卷经文'
+
+class LQReelText(models.Model):
+    lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
+    text = SutraTextField('经文') # 校勘判取审定后得到的经文
+    task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True, default=None)
+    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
+    created_at = models.DateTimeField('创建时间', default=timezone.now)
+
+    class Meta:
+        verbose_name = '校勘判取审定得到的卷经文'
+        verbose_name_plural = '校勘判取审定得到的卷经文'
 
 # 校勘判取相关
 class ReelDiff(models.Model):
@@ -263,65 +277,41 @@ class DiffSegResult(models.Model):
         unique_together = (('task', 'diffseg'),)
 
     def is_equal(self, obj):
-        print('doubt: ', self.doubt, obj.doubt)
         if self.doubt or obj.doubt:
             return False
-        print('diffseg_id: ', self.diffseg_id, obj.diffseg_id)
         if self.diffseg_id != obj.diffseg_id:
             return False
-        print('typ: ', self.typ, obj.typ)
         if self.typ != obj.typ:
             return False
-        print('selected_text: ', self.selected_text, obj.selected_text)
         if self.selected_text != obj.selected_text:
             return False
         if len(list(self.merged_diffsegresults.all())) or len(list(obj.merged_diffsegresults.all())):
             return False
-        print('split_info: ', self.split_info, obj.split_info)
         if self.split_info != obj.split_info:
             return False
         return True
 
-# 标点相关
-class PunctResultBase(object):
-    POSITION_CHOICES = (
-        (1, '在后'),
-        (2, '在前'),
-    )
-    class Meta:
-        abstract = True
-
 class Punct(models.Model):
-    reel = models.ForeignKey(Reel, on_delete=models.CASCADE)
-    task = models.OneToOneField(Task, on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始标点结果，不为null表示标点任务和标点审定任务的结果
-    published_at = models.DateTimeField('发布时间', blank=True, null=True)
-    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
-    verbose_name='发布用户')
-
-class PunctResult(models.Model):
-    punct = models.ForeignKey(Punct, on_delete=models.CASCADE)
-    cid = models.CharField('经字号', max_length=23)
-    punct_ch = models.CharField('标点字符', max_length=2)
-    position = models.SmallIntegerField('位置', choices=PunctResultBase.POSITION_CHOICES, default=1)
+    reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)
+    reeltext = models.ForeignKey(ReelCorrectText, verbose_name='实体藏经卷经文', on_delete=models.CASCADE)
+    punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
+    task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始标点结果，不为null表示标点任务和标点审定任务的结果
+    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
+    created_at = models.DateTimeField('创建时间', blank=True, null=True)
 
 class LQPunct(models.Model):
-    lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE)
-    task = models.OneToOneField(Task, on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始标点结果，不为null表示标点任务和标点审定任务的结果
-    published_at = models.DateTimeField('发布时间', blank=True, null=True)
-    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
-    verbose_name='发布用户')
-
-class LQPunctResult(models.Model):
-    lqpunct = models.ForeignKey(LQPunct, on_delete=models.CASCADE)
-    cid = models.CharField('经字号', max_length=23)
-    punct_ch = models.CharField('标点字符', max_length=2)
-    position = models.SmallIntegerField('位置', choices=PunctResultBase.POSITION_CHOICES, default=1)
+    lqreel = models.ForeignKey(LQReel,　verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
+    reeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
+    punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
+    task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始标点结果，不为null表示标点任务和标点审定任务的结果
+    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
+    created_at = models.DateTimeField('创建时间', blank=True, null=True)
 
 # 格式标注相关
 class MarkUnitBase(models.Model):
     typ = models.SmallIntegerField('类型', default=0)
-    start_cid = models.CharField('起始经字号', max_length=23)
-    end_cid = models.CharField('结束经字号', max_length=23)
+    start = models.IntegerField('起始字index', default=0)
+    end = models.IntegerField('结束字下一个index', default=0)
     text = models.TextField('文本', default='')
     
     class Meta:
@@ -329,24 +319,25 @@ class MarkUnitBase(models.Model):
 
 class Mark(models.Model):
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE)
-    task = models.OneToOneField(Task, on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始格式标注结果，不为null表示格式标注任务和格式标注审定任务的结果
-    published_at = models.DateTimeField('发布时间', blank=True, null=True)
-    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
-    verbose_name='发布用户')
+    reeltext = models.ForeignKey(ReelCorrectText, verbose_name='实体藏经卷经文', on_delete=models.CASCADE)
+    task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始格式标注结果，不为null表示格式标注任务和格式标注审定任务的结果
+    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
+    created_at = models.DateTimeField('创建时间', blank=True, null=True)
 
 class MarkUnit(MarkUnitBase):
     mark = models.ForeignKey(Mark, on_delete=models.CASCADE)
     
 class LQMark(models.Model):
-    lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE)
-    task = models.OneToOneField(Task, on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始格式标注结果，不为null表示格式标注任务和格式标注审定任务的结果
-    published_at = models.DateTimeField('发布时间', blank=True, null=True)
-    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
-    verbose_name='发布用户')
+    lqreel = models.ForeignKey(LQReel,　verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
+    reeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
+    task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始格式标注结果，不为null表示格式标注任务和格式标注审定任务的结果
+    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
+    created_at = models.DateTimeField('创建时间', blank=True, null=True)
 
 class LQMarkUnit(MarkUnitBase):
     lqmark = models.ForeignKey(LQMark, on_delete=models.CASCADE)
 
+####
 class DoubtBase(models.Model):
     STATUS_UNPROCESSED = 1
     STATUS_APPROVED = 2

@@ -124,7 +124,6 @@ class Reel(models.Model):
     f_end_char_no = models.IntegerField('终止页的行中字序号', default=-1)
     f_text = SutraTextField('调整经文', default='', blank=True, null=True)
     correct_text = SutraTextField('文字校对后的经文', default='') #按实际行加了换行符，换页标记为p\n
-    punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
     edition_type = models.SmallIntegerField('版本类型', choices=EDITION_TYPE_CHOICES, default=0)
     comment = models.CharField(verbose_name='备注', max_length=1024, default='')
 

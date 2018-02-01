@@ -76,7 +76,8 @@ class Command(BaseCommand):
             huayan_gl_1.save()
             with open(filename, 'r') as f:
                 text = f.read()
-                ReelCorrectText(reel=huayan_gl_1, text=text).save()
+                reelcorrecttext = ReelCorrectText(reel=huayan_gl_1, text=text)
+                reelcorrecttext.save()
 
         # create BatchTask
         BatchTask.objects.all().delete()
@@ -135,6 +136,6 @@ class Command(BaseCommand):
             correct_seg.position = pos
             correct_seg.save()
             #compare_segs.append(compare_seg)
-            
+
 
 

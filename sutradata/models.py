@@ -52,6 +52,8 @@ class Volume(models.Model):
 
 class LQSutra(models.Model, TripiMixin):
     sid = models.CharField(verbose_name='龙泉经目经号编码', max_length=8) #（为"LQ"+ 经序号 + 别本号）
+    code = models.CharField(verbose_name='龙泉经目编码', max_length=5, blank=False)
+    variant_code = models.CharField(verbose_name='龙泉经目别本编码', max_length=1, default='0')
     name = models.CharField(verbose_name='龙泉经目名称', max_length=64, blank=False)
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
 

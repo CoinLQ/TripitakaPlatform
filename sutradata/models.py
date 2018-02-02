@@ -30,7 +30,7 @@ class Tripitaka(models.Model, TripiMixin):
     code = models.CharField(verbose_name='实体藏经版本编码', max_length=2, blank=False)
     name = models.CharField(verbose_name='实体藏经名称', max_length=32, blank=False)
     shortname = models.CharField(verbose_name='简称（用于校勘记）', max_length=32, blank=False)
-    remark = models.TextField('备注', default='')
+    remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
         verbose_name = '实体藏经'
@@ -58,7 +58,7 @@ class LQSutra(models.Model, TripiMixin):
     variant_code = models.CharField(verbose_name='龙泉经目别本编码', max_length=1, default='0')
     name = models.CharField(verbose_name='龙泉经目名称', max_length=64, blank=False)
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
-    remark = models.TextField('备注', default='')
+    remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
         verbose_name = u"龙泉经目"
@@ -76,8 +76,8 @@ class Sutra(models.Model, TripiMixin):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', null=True, 
     blank=True, on_delete=models.SET_NULL) #（为"LQ"+ 经序号 + 别本号）
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
-    remark = models.TextField('备注', default='')
-    author = models.CharField('作译者', max_length=32, default='')
+    remark = models.TextField('备注', blank=True, default='')
+    author = models.CharField('作译者', max_length=32, blank=True, default='')
 
     class Meta:
         verbose_name = '实体经目'
@@ -90,7 +90,7 @@ class LQReel(models.Model):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', on_delete=models.CASCADE)
     reel_no = models.SmallIntegerField('卷序号')
     text = SutraTextField('经文', default='')
-    remark = models.TextField('备注', default='')
+    remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
         verbose_name = '龙泉藏经卷'
@@ -131,7 +131,7 @@ class Reel(models.Model):
     f_text = SutraTextField('调整经文', default='', blank=True, null=True)
     correct_text = SutraTextField('文字校对后的经文', default='') #按实际行加了换行符，换页标记为p\n
     edition_type = models.SmallIntegerField('版本类型', choices=EDITION_TYPE_CHOICES, default=0)
-    remark = models.TextField('备注', default='')
+    remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
         verbose_name = '实体藏经卷'

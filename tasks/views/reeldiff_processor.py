@@ -9,13 +9,18 @@ import traceback
 from difflib import SequenceMatcher
 import re, json
 
-def generate_cid(diffsegtext, tid_to_reeltext):
+def set_char_position(diffsegtext, tid_to_reeltext):
     tid = diffsegtext.tripitaka_id
-    start_cid, end_cid = tid_to_reeltext[tid].get_cid_range(
+    start_page_no, start_line_no, start_char_no, end_page_no, end_line_no, end_char_no = \
+    tid_to_reeltext[tid].get_char_position(
         diffsegtext.position,
         diffsegtext.position + len(diffsegtext.text))
-    diffsegtext.start_cid = start_cid
-    diffsegtext.end_cid = end_cid
+    reel = tid_to_reeltext[tid].reel
+    vol_page_no = reel.start_vol_page + start_page_no - 1
+    diffsegtext.start_char_pos = '%s%03d%02d%02d%02d' % (\
+        reel.sutra.sid, reel.reel_no, start_page_no, start_line_no, start_char_no)
+    diffsegtext.end_char_pos = '%s%03d%02d%02d%02d' % (\
+        reel.sutra.sid, reel.reel_no, end_page_no, end_line_no, end_char_no)
 
 def generate_text_diff(reeltext_lst, reeldiff):
     n = len(reeltext_lst)
@@ -229,7 +234,7 @@ def generate_text_diff(reeltext_lst, reeldiff):
         diffsegtexts = diffsegtexts_lst[i]
         for diffsegtext in diffsegtexts:
             diffsegtext.diffseg = diffseg
-            generate_cid(diffsegtext, tid_to_reeltext)
+            set_char_position(diffsegtext, tid_to_reeltext)
             diffsegtext_lst.append(diffsegtext)
     DiffSegText.objects.bulk_create(diffsegtext_lst)
 
@@ -243,7 +248,9 @@ def generate_reeldiff(reeldiff, sutra_lst, reel_lst, correct_text_lst):
     sutra_count = len(sutra_lst)
     i = 0
     while i < sutra_count:
+        reel = Reel.objects.get(sutra_id=sutra_lst[i].id, reel_no=reel_no)
         reeltext = ReelText(
+            reel,
             correct_text_lst[i],
             sutra_lst[i].tripitaka_id,
             sutra_lst[i].sid,

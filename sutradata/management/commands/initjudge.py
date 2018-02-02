@@ -35,7 +35,8 @@ class Command(BaseCommand):
             huayan_ql_1 = Reel.objects.get(sutra=huayan_ql, reel_no=1)
         except:
             huayan_ql_1 = Reel(sutra=huayan_ql, reel_no=1, start_vol=24,
-            start_vol_page=2, end_vol=24, end_vol_page=17, edition_type=Reel.EDITION_TYPE_CHECKED)
+            start_vol_page=2, end_vol=24, end_vol_page=17, edition_type=Reel.EDITION_TYPE_CHECKED,
+            path1='24')
             filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_ql.sid)
             with open(filename, 'r') as f:
                 huayan_ql_1.text = f.read()
@@ -62,9 +63,11 @@ class Command(BaseCommand):
             with open(filename, 'r') as f:
                 text = f.read()
             punctuation, huayan_cb_1.text = extract_punct(text)
-            huayan_cb_1.punctuation = json.dumps(punctuation)
             huayan_cb_1.save()
-            ReelCorrectText(reel=huayan_cb_1, text=huayan_cb_1.text).save()
+            reelcorrecttext = ReelCorrectText(reel=huayan_cb_1, text=huayan_cb_1.text)
+            reelcorrecttext.save()
+            punct = Punct(reel=huayan_cb_1, reeltext=reelcorrecttext, punctuation=json.dumps(punctuation))
+            punct.save()
 
         # get LQReel
         try:

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
@@ -35,15 +36,13 @@ def do_correct_task(request, task_id):
                 'pos': correctsegs[0].position,
                 }
             segs.append(seg)
-        base_text = SEPARATORS_PATTERN.sub('', compare_reel.base_reel.text)
         context = {
             'task': task,
-            'base_text': base_text,
+            'base_text': compare_reel.base_text,
             'segs': segs,
             'segs_json': json.dumps(segs),
-            'sid': task.reel.sutra.sid,
-            'start_vol': '%03d' % task.reel.start_vol,
             'start_vol_page': task.reel.start_vol_page,
+            'image_url_prefix': settings.IMAGE_URL_PREFIX,
             }
         sort_index_lst = []
         if request.GET.get('order_by', '') == 'char':
@@ -191,9 +190,8 @@ def do_correct_verify_task(request, task_id):
     'base_text': base_text,
     'segs': segs,
     'segs_json': json.dumps(segs),
-    'sid': task.reel.sutra.sid,
-    'start_vol': '%03d' % task.reel.start_vol,
     'start_vol_page': task.reel.start_vol_page,
+    'image_url_prefix': settings.IMAGE_URL_PREFIX,
     })
 
 def do_correct_verify_task_post(request, task_id):

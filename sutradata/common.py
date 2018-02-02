@@ -219,28 +219,11 @@ def get_accurate_cut(text1, text2, cut_json, pid):
             if (y + h) > max_y:
                 max_y = y + h
     return char_lst, add_count, wrong_count, confirm_count, min_x, min_y, max_x, max_y
-
-def fetch_cut_file_old(pid):
-    t_code = pid[:2]
-    s_code = pid[2:8]
-    volstr = pid[8:12]
-    url = 'https://s3.cn-north-1.amazonaws.com.cn/lqcharacters-images/%s/%s/%s/%s.cut' % (t_code, s_code, volstr, pid)
-    with urllib.request.urlopen(url) as f:
-        data = f.read()
-        return data
     
-def fetch_cut_file(sid, vol_no, page_no, vol_prefix='v'):
-    cut_url = 'https://s3.cn-north-1.amazonaws.com.cn/lqcharacters-images/%s/%03d/%s%s%03dp%04d0.cut' %\
-    (
-        sid[:2],
-        vol_no,
-        sid[:2],
-        vol_prefix,
-        vol_no,
-        page_no
-    )
+def fetch_cut_file(reel, vol_page):
+    cut_url = '%s%s%s.cut' % (settings.IMAGE_URL_PREFIX, reel.url_prefix(), vol_page)
     with urllib.request.urlopen(cut_url) as f:
-        print('fetch done: %s, vol: %s, page: %s' % (sid, vol_no, page_no))
+        print('fetch done: %s, page: %s' % (reel, vol_page))
         data = f.read()
         return data
 
@@ -256,9 +239,10 @@ def compute_accurate_cut(reel):
     page_count = len(pagetexts)
     correct_page_count = len(correct_pagetexts)
     for i in range(page_count):
-        page_no = reel.start_vol_page + i
-        pid = '%sv%03dp%04d0' % (sid, reel.start_vol, page_no)
-        cut_file = fetch_cut_file(sid, reel.start_vol, page_no)
+        page_no = i + 1
+        vol_page = reel.start_vol_page + i
+        pid = '%s%03d%02d' % (sid, reel.reel_no, page_no)
+        cut_file = fetch_cut_file(reel, vol_page)
         if i < correct_page_count:
             char_lst, cut_add_count, cut_wrong_count, cut_confirm_count, min_x, min_y, max_x, max_y = get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
             cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
@@ -352,22 +336,20 @@ def extract_page_line_separators(text):
     return separators
 
 class ReelText(object):
-    def __init__(self, text, tripitaka_id, sid, vol_no, start_vol_page, separators_json=None):
+    def __init__(self, reel, text, tripitaka_id, sid, vol_no, start_vol_page, separators_json=None):
+        self.reel = reel
         self.text = SEPARATORS_PATTERN.sub('', text)
         self.tripitaka_id = tripitaka_id
         self.tripitaka = Tripitaka.objects.get(id=tripitaka_id)
         self.sid = sid
         self.vol_no = vol_no
         self.start_vol_page = start_vol_page
-        self.page_no = 1
-        self.line_no = 1
-        self.char_no = 1
         if separators_json:
             self.separators = json.loads(separators_json)
         else:
             self.separators = extract_page_line_separators(text)
 
-    def get_cid_range(self, start_index, end_index):
+    def get_cid_range(self, start_index, end_index): # del
         if self.tripitaka.code == 'CB':
             return ('', '')
         count_p = 0
@@ -403,7 +385,7 @@ class ReelText(object):
             if separator == 'p':
                 count_p += 1
                 count_n = 0
-            else:
+            elif separator == '\n':
                 count_n += 1            
             last_pos = pos
             i += 1
@@ -413,10 +395,49 @@ class ReelText(object):
         end_cid = CID_FORMAT % (self.sid, self.vol_no, end_page, end_line_no, end_char_no)
         return (start_cid, end_cid)
 
-def get_reel_text(sid, reel_no, vol_no, start_vol_page, end_vol_page, vol_prefix='v'):
+    def get_char_position(self, start_index, end_index):
+        count_p = 0
+        count_n = 0
+        start_page_no = -1
+        start_line_no = -1
+        start_char_no = -1
+        end_page_no = -1
+        end_line_no = -1
+        end_char_no = -1
+        last_pos = 0
+        separator_count = len(self.separators)
+        i = 0
+        while i <= separator_count:
+            if i < separator_count:
+                pos, separator = self.separators[i]
+            else:
+                pos = len(self.text)
+            if pos > start_index and start_char_no == -1:
+                # 第一次pos > start_index时
+                start_page_no = count_p + 1
+                start_line_no = count_n + 1
+                start_char_no = start_index - last_pos + 1
+            if pos > end_index and end_char_no == -1:
+                # 第一次pos > end_index时
+                end_page_no = count_p + 1
+                end_line_no = count_n + 1
+                end_char_no = end_index - last_pos + 1
+
+            if i == separator_count:
+                break
+            if separator == 'p':
+                count_p += 1
+                count_n = 0
+            elif separator == '\n':
+                count_n += 1            
+            last_pos = pos
+            i += 1
+        return (start_page_no, start_line_no, start_char_no, end_page_no, end_line_no, end_char_no)
+
+def get_reel_text(reel):
     pages = []
-    for vol_page_no in range(start_vol_page, end_vol_page+1):
-        data = fetch_cut_file(sid, vol_no, vol_page_no)
+    for vol_page in range(reel.start_vol_page, reel.end_vol_page+1):
+        data = fetch_cut_file(reel, vol_page)
         if not data:
             return ''
         json_data = json.loads(data)
@@ -430,7 +451,7 @@ def get_reel_text(sid, reel_no, vol_no, start_vol_page, end_vol_page, vol_prefix
                 chars.append('\n')
                 last_char_no = 0
             if char_no != last_char_no + 1:
-                print('%s char_no error: ' % sid, vol_no, vol_page_no, line_no, char_no)
+                print('%s char_no error: ' % reel, reel.reel_no, vol_page, line_no, char_no)
                 return ''
             chars.append(char_data['ch'])
             last_line_no = line_no

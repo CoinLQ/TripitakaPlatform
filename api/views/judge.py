@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.db import transaction
 from django.db.models import Q
+from django.conf import settings
 
 from rest_framework import mixins, viewsets, generics
 from rest_framework.pagination import PageNumberPagination
@@ -30,12 +31,14 @@ class DiffSegResultList(generics.ListAPIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
 
     def get_queryset(self):
+        queryset = DiffSegResult.objects.filter(task_id=self.task.id)
         if 'all_equal' in self.request.GET:
             all_equal = self.request.GET.get('all_equal')
-            return DiffSegResult.objects.filter(task_id=self.task.id, all_equal=all_equal).order_by('id')
+            return queryset.filter(all_equal=all_equal).order_by('id')
         if 'diffseg_id' in self.request.GET:
             diffseg_id_lst = self.request.GET.get('diffseg_id').split(',')
-        return DiffSegResult.objects.filter(task_id=self.task.id, diffseg_id__in=diffseg_id_lst).order_by('id')
+            return queryset.filter(diffseg_id__in=diffseg_id_lst).order_by('id')
+        return queryset.order_by('id')
 
 class DiffSegResultUpdate(generics.UpdateAPIView):
     serializer_class = DiffSegResultSimpleSerializer
@@ -51,13 +54,14 @@ class JudgeTaskDetail(APIView):
         base_text = self.task.reeldiff.base_text
         diffseg_pos_lst = self.task.reeldiff.diffseg_pos_lst
         base_reel = Reel.objects.get(sutra=self.task.reeldiff.base_sutra, reel_no=self.task.reeldiff.reel_no)
-        punct_lst = base_reel.punctuation
+        puncts = base_reel.punct_set.all()[0:1]
+        punct = puncts[0]
         response = {
             'task_id': task_id,
             'status': self.task.status,
             'base_text': base_text,
             'diffseg_pos_lst': json.loads(diffseg_pos_lst),
-            'punct_lst': json.loads(punct_lst),
+            'punct_lst': json.loads(punct.punctuation),
             'base_tripitaka_id': base_reel.sutra.tripitaka_id,
             }
         return Response(response)

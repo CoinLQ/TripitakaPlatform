@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -26,14 +27,10 @@ class TripiMixin(object):
         return self.name
 
 class Tripitaka(models.Model, TripiMixin):
-    MARK_CHOICES=(
-        ('v', 'v: 表示册'),
-        ('r', 'r: 表示卷')
-    )
     code = models.CharField(verbose_name='实体藏经版本编码', max_length=2, blank=False)
     name = models.CharField(verbose_name='实体藏经名称', max_length=32, blank=False)
     shortname = models.CharField(verbose_name='简称（用于校勘记）', max_length=32, blank=False)
-    vol_reel_mark = models.CharField('册/卷标记符号', max_length=1, default='v', choices=MARK_CHOICES)
+    remark = models.TextField('备注', default='')
 
     class Meta:
         verbose_name = '实体藏经'
@@ -46,6 +43,7 @@ class Volume(models.Model):
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE)
     vol_no = models.SmallIntegerField(verbose_name='册序号')
     page_count = models.IntegerField(verbose_name='册页数')
+    remark = models.TextField('备注', default='')
 
     class Meta:
         verbose_name = u"实体册"
@@ -56,8 +54,11 @@ class Volume(models.Model):
 
 class LQSutra(models.Model, TripiMixin):
     sid = models.CharField(verbose_name='龙泉经目经号编码', max_length=8) #（为"LQ"+ 经序号 + 别本号）
+    code = models.CharField(verbose_name='龙泉经目编码', max_length=5, blank=False)
+    variant_code = models.CharField(verbose_name='龙泉经目别本编码', max_length=1, default='0')
     name = models.CharField(verbose_name='龙泉经目名称', max_length=64, blank=False)
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
+    remark = models.TextField('备注', default='')
 
     class Meta:
         verbose_name = u"龙泉经目"
@@ -75,7 +76,8 @@ class Sutra(models.Model, TripiMixin):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', null=True, 
     blank=True, on_delete=models.SET_NULL) #（为"LQ"+ 经序号 + 别本号）
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
-    comment = models.CharField(verbose_name='备注', max_length=1024, default='')
+    remark = models.TextField('备注', default='')
+    author = models.CharField('作译者', max_length=32, default='')
 
     class Meta:
         verbose_name = '实体经目'
@@ -88,6 +90,7 @@ class LQReel(models.Model):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', on_delete=models.CASCADE)
     reel_no = models.SmallIntegerField('卷序号')
     text = SutraTextField('经文', default='')
+    remark = models.TextField('备注', default='')
 
     class Meta:
         verbose_name = '龙泉藏经卷'
@@ -114,6 +117,9 @@ class Reel(models.Model):
     start_vol_page = models.SmallIntegerField('起始册的页序号')
     end_vol = models.SmallIntegerField('终止册')
     end_vol_page = models.SmallIntegerField('终止册的页序号')
+    path1 = models.CharField('存储层次1', max_length=16, default='')
+    path2 = models.CharField('存储层次2', max_length=16, default='')
+    path3 = models.CharField('存储层次3', max_length=16, default='')
     text = SutraTextField('经文', default='') #按实际行加了换行符，换页标记为p\n
     fixed = models.BooleanField('是否有调整', default=False)
     f_start_page = models.CharField('起始页ID', max_length=18, default='', blank=True, null=True)
@@ -124,9 +130,8 @@ class Reel(models.Model):
     f_end_char_no = models.IntegerField('终止页的行中字序号', default=-1)
     f_text = SutraTextField('调整经文', default='', blank=True, null=True)
     correct_text = SutraTextField('文字校对后的经文', default='') #按实际行加了换行符，换页标记为p\n
-    punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
     edition_type = models.SmallIntegerField('版本类型', choices=EDITION_TYPE_CHOICES, default=0)
-    comment = models.CharField(verbose_name='备注', max_length=1024, default='')
+    remark = models.TextField('备注', default='')
 
     class Meta:
         verbose_name = '实体藏经卷'
@@ -136,8 +141,35 @@ class Reel(models.Model):
     def __str__(self):
         return '%s (第%s卷)' % (self.sutra, self.reel_no)
 
+    def url_prefix(self):
+        tcode = self.sutra.sid[0:2]
+        path_lst = []
+        if self.path1:
+            path_lst.append(self.path1)
+            if self.path2:
+                path_lst.append(self.path2)
+                if self.path3:
+                    path_lst.append(self.path3)
+        path_str = '/'.join(path_lst)
+        filename_str = '_'.join(path_lst)
+        s = '/%s/%s/%s_%s_' % (tcode, path_str, tcode, filename_str)
+        return s
+
+    def image_prefix(self):
+        tcode = self.sutra.sid[0:2]
+        path_lst = []
+        if self.path1:
+            path_lst.append(self.path1)
+            if self.path2:
+                path_lst.append(self.path2)
+                if self.path3:
+                    path_lst.append(self.path3)
+        filename_str = '_'.join(path_lst)
+        s = '%s_%s_' % (tcode, filename_str)
+        return s
+
 class Page(models.Model):
-    pid = models.CharField('页ID', editable=True, max_length=18, primary_key=True) #YB000011v001p00010
+    pid = models.CharField('页ID', editable=True, max_length=13, primary_key=True) #sid + 3位卷号 + 2位页序号，页序号从1计数。如：YB00086000101
     reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)
     reel_page_no = models.SmallIntegerField('卷中页序号')
     vol_no = models.SmallIntegerField('册序号')

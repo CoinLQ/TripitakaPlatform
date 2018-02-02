@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Q
+from django.conf import settings
 from .models import *
 
 # Create your views here.
@@ -31,5 +32,20 @@ def page_verify_cut_list(request):
 
 def sutra_page_detail(request, pid):
     page = get_object_or_404(Page, pid=pid)
-    cid = request.GET.get('cid', '')
-    return render(request, 'sutradata/sutra_page_detail.html', {'page': page, 'cid': cid})
+    reel = page.reel
+    vol_page = reel.start_vol_page + page.reel_page_no - 1
+    image_url = '%s%s%s.jpg' % (settings.IMAGE_URL_PREFIX, reel.url_prefix, vol_page)
+    char_pos = request.GET.get('char_pos', '')
+    s = char_pos[-4:]
+    try:
+        line_no = int(s[-4:-2])
+        char_no = int(s[-2:])
+    except:
+        pass
+    context = {
+        'page': page,
+        'image_url': image_url,
+        'line_no': line_no,
+        'char_no': char_no,
+    }
+    return render(request, 'sutradata/sutra_page_detail.html', context)

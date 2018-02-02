@@ -24,7 +24,7 @@ def get_reeltext(lqsutra, tripitaka_id, reel_no):
     if not reel_correct_texts:
         return None
     reel_correct_text = reel_correct_texts[0]
-    reeltext = ReelText(text=reel_correct_text.text, tripitaka_id=tripitaka_id,
+    reeltext = ReelText(reel=reel, text=reel_correct_text.text, tripitaka_id=tripitaka_id,
     sid=sutra.sid, vol_no=reel.start_vol, start_vol_page=reel.start_vol_page)
     return reeltext
 

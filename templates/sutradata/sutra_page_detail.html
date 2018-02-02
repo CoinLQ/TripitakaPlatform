@@ -16,7 +16,7 @@
 {% block foot_script %}
 <script>
 $(function(){
-    var load_page_image = function(canvas_id, img_url, cutline_url, all, mark_cid) {
+    var load_page_image = function(canvas_id, img_url, cutline_url, all, mark_line_no, mark_char_no) {
         var canvas = document.getElementById(canvas_id);
         var context = canvas.getContext("2d");
         var image = new Image();
@@ -48,12 +48,8 @@ $(function(){
             var xratio = canvas.width / sw;
             var yratio = canvas.height / sh;
             $.each(data['char_data'], function(k, v){
-                var cid = '';
-                if ('char_id' in v) {
-                    cid = v['char_id']; 
-                } else {
-                    cid = '{{ page.pid }}' + pad(v['line_no'], 2) + 'n' + pad(v['char_no'], 2);
-                }
+                var line_no = v['line_no'];
+                var char_no = v['char_no'];
                 var color = "#F5270B";
                 var x = v['x'] - sx;
                 var y = v['y'] - sy;
@@ -84,7 +80,7 @@ $(function(){
                         to_draw = true;
                     }
                 }
-                if (cid == mark_cid) {
+                if (line_no == mark_line_no && char_no == mark_char_no) {
                     color = '#ff00ff';
                 }
                 if (to_draw) {
@@ -108,9 +104,9 @@ $(function(){
         image.src = img_url;
     };
 
-    var img_url = 'https://s3.cn-north-1.amazonaws.com.cn/lqcharacters-images/{{ page.pid[0:2] }}/{{ page.pid[2:8] }}/v{{ '%03d' % page.vol_no }}/{{ page.pid }}.jpg';
+    var img_url = '{{ image_url }}';
     var cutline_url = '/pages/{{ page.pid }}/cut';
-    load_page_image('page-canvas', img_url, cutline_url, true, '{{ cid }}');
+    load_page_image('page-canvas', img_url, cutline_url, true, '{{ line_no }}', '{{ char_no }}');
 });
 </script>
 {% endblock %}

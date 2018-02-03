@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from .lib.fields import JSONField
 import json
 
 class SutraTextField(models.TextField):
@@ -82,7 +83,6 @@ class Sutra(models.Model):
 class LQReel(models.Model):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', on_delete=models.CASCADE)
     reel_no = models.SmallIntegerField('卷序号')
-    text = SutraTextField('经文', blank=True, default='')
     remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
@@ -115,6 +115,9 @@ class Reel(models.Model):
     path3 = models.CharField('存储层次3', max_length=16, default='')
     edition_type = models.SmallIntegerField('版本类型', choices=EDITION_TYPE_CHOICES, default=0)
     remark = models.TextField('备注', blank=True, default='')
+    image_ready = models.BooleanField(verbose_name='图片状态', default=False)
+    cut_ready = models.BooleanField(verbose_name='切分数据状态', default=False)
+    column_ready = models.BooleanField(verbose_name='切列图状态', default=False)
 
     class Meta:
         verbose_name = '实体藏经卷'
@@ -138,19 +141,6 @@ class Reel(models.Model):
         s = '/%s/%s/%s_%s_' % (tcode, path_str, tcode, filename_str)
         return s
 
-    def image_prefix(self):
-        tcode = self.sutra.sid[0:2]
-        path_lst = []
-        if self.path1:
-            path_lst.append(self.path1)
-            if self.path2:
-                path_lst.append(self.path2)
-                if self.path3:
-                    path_lst.append(self.path3)
-        filename_str = '_'.join(path_lst)
-        s = '%s_%s_' % (tcode, filename_str)
-        return s
-
 class ReelOCRText(models.Model):
     reel = models.OneToOneField(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, primary_key=True)
     text = SutraTextField('经文', blank=True, default='') #按实际行加了换行符，换页标记为p\n
@@ -167,13 +157,42 @@ class ReelOCRText(models.Model):
         verbose_name = '实体藏经卷OCR经文'
         verbose_name_plural = '实体藏经卷OCR经文'
 
+class PageStatus:
+    INITIAL = 0
+    RECT_NOTFOUND = 1
+    PARSE_FAILED = 2
+    RECT_NOTREADY = 3
+    CUT_PIC_NOTFOUND = 4
+    COL_PIC_NOTFOUND = 5
+    COL_POS_NOTFOUND = 6
+    RECT_COL_NOTREADY = 7
+    RECT_COL_NOTFOUND = 8
+    READY = 9
+    MARKED = 10
+
+    CHOICES = (
+        (INITIAL, u'初始化'),
+        (RECT_NOTFOUND, u'切分数据未上传'),
+        (PARSE_FAILED, u'数据解析失败'),
+        (RECT_NOTREADY, u'字块数据未展开'),
+        (CUT_PIC_NOTFOUND, u'图片不存在'),
+        (COL_PIC_NOTFOUND, u'列图不存在'),
+        (COL_POS_NOTFOUND, u'列图坐标不存在'),
+        (RECT_COL_NOTREADY, u'字块对应列图未准备'),
+        (RECT_COL_NOTFOUND, u'字块对应列图不存在'),
+        (READY, u'已准备好'),
+        (MARKED, u'已入卷标记'),
+    )
+
 class Page(models.Model):
-    pid = models.CharField('页ID', editable=True, max_length=13, primary_key=True) #sid + 3位卷号 + 2位页序号，页序号从1计数。如：YB00086000101
+    pid = models.CharField(verbose_name='实体藏经页级总编码', max_length=21, blank=False, primary_key=True)
     reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)
     reel_page_no = models.SmallIntegerField('卷中页序号')
-    vol_no = models.SmallIntegerField('册序号')
     page_no = models.SmallIntegerField('页序号')
     bar_no = models.CharField('栏序号', max_length=1, default='0')
+    status = models.PositiveSmallIntegerField(db_index=True, verbose_name=u'操作类型',
+                                              choices=PageStatus.CHOICES, default=PageStatus.INITIAL)
+    bar_info = JSONField(verbose_name='栏信息', default=dict)
     text = SutraTextField('经文', blank=True) # 文字校对后的经文
     cut_info = models.TextField('切分信息')
     cut_updated_at = models.DateTimeField('更新时间', null=True)
@@ -181,11 +200,12 @@ class Page(models.Model):
     cut_wrong_count = models.SmallIntegerField('切分信息识别错的字数', default=0)
     cut_confirm_count = models.SmallIntegerField('切分信息需要确认的字数', default=0)
     cut_verify_count = models.SmallIntegerField('切分信息需要确认的字数', default=0)
+    s3_id = models.CharField(verbose_name='图片路径', max_length=128, default='', blank=False)
 
     class Meta:
         verbose_name = '实体藏经页'
         verbose_name_plural = '实体藏经页'
 
     def __str__(self):
-        return '%s第%s册第%s页' % (self.reel, self.vol_no, self.page_no)
+        return '%s第%s页' % (self.reel, self.reel_page_no)
 

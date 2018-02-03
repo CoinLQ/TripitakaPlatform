@@ -8,8 +8,6 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.db import models
 
-from social_core.utils import setting_name
-
 try:
     from django.utils.encoding import smart_unicode as smart_text
     smart_text  # placate pyflakes
@@ -26,10 +24,7 @@ else:
 
 field_class = functools.partial(six.with_metaclass, field_metaclass)
 
-if getattr(settings, setting_name('POSTGRES_JSONFIELD'), False):
-    from django.contrib.postgres.fields import JSONField as JSONFieldBase
-else:
-    JSONFieldBase = field_class(models.TextField)
+from django.contrib.postgres.fields import JSONField as JSONFieldBase
 
 
 class JSONField(JSONFieldBase):
@@ -91,4 +86,3 @@ class JSONField(JSONFieldBase):
         """Return value dumped to string."""
         orig_val = super(JSONField, self).value_from_object(obj)
         return self.get_prep_value(orig_val)
-

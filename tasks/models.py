@@ -7,10 +7,6 @@ from sutradata.models import *
 from difflib import SequenceMatcher
 import re
 
-class TripiMixin(object):
-    def __str__(self):
-        return self.name
-
 class CompareReel(models.Model):
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE, related_name='compare_set')
     base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本')
@@ -88,7 +84,7 @@ class TaskBase(object):
         (3, '高'),
     )
 
-class BatchTask(models.Model, TripiMixin):
+class BatchTask(models.Model):
     priority = models.SmallIntegerField('优先级', choices=TaskBase.PRIORITY_CHOICES, default=2) # 1,2,3分别表示低，中，高
     created_at = models.DateTimeField('创建时间', default=timezone.now)
     publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
@@ -101,7 +97,7 @@ class BatchTask(models.Model, TripiMixin):
      self.created_at.month, self.created_at.day, self.created_at.hour,
      self.created_at.minute, self.created_at.second, self.created_at.microsecond)
 
-class Task(models.Model, TripiMixin):
+class Task(models.Model):
     TYPE_CORRECT = 1
     TYPE_CORRECT_VERIFY = 2
     TYPE_JUDGE = 3
@@ -171,7 +167,7 @@ class Task(models.Model, TripiMixin):
     # 标点相关
     reeltext = models.ForeignKey('ReelCorrectText', related_name='punct_tasks', on_delete=models.SET_NULL, blank=True, null=True)
    
-    result = SutraTextField('结果')
+    result = SutraTextField('结果', blank=True)
     started_at = models.DateTimeField('开始时间', blank=True, null=True)
     finished_at = models.DateTimeField('完成时间', blank=True, null=True)
     created_at = models.DateTimeField('创建时间', default=timezone.now)
@@ -198,7 +194,7 @@ class CorrectSeg(models.Model):
 
 class ReelCorrectText(models.Model):
     reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)
-    text = SutraTextField('经文') # 文字校对或文字校对审定后得到的经文
+    text = SutraTextField('经文', blank=True) # 文字校对或文字校对审定后得到的经文
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True, default=None)
     publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', default=timezone.now)
@@ -209,7 +205,7 @@ class ReelCorrectText(models.Model):
 
 class LQReelText(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
-    text = SutraTextField('经文') # 校勘判取审定后得到的经文
+    text = SutraTextField('经文', blank=True) # 校勘判取审定后得到的经文
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True, default=None)
     publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', default=timezone.now)

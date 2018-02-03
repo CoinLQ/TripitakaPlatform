@@ -229,7 +229,11 @@ def fetch_cut_file(reel, vol_page):
 
 def compute_accurate_cut(reel):
     sid = reel.sutra.sid
-    pagetexts = reel.text[2:].split('\np\n')
+    try:
+        reel_ocr_text = ReelOCRText.objects.get(reel_id = reel.id)
+    except:
+        return None
+    pagetexts = reel_ocr_text.text[2:].split('\np\n')
     reel_correct_texts = list(ReelCorrectText.objects.filter(reel=reel).order_by('-id')[0:1])
     if not reel_correct_texts:
         return None

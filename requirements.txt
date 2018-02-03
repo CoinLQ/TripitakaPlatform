@@ -6,3 +6,4 @@ django-background-tasks
 Jinja2
 djangorestframework
 django-filter
+git+git://github.com/sshwsfc/xadmin.git@django2

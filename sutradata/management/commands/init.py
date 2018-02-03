@@ -44,12 +44,13 @@ class Command(BaseCommand):
             huayan_yb_1 = Reel(sutra=huayan_yb, reel_no=1, start_vol=27,
             start_vol_page=1, end_vol=27, end_vol_page=23, edition_type=Reel.EDITION_TYPE_CHECKED,
             path1='27')
+            huayan_yb_1.save()
             text = get_reel_text(huayan_yb_1)
             #filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_yb.sid)
             #with open(filename, 'r') as f:
             #    huayan_yb_1.text = f.read()
-            huayan_yb_1.text = text
-            huayan_yb_1.save()
+            reel_ocr_text_yb_1 = ReelOCRText(reel=huayan_yb_1, text = text)
+            reel_ocr_text_yb_1.save()
 
         filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
         with open(filename, 'r') as f:
@@ -79,8 +80,9 @@ class Command(BaseCommand):
             filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_gl.sid)
             with open(filename, 'r') as f:
                 text = f.read()
-                huayan_gl_1.text = text
                 huayan_gl_1.save()
+                reel_ocr_text = ReelOCRText(reel=huayan_gl_1, text = text)
+                reel_ocr_text.save()
                 reelcorrecttext = ReelCorrectText(reel=huayan_gl_1, text=text)
                 reelcorrecttext.save()
 
@@ -96,11 +98,11 @@ class Command(BaseCommand):
 
         # create Tasks
         # Correct Task
-        separators = extract_page_line_separators(huayan_yb_1.text)
+        separators = extract_page_line_separators(reel_ocr_text_yb_1.text)
         separators_json = json.dumps(separators, separators=(',', ':'))
 
         # 文字校对
-        diff_lst, base_text = CompareReel.generate_compare_reel(reelcorrecttext.text, huayan_yb_1.text)
+        diff_lst, base_text = CompareReel.generate_compare_reel(reelcorrecttext.text, reel_ocr_text_yb_1.text)
         compare_reel = CompareReel(reel=huayan_yb_1, base_reel=huayan_gl_1, base_text=base_text)
         compare_reel.save()
 

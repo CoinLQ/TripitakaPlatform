@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'hh-65qc%$-_4djzm%y8wp%!&va$nakjf_9d&r7z+v5(#77*u-i'
+SECRET_KEY = '2dx3sbj0#=4k$xu=8h52to&a2zia%%lr(w2h4wf$zb(ux6v9az'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -156,3 +156,11 @@ STATICFILES_DIRS = [
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
 IMAGE_URL_PREFIX = 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ), 'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+    )
+}

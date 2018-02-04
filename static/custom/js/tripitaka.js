@@ -67,80 +67,6 @@ function extract_separators(text) {
     return new_separators;
 };
 
-function judge_merge_text_punct1(text, diffseg_pos_lst, punct_lst) {
-    var lines = [];
-    var line = [];
-    var i = 0;
-    var diffseg_idx = 0;
-    var punct_idx = 0;
-    var diffseg_endpos = text.length + 1;
-    while (i < text.length) {
-        var pos = diffseg_endpos;
-        if (diffseg_idx < diffseg_pos_lst.length) {
-            if (pos > diffseg_pos_lst[diffseg_idx].base_pos) {
-                pos = diffseg_pos_lst[diffseg_idx].base_pos;
-            }
-        }
-        if (punct_idx < punct_lst.length) {
-            if (pos > punct_lst[punct_idx][0]) {
-                pos = punct_lst[punct_idx][0];
-            }
-        }
-        if (pos <= text.length && pos > i) {
-            line.push(text.substr(i, pos-i));
-            i = pos;
-        } else if (pos > text.length) {
-            line.push(text.substr(i));
-            i = text.length;
-        }
-
-        if (i == diffseg_endpos) {
-            line.push('</a>');
-            diffseg_endpos = text.length + 1;
-        }
-
-        // 处理标点
-        while (punct_idx < punct_lst.length) {
-            if (punct_lst[punct_idx][0] == i) {
-                var punct_ch = punct_lst[punct_idx][1];
-                if (punct_ch == '\n') {
-                    lines.push(line.join(''));
-                    //console.log('line: ', line.join(''));
-                    line = [];
-                } else {
-                    line.push(punct_ch);
-                }
-                ++punct_idx;
-            } else {
-                break;
-            }
-        }
-
-        if (diffseg_idx < diffseg_pos_lst.length) {
-            var pos = diffseg_pos_lst[diffseg_idx].base_pos;
-            if (pos == i) {
-                diffseg_endpos = pos + diffseg_pos_lst[diffseg_idx].base_length;
-                if (pos == diffseg_endpos) {
-                    line.push('<a href="#" class="diffseg-tag diffseg-tag-notext" id="diffseg-tag-'
-                     + diffseg_pos_lst[diffseg_idx].diffseg_id + '" v-on:click="click">');
-                    line.push('<span class="diffseg-tag-white"></span>');
-                } else {
-                    line.push('<a href="#" class="diffseg-tag" id="diffseg-tag-' + diffseg_pos_lst[diffseg_idx].diffseg_id + '">');
-                }
-                //console.log(line);
-                
-                if (diffseg_endpos == i) {
-                    line.push('</a>');
-                    diffseg_endpos = text.length + 1;
-                }
-                ++diffseg_idx;
-            }
-
-        }
-    }
-    return lines;
-}
-
 function judge_merge_text_punct(text, diffseg_pos_lst, punct_lst) {
     var TEXT = 0;
     var LINE_FEED = 1;
@@ -353,11 +279,11 @@ Vue.component('diffseg-box', {
             var lst = [];
             while (i < diffsegtexts.length) {
                 var s = '';
-                var start_char_pos = diffsegtexts[i].start_char_pos;
-                if (start_char_pos != null && start_char_pos != '') {
-                    var page_id = start_char_pos.substr(0, 13);
-                    s = '<a href="/sutra_pages/' + page_id + '/view?char_pos='
-                    + start_char_pos + '" target="_blank">'
+                var char_pos = diffsegtexts[i].start_char_pos;
+                if (char_pos != null && char_pos != '') {
+                    var pid = char_pos.substr(0, 17);
+                    s = '<a href="/sutra_pages/' + pid + '/view?char_pos='
+                    + char_pos + '" target="_blank">'
                     + diffsegtexts[i].tripitaka.shortname + '</a>';
                 } else {
                     s = diffsegtexts[i].tripitaka.shortname;
@@ -420,7 +346,10 @@ Vue.component('diffseg-box-verify', {
             <span v-else>。</span>\
         </span>\
         <div v-for="(judge_result, index) in diffsegresult.judge_results">\
-        <div>判取{{ index + 1 }}：{{ getResult(judge_result) }}</div>\
+        <div>\
+            <span>判取{{ index + 1 }}：{{ getResult(judge_result) }}</span>\
+            <a href="#" v-if="judge_result.typ == 2" @click.stop.prevent="showSplit(judge_result)">显示拆分方案</a>\
+        </div>\
         </div>\
         <div>\
             <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>\
@@ -475,11 +404,11 @@ Vue.component('diffseg-box-verify', {
             var lst = [];
             while (i < diffsegtexts.length) {
                 var s = '';
-                var cid = diffsegtexts[i].start_cid;
-                if (cid != null && cid != '') {
-                    var pid = cid.substr(0, 18);
-                    s = '<a href="/sutra_pages/' + pid + '/view?cid='
-                    + cid + '" target="_blank">'
+                var char_pos = diffsegtexts[i].start_char_pos;
+                if (char_pos != null && char_pos != '') {
+                    var pid = char_pos.substr(0, 17);
+                    s = '<a href="/sutra_pages/' + pid + '/view?char_pos='
+                    + char_pos + '" target="_blank">'
                     + diffsegtexts[i].tripitaka.shortname + '</a>';
                 } else {
                     s = diffsegtexts[i].tripitaka.shortname;
@@ -524,6 +453,10 @@ Vue.component('diffseg-box-verify', {
                 s += '判取文本：' + diffsegresult.selected_text + '。存疑，' + diffsegresult.doubt_comment + '。';
             }
             return s;
+        },
+        showSplit: function(judge_result) {
+            this.sharedata.show_split_diffsegresult = judge_result;
+            this.sharedata.showSplitDialogVisible = true;
         }
     }
 })
@@ -932,6 +865,81 @@ Vue.component('split-dialog', {
         handleCancel: function() {
             this.sharedata.splitDialogVisible = false;
             this.error = null;
+        }
+    }
+})
+
+Vue.component('show-split-dialog', {
+    props: ['sharedata'],
+    template: '\
+    <el-dialog title="拆分" :visible.sync="sharedata.showSplitDialogVisible" width="50%" @open="handleOpen" :before-close="handleOK">\
+        <table class="table table-bordered table-condensed">\
+            <thead>\
+                <tr>\
+                    <th></th>\
+                    <th v-for="tname in tname_lst">{{ tname }}</th>\
+                    <th>我的选择</th>\
+                </tr>\
+            </thead>\
+            <tbody>\
+            <tr v-for="(title, index) in title_lst">\
+                <td>{{ title }}</td>\
+                <td v-for="(tripitaka_id, tripitaka_index) in tripitaka_ids">\
+                {{ tripitaka_id_to_texts[tripitaka_id][index] }}\
+                </td>\
+                <td>\
+                {{ selected_lst[index] }}\
+                </td>\
+            </tr>\
+            </tbody>\
+        </table>\
+        <span slot="footer" class="dialog-footer">\
+            <el-button type="primary" @click="handleOK">确定</el-button>\
+        </span>\
+    </el-dialog>\
+    ',
+    data: function () {
+        return {
+            split_count: 2,
+            title_lst: [],
+            tripitaka_ids: [],
+            tname_lst: [],
+            tripitaka_id_to_texts: {},
+            selected_lst: []
+        }
+    },
+    methods: {
+        generateSplitItems: function() {
+            var diffsegresult = this.sharedata.show_split_diffsegresult;
+            if (diffsegresult.typ == 2) {
+                var split_info = JSON.parse(diffsegresult.split_info);
+                this.split_count = split_info.split_count;
+                this.tripitaka_id_to_texts = split_info.tripitaka_id_to_texts;
+                this.selected_lst = split_info.selected_lst;
+                this.title_lst = [];
+                this.tripitaka_ids = [];
+                this.tname_lst = [];
+                for (var i = 1; i <= this.split_count; ++i) {
+                    this.title_lst.push(i.toString());
+                }
+                var diffsegtexts = diffsegresult.diffseg.diffsegtexts;
+                var length = diffsegtexts.length;
+                for (var i = 0; i < length; ++i) {
+                    var tripitaka_id = diffsegtexts[i].tripitaka.id;
+                    var tname = diffsegtexts[i].tripitaka.shortname;
+                    this.tripitaka_ids.push(tripitaka_id);
+                    this.tname_lst.push(tname);
+                }
+            }
+        },
+        handleOpen: function () {
+            this.generateSplitItems();
+        },
+        handleOK: function () {
+            this.sharedata.showSplitDialogVisible = false;
+        },
+        handleCancel: function() {
+            this.sharedata.showSplitDialogVisible = false;
         }
     }
 })

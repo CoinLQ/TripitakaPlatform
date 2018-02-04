@@ -38,6 +38,7 @@
       <div is="judge-dialog" :sharedata="sharedata" v-on:reload="judgeDone(diffseg_curpage)"></div>
       <div is="merge-dialog" :sharedata="sharedata" v-on:reload="mergeSplitDone(diffseg_curpage)"></div>
       <div is="split-dialog" :sharedata="sharedata" v-on:reload="mergeSplitDone(diffseg_curpage)"></div>
+      <div is="show-split-dialog" :sharedata="sharedata"></div>
     </div>
   </div>
 </div>
@@ -59,7 +60,19 @@
       merged_base_text: [],
       not_all_selected: true,
       submit_title: 'aa',
-      sharedata: {task_id: {{ task_id }}, judge_task_ids: {{ judge_task_ids }}, status: 0, base_tripitaka_id: null, judgeDialogVisible: false, mergeDialogVisible: false, splitDialogVisible: false, segindex: -1, diffseg_no: 0, diffsegresults: []  }
+      sharedata: {
+        task_id: {{ task_id }},
+        judge_task_ids: {{ judge_task_ids }},
+        status: 0,
+        base_tripitaka_id: null,
+        judgeDialogVisible: false,
+        mergeDialogVisible: false,
+        splitDialogVisible: false,
+        showSplitDialogVisible: false,
+        segindex: -1,
+        diffseg_no: 0,
+        diffsegresults: []
+      }
     },
     created: function() {
       var vm = this

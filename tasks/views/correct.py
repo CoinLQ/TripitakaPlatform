@@ -5,8 +5,8 @@ from django.http import HttpResponse, JsonResponse
 from django.db import transaction
 from django.db.models import Q
 
-from sutradata.common import judge_merge_text_punct, ReelText, extract_page_line_separators
-from sutradata.models import *
+from tasks.common import judge_merge_text_punct, ReelText, extract_page_line_separators
+from tdata.models import *
 from tasks.models import *
 
 import json, re

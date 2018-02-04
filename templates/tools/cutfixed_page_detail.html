@@ -19,7 +19,7 @@
 {% block foot_script %}
 <script>
 $(function(){
-    var load_page_image = function(canvas_id, img_url, cutline_url, all) {
+    var load_fixed_cut = function(canvas_id, img_url, cutline_url, all) {
       var canvas = document.getElementById(canvas_id);
       var context = canvas.getContext("2d");
       var image = new Image();
@@ -32,9 +32,9 @@ $(function(){
           var yratio = 1080 / image.height;
 
           var first = true;
-          $.getJSON(cutline_url, function(data) {
+          $.getJSON(cutline_url, function(d) {
+            var data = JSON.parse(d.cut_info);
             $.each(data['char_data'], function(k, v){
-              var cid = v['char_id'];
               var color = "#F5270B";
               var x = v['x'];
               var y = v['y'];
@@ -86,11 +86,55 @@ $(function(){
       image.src = img_url;
     };
 
+    var load_ocr_cut = function(canvas_id, img_url, cutline_url) {
+      var canvas = document.getElementById(canvas_id);
+      var context = canvas.getContext("2d");
+      var image = new Image();
+      image.crossOrigin = "Anonymous";
+      image.onload = function () {
+          canvas.width = canvas.width;
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(image, 0, 0, 800, 1080);
+          var xratio = 800 / image.width;
+          var yratio = 1080 / image.height;
+
+          var first = true;
+          $.getJSON(cutline_url, function(data) {
+            $.each(data['char_data'], function(k, v){
+              var color = "#F5270B";
+              var x = v['x'];
+              var y = v['y'];
+              var w = v['w'];
+              var h = v['h'];
+              x = parseInt(x * xratio);
+              y = parseInt(y * yratio);
+              w = parseInt(w * xratio);
+              h = parseInt(h * yratio);
+
+              context.beginPath();
+              context.moveTo(x, y);
+              context.lineTo(x + w, y);
+              context.lineTo(x + w, y + h);
+              context.lineTo(x, y + h);
+              context.lineTo(x, y);
+              //设置样式
+              context.lineWidth = 1;
+              context.strokeStyle = color;
+              context.stroke();
+            });
+            
+            //绘制
+            //context.stroke();
+          });
+      };
+      image.src = img_url;
+    };
+
     var img_url = '{{ image_url|safe }}';
-    var cutline_url = '/pages/{{ page.pid }}/cut';
-    load_page_image('page-canvas', img_url, cutline_url, true);
+    var cutline_url = '/api/page/{{ page.pid }}/';
+    load_fixed_cut('page-canvas', img_url, cutline_url, true);
     cutline_url = img_url.replace('.jpg', '.cut')
-    load_page_image('page-canvas2', img_url, cutline_url, true);
+    load_ocr_cut('page-canvas2', img_url, cutline_url);
 });
 </script>
 {% endblock %}

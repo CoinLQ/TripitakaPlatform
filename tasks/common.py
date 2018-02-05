@@ -8,7 +8,6 @@ from tasks.models import *
 from rect.models import PageRect, Rect
 
 SEPARATORS_PATTERN = re.compile('[pb\n]')
-CID_FORMAT = '%sv%03dp%04d0%02dn%02d'
 
 def get_accurate_cut(text1, text2, cut_json, pid):
     """

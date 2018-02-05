@@ -219,7 +219,6 @@ class ReelDiff(models.Model):
     lqsutra = models.ForeignKey(LQSutra, on_delete=models.CASCADE, blank=True, null=True)
     reel_no = models.SmallIntegerField('卷序号')
     base_sutra = models.ForeignKey(Sutra, on_delete=models.SET_NULL, blank=True, null=True)
-    # task = models.OneToOneField(Task, on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始比对结果，不为null表示校勘判取任务和校勘判取审定任务的结果
     base_text = SutraTextField('基准文本', blank=True, null=True)
     published_at = models.DateTimeField('发布时间', blank=True, null=True)
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True,
@@ -233,12 +232,8 @@ class DiffSeg(models.Model):
     """
     reeldiff = models.ForeignKey(ReelDiff, on_delete=models.CASCADE, null=True)
     diffseg_no = models.SmallIntegerField('序号', default=0)
-    #selected_text = models.TextField('判取文本', blank=True, null=True) # del
     base_pos = models.IntegerField('在基准文本中位置', default=0) # base_pos=0表示在第1个字前，base_pos>0表示在第base_pos个字后
     base_length = models.IntegerField('基准文本中对应文本段长度', default=0)
-    #status = models.SmallIntegerField('状态', default=0) #　0, 1, 2 -- 未判取，已判取，已判取并存疑 # del
-    #存疑相关
-    #doubt_comment = models.TextField('存疑意见', default='', blank=True) # del
     recheck = models.BooleanField('待复查', default=False)
     recheck_desc = models.TextField('待复查说明', default='')
 

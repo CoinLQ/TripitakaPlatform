@@ -50,7 +50,9 @@ class DiffSegResultSimpleSerializer(serializers.ModelSerializer):
         elif typ == DiffSegResult.TYPE_SPLIT:
             if 'split_info' not in data:
                 raise serializers.ValidationError('no split_info')
-            self.is_valid_split_info(data['split_info'])
+            if 'selected_text' not in data:
+                raise serializers.ValidationError('no selected_text')
+            self.check_split_info(data)
         return data
 
     def is_valid_selected_text(self, value):
@@ -59,20 +61,28 @@ class DiffSegResultSimpleSerializer(serializers.ModelSerializer):
                 return value
         raise serializers.ValidationError('invalid selected_text')
 
-    def is_valid_split_info(self, value):
+    def check_split_info(self, data):
         tripitaka_id_to_oldtext = {}
         for diffsegtext in self.instance.diffseg.diffsegtexts.all():
             tripitaka_id_to_oldtext[diffsegtext.tripitaka_id] = diffsegtext.text
         try:
-            split_info = json.loads(value)
+            split_info = json.loads(data['split_info'])
         except:
             raise serializers.ValidationError('not json string')
+        try:
+            selected_text = data['selected_text']
+            merged_diffsegresults = data['merged_diffsegresults']
+        except:
+            raise serializers.ValidationError('data error')
+        if merged_diffsegresults != []:
+            raise serializers.ValidationError('data error')
         if 'split_count' not in split_info:
             raise serializers.ValidationError('no split_count')
         if 'tripitaka_id_to_texts' not in split_info:
             raise serializers.ValidationError('no tripitaka_id_to_texts')
         split_count = split_info['split_count']
         tripitaka_id_to_texts = split_info['tripitaka_id_to_texts']
+        selected_lst = split_info['selected_lst']
         try:
             for tripitaka_id, oldtext in tripitaka_id_to_oldtext.items():
                 tripitaka_id = '%s' % tripitaka_id
@@ -81,7 +91,7 @@ class DiffSegResultSimpleSerializer(serializers.ModelSerializer):
                     raise Exception()
                 if oldtext != ''.join(texts):
                     raise Exception()
+            if selected_text != ''.join(selected_lst):
+                raise Exception()
         except:
             raise serializers.ValidationError('invalid split_info')
-        return value
-

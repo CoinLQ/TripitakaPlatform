@@ -1,10 +1,10 @@
-django==2.0.1
+django==2.0.2
 psycopg2
 django-bootstrap3
 django-background-tasks
-Jinja2
+Jinja2==2.10
 djangorestframework
-git+git://github.com/sshwsfc/xadmin.git@django2
+#git+git://github.com/sshwsfc/xadmin.git@django2
 django-crispy-forms==1.7.0
 django-formtools==2.1
 django-reversion==2.0.10
@@ -30,8 +30,8 @@ django-material
 celery==4.1.0
 django-celery-results==1.0.1
 SQLAlchemy==1.1.15
--e git+https://github.com/CoinLQ/django-rest-framework-jwt/archive/master.zip
--e git+https://github.com/CoinLQ/jwt_auth/archive/master.zip
+-e git+https://github.com/CoinLQ/django-rest-framework-jwt#egg=djangorestframework-jwt
+-e git+https://github.com/CoinLQ/jwt_auth#egg=jwt_auth
 django-jsonfield==1.0.1
 django-bulk-update==2.2.0
 pycurl==7.43.0 --global-option="--with-openssl"

@@ -5,14 +5,12 @@ from django.http import HttpResponse, JsonResponse
 from django.db import transaction
 from django.db.models import Q
 
-from tasks.common import judge_merge_text_punct, ReelText, extract_page_line_separators
+from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, ReelText, extract_page_line_separators
 from tdata.models import *
 from tasks.models import *
 
 import json, re
 from operator import attrgetter, itemgetter
-
-SEPARATORS_PATTERN = re.compile('[p\n]')
 
 # TODO: 检查权限
 #@login_required

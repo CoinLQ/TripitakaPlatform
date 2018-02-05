@@ -6,15 +6,13 @@ from django.db.models import Q
 
 from tdata.models import *
 from tasks.models import *
-from tasks.common import judge_merge_text_punct, ReelText, \
+from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, ReelText, \
 extract_page_line_separators, clean_separators
 from tasks.reeldiff_processor import generate_reeldiff
 
 import json, re, logging
 from operator import attrgetter, itemgetter
 from difflib import SequenceMatcher
-
-SEPARATORS_PATTERN = re.compile('[p\n]')
 
 logger = logging.getLogger(__name__)
 

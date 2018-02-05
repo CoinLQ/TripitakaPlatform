@@ -41,7 +41,7 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
     for task_no in range(1, correct_times + 1):
         task = Task(batch_task=batchtask, reel=reel, typ=Task.TYPE_CORRECT, task_no=task_no, status=Task.STATUS_NOT_READY,
         publisher=batchtask.publisher)
-        if task_no <= int((correct_times + 1) / 2):
+        if task_no % 2 == 1:
             task.compare_reel = compare_reel1
         else:
             task.compare_reel = compare_reel2

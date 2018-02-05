@@ -58,7 +58,6 @@ class JudgeTaskDetail(APIView):
         puncts = base_reel.punct_set.all()[0:1]
         punct = puncts[0]
         response = {
-            'user': request.user.username,
             'task_id': task_id,
             'status': self.task.status,
             'base_text': base_text,

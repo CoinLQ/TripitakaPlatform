@@ -141,8 +141,7 @@ def do_correct_task_post(request, task_id):
 
             with transaction.atomic():
                 # 保存文字校对审定任务的correctsegs
-                for seg in correctsegs_verify:
-                    seg.save()
+                CorrectSeg.objects.bulk_create(correctsegs_verify)
 
                 # 文字校对审定任务设为待领取
                 Task.objects.filter(reel=task.reel,

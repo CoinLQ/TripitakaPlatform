@@ -18,8 +18,6 @@ from django.conf.urls.static import static
 from django.urls import include, path
 from django.conf.urls import url
 
-from sutradata.views import *
-from tasks.views.task_controller import *
 from tasks.views.correct import *
 from tasks.views.judge import *
 from tools.views import *
@@ -27,13 +25,11 @@ from tools.views import *
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
+    url(r'^auth/', include("jwt_auth.urls", namespace="api-auth")),
     url(r'^api-auth/', include('rest_framework.urls')),
     url(r'^api/', include('api.urls')),
     path('correct/<int:task_id>/', do_correct_task, name='do_correct_task'),
     path('correct_verify/<int:task_id>/', do_correct_verify_task, name='do_correct_verify_task'),
-    path('pages/cutlist', page_cut_list, name='page_cut_list'),
-    path('pages/verify_cutlist', page_verify_cut_list, name='page_verify_cut_list'),
-    path('pages/<pid>/cut', page_cut_info, name='page_cut_info'),
     path('sutra_pages/<pid>/view', sutra_page_detail, name='sutra_page_detail'),
     path('judge/<int:task_id>/', do_judge_task, name='do_judge_task'),
     path('judge_verify/<int:task_id>/', do_judge_verify_task, name='do_judge_verify_task'),

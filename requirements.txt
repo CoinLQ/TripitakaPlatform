@@ -1,9 +1,39 @@
 django==2.0.1
 psycopg2
-django-extensions
 django-bootstrap3
 django-background-tasks
 Jinja2
 djangorestframework
-django-filter
 git+git://github.com/sshwsfc/xadmin.git@django2
+django-crispy-forms==1.7.0
+django-formtools==2.1
+django-reversion==2.0.10
+future==0.16.0
+httplib2==0.9.2
+pytz==2017.2
+six==1.10.0
+unipath==1.1
+django-rest-swagger==2.1.0
+pillow==3.4.2
+django-extensions==1.8.1
+django-filter==1.0.4
+boto3==1.4.7
+flake8==3.4.1
+Fabric3==1.13.1.post1
+django-storages==1.6.5
+dotmap==1.2.20
+numpy==1.13.1
+django-redis==4.6
+codecov==2.0.9
+django-cors-headers==2.1.0
+django-material
+celery==4.1.0
+django-celery-results==1.0.1
+SQLAlchemy==1.1.15
+-e git+https://github.com/CoinLQ/django-rest-framework-jwt/archive/master.zip
+-e git+https://github.com/CoinLQ/jwt_auth/archive/master.zip
+django-jsonfield==1.0.1
+django-bulk-update==2.2.0
+pycurl==7.43.0 --global-option="--with-openssl"
+# fix endless migrations issue
+-e git+https://github.com/celery/django-celery-beat@feaf34e2c30e28273b03d754d50e#egg=django-celery-beat

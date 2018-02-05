@@ -219,7 +219,7 @@ class ReelDiff(models.Model):
     lqsutra = models.ForeignKey(LQSutra, on_delete=models.CASCADE, blank=True, null=True)
     reel_no = models.SmallIntegerField('卷序号')
     base_sutra = models.ForeignKey(Sutra, on_delete=models.SET_NULL, blank=True, null=True)
-    base_text = SutraTextField('基准文本', blank=True, null=True)
+    base_text = models.ForeignKey(ReelCorrectText, related_name='reeldiffs', verbose_name='基准文本', on_delete=models.CASCADE)
     published_at = models.DateTimeField('发布时间', blank=True, null=True)
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True,
     verbose_name='发布用户')

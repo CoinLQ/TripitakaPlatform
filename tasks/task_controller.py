@@ -158,8 +158,7 @@ def create_reeldiff_for_judge_task(lqreel, lqsutra):
     for reel in reel_lst:
         correct_text_lst.append( reel_id_to_text[reel.id] )
         reel_correct_text_lst.append( reel_id_to_reel_correct_text[reel.id] )
-    base_text = SEPARATORS_PATTERN.sub('', correct_text_lst[0])
-    reeldiff = ReelDiff(lqsutra=lqsutra, reel_no=reel_no, base_sutra=new_sutra_lst[0], base_text=base_text)
+    reeldiff = ReelDiff(lqsutra=lqsutra, reel_no=reel_no, base_sutra=new_sutra_lst[0], base_text=reel_correct_text_lst[0])
     reeldiff.save()
     reeldiff.correct_texts.set(reel_correct_text_lst)
     

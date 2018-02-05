@@ -16,7 +16,8 @@ from tdata.models import *
 from tasks.models import *
 from jkapi.serializers import *
 from jkapi.permissions import *
-from tasks.common import judge_merge_text_punct, ReelText, extract_page_line_separators
+from tasks.common import judge_merge_text_punct, ReelText, \
+extract_page_line_separators, clean_separators
 from tasks.task_controller import judge_submit_result, publish_judge_result
 
 import json, re
@@ -51,7 +52,7 @@ class JudgeTaskDetail(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
     
     def get(self, request, task_id, format=None):
-        base_text = self.task.reeldiff.base_text
+        base_text = clean_separators(self.task.reeldiff.base_text.text)
         diffseg_pos_lst = self.task.reeldiff.diffseg_pos_lst
         base_reel = Reel.objects.get(sutra=self.task.reeldiff.base_sutra, reel_no=self.task.reeldiff.reel_no)
         puncts = base_reel.punct_set.all()[0:1]

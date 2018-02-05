@@ -471,3 +471,6 @@ def get_reel_text(reel):
             last_char_no = char_no
         pages.append( ''.join(chars) )
     return '\n'.join(pages)
+
+def clean_separators(text):
+    return SEPARATORS_PATTERN.sub('', text)

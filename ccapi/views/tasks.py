@@ -183,17 +183,15 @@ class PageTaskViewSet(RectBulkOpMixin,
                              "msg": "All tasks has been done!"})
         pagerect_ids = [page['id'] for page in task.page_set]
         pages = PageRect.objects.filter(id__in=pagerect_ids).select_related('page')
-        page_id = pages[0].page_id
-        _rects = Rect.objects.filter(page_code=page_id).all()
+        page_code = pages[0].page.page_code
+        _rects = Rect.objects.filter(page_code=page_code).all()
         rects = RectSerializer(data=_rects, many=True)
         rects.is_valid()
         page = pages[0].page
         # TODO: test, check
-        # TODO: s3_id改名成page_code        
         return Response({"status": 0,
                         "rects": rects.data,
-                        "page_id": page_id,
-                        "s3_id": page.page_code, 
+                        "page_code": page.page_code, 
                         "task_id": task.pk})
 
 

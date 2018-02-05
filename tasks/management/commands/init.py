@@ -25,6 +25,7 @@ class Command(BaseCommand):
         except:
             admin = Staff(email='thinr@163.com', username='admin')
             admin.set_password('admin')
+            admin.is_admin = True
             admin.save()
 
         try:

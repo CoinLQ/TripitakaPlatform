@@ -11,6 +11,7 @@ rm -f rect/migrations/000*
 ./manage.py makemigrations tdata
 ./manage.py makemigrations tasks
 ./manage.py makemigrations rect
+cp rect/sql/*.py rect/migrations/.
 ./manage.py migrate
 ./manage.py import_tripitaka_list
 ./manage.py init

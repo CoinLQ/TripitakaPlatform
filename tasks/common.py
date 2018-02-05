@@ -321,12 +321,11 @@ def compute_accurate_cut(reel):
             Rect.normalize(rect)
             rect.page_code = page_code
             rect.reel_id = reel.id
-            column_set = []
             for column in column_lst:
                 if column['x'] <= rect.x and rect.x <= column['x1'] and \
                     column['y'] <= rect.y and rect.y <= column['y1']:
-                    column_set.append(column)
-            rect.column_set = column_set
+                    rect.column_set = column
+                    break
             rect_lst.append(rect)
         Rect.objects.bulk_create(rect_lst)
 

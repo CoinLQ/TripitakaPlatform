@@ -876,15 +876,15 @@ class CharClassifyPlan(models.Model):
         0,0,0,
         '%s'
         FROM public.rect_rect
-        where reel_id IN ('%s')
+        where reel_id IN (%s)
         group by ch
-        ''' % (schedule.id, '\',\''.join(schedule.reels.values_list('rid', flat=True)))
+        ''' % (schedule.id, ','.join([str(r_id) for r_id in schedule.reels.values_list('id', flat=True)]))
         cursor.execute(raw_sql)
         CharClassifyPlan.objects.filter(schedule=schedule, total_cnt__lt=10).all().delete()
 
 
     def measure_charplan(self, wcc_threshold):
-        result = Rect.objects.filter(ch=self.ch, reel_id__in=self.schedule.reels.values_list('rid', flat=True)).aggregate(
+        result = Rect.objects.filter(ch=self.ch, reel_id__in=self.schedule.reels.values_list('id', flat=True)).aggregate(
             needcheck_cnt=Sum(Case(When(wcc__lte=wcc_threshold, then=Value(1)),
             default=Value(0),
             output_field=models.    IntegerField())),
@@ -928,7 +928,7 @@ class CCAllocateTask(AllocateTask):
             rect_set.append(rect.serialize_set)
             if len(rect_set) == count:
                 # 268,435,455可容纳一部大藏经17，280，000个字
-                task_no = "%s_%s%05X" % (self.schedule.schedule_no, reel.rid, self.task_id())
+                task_no = "%s_%d_%05X" % (self.schedule.schedule_no, reel.id, self.task_id())
                 task = CCTask(number=task_no, schedule=self.schedule, ttype=SliceType.CC, count=count, status=TaskStatus.NOT_GOT,
                               rect_set=list(rect_set), cc_threshold=rect.cc)
                 rect_set.clear()
@@ -938,7 +938,7 @@ class CCAllocateTask(AllocateTask):
                     total_tasks += len(task_set)
                     task_set.clear()
         if len(rect_set) > 0:
-            task_no = "%s_%s%05X" % (self.schedule.schedule_no, reel.rid, self.task_id())
+            task_no = "%s_%d_%05X" % (self.schedule.schedule_no, reel.id, self.task_id())
             task = CCTask(number=task_no, schedule=self.schedule, ttype=SliceType.CC, count=count, status=TaskStatus.NOT_GOT,
                             rect_set=list(rect_set), cc_threshold=rect.cc)
             rect_set.clear()
@@ -965,7 +965,7 @@ class ClassifyAllocateTask(AllocateTask):
         word_set = {}
         task_set = []
         count = AllocateTask.Config.DEFAULT_COUNT
-        reel_ids = self.schedule.reels.values_list('rid', flat=True)
+        reel_ids = self.schedule.reels.values_list('id', flat=True)
         base_queryset = Rect.objects.filter(reel_id__in=reel_ids)
         total_tasks = 0
         # 首先找出这些计划准备表
@@ -1020,7 +1020,7 @@ class PerpageAllocateTask(AllocateTask):
         for no, pagerect in enumerate(query_set, start=1):
             page_set.append(pagerect.serialize_set)
             if len(page_set) == count:
-                task_no = "%s_%s%05X" % (self.schedule.schedule_no, reel.rid, self.task_id())
+                task_no = "%s_%d_%05X" % (self.schedule.schedule_no, reel.id, self.task_id())
                 task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1,
                                   status=TaskStatus.NOT_READY,
                                   page_set=list(page_set))
@@ -1051,7 +1051,7 @@ class AbsentpageAllocateTask(AllocateTask):
         for no, pagerect in enumerate(query_set, start=1):
             page_set.append(pagerect.serialize_set)
             if len(page_set) == count:
-                task_no = "%s_%s%05X" % (self.schedule.schedule_no, reel.rid, self.task_id())
+                task_no = "%s_%d_%05X" % (self.schedule.schedule_no, reel.id, self.task_id())
                 task = AbsentTask(number=task_no, schedule=self.schedule, ttype=SliceType.CHECK, count=1,
                                 page_set=list(page_set))
                 page_set.clear()
@@ -1115,10 +1115,12 @@ def allocateTasks(schedule, reel, type):
 @disable_for_loaddata
 def post_schedule_create_pretables(sender, instance, created, **kwargs):
     if created:
-        Schedule_Task_Statistical(schedule=instance).save()
+        pass
+        # Schedule_Task_Statistical(schedule=instance).save()
         # Schedule刚被创建，就建立聚类字符准备表，创建逐字校对的任务，任务为未就绪状态
-        CharClassifyPlan.create_charplan.s(instance.pk.hex).apply_async(countdown=20)
-        Reel_Task_Statistical.gen_pptask_by_plan.apply_async(countdown=60)
+        # FIXME: open it
+        # CharClassifyPlan.create_charplan.s(instance.pk.hex).apply_async(countdown=20)
+        # Reel_Task_Statistical.gen_pptask_by_plan.apply_async(countdown=60)
     else:
         # update
         if (instance.has_changed) and ( 'status' in instance.changed_fields):

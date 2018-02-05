@@ -26,52 +26,6 @@ CREATE TRIGGER cc_schedule_seq
             FOR EACH ROW
             EXECUTE PROCEDURE fn_schedule_seq();
 
--- CREATE or REPLACE FUNCTION fn_gen_sid() RETURNS trigger AS $fn_gen_sid$
--- BEGIN NEW.sid := NEW.tripitaka_id||lpad(NEW.code, 5, '0')||NEW.variant_code;
--- RETURN NEW;
--- END;
--- $fn_gen_sid$ LANGUAGE plpgsql;
-
--- DROP TRIGGER IF EXISTS fn_gen_sid ON rect_sutra;
--- CREATE TRIGGER fn_gen_sid
---     BEFORE INSERT ON rect_sutra
---             FOR EACH ROW
---             EXECUTE PROCEDURE fn_gen_sid();
-
--- CREATE or REPLACE FUNCTION fn_gen_rid() RETURNS trigger AS $fn_gen_rid$
--- BEGIN NEW.rid := NEW.sutra_id||'r'|| to_char(NEW.reel_no,'FM000') ;
--- RETURN NEW;
--- END;
--- $fn_gen_rid$ LANGUAGE plpgsql;
-
--- DROP TRIGGER IF EXISTS fn_gen_rid ON rect_reel;
--- CREATE TRIGGER fn_gen_rid
---     BEFORE INSERT ON rect_reel
---             FOR EACH ROW
---             EXECUTE PROCEDURE fn_gen_rid();
-
-
--- CREATE or REPLACE FUNCTION fn_gen_pid() RETURNS trigger AS $fn_gen_pid$
--- BEGIN
--- IF NEW.bar_no IS NULL THEN
--- NEW.bar_no := '0';
--- END IF;
--- IF NEW.vol_no = 0 OR NEW.vol_no IS NULL THEN
--- NEW.pid := LEFT(NEW.reel_id, 8)||'r'||to_char(NEW.reel_no,'FM000')||'p'||to_char(NEW.reel_page_no,'FM00000')||NEW.bar_no;
--- ELSIF NEW.envelop_no = 0 OR NEW.envelop_no IS NULL THEN
--- NEW.pid := LEFT(NEW.reel_id, 8)||'v'||to_char(NEW.vol_no,'FM000')||'p'||to_char(NEW.page_no,'FM00000')||NEW.bar_no;
--- ELSE
--- NEW.pid := LEFT(NEW.reel_id, 8)||'e'||to_char(NEW.envelop_no,'FM000')||'v'||to_char(NEW.vol_no,'FM000')||'p'||to_char(NEW.page_no,'FM00000')||NEW.bar_no;
--- END IF;
--- RETURN NEW;
--- END;
--- $fn_gen_pid$ LANGUAGE plpgsql;
-
--- DROP TRIGGER IF EXISTS fn_gen_pid ON rect_page;
--- CREATE TRIGGER fn_gen_pid
---     BEFORE INSERT ON rect_page
---             FOR EACH ROW
---             EXECUTE PROCEDURE fn_gen_pid();
 
 CREATE or REPLACE FUNCTION fn_create_reelstatis() RETURNS trigger AS $fn_create_reelstatis$
 BEGIN

@@ -178,15 +178,21 @@ def publish_correct_result(task):
     text_changed = False
     saved_reel_correct_texts = list(ReelCorrectText.objects.filter(reel=task.reel).order_by('-id')[0:1])
     if len(saved_reel_correct_texts) == 0:
-        reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task)
-        reel_correct_text.save()
+        with transaction.atomic():
+            reeltext_count = ReelCorrectText.objects.filter(task_id=task.id).count()
+            if reeltext_count == 0:
+                reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task)
+                reel_correct_text.save()
     else: # 与最新的一份记录比较
         text1 = saved_reel_correct_texts[0].text
         text2 = task.result
         if text1 != text2:
-            reel_correct_text = ReelCorrectText(reel=task.reel, text=text2, task=task)
-            reel_correct_text.save()
-            text_changed = True
+            with transaction.atomic():
+                reeltext_count = ReelCorrectText.objects.filter(task_id=task.id).count()
+                if reeltext_count == 0:
+                    reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task)
+                    reel_correct_text.save()
+                    text_changed = True
 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra
@@ -206,12 +212,6 @@ def publish_correct_result(task):
 def correct_submit_result():
     '''
     文字校对提交结果
-    '''
-    pass
-
-def correct_verify_submit_result(task):
-    '''
-    文字校对审定发布结果
     '''
     pass
 

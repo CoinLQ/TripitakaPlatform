@@ -1,43 +1,38 @@
 {% extends "base.html" %}
 {% block title %}{{ task.reel }}文字校对{% endblock %}
 {% block content %}
-<div class="container">
-  <form action="" method="POST">
+<form action="" method="POST">
       {{ csrf_input }}
-<div class="container col-md-8">
-  <div class="row">
-    <div class="page-img">
-      <canvas id="page-canvas" width="800" height="1080"></canvas>
-    </div>
-  </div>
-  <div class="row">
-    <div class="page-img-bg"></div>
-    <div class="">
-      <b>与底本比对有差异的文本段</b>
-      
+  <div class="content-container">
+    <div class="col-md-7 left-pane">
+      <div class="canvas-pane">
+        <canvas id="page-canvas"></canvas>
+      </div>
+      <div class="collate-pane">
+        <b>与底本比对有差异的文本段</b>
         <table class="table table-bordered table-condensed">
-          <thead>
+          <thead style="background-color: darkorange;">
             <tr>
-              <th width="40%">OCR</th>
-              <th width="40%">比对本</th>
-              <th>我的选择</th>
-              <th></th>
+              <th width="40%"> OCR </th>
+              <th width="40%"> 比对本 </th>
+              <th> 我的选择 </th>
+              <th> </th>
             </tr>
           </thead>
           <tbody>
-            {% if sort_index_lst %}
+                  {% if sort_index_lst %}
             <a href="/correct/{{ task.id }}/">按位置排序</a>
-            {% for seg_index, ch in sort_index_lst %}
-            {% set seg=segs[seg_index] %}
+                  {% for seg_index, ch in sort_index_lst %}
+                  {% set seg=segs[seg_index] %}
             <tr class="seg-row" id="segrow_{{ seg.id }}" seg-index="{{ seg_index }}" seg-id="{{ seg.id }}">
-              <td class="ocr-text">{{ seg.ocr_text }}</td>
-              <td class="base-text">{{ seg.base_text }}</td>
+              <td class="ocr-text"> {{ seg.ocr_text }} </td>
+              <td class="base-text"> {{ seg.base_text }} </td>
               <td class="selected-text">
                 <textarea class="segtext{% if seg.doubt_comment %} doubt{% endif %}" rows="1" id="segtext_{{ seg.id }}" name="segtext_{{ seg.id }}" index="{{ seg_index }}">{{ seg.selected_text }}</textarea>
-                <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value="" />
-                <input type="hidden" name="segline_{{ seg.id }}" id="segline_{{ seg.id }}" value="" />
-                <input type="hidden" name="segchar_{{ seg.id }}" id="segchar_{{ seg.id }}" value="" />
-                <input type="hidden" name="segpos_{{ seg.id }}" id="segpos_{{ seg.id }}" value="" />
+                <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value=""/>
+                <input type="hidden" name="segline_{{ seg.id }}" id="segline_{{ seg.id }}" value=""/>
+                <input type="hidden" name="segchar_{{ seg.id }}" id="segchar_{{ seg.id }}" value=""/>
+                <input type="hidden" name="segpos_{{ seg.id }}" id="segpos_{{ seg.id }}" value=""/>
               </td>
               <td>
                 <a class="btn btn-default doubt-btn" data-toggle="modal" data-target="#doubt-modal-{{ seg.id }}">存疑</a>
@@ -59,20 +54,24 @@
                 </div>
               </td>
             </tr>
-            {% endfor %}
-            {% else %}
+                  {% endfor %}
+                  {% else %}
             <a href="/correct/{{ task.id }}/?order_by=char">按字排序</a>
-            {% for seg in segs %}
-            {% if seg.ocr_text != seg.base_text %}
+                  {% for seg in segs %}
+                  {% if seg.ocr_text != seg.base_text %}
             <tr class="seg-row" id="segrow_{{ seg.id }}" seg-index="{{ loop.index0 }}" seg-id="{{ seg.id }}">
-              <td class="ocr-text">{{ seg.ocr_text }}</td>
-              <td class="base-text">{{ seg.base_text }}</td>
+              <td class="ocr-text">
+                {{ seg.ocr_text }}
+              </td>
+              <td class="base-text">
+                {{ seg.base_text }}
+              </td>
               <td class="selected-text">
                 <textarea class="segtext{% if seg.doubt_comment %} doubt{% endif %}" rows="1" id="segtext_{{ seg.id }}" name="segtext_{{ seg.id }}">{{ seg.selected_text }}</textarea>
-                <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value="" />
-                <input type="hidden" name="segline_{{ seg.id }}" id="segline_{{ seg.id }}" value="" />
-                <input type="hidden" name="segchar_{{ seg.id }}" id="segchar_{{ seg.id }}" value="" />
-                <input type="hidden" name="segpos_{{ seg.id }}" id="segpos_{{ seg.id }}" value="" />
+                <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value=""/>
+                <input type="hidden" name="segline_{{ seg.id }}" id="segline_{{ seg.id }}" value=""/>
+                <input type="hidden" name="segchar_{{ seg.id }}" id="segchar_{{ seg.id }}" value=""/>
+                <input type="hidden" name="segpos_{{ seg.id }}" id="segpos_{{ seg.id }}" value=""/>
               </td>
               <td>
                 <a class="btn btn-default doubt-btn" data-toggle="modal" data-target="#doubt-modal-{{ seg.id }}">存疑</a>
@@ -94,53 +93,54 @@
                 </div>
               </td>
             </tr>
-            {% endif %}
-            {% endfor %}
-            {% endif %}
+                  {% endif %}
+                  {% endfor %}
+                  {% endif %}
           </tbody>
         </table>
+      </div>
     </div>
-  </div>
-</div>
-<div class="container col-md-4">
-  <div class="row">
-    <div class="reel-text-region">
-      <ul class="nav nav-tabs">
-        <li class="nav-item">
-          <a class="nav-link active" data-toggle="tab" href="#panel1" role="tab">比对结果</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" data-toggle="tab" href="#panel2" role="tab">卷文本</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" data-toggle="tab" href="#panel3" role="tab">CBETA</a>
-        </li>
-      </ul>
-      <div class="tab-content">
-        <div class="tab-pane active" id="panel1" role="tabpanel">
-          <div id="reel-text-compare" class="reel-text-compare"></div>
-        </div>
-        <div class="tab-pane" id="panel2" role="tabpanel">
-            <div class="form-group">
-              <textarea id="reel-text" name="reel_text" class="reel-textarea"></textarea>
+    <div class="col-md-5 right-pane">
+      <div class="diff-text-pane">
+        <div class="reel-text-region-o">
+          <ul class="nav nav-tabs">
+            <li class="nav-item">
+            <a class="nav-link active" data-toggle="tab" href="#panel1" role="tab">比对结果</a>
+            </li>
+            <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#panel2" role="tab">卷文本</a>
+            </li>
+            <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#panel3" role="tab">CBETA</a>
+            </li>
+          </ul>
+          <div class="tab-content">
+            <div class="tab-pane active" id="panel1" role="tabpanel">
+              <div id="reel-text-compare" class="reel-text-compare">
+              </div>
             </div>
+            <div class="tab-pane" id="panel2" role="tabpanel">
+              <div class="form-group">
+                <textarea id="reel-text" name="reel_text" class="reel-textarea"></textarea>
+              </div>
+            </div>
+            <div class="tab-pane" id="panel3" role="tabpanel">
+              <div id="reel-basetext" class="reel-basetext">
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="tab-pane" id="panel3" role="tabpanel">
-          <div id="reel-basetext" class="reel-basetext"></div>
+      </div>
+      <div class="submit-pane">
+        <div class="correct-submit-o">
+          <input type="hidden" id="input-finished" name="finished" value="0"/>
+          <button type="submit" class="btn btn-primary">暂存</button>
+          <button type="submit" class="btn btn-primary" id="finished-task">完成</button>
         </div>
       </div>
     </div>
   </div>
-  <div class="row">
-    <div class="correct-submit">
-      <input type="hidden" id="input-finished" name="finished" value="0" />
-      <button type="submit" class="btn btn-primary">暂存</button>
-      <button type="submit" class="btn btn-primary" id="finished-task">完成</button>
-    </div>
-    </form>
-  </div>
-</div>
-</div>
+</form>
 {% endblock %}
 {% block foot_script %}
 <script>
@@ -185,7 +185,7 @@
             'selected_text': base_text.substr(base_pos, length)
           });
         }
-        
+
         // 处理当前seg
         text_lst.push( {
           'type': 'diff',
@@ -240,7 +240,7 @@
                 text_lst[text_idx].selected_text = text_lst[text_idx].selected_text.substr(cut_length);
               }
               pos = pos + cut_length;
-            }            
+            }
           }
           //插入separator
           new_text_lst.push({
@@ -362,7 +362,7 @@
       var textarea = $(this).parent().find('textarea.segtext');
       var index = parseInt($(this).parent().attr('seg-index'));
       segtext_change(index, segs[index].ocr_text);
-      textarea.val(segs[index].selected_text);      
+      textarea.val(segs[index].selected_text);
       load_reel_text();
     });
     $('.base-text').dblclick(function() {
@@ -372,6 +372,34 @@
       textarea.val(segs[index].selected_text);
       load_reel_text();
     });
+    var setImg = function (img_url, x, y, w, h) {
+        var canvas = document.getElementById("page-canvas");
+        var context = canvas.getContext("2d");
+        var image = new Image();
+        image.onload = function () {
+            canvas.width = canvas.width;
+            canvas.height = ~~$(".canvas-pane").innerHeight();
+            canvas.width = ~~$(".canvas-pane").innerWidth();
+            let trans_y = ~~Math.max(0, y-470)
+            context.translate(0, -trans_y);
+            context.drawImage(image, 0, 0, 800, 1080);
+            var xratio = 800 / image.width;
+            var yratio = 1080 / image.height;
+            x = parseInt(x * xratio);
+            y = parseInt(y * yratio);
+            w = parseInt(w * xratio);
+            h = parseInt(h * yratio);
+
+            //设置样式
+            context.lineWidth = 1;
+            context.strokeStyle = "#F5270B";
+            context.fillStyle = "#F5270BA0";
+            //绘制
+            context.strokeRect(x, y, w, h);
+            context.fillRect(x, y, w, h);
+        };
+        image.src = img_url;
+    }
     var load_page_image = function(index) {
       var vol_page_no = {{ start_vol_page }} + segs[index].page_no - 1;
       var page_code = vol_page_no.toString();
@@ -384,7 +412,7 @@
           var char_no = parseInt(v['char_no']);
           if (line_no == segs[index].line_no && char_no == segs[index].char_no) {
             setImg(url, v['x'], v['y'], v['w'], v['h']);
-            $('div.page-img').scrollTop(v['y'] - 470);
+            // $('div.canvas-pane').scrollTop(v['y'] - 470);
           }
         });
       });
@@ -396,8 +424,8 @@
       var index = parseInt($(this).attr('seg-index'));
       load_page_image(index);
       var offset = $('#seg-diff-' + seg_id).position().top - 60;
-      $('div.reel-text-region').animate({
-        scrollTop: offset + $('div.reel-text-region').scrollTop()
+      $('div.reel-text-region-o').animate({
+        scrollTop: offset + $('div.reel-text-region-o').scrollTop()
       }, 500);
     });
     $('.doubt-ok').click(function(e) {
@@ -421,6 +449,15 @@
     load_reel_text();
     load_page_image(0);
     $('#reel-basetext').html(base_text.replace(/^p\n/, '').replace(/\np\n/g, '<br />').replace(/\n/g, '<br />'))
+
+    $('textarea').each(function () {
+      this.setAttribute('style', 'height:' + (this.scrollHeight) + 'px;overflow-y:hidden;');
+    }).on('input', function () {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
+    });
+    $('#reel-text').width($('.reel-text-region-o').innerWidth());
+    $('#reel-text').height($('.diff-text-pane').innerHeight());
   });
 </script>
 {% endblock %}

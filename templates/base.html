@@ -22,37 +22,31 @@
     </div>
     <!-- End Page Loading -->
     <header id="header" class="page-topbar">
-        
+
     </header>
     <div id="main">
         <!-- START WRAPPER -->
         <div class="wrapper">
             <!-- START LEFT SIDEBAR NAV-->
-            <aside id="left-sidebar-nav" class="nav-expanded nav-lock nav-collapsible">
+            <!-- <aside id="left-sidebar-nav" class="nav-expanded nav-lock nav-collapsible">
                 <div class="brand-sidebar">
                     <h1 class="logo-wrapper">
-                        <!--<a href="#" class="brand-logo darken-1">
+                        <a href="#" class="brand-logo darken-1">
                             <span class="logo-text hide-on-med-and-down">藏经工作平台</span>
-                        </a>-->
-                        <a href="#" class="navbar-toggler">
                         </a>
+                        <a href="#" class="navbar-toggler"> </a>
                     </h1>
                 </div>
-
-            </aside>
+            </aside> -->
             <section id="content">
                 <!--start container-->
-                <div class="container">
-<!--
-                    <div class="main-header">
-                        <p></p>
-                    </div>
-                    <div class="main-divide"></div>-->
+                <!-- <div class="container"> -->
+                    <!-- <div class="main-divide"></div> -->
                     {% block content %} {% endblock %}
-                </div>
+                <!-- </div> -->
+            </section>
         </div>
-        </section>
-    </div>    
+    </div>
     <script src="{{ static('js/jquery-latest.js') }}" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.5.13/dist/vue.js"></script>
     <script src="{{ static('js/axios.min.js') }}"></script>

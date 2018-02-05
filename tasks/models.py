@@ -1,8 +1,8 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-
-from sutradata.models import *
+from jwt_auth.models import Staff
+from tdata.models import *
 
 from difflib import SequenceMatcher
 import re
@@ -87,7 +87,7 @@ class TaskBase(object):
 class BatchTask(models.Model):
     priority = models.SmallIntegerField('优先级', choices=TaskBase.PRIORITY_CHOICES, default=2) # 1,2,3分别表示低，中，高
     created_at = models.DateTimeField('创建时间', default=timezone.now)
-    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+    publisher = models.ForeignKey(Staff, on_delete=models.PROTECT,
     verbose_name='发布用户')
     description = models.TextField('描述', blank=True)
 
@@ -172,9 +172,9 @@ class Task(models.Model):
     finished_at = models.DateTimeField('完成时间', blank=True, null=True)
     created_at = models.DateTimeField('创建时间', default=timezone.now)
     picked_at = models.DateTimeField('领取时间', blank=True, null=True)
-    picker = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='picked_tasks', on_delete=models.SET_NULL,
+    picker = models.ForeignKey(Staff, related_name='picked_tasks', on_delete=models.SET_NULL,
     verbose_name='领取用户', blank=True, null=True)
-    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='published_tasks', on_delete=models.PROTECT,
+    publisher = models.ForeignKey(Staff, related_name='published_tasks', on_delete=models.PROTECT,
     verbose_name='发布用户')
     priority = models.SmallIntegerField('优先级', choices=TaskBase.PRIORITY_CHOICES, default=2) # 1,2,3分别表示低，中，高
     progress = models.SmallIntegerField('进度', default=0)
@@ -196,7 +196,7 @@ class ReelCorrectText(models.Model):
     reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)
     text = SutraTextField('经文', blank=True) # 文字校对或文字校对审定后得到的经文
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True, default=None)
-    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
+    publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', default=timezone.now)
 
     class Meta:
@@ -207,7 +207,7 @@ class LQReelText(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
     text = SutraTextField('经文', blank=True) # 校勘判取审定后得到的经文
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True, default=None)
-    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
+    publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', default=timezone.now)
 
     class Meta:
@@ -222,7 +222,7 @@ class ReelDiff(models.Model):
     # task = models.OneToOneField(Task, on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始比对结果，不为null表示校勘判取任务和校勘判取审定任务的结果
     base_text = SutraTextField('基准文本', blank=True, null=True)
     published_at = models.DateTimeField('发布时间', blank=True, null=True)
-    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+    publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True,
     verbose_name='发布用户')
     correct_texts = models.ManyToManyField(ReelCorrectText)
     diffseg_pos_lst = models.TextField('DiffSeg位置信息')
@@ -300,7 +300,7 @@ class Punct(models.Model):
     reeltext = models.ForeignKey(ReelCorrectText, verbose_name='实体藏经卷经文', on_delete=models.CASCADE)
     punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始标点结果，不为null表示标点任务和标点审定任务的结果
-    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
+    publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', blank=True, null=True)
 
 class LQPunct(models.Model):
@@ -308,7 +308,7 @@ class LQPunct(models.Model):
     reeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
     punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始标点结果，不为null表示标点任务和标点审定任务的结果
-    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
+    publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', blank=True, null=True)
 
 # 格式标注相关
@@ -325,7 +325,7 @@ class Mark(models.Model):
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE)
     reeltext = models.ForeignKey(ReelCorrectText, verbose_name='实体藏经卷经文', on_delete=models.CASCADE)
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始格式标注结果，不为null表示格式标注任务和格式标注审定任务的结果
-    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
+    publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', blank=True, null=True)
 
 class MarkUnit(MarkUnitBase):
@@ -335,7 +335,7 @@ class LQMark(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
     reeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始格式标注结果，不为null表示格式标注任务和格式标注审定任务的结果
-    publisher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
+    publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', blank=True, null=True)
 
 class LQMarkUnit(MarkUnitBase):
@@ -353,10 +353,10 @@ class DoubtBase(models.Model):
     )
 
     comment = models.TextField('意见')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+    user = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True,
     verbose_name='用户')
     created_at = models.DateTimeField('创建时间', default=timezone.now)
-    processor = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='processed_%(class)s', on_delete=models.SET_NULL, null=True,
+    processor = models.ForeignKey(Staff, related_name='processed_%(class)s', on_delete=models.SET_NULL, null=True,
     verbose_name='处理用户')
     processed_at = models.DateTimeField('处理时间', null=True)
     status = models.SmallIntegerField('状态', choices=STATUS_CHOICES)

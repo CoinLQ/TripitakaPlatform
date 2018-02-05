@@ -54,7 +54,7 @@ class JudgeTaskDetail(APIView):
     def get(self, request, task_id, format=None):
         base_text = clean_separators(self.task.reeldiff.base_text.text)
         diffseg_pos_lst = self.task.reeldiff.diffseg_pos_lst
-        base_reel = Reel.objects.get(sutra=self.task.reeldiff.base_sutra, reel_no=self.task.reeldiff.reel_no)
+        base_reel = self.task.reeldiff.base_text.reel
         puncts = base_reel.punct_set.all()[0:1]
         punct = puncts[0]
         response = {
@@ -75,13 +75,14 @@ class FinishJudgeTask(APIView):
         objs = list(DiffSegResult.objects.filter(task_id=task_id, selected=0)[0:1])
         all_selected = (len(objs) == 0)
         if all_selected:
-            Task.objects.filter(id=task_id).update(status=Task.STATUS_FINISHED)
+            self.task.status = Task.STATUS_FINISHED
+            self.task.save(update_fields=['status'])
             # TODO: changed to background job
             if self.task.typ == Task.TYPE_JUDGE:
                 judge_submit_result(self.task)
             elif self.task.typ == Task.TYPE_JUDGE_VERIFY:
                 publish_judge_result(self.task)
-            return Response({'task_id': task_id})
+            return Response({'task_id': task_id, 'status': self.task.status})
         return Response({'msg': 'not all selected'}, status=status.HTTP_400_BAD_REQUEST)
 
 class DiffSegResultAllSelected(APIView):

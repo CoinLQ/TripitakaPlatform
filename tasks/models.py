@@ -160,8 +160,8 @@ class Task(models.Model):
     status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1)
 
     # 文字校对相关
-    compare_reel = models.ForeignKey(CompareReel, on_delete=models.SET_NULL, null=True)
-    separators = models.TextField('页行分隔符')
+    compare_reel = models.ForeignKey(CompareReel, on_delete=models.SET_NULL, blank=True, null=True)
+    separators = models.TextField('页行分隔符', blank=True, null=True)
     # 校勘判取相关
     reeldiff = models.ForeignKey('ReelDiff', on_delete=models.SET_NULL, null=True)
     # 标点相关
@@ -203,6 +203,9 @@ class ReelCorrectText(models.Model):
         verbose_name = '文字校对得到的卷经文'
         verbose_name_plural = '文字校对得到的卷经文'
 
+    def __str__(self):
+        return '%s' % self.reel
+
 class LQReelText(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
     text = SutraTextField('经文', blank=True) # 校勘判取审定后得到的经文
@@ -218,7 +221,6 @@ class LQReelText(models.Model):
 class ReelDiff(models.Model):
     lqsutra = models.ForeignKey(LQSutra, on_delete=models.CASCADE, blank=True, null=True)
     reel_no = models.SmallIntegerField('卷序号')
-    base_sutra = models.ForeignKey(Sutra, on_delete=models.SET_NULL, blank=True, null=True)
     base_text = models.ForeignKey(ReelCorrectText, related_name='reeldiffs', verbose_name='基准文本', on_delete=models.CASCADE)
     published_at = models.DateTimeField('发布时间', blank=True, null=True)
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True,

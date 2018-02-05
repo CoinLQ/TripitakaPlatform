@@ -22,7 +22,7 @@ class CompareReel(models.Model):
         用于文字校对前的文本比对
         text1是基础本；text2是要比对的版本。
         """
-        SEPARATORS_PATTERN = re.compile('[p\n]')
+        SEPARATORS_PATTERN = re.compile('[pb\n]')
         text1 = SEPARATORS_PATTERN.sub('', text1)
         text2 = SEPARATORS_PATTERN.sub('', text2)
         base_text_lst = []

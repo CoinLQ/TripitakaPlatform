@@ -5,14 +5,14 @@ from django.http import HttpResponse, JsonResponse
 from django.db import transaction
 from django.db.models import Q
 
-from tasks.common import judge_merge_text_punct, ReelText, extract_page_line_separators
 from tdata.models import *
 from tasks.models import *
+from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, ReelText,\
+extract_page_line_separators
+from tasks.task_controller import publish_correct_result
 
 import json, re
 from operator import attrgetter, itemgetter
-
-SEPARATORS_PATTERN = re.compile('[p\n]')
 
 # TODO: 检查权限
 #@login_required
@@ -141,8 +141,7 @@ def do_correct_task_post(request, task_id):
 
             with transaction.atomic():
                 # 保存文字校对审定任务的correctsegs
-                for seg in correctsegs_verify:
-                    seg.save()
+                CorrectSeg.objects.bulk_create(correctsegs_verify)
 
                 # 文字校对审定任务设为待领取
                 Task.objects.filter(reel=task.reel,
@@ -229,10 +228,12 @@ def do_correct_verify_task_post(request, task_id):
         reel_text = request.POST.get('reel_text').replace('\r\n', '\n')
         if reel_text:
             separators = extract_page_line_separators(reel_text)
-            separators_json = json.dumps(separators, separators=(',', ':'))
-            Task.objects.filter(id=task_id).update(result=reel_text, separators=separators_json)
+            task.separators = json.dumps(separators, separators=(',', ':'))
+            task.result = reel_text
+            task.save(update_fields=['result', 'separators'])
         finished = request.POST.get('finished')
         if finished == '1':
-            Task.objects.filter(id=task_id).update(status=Task.STATUS_FINISHED)
-            task.reel.update(correct_text=reel_text)
+            task.status = Task.STATUS_FINISHED
+            task.save(update_fields=['status'])
+            publish_correct_result(task)
     return redirect('do_correct_verify_task', task_id=task_id)

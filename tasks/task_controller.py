@@ -6,15 +6,13 @@ from django.db.models import Q
 
 from tdata.models import *
 from tasks.models import *
-from tasks.common import judge_merge_text_punct, ReelText, \
+from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, ReelText, \
 extract_page_line_separators, clean_separators
 from tasks.reeldiff_processor import generate_reeldiff
 
 import json, re, logging
 from operator import attrgetter, itemgetter
 from difflib import SequenceMatcher
-
-SEPARATORS_PATTERN = re.compile('[p\n]')
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +41,7 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
     for task_no in range(1, correct_times + 1):
         task = Task(batch_task=batchtask, reel=reel, typ=Task.TYPE_CORRECT, task_no=task_no, status=Task.STATUS_NOT_READY,
         publisher=batchtask.publisher)
-        if task_no <= int((correct_times + 1) / 2):
+        if task_no % 2 == 1:
             task.compare_reel = compare_reel1
         else:
             task.compare_reel = compare_reel2
@@ -180,15 +178,21 @@ def publish_correct_result(task):
     text_changed = False
     saved_reel_correct_texts = list(ReelCorrectText.objects.filter(reel=task.reel).order_by('-id')[0:1])
     if len(saved_reel_correct_texts) == 0:
-        reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task)
-        reel_correct_text.save()
+        with transaction.atomic():
+            reeltext_count = ReelCorrectText.objects.filter(task_id=task.id).count()
+            if reeltext_count == 0:
+                reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task)
+                reel_correct_text.save()
     else: # 与最新的一份记录比较
         text1 = saved_reel_correct_texts[0].text
         text2 = task.result
         if text1 != text2:
-            reel_correct_text = ReelCorrectText(reel=task.reel, text=text2, task=task)
-            reel_correct_text.save()
-            text_changed = True
+            with transaction.atomic():
+                reeltext_count = ReelCorrectText.objects.filter(task_id=task.id).count()
+                if reeltext_count == 0:
+                    reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task)
+                    reel_correct_text.save()
+                    text_changed = True
 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra
@@ -208,12 +212,6 @@ def publish_correct_result(task):
 def correct_submit_result():
     '''
     文字校对提交结果
-    '''
-    pass
-
-def correct_verify_submit_result(task):
-    '''
-    文字校对审定发布结果
     '''
     pass
 

@@ -1,3 +1,42 @@
+.left-pane {
+    height: 100%;
+    padding: 5px;
+}
+.right-pane {
+    height: 100%;
+    padding: 5px;
+}
+.diff-text-pane {
+    padding: 0 15px;
+    height: 95%;
+    overflow: scroll;
+    box-shadow: 0px 0px 1px 2px #363E4E;
+}
+.page-canvas {
+    width: 100%;
+    height: 100%;
+}
+.selected-text > textarea {
+    width: 150px;
+    border: 0;
+}
+tr:nth-child(even) {
+    background-color: #f8f8f9;
+}
+.canvas-pane {
+    box-shadow: 0px 0px 1px 2px #363E4E;
+    height: 45%;
+    overflow: scroll;
+}
+.collate-pane {
+    box-shadow: 0px 0px 1px 2px #363E4E;
+    margin-top: 15px;
+    overflow: scroll;
+    height: 53%;
+}
+.submit-pane {
+    margin-top: 5px;
+}
 .reel-text-region {
     position: fixed;
     overflow: scroll;

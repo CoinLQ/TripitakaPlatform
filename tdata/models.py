@@ -86,7 +86,7 @@ class Sutra(models.Model):
         verbose_name_plural = '实体经目管理'
 
     def __str__(self):
-        return self.name
+        return '%s:%s' % (self.sid, self.name)
 
 class LQReel(models.Model):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', on_delete=models.CASCADE)
@@ -137,7 +137,7 @@ class Reel(models.Model):
         return u"第%s卷" %(self.reel_no,)
 
     def __str__(self):
-        return '%s%d' % (self.sutra.name, self.reel_no)
+        return '%s%d' % (self.sutra, self.reel_no)
 
     def url_prefix(self):
         tcode = self.sutra.sid[0:2]

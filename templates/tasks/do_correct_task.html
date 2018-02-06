@@ -329,9 +329,15 @@
         var seg_id = $(this).attr('seg-id');
         var index = segid_index_map[seg_id];
         load_page_image(index);
-        $('body').animate({
-          scrollTop: $('#segrow_' + seg_id).position().top - 450
-        }, 500);
+        let scrollTop = $('#segrow_' + seg_id).data('scrollTop')
+        if (!scrollTop) {
+          scrollTop = $('#segrow_' + seg_id).position().top
+                    - $('.collate-pane').offset().top
+                    + $('.collate-pane').scrollTop();
+          $('#segrow_' + seg_id).data('scrollTop', scrollTop);
+        }
+        $('.collate-pane').animate({scrollTop: scrollTop }, 500);
+        $('#segrow_' + seg_id).fadeOut(500).fadeIn(500);
       });
     };
 
@@ -378,17 +384,13 @@
         var image = new Image();
         image.onload = function () {
             canvas.width = canvas.width;
-            canvas.height = ~~$(".canvas-pane").innerHeight();
-            canvas.width = ~~$(".canvas-pane").innerWidth();
-            let trans_y = ~~Math.max(0, y-470)
-            context.translate(0, -trans_y);
-            context.drawImage(image, 0, 0, 800, 1080);
-            var xratio = 800 / image.width;
-            var yratio = 1080 / image.height;
-            x = parseInt(x * xratio);
-            y = parseInt(y * yratio);
-            w = parseInt(w * xratio);
-            h = parseInt(h * yratio);
+            canvas.height = image.height;
+            canvas.width = image.width;
+
+            x = ~~x; y = ~~y; w = ~~w; h = ~~h;
+
+            context.scale(0.8, 0.8);
+            context.drawImage(image, 0, 0);
 
             //设置样式
             context.lineWidth = 1;
@@ -397,6 +399,13 @@
             //绘制
             context.strokeRect(x, y, w, h);
             context.fillRect(x, y, w, h);
+
+            let wrapper_h = $('.canvas-pane').innerHeight();
+            let wrapper_w = $('.canvas-pane').innerWidth();
+            let trans_y = y*0.8 > wrapper_h-100 ? y*0.8-wrapper_h/2: 0;
+            let trans_x = x*0.8 > wrapper_w-100 ? x*0.8-wrapper_w/2: 0;
+            $('.canvas-pane').scrollTop(~~trans_y);
+            $('.canvas-pane').scrollLeft(~~trans_x);
         };
         image.src = img_url;
     }
@@ -423,9 +432,13 @@
       $('#seg-diff-' + seg_id).attr('style', 'color:red;');
       var index = parseInt($(this).attr('seg-index'));
       load_page_image(index);
-      var offset = $('#seg-diff-' + seg_id).position().top - 60;
-      $('div.reel-text-region-o').animate({
-        scrollTop: offset + $('div.reel-text-region-o').scrollTop()
+      let offset = $(this).attr('scrollTop')
+      if (!offset) {
+        offset = $('div.diff-text-pane').scrollTop() + $('#seg-diff-' + seg_id).position().top - 60;
+        $(this).attr('scrollTop', offset);
+      }
+      $('div.diff-text-pane').animate({
+        scrollTop: offset
       }, 500);
     });
     $('.doubt-ok').click(function(e) {

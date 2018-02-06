@@ -34,7 +34,7 @@ class Tripitaka(models.Model):
 
     class Meta:
         verbose_name = '实体藏经'
-        verbose_name_plural = '实体藏经管理'
+        verbose_name_plural = '实体藏'
 
     def __str__(self):
         return '{} ({})'.format(self.name, self.code)
@@ -57,6 +57,7 @@ class LQSutra(models.Model):
     code = models.CharField(verbose_name='龙泉经目编码', max_length=5, blank=False)
     variant_code = models.CharField(verbose_name='龙泉经目别本编码', max_length=1, default='0')
     name = models.CharField(verbose_name='龙泉经目名称', max_length=64, blank=False)
+    author = models.CharField(verbose_name='著译者', max_length=255, blank=True)    
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
     remark = models.TextField('备注', blank=True, default='')
 
@@ -69,7 +70,7 @@ class LQSutra(models.Model):
 
 class Sutra(models.Model):
     sid = models.CharField(verbose_name='实体藏经|唯一经号编码', editable=True, max_length=8)
-    tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE)
+    tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE,verbose_name='藏')
     code = models.CharField(verbose_name='实体经目编码', max_length=5, blank=False)
     variant_code = models.CharField(verbose_name='别本编码', max_length=1, default='0')
     name = models.CharField(verbose_name='实体经目名称', max_length=64, blank=True)
@@ -81,7 +82,7 @@ class Sutra(models.Model):
 
     class Meta:
         verbose_name = '实体经目'
-        verbose_name_plural = '实体经目管理'
+        verbose_name_plural = '实体经'
 
     def __str__(self):
         return '%s:%s' % (self.sid, self.name)
@@ -127,7 +128,7 @@ class Reel(models.Model):
 
     class Meta:
         verbose_name = '实体藏经卷'
-        verbose_name_plural = '实体藏经卷'
+        verbose_name_plural = '实体卷'
         unique_together = (('sutra', 'reel_no'),)
 
     @property

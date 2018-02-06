@@ -21,10 +21,12 @@ from django.conf.urls import url
 from tasks.views.correct import *
 from tasks.views.judge import *
 from tools.views import *
+import xadmin
 
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
+    path('xadmin/', xadmin.site.urls),
     url(r'^auth/', include("jwt_auth.urls", namespace="api-auth")),
     url(r'^api-auth/', include('rest_framework.urls')),
     url(r'^api/', include('api.urls')),

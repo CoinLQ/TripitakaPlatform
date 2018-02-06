@@ -329,9 +329,15 @@
         var seg_id = $(this).attr('seg-id');
         var index = segid_index_map[seg_id];
         load_page_image(index);
-        $('body').animate({
-          scrollTop: $('#segrow_' + seg_id).position().top - 450
-        }, 500);
+        let scrollTop = $('#segrow_' + seg_id).data('scrollTop')
+        if (!scrollTop) {
+          scrollTop = $('#segrow_' + seg_id).position().top
+                    - $('.collate-pane').offset().top
+                    + $('.collate-pane').scrollTop();
+          $('#segrow_' + seg_id).data('scrollTop', scrollTop);
+        }
+        $('.collate-pane').animate({scrollTop: scrollTop }, 500);
+        $('#segrow_' + seg_id).fadeOut(500).fadeIn(500);
       });
     };
 
@@ -380,15 +386,19 @@
             canvas.width = canvas.width;
             canvas.height = ~~$(".canvas-pane").innerHeight();
             canvas.width = ~~$(".canvas-pane").innerWidth();
-            let trans_y = ~~Math.max(0, y-470)
-            context.translate(0, -trans_y);
-            context.drawImage(image, 0, 0, 800, 1080);
-            var xratio = 800 / image.width;
-            var yratio = 1080 / image.height;
+            // var xratio = 800 / image.width;
+            // var yratio = 1080 / image.height;
+            let xratio = 1, yratio = 1;
             x = parseInt(x * xratio);
             y = parseInt(y * yratio);
             w = parseInt(w * xratio);
             h = parseInt(h * yratio);
+
+            let trans_y = y > canvas.height-100 ? y-canvas.height/2: 0;
+            let trans_x = x > canvas.width-100 ? x-canvas.width/2: 0;
+            context.scale(0.8, 0.8);
+            context.translate(~~-trans_x, ~~-trans_y);
+            context.drawImage(image, 0, 0);
 
             //设置样式
             context.lineWidth = 1;
@@ -423,9 +433,13 @@
       $('#seg-diff-' + seg_id).attr('style', 'color:red;');
       var index = parseInt($(this).attr('seg-index'));
       load_page_image(index);
-      var offset = $('#seg-diff-' + seg_id).position().top - 60;
-      $('div.reel-text-region-o').animate({
-        scrollTop: offset + $('div.reel-text-region-o').scrollTop()
+      let offset = $(this).attr('scrollTop')
+      if (!offset) {
+        offset = $('div.diff-text-pane').scrollTop() + $('#seg-diff-' + seg_id).position().top - 60;
+        $(this).attr('scrollTop', offset);
+      }
+      $('div.diff-text-pane').animate({
+        scrollTop: offset
       }, 500);
     });
     $('.doubt-ok').click(function(e) {

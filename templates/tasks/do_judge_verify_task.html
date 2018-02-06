@@ -31,7 +31,7 @@
         <li :class="{ disabled: (diffseg_curpage == diffseg_page_count) }"><a href="#" @click.stop.prevent="nextPage">&gt;</a></li>
       </ul>
       <div class="text-center">
-        <button class="btn btn-primary" :disabled="not_all_selected || (sharedata.status == 4)" :title="submit_title" @click.stop.prevent="finishJudgeTask">提交</button>
+        <button class="btn btn-primary" :disabled="submit_disabled" :title="submit_title" @click.stop.prevent="finishJudgeTask">提交</button>
       </div>
     </div>
     <div class="row">
@@ -58,8 +58,8 @@
       diffseg_page_count: 1,
       diffseg_curpage: 1,
       merged_base_text: [],
-      not_all_selected: true,
-      submit_title: 'aa',
+      submit_disabled: true,
+      submit_title: '',
       sharedata: {
         task_id: {{ task_id }},
         judge_task_ids: {{ judge_task_ids }},
@@ -183,7 +183,7 @@
         var vm = this
         axios.get('/api/judge/' + vm.sharedata.task_id + '/allselected/')
         .then(function(response) {
-          vm.not_all_selected = ! response.data.all_selected;
+          vm.submit_disabled = ! response.data.all_selected;
         })
       },
       setCurrentSeg: function (diffseg_id) {
@@ -199,8 +199,12 @@
       },
       finishJudgeTask: function() {
         var vm = this;
-        axios.post('/api/judge/' + this.sharedata.task_id + '/finish/')
+        axios.post('/api/judge/' + vm.sharedata.task_id + '/finish/')
         .then(function(response) {
+          vm.sharedata.status = response.data.status;
+          if (vm.sharedata.status == 4) {
+            vm.submit_disabled = true;
+          }
           alert('提交成功！');
         })
         .catch(function (error) {

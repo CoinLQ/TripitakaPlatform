@@ -6,14 +6,13 @@ from django.db.models import Q
 
 from tdata.models import *
 from tasks.models import *
-from tasks.common import judge_merge_text_punct, ReelText, extract_page_line_separators
+from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, ReelText, \
+extract_page_line_separators, clean_separators
 from tasks.reeldiff_processor import generate_reeldiff
 
 import json, re, logging
 from operator import attrgetter, itemgetter
 from difflib import SequenceMatcher
-
-SEPARATORS_PATTERN = re.compile('[p\n]')
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +41,7 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
     for task_no in range(1, correct_times + 1):
         task = Task(batch_task=batchtask, reel=reel, typ=Task.TYPE_CORRECT, task_no=task_no, status=Task.STATUS_NOT_READY,
         publisher=batchtask.publisher)
-        if task_no <= int((correct_times + 1) / 2):
+        if task_no % 2 == 1:
             task.compare_reel = compare_reel1
         else:
             task.compare_reel = compare_reel2
@@ -158,8 +157,7 @@ def create_reeldiff_for_judge_task(lqreel, lqsutra):
     for reel in reel_lst:
         correct_text_lst.append( reel_id_to_text[reel.id] )
         reel_correct_text_lst.append( reel_id_to_reel_correct_text[reel.id] )
-    base_text = SEPARATORS_PATTERN.sub('', correct_text_lst[0])
-    reeldiff = ReelDiff(lqsutra=lqsutra, reel_no=reel_no, base_sutra=new_sutra_lst[0], base_text=base_text)
+    reeldiff = ReelDiff(lqsutra=lqsutra, reel_no=reel_no, base_text=reel_correct_text_lst[0])
     reeldiff.save()
     reeldiff.correct_texts.set(reel_correct_text_lst)
     
@@ -180,15 +178,21 @@ def publish_correct_result(task):
     text_changed = False
     saved_reel_correct_texts = list(ReelCorrectText.objects.filter(reel=task.reel).order_by('-id')[0:1])
     if len(saved_reel_correct_texts) == 0:
-        reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task)
-        reel_correct_text.save()
+        with transaction.atomic():
+            reeltext_count = ReelCorrectText.objects.filter(task_id=task.id).count()
+            if reeltext_count == 0:
+                reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task)
+                reel_correct_text.save()
     else: # 与最新的一份记录比较
         text1 = saved_reel_correct_texts[0].text
         text2 = task.result
         if text1 != text2:
-            reel_correct_text = ReelCorrectText(reel=task.reel, text=text2, task=task)
-            reel_correct_text.save()
-            text_changed = True
+            with transaction.atomic():
+                reeltext_count = ReelCorrectText.objects.filter(task_id=task.id).count()
+                if reeltext_count == 0:
+                    reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task)
+                    reel_correct_text.save()
+                    text_changed = True
 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra
@@ -208,12 +212,6 @@ def publish_correct_result(task):
 def correct_submit_result():
     '''
     文字校对提交结果
-    '''
-    pass
-
-def correct_verify_submit_result(task):
-    '''
-    文字校对审定发布结果
     '''
     pass
 
@@ -286,4 +284,39 @@ def publish_judge_result(task):
     发布校勘判取结果
     '''
     print('publish_judge_result')
-    pass
+    if task.status != Task.STATUS_FINISHED:
+        return
+    lqreeltext_count = LQReelText.objects.filter(task_id=task.id).count()
+    if lqreeltext_count != 0:
+        return
+    base_correct_text = task.reeldiff.base_text
+    base_text = clean_separators(base_correct_text.text)
+    base_tripitaka_id = base_correct_text.reel.sutra.tripitaka_id
+    text_lst = []
+    base_index = 0
+    base_text_length = len(base_text)
+    diffsegresults = list(DiffSegResult.objects.filter(task_id=task.id).order_by('id'))
+    for diffsegresult in diffsegresults:
+        if not diffsegresult.selected:
+            print('not selected')
+            return
+        base_pos = diffsegresult.diffseg.base_pos
+        base_length = diffsegresult.diffseg.base_length
+        if base_index < base_pos:
+            text_lst.append( base_text[base_index: base_pos] )
+            base_index = base_pos
+        if base_index != base_pos:
+            print('error')
+            return
+        text_lst.append(diffsegresult.selected_text)
+        base_index += base_length
+    if base_index < base_text_length:
+        text_lst.append( base_text[base_index: base_text_length] )
+    else:
+        print('error')
+        return
+    with transaction.atomic():
+        lqreeltext_count = LQReelText.objects.filter(task_id=task.id).count()
+        if lqreeltext_count == 0:
+            lqreeltext = LQReelText(lqreel=task.lqreel, text=''.join(text_lst), task=task, publisher=task.picker)
+            lqreeltext.save()

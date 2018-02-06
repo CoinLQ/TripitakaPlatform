@@ -22,7 +22,7 @@ class CompareReel(models.Model):
         用于文字校对前的文本比对
         text1是基础本；text2是要比对的版本。
         """
-        SEPARATORS_PATTERN = re.compile('[p\n]')
+        SEPARATORS_PATTERN = re.compile('[pb\n]')
         text1 = SEPARATORS_PATTERN.sub('', text1)
         text2 = SEPARATORS_PATTERN.sub('', text2)
         base_text_lst = []
@@ -160,8 +160,8 @@ class Task(models.Model):
     status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1)
 
     # 文字校对相关
-    compare_reel = models.ForeignKey(CompareReel, on_delete=models.SET_NULL, null=True)
-    separators = models.TextField('页行分隔符')
+    compare_reel = models.ForeignKey(CompareReel, on_delete=models.SET_NULL, blank=True, null=True)
+    separators = models.TextField('页行分隔符', blank=True, null=True)
     # 校勘判取相关
     reeldiff = models.ForeignKey('ReelDiff', on_delete=models.SET_NULL, null=True)
     # 标点相关
@@ -203,6 +203,9 @@ class ReelCorrectText(models.Model):
         verbose_name = '文字校对得到的卷经文'
         verbose_name_plural = '文字校对得到的卷经文'
 
+    def __str__(self):
+        return '%s' % self.reel
+
 class LQReelText(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
     text = SutraTextField('经文', blank=True) # 校勘判取审定后得到的经文
@@ -218,9 +221,7 @@ class LQReelText(models.Model):
 class ReelDiff(models.Model):
     lqsutra = models.ForeignKey(LQSutra, on_delete=models.CASCADE, blank=True, null=True)
     reel_no = models.SmallIntegerField('卷序号')
-    base_sutra = models.ForeignKey(Sutra, on_delete=models.SET_NULL, blank=True, null=True)
-    # task = models.OneToOneField(Task, on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始比对结果，不为null表示校勘判取任务和校勘判取审定任务的结果
-    base_text = SutraTextField('基准文本', blank=True, null=True)
+    base_text = models.ForeignKey(ReelCorrectText, related_name='reeldiffs', verbose_name='基准文本', on_delete=models.CASCADE)
     published_at = models.DateTimeField('发布时间', blank=True, null=True)
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True,
     verbose_name='发布用户')
@@ -233,12 +234,8 @@ class DiffSeg(models.Model):
     """
     reeldiff = models.ForeignKey(ReelDiff, on_delete=models.CASCADE, null=True)
     diffseg_no = models.SmallIntegerField('序号', default=0)
-    #selected_text = models.TextField('判取文本', blank=True, null=True) # del
     base_pos = models.IntegerField('在基准文本中位置', default=0) # base_pos=0表示在第1个字前，base_pos>0表示在第base_pos个字后
     base_length = models.IntegerField('基准文本中对应文本段长度', default=0)
-    #status = models.SmallIntegerField('状态', default=0) #　0, 1, 2 -- 未判取，已判取，已判取并存疑 # del
-    #存疑相关
-    #doubt_comment = models.TextField('存疑意见', default='', blank=True) # del
     recheck = models.BooleanField('待复查', default=False)
     recheck_desc = models.TextField('待复查说明', default='')
 

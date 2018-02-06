@@ -1,50 +1,34 @@
 # -*- coding: UTF-8 -*-
 from django.db import models
 
-# Create your models here.
-from django.db import models
-from django.core.validators import MaxValueValidator, MinValueValidator
 import uuid
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from jwt_auth.models import Staff
 from django.utils.timezone import localtime, now
-from functools import wraps, reduce
-from django.db.models import Min, Sum
+from functools import wraps
 from django.db import connection, transaction
-import json
-import urllib.request
-import collections
-from django.db import connection, transaction
-from django.db.models import Sum, Case, When, Value, Count, Avg, F
+from django.db.models import Min, Sum, Case, When, Value, Count, F
 from django_bulk_update.manager import BulkUpdateManager
 from .lib.arrange_rect import ArrangeRect
 from django.forms.models import model_to_dict
-from django.core.exceptions import ValidationError
 from dotmap import DotMap
 from PIL import Image, ImageFont, ImageDraw
-from io import BytesIO
 from celery import shared_task
 from TripitakaPlatform import email_if_fails
 import os, sys
-import re
 
 from tdata.lib.fields import JSONField
 from tdata.models import *
 
-try:
-    from functools import wraps
-except ImportError:
-    from django.utils.functional import wraps
-
 import inspect
 
 
-def disable_for_loaddata(signal_handler):
+def disable_for_create_cut_task(signal_handler):
     @wraps(signal_handler)
     def wrapper(*args, **kwargs):
         for fr in inspect.stack():
-            if inspect.getmodulename(fr[1]) == 'loaddata':
+            if inspect.getmodulename(fr[1]) == 'create_cut_task':
                 return
         signal_handler(*args, **kwargs)
     return wrapper
@@ -231,14 +215,14 @@ class PageRect(models.Model):
     def rebuild_rect(self):
         if len(self.rect_set) == 0:
             return
-        Rect.objects.filter(page_code=self.page_id).all().delete()
+        Rect.objects.filter(page_pid=self.page_id).all().delete()
         return PageRect.align_rects_bypage(self, self.rect_set)
 
     @classmethod
-    def reformat_rects(cls, page_id):
+    def reformat_rects(cls, page_pid):
         ret = True
-        rects = Rect.objects.filter(page_code=page_id).all()
-        pagerect = PageRect.objects.filter(page_id=page_id).first()
+        rects = Rect.objects.filter(page_pid=page_pid).all()
+        pagerect = PageRect.objects.filter(page_id=page_pid).first()
         if rects.count() == 0:
             return ret
         return PageRect.align_rects_bypage(pagerect, rects)
@@ -251,19 +235,19 @@ class PageRect(models.Model):
         rect_list = list()
         for lin_n, line in columns.items():
             for col_n, _r in enumerate(line, start=1):
-                _rect = DotMap(_r)
+                _rect = _r
                 _rect['line_no'] = lin_n
                 _rect['char_no'] = col_n
-                _rect['page_code'] = pagerect.page_id
+                _rect['page_pid'] = pagerect.page_id
                 _rect['reel_id'] = pagerect.reel_id
-                _rect = Rect.normalize(_rect)
                 try :
                     # 这里以左上角坐标，落在哪个列数据为准
-                    column_dict = (item for item in page.json if item["x"] <= _rect['x'] and _rect['x'] <= item["x1"] and
+                    column_dict = (item for item in page.cut_info if item["x"] <= _rect['x'] and _rect['x'] <= item["x1"] and
                                                 item["y"] <= _rect['y'] and _rect['y'] <= item["y1"] ).__next__()
                     _rect['column_set'] = column_dict
                 except:
                     ret = False
+                _rect = Rect.normalize(_rect)
                 rect_list.append(_rect)
         Rect.bulk_insert_or_replace(rect_list)
         pagerect.line_count = max(map(lambda Y: Y['line_no'], rect_list))
@@ -310,7 +294,7 @@ class Rect(models.Model):
 
     cid = models.CharField(verbose_name=u'经字号', max_length=32, db_index=True) # 字ID YB000860_001_01_0_01_01
     reel = models.ForeignKey(Reel, null=True, blank=True, related_name='rects', on_delete=models.SET_NULL)
-    page_code = models.CharField(max_length=23, blank=False, verbose_name=u'关联源页CODE', db_index=True)
+    page_pid = models.CharField(max_length=23, blank=False, verbose_name=u'关联源页pid', db_index=True)
     column_set = JSONField(default=list, verbose_name=u'切字块所在切列JSON数据集')
     char_no = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=u'字号', default=0)
     line_no = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=u'行号', default=0)  # 对应图片的一列
@@ -337,7 +321,7 @@ class Rect(models.Model):
 
     @property
     def rect_sn(self):
-        return "%s%02dn%02d" % (self.page_code, self.line_no, self.char_no)
+        return "%s_%02d_%02d" % (self.page_pid, self.line_no, self.char_no)
 
     def __str__(self):
         return self.ch
@@ -373,6 +357,8 @@ class Rect(models.Model):
         _dict = Rect.DefaultDict()
         for k, v in rect_dict.items():
             _dict[k] = v
+
+        ## 此处处理重复添加，对于已有的exist_rects，将更新旧的Rect，不再生成新的Rect实例
         if type(_dict['id']).__name__ == "UUID":
             _dict['id'] = _dict['id'].hex
         try:
@@ -380,12 +366,15 @@ class Rect(models.Model):
             rect = el[0]
         except:
             rect = Rect()
+
+        ## 此处处理外部API提供的字典数据，过滤掉非model定义交集的部分。
         valid_keys = rect.serialize_set.keys()-['id']
         key_set = set(valid_keys).intersection(_dict.keys())
         for key in key_set:
             if key in valid_keys:
                 setattr(rect, key, _dict[key])
         rect.updated_at = localtime(now())
+        ## 此处根据已有的page_pid, line_no, char_no,生成新的cid
         rect.cid = rect.rect_sn
         ### 这里由于外部数据格式不规范，对char作为汉字的情况追加的。
         if _dict['char']:
@@ -410,7 +399,7 @@ class Rect(models.Model):
         Rect.objects.bulk_update(updates)
 
     @staticmethod
-    def normalize(r):
+    def _normalize(r):
         if (r.w < 0):
             r.x = r.x + r.w
             r.w = abs(r.w)
@@ -424,16 +413,24 @@ class Rect(models.Model):
             r.h = 1
         return r
 
+    @staticmethod
+    def normalize(r):
+        if isinstance(r, dict):
+            r = DotMap(r)
+        r = Rect._normalize(r)
+        if isinstance(r, DotMap):
+            r = r.toDict()
+        return r
+
     class Meta:
         verbose_name = u"源-切字块"
         verbose_name_plural = u"源-切字块管理"
         ordering = ('-cc',)
 
-# TODO: check
-# @receiver(pre_save, sender=Rect)
-# def positive_w_h_fields(sender, instance, **kwargs):
-#     instance = Rect.normalize(instance)
-#     instance.sid = "%s%02dn%02d" % (Page.convertSN_to_S3ID(instance.page_code), instance.line_no, instance.char_no)
+
+@receiver(pre_save, sender=Rect)
+def positive_w_h_fields(sender, instance, **kwargs):
+    instance = Rect.normalize(instance)
 
 class Patch(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -680,7 +677,7 @@ class Task(models.Model):
         self.update_date = localtime(now()).date()
         self.tasks_increment()
         self.status = TaskStatus.COMPLETED
-        return self.save(update_fields=["status"])
+        return self.save(update_fields=["status", "update_date"])
 
     @activity_log
     def emergen(self):
@@ -1112,15 +1109,13 @@ def allocateTasks(schedule, reel, type):
 
 
 @receiver(post_save, sender=Schedule)
-@disable_for_loaddata
+@disable_for_create_cut_task
 def post_schedule_create_pretables(sender, instance, created, **kwargs):
     if created:
-        pass
-        # Schedule_Task_Statistical(schedule=instance).save()
+        Schedule_Task_Statistical(schedule=instance).save()
         # Schedule刚被创建，就建立聚类字符准备表，创建逐字校对的任务，任务为未就绪状态
-        # FIXME: open it
-        # CharClassifyPlan.create_charplan.s(instance.pk.hex).apply_async(countdown=20)
-        # Reel_Task_Statistical.gen_pptask_by_plan.apply_async(countdown=60)
+        CharClassifyPlan.create_charplan.s(instance.pk.hex).apply_async(countdown=20)
+        Reel_Task_Statistical.gen_pptask_by_plan.apply_async(countdown=60)
     else:
         # update
         if (instance.has_changed) and ( 'status' in instance.changed_fields):

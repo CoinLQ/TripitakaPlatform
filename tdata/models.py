@@ -3,6 +3,8 @@ from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .lib.fields import JSONField
+from PIL import Image, ImageFont, ImageDraw
+from io import BytesIO
 import json
 import urllib.request
 
@@ -73,7 +75,7 @@ class Sutra(models.Model):
     code = models.CharField(verbose_name='实体经目编码', max_length=5, blank=False)
     variant_code = models.CharField(verbose_name='别本编码', max_length=1, default='0')
     name = models.CharField(verbose_name='实体经目名称', max_length=64, blank=True)
-    lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', null=True, 
+    lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', null=True,
     blank=True, on_delete=models.SET_NULL) #（为"LQ"+ 经序号 + 别本号）
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
     remark = models.TextField('备注', blank=True, default='')
@@ -223,29 +225,19 @@ class Page(models.Model):
     def __str__(self):
         return '%s第%s页' % (self.reel, self.reel_page_no)
 
+    @property
+    def s3_uri(self):
+        return '%s%s%s.jpg' % (settings.IMAGE_URL_PREFIX, self.reel.url_prefix(), self.page_no)
+
     def _remote_image_stream(self):
         opener = urllib.request.build_opener()
         # AWS S3 Private Resource snippet, someday here should to be.
         # opener.addheaders = [('Authorization', 'AWS AKIAIOSFODNN7EXAMPLE:02236Q3V0RonhpaBX5sCYVf1bNRuU=')]
-        reader = opener.open(self.get_real_path())
+        reader = opener.open(self.s3_uri)
         return Image.open(BytesIO(reader.read()))
 
-    # https://hk.tower.im/projects/3032432a1c5b4618a668509f25448034/messages/419ecfb3901e4faba2574447ce8cc7f6/
-    # 储存格式文档
-    @classmethod
-    def sid_to_uri(cls, s3_id):
-        tr_code = s3_id[0:2]
-        trail_code = s3_id[-1]
-        ann_code = tr_code + s3_id[8:-1]
-        ann_code = ann_code.replace("_", "/")
-        ann_code = ann_code.replace('p', '')
-        if trail_code != '0':
-            ann_code += trail_code
-
-        return "%s/%s" % (os.path.dirname(ann_code), ann_code.replace("/", "_"))
-
     def down_col_pos(self):
-        cut_file = self.get_real_path()[0:-3] + "col"
+        cut_file = self.s3_uri[0:-3] + "col"
         opener = urllib.request.build_opener()
         try:
             response = opener.open(cut_file)
@@ -269,7 +261,7 @@ class Page(models.Model):
             return
 
     def down_pagerect(self):
-        cut_file = self.get_real_path()[0:-3] + "cut"
+        cut_file = self.s3_uri[0:-3] + "cut"
         opener = urllib.request.build_opener()
         try:
             response = opener.open(cut_file)

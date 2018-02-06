@@ -5,17 +5,6 @@ from dotmap import DotMap
 
 
 class ArrangeRect(object):
-    @classmethod
-    def resort_rects_from_list(cls, rects):
-        rects = list(map(lambda m: ArrangeRect.normalize(m), rects))
-        columns, m = dict(), 0
-        column_len = dict()
-        mean_width = int(np.mean(list(map(lambda X: int(X['w']), rects))))
-        while rects:
-            m = m + 1
-            columns[m] = cls._pick_one_column(rects, mean_width)
-            column_len[m] = len(columns[m])
-        return columns, column_len
 
     @classmethod
     def resort_rects_from_qs(cls, queryset):

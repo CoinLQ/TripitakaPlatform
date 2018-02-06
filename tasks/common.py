@@ -226,7 +226,7 @@ def get_accurate_cut(text1, text2, cut_json, pid):
             if (y + h) > max_y:
                 max_y = y + h
     return char_lst, line_count, column_count, char_count_lst, add_count, wrong_count, confirm_count, min_x, min_y, max_x, max_y
-    
+
 def fetch_cut_file(reel, vol_page):
     cut_url = '%s%s%s.cut' % (settings.IMAGE_URL_PREFIX, reel.url_prefix(), vol_page)
     with urllib.request.urlopen(cut_url) as f:
@@ -260,10 +260,10 @@ def compute_accurate_cut(reel):
         page_no = i + 1
         vol_page = reel.start_vol_page + i
         # 最后一位是栏号，如果有分栏，需用a/b；无分栏，用0
-        pid = '%s_%03d_%02d_%s' % (sid, reel.reel_no, page_no, '0') # YB000860_001_01_0 
+        pid = '%s_%03d_%02d_%s' % (sid, reel.reel_no, page_no, '0') # YB000860_001_01_0
         cut_file = fetch_cut_file(reel, vol_page)
         # 如果有分栏，最后一位是栏号，需用a/b；无分栏，为空
-        page_code = '%s_%s_%s%s' % (sid[0:2], reel.path_str(), vol_page, '') # YB_1_1 
+        page_code = '%s_%s_%s%s' % (sid[0:2], reel.path_str(), vol_page, '') # YB_1_1
         if i < correct_page_count:
             char_lst, line_count, column_count, char_count_lst, cut_add_count, cut_wrong_count, cut_confirm_count, min_x, min_y, max_x, max_y = get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
             cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
@@ -314,13 +314,11 @@ def compute_accurate_cut(reel):
         for char_info in char_lst:
             line_no=char_info['line_no']
             char_no=char_info['char_no']
-            cid = '%s_%02d_%02d' % (pid, line_no, char_no)
-            rect = Rect(cid=cid, x=char_info['x'], y=char_info['y'], w=char_info['w'], h=char_info['h'],
+            rect = Rect(x=char_info['x'], y=char_info['y'], w=char_info['w'], h=char_info['h'],
             ch=char_info['ch'], cc=char_info.get('cc', 1), wcc=char_info.get('wcc', 1),
-            line_no=line_no, char_no=char_no)
+            line_no=line_no, char_no=char_no, page_pid=pid, reel_id=reel.id)
             Rect.normalize(rect)
-            rect.page_code = page_code
-            rect.reel_id = reel.id
+            rect.cid = rect.rect_sn
             for column in column_lst:
                 if column['x'] <= rect.x and rect.x <= column['x1'] and \
                     column['y'] <= rect.y and rect.y <= column['y1']:
@@ -442,7 +440,7 @@ class ReelText(object):
                 count_p += 1
                 count_n = 0
             elif separator == '\n':
-                count_n += 1            
+                count_n += 1
             last_pos = pos
             i += 1
         return (start_page_no, start_line_no, start_char_no, end_page_no, end_line_no, end_char_no)

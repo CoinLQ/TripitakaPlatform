@@ -4,16 +4,16 @@ from rect.models import Rect, PageRect, DeletionCheckItem
 class RectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rect
-        can_write_fields = ('x', 'y', 'w', 'h', 'op', 'ch', 'id', 'page_code', 'line_no', 'char_no')
+        can_write_fields = ('x', 'y', 'w', 'h', 'op', 'ch', 'id', 'page_pid', 'line_no', 'char_no')
         fields = ('w', 'line_no', 'ch', 'wcc', 'op', 'cc',
-                  'x', 'id', 'ts', 'char_no', 'h', 'y', 'column_set', 'cid', 'page_code',
+                  'x', 'id', 'ts', 'char_no', 'h', 'y', 'column_set', 'cid', 'page_pid',
                   'reel_id')
 
 class RectWriterSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(format='hex_verbose')
     class Meta:
         model = Rect
-        fields = ('x', 'y', 'w', 'h', 'op', 'ch', 'id', 'page_code', 'line_no', 'char_no')
+        fields = ('x', 'y', 'w', 'h', 'op', 'ch', 'id', 'page_pid', 'line_no', 'char_no')
 
 # TODO: check fields
 class PageRectSerializer(serializers.ModelSerializer):

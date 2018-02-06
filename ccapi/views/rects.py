@@ -129,7 +129,7 @@ class RectViewSet(viewsets.ReadOnlyModelViewSet, mixins.ListModelMixin):
         col_id = rect.cid[:-3]
         pattern = re.compile(r'{}'.format(col_id))
 
-        col_rects = list(filter(lambda x: pattern.search(x.cid) and pk != x.cid, Rect.objects.filter(page_code=rect.page_code).all()))
+        col_rects = list(filter(lambda x: pattern.search(x.cid) and pk != x.cid, Rect.objects.filter(page_pid=rect.page_pid).all()))
         rects = RectSerializer(data=col_rects, many=True)
         rects.is_valid()
         return Response({"status": 0,

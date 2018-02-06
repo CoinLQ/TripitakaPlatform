@@ -42,14 +42,15 @@ class RectBulkOpMixin(object):
                         "task_id": instance.pk})
         if isinstance(instance, PageTask):
             pagerect_ids = [page['id'] for page in instance.page_set]
-            pages = PageRect.objects.filter(id__in=pagerect_ids).select_related('page')
-            page_id = pages[0].page_id
-            _rects = Rect.objects.filter(page_code=page_id).all()
+            rectpages = PageRect.objects.filter(id__in=pagerect_ids).select_related('page')
+            page_id = rectpages[0].page_id
+            _rects = Rect.objects.filter(page_pid=page_id).all()
             rects = RectSerializer(data=_rects, many=True)
             rects.is_valid()
+            page= rectpages[0].page
             return Response({"status": 0,
                             "rects": rects.data,
-                            "page_id": page_id,
+                            "page_code": page.page_code,
                             "task_id": instance.pk})
         return Response(serializer.data)
 
@@ -87,6 +88,7 @@ class CCTaskViewSet(RectBulkOpMixin,
                              "msg": u"有些字块不属于你的任务!"})
         rects = request.data['rects']
         task.rect_set = request.data['rects']
+        task.save()
         self.task_done(rects, task)
         return Response({"status": 0,
                             "task_id": pk })
@@ -110,7 +112,7 @@ class CCTaskViewSet(RectBulkOpMixin,
         task = retrieve_cctask(staff)
         if not task:
             return Response({"status": -1,
-                             "msg": "All tasks has been done!"})
+                             "msg": "All tasks have been done!"})
         return Response({"status": 0,
                         "rects": task.rect_set,
                         "task_id": task.pk})
@@ -137,6 +139,7 @@ class ClassifyTaskViewSet(RectBulkOpMixin,
                              "msg": u"有些字块不属于你的任务!"})
         rects = request.data['rects']
         task.rect_set = request.data['rects']
+        task.save()
         self.task_done(rects, task)
         return Response({"status": 0,
                             "task_id": pk })
@@ -161,7 +164,7 @@ class ClassifyTaskViewSet(RectBulkOpMixin,
         task = retrieve_classifytask(staff)
         if not task:
             return Response({"status": -1,
-                             "msg": "All tasks has been done!"})
+                             "msg": "All tasks have been done!"})
         return Response({"status": 0,
                         "rects": task.rect_set,
                         "char_set": task.char_set,
@@ -180,18 +183,18 @@ class PageTaskViewSet(RectBulkOpMixin,
         task = retrieve_pagetask(staff)
         if not task:
             return Response({"status": -1,
-                             "msg": "All tasks has been done!"})
+                             "msg": "All tasks have been done!"})
         pagerect_ids = [page['id'] for page in task.page_set]
-        pages = PageRect.objects.filter(id__in=pagerect_ids).select_related('page')
-        page_code = pages[0].page.page_code
-        _rects = Rect.objects.filter(page_code=page_code).all()
+        rectpages = PageRect.objects.filter(id__in=pagerect_ids).select_related('page')
+        page_id = rectpages[0].page_id
+        _rects = Rect.objects.filter(page_pid=page_id).all()
         rects = RectSerializer(data=_rects, many=True)
         rects.is_valid()
-        page = pages[0].page
+        page = rectpages[0].page
         # TODO: test, check
         return Response({"status": 0,
                         "rects": rects.data,
-                        "page_code": page.page_code, 
+                        "page_code": page.page_code,
                         "task_id": task.pk})
 
 
@@ -268,14 +271,14 @@ class DelTaskViewSet(RectBulkOpMixin,
         task = retrieve_deltask(staff)
         if not task:
             return Response({"status": -1,
-                             "msg": "All tasks has been done!"})
+                             "msg": "All tasks have been done!"})
         queryset = task.del_task_items.prefetch_related('modifier', 'verifier')
 
         items = DeletionCheckItemSerializer(data=queryset, many=True)
         items.is_valid()
         if not task:
             return Response({"status": -1,
-                             "msg": "All tasks has been done!"})
+                             "msg": "All tasks have been done!"})
         return Response({"status": 0,
                         "rects": items.data,
                         "task_id": task.pk})

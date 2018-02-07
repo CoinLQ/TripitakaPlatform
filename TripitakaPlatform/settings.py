@@ -163,6 +163,7 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
+    os.path.join(BASE_DIR, 'xapps/common/static'),
 ]
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
@@ -244,10 +245,6 @@ USE_TZ = True
 #     # Don't forget to use absolute paths, not relative paths.
 # )
 # Add for vuejs
-
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'xapps/common/static'),
-]
 
 # List of finder classes that know how to find static files in
 # various locations.

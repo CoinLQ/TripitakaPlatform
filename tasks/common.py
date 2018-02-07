@@ -332,7 +332,7 @@ def clean_sutra_text(text):
     text = text.replace('\r\n', '\n').replace('\n\n', '\n')
     return SUTRA_CLEAN_PATTERN.sub('', text)
 
-PUNCT_CHARACTERS = '：，。；、\n'
+PUNCT_CHARACTERS = '：，。；、！？\n'
 def extract_punct(text):
     pos = 0
     punct_lst = []

@@ -57,28 +57,16 @@ class Command(BaseCommand):
         # CBETA第1卷
         CB = Tripitaka.objects.get(code='CB')
         try:
-            huayan_cb = Sutra.objects.get(sid='CB000800')
+            huayan_cb = Sutra.objects.get(sid='CB002780')
         except:
-            huayan_cb = Sutra(sid='CB000800', tripitaka=CB, code='00080', variant_code='0',
+            huayan_cb = Sutra(sid='CB002780', tripitaka=CB, code='00278', variant_code='0',
             name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)
             huayan_cb.save()
         try:
             huayan_cb_1 = Reel.objects.get(sutra=huayan_cb, reel_no=1)
         except:
-            huayan_cb_1 = Reel(sutra=huayan_cb, reel_no=1, start_vol=14,
-            start_vol_page=31, end_vol=14, end_vol_page=37, edition_type=Reel.EDITION_TYPE_BASE)
-            huayan_cb_1.save()
-            filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_punct.txt' % huayan_cb.sid)
-            with open(filename, 'r') as f:
-                text = f.read()
-            punctuation, text = extract_punct(text)
-            reel_ocr_text = ReelOCRText(reel=huayan_cb_1, text = text)
-            reel_ocr_text.save()
-            
-            reelcorrecttext = ReelCorrectText(reel=huayan_cb_1, text=text)
-            reelcorrecttext.save()
-            punct = Punct(reel=huayan_cb_1, reeltext=reelcorrecttext, punctuation=json.dumps(punctuation))
-            punct.save()
+            print('please run ./manage.py import_cbeta_huayan60')
+            return
 
         # get LQReel
         try:
@@ -129,6 +117,7 @@ class Command(BaseCommand):
             correct_task.result = correct_text
             correct_task.separators = separators_json
             Task.objects.filter(id=correct_task.id).update(result=correct_text, separators=separators_json)
+            ReelCorrectText.objects.filter(task=correct_task).delete()
             publish_correct_result(correct_task)
 
             # # 得到精确的切分数据

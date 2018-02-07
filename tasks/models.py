@@ -50,7 +50,8 @@ class CompareReel(models.Model):
                 pos += (j2 - j1)
             elif tag == 'delete':
                 if base_pos > 0 and i1 > 0:
-                    diff_lst.append( (1, base_pos-1, pos-1, text1[i1-1:i1] + base_text, text2[j1-1:j1]) )
+                    if base_text != '':
+                        diff_lst.append( (1, base_pos-1, pos-1, text1[i1-1:i1] + base_text, text2[j1-1:j1]) )
                 else:
                     diff_lst.append( (1, base_pos, pos, base_text, '') )
                 base_pos += (i2 - i1)

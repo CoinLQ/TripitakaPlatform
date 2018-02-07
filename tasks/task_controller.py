@@ -69,6 +69,52 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
                 correct_seg.position = pos
                 correct_seg.save()
 
+def create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_times):
+    for task_no in range(1, judge_times + 1):
+        task = Task(batch_task=batchtask, typ=Task.TYPE_JUDGE, lqreel=lqreel,
+        base_reel=base_reel, task_no=task_no, status=Task.STATUS_NOT_READY,
+        publisher=batchtask.publisher)
+        task.save()
+    # 校勘判取审定任务只有一次
+    if judge_verify_times:
+        task = Task(batch_task=batchtask, typ=Task.TYPE_JUDGE_VERIFY, lqreel=lqreel,
+        base_reel=base_reel, task_no=0, status=Task.STATUS_NOT_READY,
+        publisher=batchtask.publisher)
+        task.save()
+
+def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
+    reelcorrecttext = None
+    punctuation_json = '[]'
+    status = Task.STATUS_NOT_READY
+    try:
+        reelcorrecttext = ReelCorrectText.objects.filter(reel=reel).order_by('-id')[0]
+        if reelcorrecttext:
+            status = Task.STATUS_READY
+    except:
+        pass
+
+    # 标点以CBETA的结果为起点
+    try:
+        CB = Tripitaka.objects.get(code='CB')
+        sutra_cb = Sutra.objects.get(lqsutra=reel.sutra.lqsutra, tripitaka=CB)
+        reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=reel.reel_no)
+        punct = Punct.objects.filter(reel=reel_cb)[0]
+        punctuation_json = punct.punctuation
+    except:
+        pass
+    for task_no in range(1, punct_times + 1):
+        task = Task(batch_task=batchtask, typ=Task.TYPE_PUNCT, reel=reel,
+        reeltext=reelcorrecttext, result=punctuation_json, task_no=task_no,
+        status=status, publisher=batchtask.publisher)
+        task.save()
+
+    # 标点审定任务只有一次
+    if punct_verify_times:
+        task = Task(batch_task=batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=reel,
+        reeltext=reelcorrecttext, result=punctuation_json, task_no=task_no,
+        status=status, publisher=batchtask.publisher)
+        task.save()
+
 # 从龙泉大藏经来发布
 def create_tasks_for_batchtask(batchtask, reel_lst,
 correct_times, correct_verify_times,
@@ -96,10 +142,12 @@ lqmark_times, lqmark_verify_times):
             print('no base sutra')
             continue
         base_reel_lst = []
-        reel = Reel.objects.get(sutra=first_base_sutra, reel_no=reel_no)
-        base_reel_lst.append(reel)
-        reel = Reel.objects.get(sutra=second_base_sutra, reel_no=reel_no)
-        base_reel_lst.append(reel)
+        if first_base_sutra:
+            reel = Reel.objects.get(sutra=first_base_sutra, reel_no=reel_no)
+            base_reel_lst.append(reel)
+        if second_base_sutra:
+            reel = Reel.objects.get(sutra=second_base_sutra, reel_no=reel_no)
+            base_reel_lst.append(reel)
 
         for sutra in sutra_lst:
             try:
@@ -108,7 +156,14 @@ lqmark_times, lqmark_verify_times):
                 # TODO: 记录错误
                 continue
             create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_verify_times)
-            # TODO: other tasks
+            create_punct_tasks(batchtask, reel, punct_times, punct_verify_times)
+
+        try:
+            lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
+            base_reel = base_reel_lst[0]
+            create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_times)
+        except:
+            print('create judge task failed: ', lqsutra, reel_no)
 
 def create_reeldiff_for_judge_task(lqreel, lqsutra):
     reel_no = lqreel.reel_no
@@ -175,6 +230,7 @@ def publish_correct_result(task):
     '''
     sutra = task.reel.sutra
     reel_no = task.reel.reel_no
+    reel_correct_text = None
     text_changed = False
     saved_reel_correct_texts = list(ReelCorrectText.objects.filter(reel=task.reel).order_by('-id')[0:1])
     if len(saved_reel_correct_texts) == 0:
@@ -193,6 +249,16 @@ def publish_correct_result(task):
                     reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task)
                     reel_correct_text.save()
                     text_changed = True
+        else:
+            return
+
+    # 基础标点任务
+    if reel_correct_text:
+        # 检查是否有未就绪的基础标点任务，如果有，状态设为READY
+        punct_tasks = list(Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY))
+        if len(punct_tasks) > 0:
+            punct_task_ids = [task.id for task in punct_tasks]
+            Task.objects.filter(id__in=punct_task_ids).update(reeltext=reel_correct_text, status=Task.STATUS_READY)
 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra

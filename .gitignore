@@ -8,3 +8,4 @@ static/js
 static/css
 static/fonts
 .pyc
+*.log

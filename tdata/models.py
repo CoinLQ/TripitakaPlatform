@@ -33,7 +33,7 @@ class Tripitaka(models.Model):
     path3_name = models.CharField('存储层次3中文名', max_length=16, blank=True, default='')
 
     class Meta:
-        verbose_name = '实体藏经'
+        verbose_name = '实体藏'
         verbose_name_plural = '实体藏'
 
     def __str__(self):
@@ -81,7 +81,7 @@ class Sutra(models.Model):
     author = models.CharField('作译者', max_length=32, blank=True, default='')
 
     class Meta:
-        verbose_name = '实体经目'
+        verbose_name = '实体经'
         verbose_name_plural = '实体经'
 
     def __str__(self):
@@ -127,7 +127,7 @@ class Reel(models.Model):
     column_ready = models.BooleanField(verbose_name='切列图状态', default=False)
 
     class Meta:
-        verbose_name = '实体藏经卷'
+        verbose_name = '实体卷'
         verbose_name_plural = '实体卷'
         unique_together = (('sutra', 'reel_no'),)
 

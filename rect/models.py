@@ -566,7 +566,7 @@ class Reel_Task_Statistical(models.Model):
     updated_at = models.DateTimeField('更新时间', auto_now=True)
 
     class Meta:
-        verbose_name = u"实体卷任务统计"
+        verbose_name = u"总体进度"
         verbose_name_plural = u"总体进度"
         ordering = ('schedule', '-updated_at')
 
@@ -717,7 +717,7 @@ class CCTask(Task):
     rect_set = JSONField(default=list, verbose_name=u'字块集') # [rect_json]
 
     class Meta:
-        verbose_name = u"置信校对任务"
+        verbose_name = u"置信校对"
         verbose_name_plural = u"置信校对"
 
 
@@ -730,7 +730,7 @@ class ClassifyTask(Task):
     rect_set = JSONField(default=list, verbose_name=u'字块集') # [rect_json]
 
     class Meta:
-        verbose_name = u"聚类校对任务"
+        verbose_name = u"聚类校对"
         verbose_name_plural = u"聚类校对"
 
 
@@ -742,7 +742,7 @@ class PageTask(Task):
     page_set = JSONField(default=list, verbose_name=u'页的集合') # [page_json]
 
     class Meta:
-        verbose_name = u"逐字校对任务"
+        verbose_name = u"逐字校对"
         verbose_name_plural = u"逐字校对"
 
 
@@ -754,7 +754,7 @@ class AbsentTask(Task):
     page_set = JSONField(default=list, verbose_name=u'页的集合') # [page_id, page_id]
 
     class Meta:
-        verbose_name = u"查漏补缺任务"
+        verbose_name = u"查漏校对"
         verbose_name_plural = u"查漏校对"
 
 
@@ -766,7 +766,7 @@ class DelTask(Task):
     rect_set = JSONField(default=list, verbose_name=u'字块集') # [deletion_item_id, deletion_item_id]
 
     class Meta:
-        verbose_name = u"删框任务"
+        verbose_name = u"删框审定"
         verbose_name_plural = u"删框审定"
 
     def execute(self):
@@ -858,7 +858,7 @@ class CharClassifyPlan(models.Model):
 
 
     class Meta:
-        verbose_name = u"聚类准备表"
+        verbose_name = u"聚类阈值"
         verbose_name_plural = u"聚类阈值"
 
     @shared_task

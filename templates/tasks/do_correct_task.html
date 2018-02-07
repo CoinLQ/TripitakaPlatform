@@ -9,19 +9,19 @@
         <canvas id="page-canvas"></canvas>
       </div>
       <div class="collate-pane">
-        <b>与底本比对有差异的文本段</b>
+        <b>比对差异</b>
         <table class="table table-bordered table-condensed">
           <thead style="background-color: darkorange;">
             <tr>
               <th width="40%"> OCR </th>
               <th width="40%"> 比对本 </th>
-              <th> 我的选择 </th>
+              <th> 校对结果 </th>
               <th> </th>
             </tr>
           </thead>
           <tbody>
                   {% if sort_index_lst %}
-            <a href="/correct/{{ task.id }}/">按位置排序</a>
+            <a href="/correct/{{ task.id }}/">阅读排序</a>
                   {% for seg_index, ch in sort_index_lst %}
                   {% set seg=segs[seg_index] %}
             <tr class="seg-row" id="segrow_{{ seg.id }}" seg-index="{{ seg_index }}" seg-id="{{ seg.id }}">

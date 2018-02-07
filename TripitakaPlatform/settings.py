@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'celery',
     'xadmin',
     'crispy_forms',
+    'xapps',
 ]
 
 MIDDLEWARE = [
@@ -89,7 +90,8 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates'
         ,
-        'DIRS': [os.path.join(BASE_DIR, 'templates')]
+        'DIRS': [os.path.join(BASE_DIR, 'templates'),
+                 os.path.join(BASE_DIR, "xapps/common/templates")]
         ,
         'APP_DIRS': True,
         'OPTIONS': {
@@ -243,9 +245,9 @@ USE_TZ = True
 # )
 # Add for vuejs
 
-# STATICFILES_DIRS = [
-#     #os.path.join(BASE_DIR, 'xapps/common/static'),
-# ]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'xapps/common/static'),
+]
 
 # List of finder classes that know how to find static files in
 # various locations.

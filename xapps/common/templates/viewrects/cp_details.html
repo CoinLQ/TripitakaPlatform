@@ -1,0 +1,199 @@
+{% extends "common/base.html" %}
+
+{% block extrastyle %}
+<title>聚类预览列表</title>
+<link rel="stylesheet" href="/static/characters/css/app.css">
+<link rel="stylesheet" href="/static/css/bootstrap-slider.css">
+<style>
+.popover {
+    width: auto;
+    max-width: 2048px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="app" class="container" >
+    <div class='row'>
+        <!--end col-md-3 -->
+        <div class='col-md-12 col-xs-12' style="margin-top:20px;">
+            <strong id='checkchar' style='font-size:36px; margin:0px;padding:8px;color:#483D8B;'>[[char]]</strong>
+            <a class="btn btn-default" href="javascript:;" @click="checkDict" style="margin-top:-12px;padding:8px 12px;"><span class="tooltip_text">查字典</span><span class="fa fa-book"></span></a>
+            <div style="clear:both;"> </div>
+            <div class='row'>
+                <label>设置文字置信度:
+                    {% comment %}<input id="ex1" data-slider-id='ex1Slider' type="text" data-slider-min="0" data-slider-max="100" data-slider-step="1" data-slider-value="96"/>{% endcomment %}
+                    <input class="accuracy_input form-control-inline" v-model="inputCC" @keyup.enter="changeCC(inputCC)" style="margin-top:2px;" />
+                    0&nbsp;<input  id="cc_slider" data-slider-id="ex1Slider" type="text"
+                        data-slider-min="0" data-slider-max="100" data-slider-step="1"
+                        data-slider-value="65"/>&nbsp;100%
+                </label>
+            </div>
+
+            <div style="clear:both;"> </div>
+            <div id='charBrowseArea' style="margin-right:-15px;margin-left:18px;display:none">
+            </div>
+            <div style="clear:both;"> </div>
+
+            <div id="charListArea" style="margin-right:-15px;margin-left:18px;display: inline-block">
+                <div v-for="rect in rects" class="inner-wrapper" style="display: inline-block; margin: 5px;">
+                    <rectitem :item="rect" ></rectitem>
+                </div>
+            </div>
+
+            <div style="clear:both;"> </div>
+
+            <div class="page-wrapper" id="pageDiv" onselectstart="return false">
+                <span class='pagitor first btn btn-default' id='char_index_first'><span class="fa fa-step-backward" @click="loadRect(1)"></span></span>
+                <span class='pagitor more-padding previous btn btn-default' @click="loadRect(page - 1)">❮</span>
+                <input class='form-control-inline pagitor_input input-sm' v-model="inputPage" @keyup.enter="loadRect(inputPage)" type='number' min="1" value='1'>
+                <span class='pagitor more-padding next btn btn-default' @click="loadRect(page + 1)">❯</span>
+                <span class='pagitor last btn btn-default' id='char_index_last'><span class="fa fa-step-forward" @click="loadRect(total_pages)"></span></span>
+                <span class='pagitor_of total_page'>第[[page]]页, 共[[total_pages]]页, 共[[total_entries]]字</span>
+
+                <div class="btn-group">
+                  <button class="btn btn-default btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    [[page_size]] <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a href="javascript:;" @click="setPageSize(10)">10&nbsp;</a></li>
+                    <li><a href="javascript:;" @click="setPageSize(20)">20&nbsp;</a></li>
+                    <li><a href="javascript:;" @click="setPageSize(50)">50&nbsp;</a></li>
+                    <li><a href="javascript:;" @click="setPageSize(100)">100&nbsp;</a></li>
+                    <li><a href="javascript:;" @click="setPageSize(200)">200&nbsp;</a></li>
+                  </ul>
+                </div>
+                <label style="line-height: 31px;">字/页</label>
+            </div>
+
+        </div>
+        <!--end col-md-9 -->
+    </div>
+</div>
+<!-- /.container -->
+{% endblock %}
+
+{% block extrabody %}
+<script src="/static/js/jquery-2.2.4.min.js" charset="utf-8"></script>
+<script src="/static/js/bootstrap-slider.js"></script>
+<script src="/static/js/vue/vue.min.js"></script>
+<script src="/static/js/vue/axios.min.js"></script>
+<script src="/static/viewrects/js/rectItem.js"></script>
+<script type="text/javascript">
+
+var ccpid = '{{ ccpid|escapejs }}';
+var schedule_id = '{{ schedule_id|escapejs }}';
+var char = '{{ char|escapejs }}';
+var app = new Vue({
+    el: '#app',
+    delimiters: ['[[', ']]'],
+    data: {
+        ccpid: ccpid,
+        schedule_id: schedule_id,
+        char: char,
+        rects: [],
+        cc: 0.99,
+        inputCC: this.cc,
+        page: 0,
+        inputPage: this.page,
+        page_size: 20,
+        total_pages: 1,
+        total_entries: 0,
+    },
+    mounted: function () {
+        this.inputCC = this.cc;
+        this.inputPage = this.page;
+        this.loadRect(1);
+
+        var timeout;
+        var that = this;
+        $('#cc_slider').slider().on('change', function (e) {
+            //当值发生改变的时候触发 获取旧值和新值
+            //console.info(e.value.oldValue + '--' + e.value.newValue);
+            that.inputCC = e.value.newValue / 100;
+            if(timeout) clearTimeout(timeout);
+            timeout = setTimeout(function () {
+               that.changeCC(that.inputCC);
+            }, 1200);
+        });
+        $('#cc_slider').slider('setValue', this.inputCC * 100);
+    },
+    methods:{
+        changeCC: function (inputCC) {
+            if(inputCC != this.cc){
+                var that = this;
+                that.page = 0;
+                $('#cc_slider').slider('setValue', inputCC * 100);
+                axios.get("/api/rect/cp_wcc_count/", {
+                    params: {
+                        'ccpid': that.ccpid,
+                        'wcc': inputCC,
+                    }
+                }).then(function(response){
+                    if(response.status == 200){
+                        var ret = response.data;
+                        if(ret && ret.status == 0 && ret.data.count){
+                            var actual_page = Math.ceil(ret.data.count / that.page_size);
+                            actual_page = Math.max(1, actual_page);
+                            //加载wcc所在的页
+                            console.log("gte wcc("+inputCC+") has "+ret.data.count+" char, page="+actual_page);
+                            that.loadRect(actual_page);
+                        }
+                    }
+                }).catch(function (error) {
+                    console.log(error);
+                })
+            }
+        },
+        setPageSize: function (size) {
+            if(size >= 10 && size != this.page_size){
+                this.page = 0;
+                this.innerLoadRect(1, this.cc, size);
+            }
+        },
+        loadRect: function (pagenum) {
+            this.innerLoadRect(pagenum, this.cc, this.page_size);
+        },
+        innerLoadRect: function (pagenum, cc, page_size) {
+            console.log('loadRect='+pagenum);
+            if(pagenum <= 0 || pagenum == this.page || pagenum > this.total_pages){
+                console.log("Invalid pageNum!");
+                return ;
+            }
+            var that = this;
+            axios.get("/api/rect/cpreview/", {
+                params: {
+                    'ccpid': this.ccpid,
+                    //'wcc': cc,
+                    'page': pagenum,
+                    'page_size': page_size
+                }
+            }).then(function(response){
+                if(response.status == 200){
+                    var ddd = response.data;
+                    if(ddd){
+                        if(cc != that.cc) that.cc = cc;
+                        that.page = ddd.pagination.page;
+                        that.inputPage = that.page;
+                        that.page_size = ddd.pagination.page_size;
+                        that.total_pages = ddd.pagination.total_pages;
+                        that.total_entries = ddd.pagination.total_entries;
+                        that.rects = ddd.models;
+                    }
+                }
+            }).catch(function (error) {
+                console.log(error);
+            })
+        },
+        checkDict: function() {
+            url = "http://hanzi.lqdzj.cn/variant_detail?q="
+            url += this.char;
+            var _open = window.open(url);
+            if (_open == null || typeof(_open) == 'undefined')
+                console.log("Turn off your pop-up blocker!");
+        },
+    }
+});
+
+</script>
+{% endblock %}

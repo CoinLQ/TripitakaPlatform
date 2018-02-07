@@ -9,7 +9,7 @@ from ccapi.views.rects import PageRectViewSet, RectViewSet, \
 from ccapi.views.tasks import CCTaskViewSet, ClassifyTaskViewSet, \
                          PageTaskViewSet, DelTaskViewSet
 from jkapi.views.judge import DiffSegResultList, DiffSegResultUpdate, JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected
-
+from jkapi.views.punct import PunctTaskDetail
 
 router = routers.DefaultRouter()
 router.register(r'pagerect', PageRectViewSet)
@@ -31,4 +31,5 @@ urlpatterns = [
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegresults/$', DiffSegResultList.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegresults/(?P<pk>[0-9]+)/$', DiffSegResultUpdate.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegresults/(?P<diffsegresult_id>[0-9]+)/mergelist/$', MergeList.as_view()),
+    url(r'^punct/(?P<task_id>[0-9]+)/$', PunctTaskDetail.as_view()),
 ]

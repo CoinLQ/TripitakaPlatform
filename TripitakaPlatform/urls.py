@@ -20,6 +20,7 @@ from django.conf.urls import url
 
 from tasks.views.correct import *
 from tasks.views.judge import *
+from tasks.views.punct import *
 from tools.views import *
 
 urlpatterns = [
@@ -33,6 +34,7 @@ urlpatterns = [
     path('sutra_pages/<pid>/view', sutra_page_detail, name='sutra_page_detail'),
     path('judge/<int:task_id>/', do_judge_task, name='do_judge_task'),
     path('judge_verify/<int:task_id>/', do_judge_verify_task, name='do_judge_verify_task'),
+    path('punct/<int:task_id>/', do_punct_task, name='do_punct_task'),
 
     path('tools/cutfixed_pages/', cutfixed_pages, name='cutfixed_pages'),
     path('tools/cutfixed_pages/<pid>/', cutfixed_page_detail, name='cutfixed_page_detail'),

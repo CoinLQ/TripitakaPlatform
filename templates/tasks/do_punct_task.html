@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block style %}
+<style type="text/css">
+[contenteditable]:focus {
+  outline: 0px solid transparent;
+}
+</style>
+{% endblock %}
+{% block content %}
+<div id="punct">
+  <div class="container">
+    <div class="row">
+      <div>
+        <span v-for="punctseg in punctseg_lst">
+          <span is="punct-show-seg" :punctseg="punctseg"></span>
+        </span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="text-center">
+          <button class="btn btn-primary" v-if="submit_title.length != 0" :disabled="sharedata.status == 4" :title="submit_title" @click.stop.prevent="submitPunctTask">暂存</button>
+        <button class="btn btn-primary" v-if="submit_title.length != 0" :disabled="sharedata.status == 4" :title="submit_title" @click.stop.prevent="finishPunctTask">完成</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+{% endblock %}
+{% block foot_script %}
+<script src="{{ static('custom/js/punct.js') }}"></script>
+<script>
+  var app = new Vue({
+    el: '#punct',
+    data: {
+      reeltext: '',
+      punct: [],
+      punct_result: [],
+      punctseg_lst: [],
+      submit_title: '',
+      sharedata: {task_id: {{ task_id }}, status: 4  }
+    },
+    created: function() {
+      var vm = this;
+      axios.get('/api/punct/' + vm.sharedata.task_id + '/')
+      .then(function(response) {
+        vm.reeltext = response.data.reeltext;
+        vm.punct = response.data.punct;
+        vm.sharedata.status = response.data.status;
+        vm.punct_result = response.data.punct_result;
+        vm.loadSutraText();
+        if (vm.sharedata.status == 4) {
+          vm.submit_title = '已完成';
+        } else {
+          vm.submit_title = '未完成前离开标点任务，请点暂存；已做完，可直接点完成'
+        }
+      });
+    },
+    methods: {
+      cleanPunct: function (str) {
+        var ch_lst = [];
+        for (var i = 0; i < str.length; ++i) {
+          if (this.PUNCT_LIST.indexOf(str[i]) == -1) {
+            ch_lst.push(str[i]);
+          }
+        }
+        return ch_lst.join('');
+      },
+      merge_punct_lst: function() {
+        console.log(this.punct_result);
+        var orig_idx = 0;
+        var orig_count = this.punct_result.length;
+        var new_punct_result = [];
+        for (var i = 0; i < this.punctseg_lst.length; ++i) {
+          var punctseg = this.punctseg_lst[i];
+          for (var j = 0; j < punctseg.user_puncts.length; ++j) {
+            var punct_unit = punctseg.user_puncts[j];
+            new_punct_result.push(punct_unit);
+          }
+        }
+        this.punct_result = new_punct_result;
+        console.log(this.punct_result);
+      },
+      loadSutraText: function() {
+        var puncts = [this.punct];
+        var colors = ['green'];
+        this.punctseg_lst = merge_text_punct(this.reeltext, puncts, this.punct_result, colors);
+        this.allowed_edit_punct_index = puncts.length - 1;
+      },
+      submitPunctTask: function() {
+        var vm = this;
+        this.merge_punct_lst();
+        axios.post('/api/punct/' + this.sharedata.task_id + '/', {
+          'punct_result': this.punct_result
+        })
+        .then(function(response) {
+          alert('提交成功！');
+        })
+        .catch(function (error) {
+          vm.error = '提交出错！';
+        });
+      },
+      finishPunctTask: function() {
+        var vm = this;
+        this.merge_punct_lst();
+        axios.post('/api/punct/' + this.sharedata.task_id + '/', {
+          'punct_result': this.punct_result,
+          'finished': 1
+        })
+        .then(function(response) {
+          alert('提交成功！');
+        })
+        .catch(function (error) {
+          vm.error = '提交出错！';
+        });
+      }
+    }
+  });
+</script>
+{% endblock %}

@@ -320,3 +320,6 @@ def publish_judge_result(task):
         if lqreeltext_count == 0:
             lqreeltext = LQReelText(lqreel=task.lqreel, text=''.join(text_lst), task=task, publisher=task.picker)
             lqreeltext.save()
+
+def punct_submit_result(task):
+    pass

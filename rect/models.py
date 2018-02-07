@@ -470,7 +470,7 @@ class Patch(models.Model):
 
 class Schedule(models.Model, ModelDiffMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    reels = models.ManyToManyField(Reel, limit_choices_to={'ready': True}, blank=True )
+    reels = models.ManyToManyField(Reel, limit_choices_to={'cut_ready': True}, blank=True )
     name = models.CharField(verbose_name='计划名称', max_length=64)
 
     cc_threshold = models.FloatField("切分置信度阈值", default=0.65, blank=True)
@@ -509,7 +509,7 @@ class Schedule(models.Model, ModelDiffMixin):
 
     class Meta:
         verbose_name = u"切分计划"
-        verbose_name_plural = u"切分计划管理"
+        verbose_name_plural = u"切分计划"
         ordering = ('due_at', "status")
 
 
@@ -563,8 +563,8 @@ class Reel_Task_Statistical(models.Model):
     updated_at = models.DateTimeField('更新时间', auto_now=True)
 
     class Meta:
-        verbose_name = u"实体卷任务统计"
-        verbose_name_plural = u"实体卷任务统计管理"
+        verbose_name = u"总体进度"
+        verbose_name_plural = u"总体进度"
         ordering = ('schedule', '-updated_at')
 
     @shared_task
@@ -714,8 +714,8 @@ class CCTask(Task):
     rect_set = JSONField(default=list, verbose_name=u'字块集') # [rect_json]
 
     class Meta:
-        verbose_name = u"置信校对任务"
-        verbose_name_plural = u"置信校对任务管理"
+        verbose_name = u"置信校对"
+        verbose_name_plural = u"置信校对"
 
 
 class ClassifyTask(Task):
@@ -727,8 +727,8 @@ class ClassifyTask(Task):
     rect_set = JSONField(default=list, verbose_name=u'字块集') # [rect_json]
 
     class Meta:
-        verbose_name = u"聚类校对任务"
-        verbose_name_plural = u"聚类校对任务管理"
+        verbose_name = u"聚类校对"
+        verbose_name_plural = u"聚类校对"
 
 
 class PageTask(Task):
@@ -739,8 +739,8 @@ class PageTask(Task):
     page_set = JSONField(default=list, verbose_name=u'页的集合') # [page_json]
 
     class Meta:
-        verbose_name = u"逐字校对任务"
-        verbose_name_plural = u"逐字校对任务管理"
+        verbose_name = u"逐字校对"
+        verbose_name_plural = u"逐字校对"
 
 
 class AbsentTask(Task):
@@ -751,8 +751,8 @@ class AbsentTask(Task):
     page_set = JSONField(default=list, verbose_name=u'页的集合') # [page_id, page_id]
 
     class Meta:
-        verbose_name = u"查漏补缺任务"
-        verbose_name_plural = u"查漏补缺任务管理"
+        verbose_name = u"查漏校对"
+        verbose_name_plural = u"查漏校对"
 
 
 class DelTask(Task):
@@ -763,8 +763,8 @@ class DelTask(Task):
     rect_set = JSONField(default=list, verbose_name=u'字块集') # [deletion_item_id, deletion_item_id]
 
     class Meta:
-        verbose_name = u"删框任务"
-        verbose_name_plural = u"删框任务管理"
+        verbose_name = u"删框审定"
+        verbose_name_plural = u"删框审定"
 
     def execute(self):
         for item in self.del_task_items.all():
@@ -855,8 +855,8 @@ class CharClassifyPlan(models.Model):
 
 
     class Meta:
-        verbose_name = u"聚类准备表"
-        verbose_name_plural = u"聚类准备表管理"
+        verbose_name = u"聚类阈值"
+        verbose_name_plural = u"聚类阈值"
 
     @shared_task
     @email_if_fails

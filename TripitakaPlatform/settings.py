@@ -32,6 +32,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'dmXadmin.apps.DmxadminConfig',
     'tdata.apps.TdataConfig',
     'tasks.apps.TasksConfig',
     'rect.apps.RectConfig',
@@ -50,6 +51,8 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'django_celery_results',
     'celery',
+    'xadmin',
+    'crispy_forms',
 ]
 
 MIDDLEWARE = [
@@ -142,15 +145,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
-
+LANGUAGE_CODE = 'zh-hans'
 TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
 USE_L10N = True
-
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -254,8 +255,6 @@ USE_TZ = True
 #     'django.contrib.staticfiles.finders.DefaultStorageFinder',
 # )
 
-XADMIN_TITLE = _(u"龙泉大藏经切分平台")
-XADMIN_FOOTER_TITLE = _(u"北京 龙泉寺-AIITC.inc")
 
 # Redis Cache Settings
 CACHES = {
@@ -321,3 +320,5 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PW', '')
 EMAIL_USE_TLS = True
 EMAIL_FROM = EMAIL_HOST_USER
 SERVER_EMAIL = EMAIL_HOST_USER
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 100000

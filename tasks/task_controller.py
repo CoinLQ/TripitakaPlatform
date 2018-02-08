@@ -29,45 +29,70 @@ def get_reeltext(lqsutra, tripitaka_id, reel_no):
 
 def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_verify_times):
     # Correct Task
-    separators = extract_page_line_separators(reel.text)
+    reel_correct_texts = list(ReelCorrectText.objects.filter(reel=reel).order_by('-id')[0:1])
+    if not reel_correct_texts:
+        return None
+    reel_correct_text = reel_correct_texts[0]
+    separators = extract_page_line_separators(reel_correct_text.text)
     separators_json = json.dumps(separators, separators=(',', ':'))
 
-    compare_reel1 = CompareReel(reel=reel, base_reel=base_reel_lst[0])
-    compare_reel1.save()
-    compare_reel2 = CompareReel(reel=reel, base_reel=base_reel_lst[1])
-    compare_reel2.save()
+    compare_reels = []
+    compare_reel_to_diff_lst = {}
+    compare_reel_to_compare_segs = {}
+    for base_reel in base_reel_lst:
+        reel_correct_texts = list(ReelCorrectText.objects.filter(reel=base_reel).order_by('-id')[0:1])
+        if not reel_correct_texts:
+            return None
+        base_reel_correct_text = reel_correct_texts[0]
+
+        diff_lst, base_reel_text = CompareReel.generate_compare_reel(base_reel_correct_text.text, reel_correct_text.text)
+        compare_reel = CompareReel(reel=reel, base_reel=base_reel, base_text=base_reel_text)
+        compare_reel.save()
+        compare_reels.append(compare_reel)
+        compare_reel_to_diff_lst[compare_reel.id] = diff_lst
+
+        compare_segs = []
+        for tag, base_pos, pos, base_text, ocr_text in diff_lst:
+            compare_seg = CompareSeg(compare_reel=compare_reel,
+            base_pos=base_pos,
+            ocr_text=ocr_text, base_text=base_text)
+            compare_segs.append(compare_seg)
+        CompareSeg.objects.bulk_create(compare_segs)
+        compare_reel_to_compare_segs[compare_reel.id] = compare_segs
 
     task_lst = []
     for task_no in range(1, correct_times + 1):
         task = Task(batch_task=batchtask, reel=reel, typ=Task.TYPE_CORRECT, task_no=task_no, status=Task.STATUS_NOT_READY,
         publisher=batchtask.publisher)
-        if task_no % 2 == 1:
-            task.compare_reel = compare_reel1
-        else:
-            task.compare_reel = compare_reel2
         task.separators = separators_json
         task.save()
         task_lst.append(task)
+    
+    correct_seg_lst = []
+    for task in task_lst:
+        compare_reel = compare_reels[(task.task_no % 2) - 1]
+        task.compare_reel = compare_reel
+        base_reel = compare_reel.base_reel
+        reel = compare_reel.reel
+        diff_lst = compare_reel_to_diff_lst[compare_reel.id]
+        compare_segs = compare_reel_to_compare_segs[compare_reel.id]
+        i = 0
+        for tag, base_pos, pos, base_text, ocr_text in diff_lst:
+            compare_seg = compare_segs[i]
+            correct_seg = CorrectSeg(task=task, compare_seg=compare_seg)
+            correct_seg.selected_text = compare_seg.ocr_text
+            correct_seg.position = pos
+            correct_seg_lst.append(correct_seg)
+            i += 1
+        task.status = Task.STATUS_READY
+    CorrectSeg.objects.bulk_create(correct_seg_lst)
+    task_id_lst = [task.id for task in task_lst]
+    Task.objects.filter(id__in=task_id_lst).update(status=Task.STATUS_READY) # 实际修改任务状态
 
     if correct_verify_times:
         task = Task(batch_task=batchtask, reel=reel, typ=Task.TYPE_CORRECT_VERIFY, task_no=0, status=Task.STATUS_NOT_READY,
         publisher=batchtask.publisher)
         task.save()
-    
-    for task in task_lst:
-        base_reel = task.compare_reel.base_reel
-        reel = task.compare_reel.reel
-        diff_lst = CompareReel.generate_compare_reel(base_reel.text, reel.text)
-        for tag, base_pos, pos, base_text, ocr_text in diff_lst:
-            compare_seg = CompareSeg(compare_reel=task.compare_reel,
-            base_pos=base_pos,
-            ocr_text=ocr_text, base_text=base_text)
-            compare_seg.save()
-            for task in task_lst:
-                correct_seg = CorrectSeg(task=task, compare_seg=compare_seg)
-                correct_seg.selected_text = compare_seg.ocr_text
-                correct_seg.position = pos
-                correct_seg.save()
 
 def create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_times):
     for task_no in range(1, judge_times + 1):
@@ -121,28 +146,36 @@ correct_times, correct_verify_times,
 judge_times, judge_verify_times,
 punct_times, punct_verify_times,
 lqpunct_times, lqpunct_verify_times,
-mark_times, mark_verify_times,
-lqmark_times, lqmark_verify_times):
+mark_times = 0, mark_verify_times = 0,
+lqmark_times = 0, lqmark_verify_times = 0):
     '''
     reel_lst格式： [(lqsutra, reel_no), (lqsutra, reel_no)]
     '''
     for lqsutra, reel_no in reel_lst:
         # 创建文字校对任务
-        sutra_lst = list(lqsutra.sutra_set.all())
+        origin_sutra_lst = list(lqsutra.sutra_set.all())
+        # 将未准备好数据的藏经版本过滤掉
+        sutra_lst = []
+        for sutra in origin_sutra_lst:
+            if sutra.tripitaka.cut_ready:
+                sutra_lst.append(sutra)
+
         # 先得到两个base_reel，CBETA和高丽藏
         first_base_sutra = None
         second_base_sutra = None
         for sutra in sutra_lst:
             if sutra.sid.startswith('CB'):
                 first_base_sutra = sutra
-            if sutra.sid.startswith('GL'):
-                second_base_sutra = sutra
-        if not first_base_sutra or not second_base_sutra:
+            # # 暂时不使用高丽藏作为比对本
+            # if sutra.sid.startswith('GL'):
+            #     second_base_sutra = sutra
+        if not first_base_sutra and not second_base_sutra:
             # 记录错误
             print('no base sutra')
             continue
         base_reel_lst = []
         if first_base_sutra:
+            print('', first_base_sutra.sid, reel_no)
             reel = Reel.objects.get(sutra=first_base_sutra, reel_no=reel_no)
             base_reel_lst.append(reel)
         if second_base_sutra:

@@ -16,7 +16,9 @@ cp rect/sql/*.py rect/migrations/.
 ./manage.py import_tripitaka_list
 ./manage.py set_cut_ready
 ./manage.py import_sutra_reel
-./manage.py import_cbeta_huayan60
 ./manage.py create_lqreel
+./manage.py import_cbeta_huayan60
+./manage.py import_reel
+./manage.py generate_reel_path
 ./manage.py download_ready_ocrtext
 ./manage.py create_huayan60_tasks

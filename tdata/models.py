@@ -148,6 +148,12 @@ class Reel(models.Model):
         s = '/%s/%s/%s_%s_' % (tcode, path, tcode, filename_str)
         return s
 
+    def image_prefix(self):
+        tcode = self.sutra.sid[0:2]
+        filename_str = self.path_str()
+        s = '%s_%s_' % (tcode, filename_str)
+        return s
+
     def path_str(self):
         path_lst = []
         if self.path1:

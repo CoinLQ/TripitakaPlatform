@@ -43,7 +43,7 @@ class Command(BaseCommand):
         self.ImportSutra()
 
         #导入详目    ok
-        self.ImportSutraJuan()     
+        #self.ImportSutraJuan()     
    
         return None
                              

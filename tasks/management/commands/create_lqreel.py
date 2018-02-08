@@ -17,14 +17,14 @@ import re, json
 class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
-        reels = list(Reel.objects.all())
+        # reels = list(Reel.objects.all())
         lqreels = list(LQReel.objects.all())
         lqreel_set = set()
         for lqreel in lqreels:
             key = '%s_%03d' % (lqreel.lqsutra.sid, lqreel.reel_no)
             lqreel_set.add( key )
         lqreel_lst = []
-        
+
         # 華嚴經60卷
         lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
         for reel_no in range(1, 61):

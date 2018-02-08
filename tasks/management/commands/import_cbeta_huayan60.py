@@ -90,7 +90,7 @@ class Command(BaseCommand):
                 lines = f.readlines()
                 read_reel_info(huayan_cb, reel_no, lines)
 
-        for reel_no in range(1, 3):
+        for reel_no in range(1, 61):
             filename = os.path.join(BASE_DIR, 'data/cbeta_huayan/text/CB_278_%s.txt' % reel_no)
             text = ''
             with open(filename, 'r') as f:

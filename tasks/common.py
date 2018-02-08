@@ -227,11 +227,18 @@ def get_accurate_cut(text1, text2, cut_json, pid):
     return char_lst, line_count, column_count, char_count_lst, add_count, wrong_count, confirm_count, min_x, min_y, max_x, max_y
 
 def fetch_cut_file(reel, vol_page):
+    if reel.reel_no <= 0:
+        return ''
     cut_url = '%s%s%s.cut' % (settings.IMAGE_URL_PREFIX, reel.url_prefix(), vol_page)
-    with urllib.request.urlopen(cut_url) as f:
-        print('fetch done: %s, page: %s' % (reel, vol_page))
-        data = f.read()
-        return data
+    print('cut_url: ', cut_url)
+    try:
+        with urllib.request.urlopen(cut_url) as f:
+            print('fetch done: %s, page: %s' % (reel, vol_page))
+            data = f.read()
+            return data
+    except:
+        print('no data: ', cut_url)
+        return ''
 
 def fetch_col_file(reel, vol_page):
     url = '%s%s%s.col' % (settings.IMAGE_URL_PREFIX, reel.url_prefix(), vol_page)
@@ -385,6 +392,8 @@ def extract_page_line_separators(text):
             if i == (line_cnt - 1): # 一页中最后一行
                 if page_index != (page_count - 1): # 非最后一页
                     separators.append( (pos, 'p') )
+            # elif lines[i] == 'b': # TODO
+            #     separators.append( (pos, 'b') )
             else:
                 separators.append( (pos, '\n') )
             i += 1

@@ -16,8 +16,7 @@ import re, json
 class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
-        tcode_lst = []
-        #tcode_lst = ['PL', 'SX', 'YB', 'QL', 'ZH', 'QS', 'ZC']
+        tcode_lst = ['PL', 'SX', 'YB', 'QL', 'ZH', 'QS', 'ZC']
         for tcode in tcode_lst:
             tripitaka = Tripitaka.objects.get(code=tcode)
             for sutra in tripitaka.sutra_set.all():

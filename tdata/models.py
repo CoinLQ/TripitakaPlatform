@@ -33,6 +33,7 @@ class Tripitaka(models.Model):
     path2_name = models.CharField('存储层次2中文名', max_length=16, blank=True, default='')
     path3_char = models.CharField('存储层次3字母', max_length=1, blank=True, default='')
     path3_name = models.CharField('存储层次3中文名', max_length=16, blank=True, default='')
+    cut_ready = models.BooleanField(verbose_name='切分数据状态', default=False)
 
     class Meta:
         verbose_name = '实体藏'

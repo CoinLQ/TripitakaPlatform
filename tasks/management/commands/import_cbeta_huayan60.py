@@ -68,14 +68,12 @@ def process_cbeta_text(huayan_cb, reel_no, lines):
 class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
-        admin = Staff.objects.get(username='admin')
-
         # get LQSutra
         lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
 
         # CBETA第1卷
         CB = Tripitaka.objects.get(code='CB')
-        CB.sutra_set.all().delete()
+        #CB.sutra_set.all().delete()
 
         try:
             huayan_cb = Sutra.objects.get(sid='CB002780')
@@ -83,6 +81,7 @@ class Command(BaseCommand):
             huayan_cb = Sutra(sid='CB002780', tripitaka=CB, code='00278', variant_code='0',
             name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)
             huayan_cb.save()
+        Reel.objects.filter(sutra=huayan_cb).delete()
 
         for reel_no in range(1, 61):
             filename = os.path.join(BASE_DIR, 'data/cbeta_huayan/reel_info/CBETA_60_%s.txt' % reel_no)

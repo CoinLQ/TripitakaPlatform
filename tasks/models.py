@@ -3,7 +3,6 @@ from django.db import models
 from django.utils import timezone
 from jwt_auth.models import Staff
 from tdata.models import *
-
 from difflib import SequenceMatcher
 import re
 
@@ -167,7 +166,7 @@ class Task(models.Model):
     reeldiff = models.ForeignKey('ReelDiff', on_delete=models.SET_NULL, null=True)
     # 标点相关
     reeltext = models.ForeignKey('ReelCorrectText', related_name='punct_tasks', on_delete=models.SET_NULL, blank=True, null=True)
-   
+
     result = SutraTextField('结果', blank=True)
     started_at = models.DateTimeField('开始时间', blank=True, null=True)
     finished_at = models.DateTimeField('完成时间', blank=True, null=True)
@@ -179,6 +178,14 @@ class Task(models.Model):
     verbose_name='发布用户')
     priority = models.SmallIntegerField('优先级', choices=TaskBase.PRIORITY_CHOICES, default=2) # 1,2,3分别表示低，中，高
     progress = models.SmallIntegerField('进度', default=0)
+
+    class Meta:
+        verbose_name_plural = verbose_name = u'任务'
+
+    class Config:
+        list_display_fields = ('id', 'result', 'created_at')
+        list_form_fields = list_display_fields
+        search_fields = ('id', 'result', 'created_at')
 
 class CorrectSeg(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
@@ -315,7 +322,7 @@ class MarkUnitBase(models.Model):
     start = models.IntegerField('起始字index', default=0)
     end = models.IntegerField('结束字下一个index', default=0)
     text = models.TextField('文本', default='')
-    
+
     class Meta:
         abstract = True
 
@@ -328,7 +335,7 @@ class Mark(models.Model):
 
 class MarkUnit(MarkUnitBase):
     mark = models.ForeignKey(Mark, on_delete=models.CASCADE)
-    
+
 class LQMark(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
     reeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)

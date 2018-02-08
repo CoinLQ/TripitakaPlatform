@@ -114,5 +114,4 @@ class BaseModelTest(TestCase):
 
     def test_make_pagerect_demo(self):
         page = Page.objects.filter(pid='YB000860_001_02_0')
-        import pdb;pdb.set_trace()
         page.first().pagerects.first().make_annotate()

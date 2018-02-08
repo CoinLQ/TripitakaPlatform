@@ -101,10 +101,8 @@ class Command(BaseCommand):
             filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_gl.sid)
             with open(filename, 'r') as f:
                 text = f.read()
-                reel_ocr_text = ReelOCRText(reel=huayan_gl_1, text = text)
-                reel_ocr_text.save()
-                reelcorrecttext = ReelCorrectText(reel=huayan_gl_1, text=text)
-                reelcorrecttext.save()
+                reelcorrecttext_gl = ReelCorrectText(reel=huayan_gl_1, text=text)
+                reelcorrecttext_gl.save()
 
         # create BatchTask
         BatchTask.objects.all().delete()
@@ -122,7 +120,7 @@ class Command(BaseCommand):
         separators_json = json.dumps(separators, separators=(',', ':'))
 
         # 文字校对
-        diff_lst, base_text = CompareReel.generate_compare_reel(reelcorrecttext.text, reel_ocr_text_yb_1.text)
+        diff_lst, base_text = CompareReel.generate_compare_reel(reelcorrecttext_gl.text, reel_ocr_text_yb_1.text)
         compare_reel = CompareReel(reel=huayan_yb_1, base_reel=huayan_gl_1, base_text=base_text)
         compare_reel.save()
 

@@ -28,12 +28,16 @@ def get_reeltext(lqsutra, tripitaka_id, reel_no):
     return reeltext
 
 def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_verify_times):
+    if reel.sutra.sid.startswith('CB'): # 不对CBETA生成任务
+        return
     # Correct Task
-    reel_correct_texts = list(ReelCorrectText.objects.filter(reel=reel).order_by('-id')[0:1])
-    if not reel_correct_texts:
+    print('create_correct_tasks: ', reel)
+    reel_ocr_texts = list(ReelOCRText.objects.filter(reel=reel))
+    if len(reel_ocr_texts) == 0:
+        print('no ocr text')
         return None
-    reel_correct_text = reel_correct_texts[0]
-    separators = extract_page_line_separators(reel_correct_text.text)
+    reel_ocr_text = reel_ocr_texts[0]
+    separators = extract_page_line_separators(reel_ocr_text.text)
     separators_json = json.dumps(separators, separators=(',', ':'))
 
     compare_reels = []
@@ -42,10 +46,26 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
     for base_reel in base_reel_lst:
         reel_correct_texts = list(ReelCorrectText.objects.filter(reel=base_reel).order_by('-id')[0:1])
         if not reel_correct_texts:
+            print('no base text.')
             return None
         base_reel_correct_text = reel_correct_texts[0]
+        base_text = base_reel_correct_text.text
+        # 对于比对本，将前后两卷经文都加上
+        base_reel_next = list(Reel.objects.filter(sutra=base_reel.sutra, reel_no=base_reel.reel_no+1))
+        if len(base_reel_next) > 0:
+            base_reel_next = base_reel_next[0]
+            reel_correct_texts = list(ReelCorrectText.objects.filter(reel=base_reel_next).order_by('-id')[0:1])
+            if reel_correct_texts:
+                base_text += reel_correct_texts[0].text
+        if base_reel.reel_no > 1:
+            base_reel_prev = list(Reel.objects.filter(sutra=base_reel.sutra, reel_no=base_reel.reel_no-1))
+            if len(base_reel_prev) > 0:
+                base_reel_prev = base_reel_prev[0]
+                reel_correct_texts = list(ReelCorrectText.objects.filter(reel=base_reel_prev).order_by('-id')[0:1])
+                if reel_correct_texts:
+                    base_text = reel_correct_texts[0].text + base_text
 
-        diff_lst, base_reel_text = CompareReel.generate_compare_reel(base_reel_correct_text.text, reel_correct_text.text)
+        diff_lst, base_reel_text = CompareReel.generate_compare_reel(base_text, reel_ocr_text.text)
         compare_reel = CompareReel(reel=reel, base_reel=base_reel, base_text=base_reel_text)
         compare_reel.save()
         compare_reels.append(compare_reel)
@@ -54,8 +74,7 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
         compare_segs = []
         for tag, base_pos, pos, base_text, ocr_text in diff_lst:
             compare_seg = CompareSeg(compare_reel=compare_reel,
-            base_pos=base_pos,
-            ocr_text=ocr_text, base_text=base_text)
+            base_pos=base_pos, ocr_text=ocr_text, base_text=base_text)
             compare_segs.append(compare_seg)
         CompareSeg.objects.bulk_create(compare_segs)
         compare_reel_to_compare_segs[compare_reel.id] = compare_segs
@@ -64,14 +83,15 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
     for task_no in range(1, correct_times + 1):
         task = Task(batch_task=batchtask, reel=reel, typ=Task.TYPE_CORRECT, task_no=task_no, status=Task.STATUS_NOT_READY,
         publisher=batchtask.publisher)
+        compare_reel = compare_reels[(task.task_no % 2) - 1]
+        task.compare_reel = compare_reel
         task.separators = separators_json
         task.save()
         task_lst.append(task)
     
     correct_seg_lst = []
     for task in task_lst:
-        compare_reel = compare_reels[(task.task_no % 2) - 1]
-        task.compare_reel = compare_reel
+        compare_reel = task.compare_reel
         base_reel = compare_reel.base_reel
         reel = compare_reel.reel
         diff_lst = compare_reel_to_diff_lst[compare_reel.id]
@@ -142,10 +162,10 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
 
 # 从龙泉大藏经来发布
 def create_tasks_for_batchtask(batchtask, reel_lst,
-correct_times, correct_verify_times,
-judge_times, judge_verify_times,
-punct_times, punct_verify_times,
-lqpunct_times, lqpunct_verify_times,
+correct_times = 0, correct_verify_times = 0,
+judge_times = 0, judge_verify_times = 0,
+punct_times = 0, punct_verify_times = 0,
+lqpunct_times = 0, lqpunct_verify_times = 0,
 mark_times = 0, mark_verify_times = 0,
 lqmark_times = 0, lqmark_verify_times = 0):
     '''
@@ -175,7 +195,6 @@ lqmark_times = 0, lqmark_verify_times = 0):
             continue
         base_reel_lst = []
         if first_base_sutra:
-            print('', first_base_sutra.sid, reel_no)
             reel = Reel.objects.get(sutra=first_base_sutra, reel_no=reel_no)
             base_reel_lst.append(reel)
         if second_base_sutra:
@@ -183,22 +202,20 @@ lqmark_times = 0, lqmark_verify_times = 0):
             base_reel_lst.append(reel)
 
         for sutra in sutra_lst:
-            if sutra.sid.startswith('CB'): # 不对CBETA生成任务
-                continue
             try:
                 reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
             except:
                 # TODO: 记录错误
                 continue
             create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_verify_times)
-            create_punct_tasks(batchtask, reel, punct_times, punct_verify_times)
+            #create_punct_tasks(batchtask, reel, punct_times, punct_verify_times)
 
-        try:
-            lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
-            base_reel = base_reel_lst[0]
-            create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_times)
-        except:
-            print('create judge task failed: ', lqsutra, reel_no)
+        # try:
+        #     lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
+        #     base_reel = base_reel_lst[0]
+        #     create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_times)
+        # except:
+        #     print('create judge task failed: ', lqsutra, reel_no)
 
 def create_reeldiff_for_judge_task(lqreel, lqsutra):
     reel_no = lqreel.reel_no

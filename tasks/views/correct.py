@@ -22,7 +22,7 @@ def do_correct_task(request, task_id):
     else:
         task = get_object_or_404(Task, pk=task_id)
         compare_reel = task.compare_reel
-        comparesegs = [seg for seg in compare_reel.compareseg_set.all()]
+        comparesegs = [seg for seg in compare_reel.compareseg_set.all().order_by('id')]
         segs = []
         for compareseg in comparesegs:
             correctsegs = CorrectSeg.objects.filter(task=task, compare_seg=compareseg).order_by('position')

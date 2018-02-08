@@ -30,5 +30,5 @@ class Command(BaseCommand):
         CompareReel.objects.all().delete()
         batchtask = BatchTask(priority=2, publisher=admin)
         batchtask.save()
-        create_tasks_for_batchtask(batchtask, reel_lst, 2, 1, 2, 1)
+        create_tasks_for_batchtask(batchtask, reel_lst, 2, 1, 2, 1, 2, 1)
         print('batchtask id: ', batchtask.id)

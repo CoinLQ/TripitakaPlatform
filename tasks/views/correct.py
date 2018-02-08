@@ -88,13 +88,19 @@ def do_correct_task_post(request, task_id):
         for seg_id in save_seg_ids:
             d[seg_id].save()
         reel_text = request.POST.get('reel_text').replace('\r\n', '\n')
+        update_fields=[]
         if reel_text:
             separators = extract_page_line_separators(reel_text)
             separators_json = json.dumps(separators, separators=(',', ':'))
-            Task.objects.filter(id=task_id).update(result=reel_text, separators=separators_json)
+            task.result = reel_text
+            task.separators = separators_json
+            update_fields = ['result', 'separators']
         finished = request.POST.get('finished')
         if finished == '1':
-            Task.objects.filter(id=task_id).update(status=Task.STATUS_FINISHED)
+            task.status = Task.STATUS_FINISHED
+            update_fields.append('status')
+        if update_fields:
+            task.save(update_fields=update_fields)
     if finished == '1':
         # 检查一组的几个文字校对任务是否都已完成
         correct_tasks = Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT)
@@ -104,49 +110,52 @@ def do_correct_task_post(request, task_id):
                 all_finished = False
         task_count = len(correct_tasks)
         # 如果都已完成
-        if all_finished and task_count > 1:
-            # 查到文字校对审定任务
-            correct_verify_tasks = [task for task in Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT_VERIFY)]
-            if len(correct_verify_tasks) == 0:
-                return redirect('/')
-            correct_verify_task = correct_verify_tasks[0]
+        if all_finished:
+            if task_count == 1:
+                publish_correct_result(task)
+            else:
+                # 查到文字校对审定任务
+                correct_verify_tasks = [task for task in Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT_VERIFY)]
+                if len(correct_verify_tasks) == 0:
+                    return redirect('/')
+                correct_verify_task = correct_verify_tasks[0]
 
-            # 比较一组的几个文字校对任务的结果
-            correctsegs_lst = [ [] ] * task_count
-            i = 0
-            while i < task_count:
-                correctsegs_lst[i] = [ seg for seg in CorrectSeg.objects.filter(task=correct_tasks[i]).order_by('compare_seg_id') ]
-                i += 1
-            correctsegs_verify = []
-            seg_count = len(correctsegs_lst[0])
-            i = 0
-            while i < seg_count:
-                seg = CorrectSeg(task=correct_verify_task, compare_seg=correctsegs_lst[0][i].compare_seg)
-                j = 0
-                all_equal = True
-                while j < task_count - 1:
-                    if correctsegs_lst[j][i].selected_text != correctsegs_lst[j+1][i].selected_text:
-                        all_equal = False
-                        break
-                    j += 1
-                if all_equal: # TODO: 都相同的文本段是否需要保存？
-                    seg.diff_flag = 0
-                seg.selected_text = correctsegs_lst[0][i].selected_text
-                seg.position = correctsegs_lst[0][i].position
-                seg.page_no = correctsegs_lst[0][i].page_no
-                seg.line_no = correctsegs_lst[0][i].line_no
-                seg.char_no = correctsegs_lst[0][i].char_no
-                correctsegs_verify.append(seg)
-                i += 1
+                # 比较一组的几个文字校对任务的结果
+                correctsegs_lst = [ [] ] * task_count
+                i = 0
+                while i < task_count:
+                    correctsegs_lst[i] = [ seg for seg in CorrectSeg.objects.filter(task=correct_tasks[i]).order_by('compare_seg_id') ]
+                    i += 1
+                correctsegs_verify = []
+                seg_count = len(correctsegs_lst[0])
+                i = 0
+                while i < seg_count:
+                    seg = CorrectSeg(task=correct_verify_task, compare_seg=correctsegs_lst[0][i].compare_seg)
+                    j = 0
+                    all_equal = True
+                    while j < task_count - 1:
+                        if correctsegs_lst[j][i].selected_text != correctsegs_lst[j+1][i].selected_text:
+                            all_equal = False
+                            break
+                        j += 1
+                    if all_equal: # TODO: 都相同的文本段是否需要保存？
+                        seg.diff_flag = 0
+                    seg.selected_text = correctsegs_lst[0][i].selected_text
+                    seg.position = correctsegs_lst[0][i].position
+                    seg.page_no = correctsegs_lst[0][i].page_no
+                    seg.line_no = correctsegs_lst[0][i].line_no
+                    seg.char_no = correctsegs_lst[0][i].char_no
+                    correctsegs_verify.append(seg)
+                    i += 1
 
-            with transaction.atomic():
-                # 保存文字校对审定任务的correctsegs
-                CorrectSeg.objects.bulk_create(correctsegs_verify)
+                with transaction.atomic():
+                    # 保存文字校对审定任务的correctsegs
+                    CorrectSeg.objects.bulk_create(correctsegs_verify)
 
-                # 文字校对审定任务设为待领取
-                Task.objects.filter(reel=task.reel,
-                batch_task=task.batch_task,
-                typ=Task.TYPE_CORRECT_VERIFY).update(separators=correct_tasks[0].separators, status=Task.STATUS_READY)
+                    # 文字校对审定任务设为待领取
+                    Task.objects.filter(reel=task.reel,
+                    batch_task=task.batch_task,
+                    typ=Task.TYPE_CORRECT_VERIFY).update(separators=correct_tasks[0].separators, status=Task.STATUS_READY)
     return redirect('do_correct_task', task_id=task_id)
 
 #@login_required

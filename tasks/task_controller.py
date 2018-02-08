@@ -7,10 +7,10 @@ from django.db.models import Q
 from tdata.models import *
 from tasks.models import *
 from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, ReelText, \
-extract_page_line_separators, clean_separators
+extract_page_line_separators, clean_separators, compute_accurate_cut
 from tasks.reeldiff_processor import generate_reeldiff
 
-import json, re, logging
+import json, re, logging, traceback
 from operator import attrgetter, itemgetter
 from difflib import SequenceMatcher
 
@@ -208,14 +208,14 @@ lqmark_times = 0, lqmark_verify_times = 0):
                 # TODO: 记录错误
                 continue
             create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_verify_times)
-            #create_punct_tasks(batchtask, reel, punct_times, punct_verify_times)
+            create_punct_tasks(batchtask, reel, punct_times, punct_verify_times)
 
-        # try:
-        #     lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
-        #     base_reel = base_reel_lst[0]
-        #     create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_times)
-        # except:
-        #     print('create judge task failed: ', lqsutra, reel_no)
+        try:
+            lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
+            base_reel = base_reel_lst[0]
+            create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_times)
+        except:
+            print('create judge task failed: ', lqsutra, reel_no)
 
 def create_reeldiff_for_judge_task(lqreel, lqsutra):
     reel_no = lqreel.reel_no
@@ -303,6 +303,13 @@ def publish_correct_result(task):
                     text_changed = True
         else:
             return
+
+    if reel_correct_text:
+        # 得到精确的切分数据
+        try:
+            compute_accurate_cut(task.reel)
+        except Exception:
+            traceback.print_exc()
 
     # 基础标点任务
     if reel_correct_text:

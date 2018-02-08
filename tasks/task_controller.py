@@ -157,7 +157,7 @@ lqmark_times = 0, lqmark_verify_times = 0):
         # 将未准备好数据的藏经版本过滤掉
         sutra_lst = []
         for sutra in origin_sutra_lst:
-            if sutra.tripitaka.cut_ready:
+            if sutra.tripitaka.cut_ready or sutra.sid.startswith('CB'):
                 sutra_lst.append(sutra)
 
         # 先得到两个base_reel，CBETA和高丽藏
@@ -183,6 +183,8 @@ lqmark_times = 0, lqmark_verify_times = 0):
             base_reel_lst.append(reel)
 
         for sutra in sutra_lst:
+            if sutra.sid.startswith('CB'): # 不对CBETA生成任务
+                continue
             try:
                 reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
             except:

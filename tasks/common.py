@@ -1,5 +1,5 @@
 from difflib import SequenceMatcher
-import re, json
+import re, json, os
 import urllib.request
 import traceback
 
@@ -229,12 +229,18 @@ def get_accurate_cut(text1, text2, cut_json, pid):
 def fetch_cut_file(reel, vol_page):
     if reel.reel_no <= 0:
         return ''
+    cut_filename = 'logs/%s.cut' % reel.image_prefix()
+    if os.path.exists( cut_filename ):
+        with open(cut_filename, 'r') as f:
+            return f.read()
     cut_url = '%s%s%s.cut' % (settings.IMAGE_URL_PREFIX, reel.url_prefix(), vol_page)
     print('cut_url: ', cut_url)
     try:
         with urllib.request.urlopen(cut_url) as f:
             print('fetch done: %s, page: %s' % (reel, vol_page))
             data = f.read()
+            with open(cut_filename, 'w') as fout:
+                fout.write(data)
             return data
     except:
         print('no data: ', cut_url)

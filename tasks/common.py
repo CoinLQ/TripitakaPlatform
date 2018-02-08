@@ -1,11 +1,13 @@
 from difflib import SequenceMatcher
-import re, json
+import re, json, os
 import urllib.request
 import traceback
 
 from tdata.models import *
 from tasks.models import *
 from rect.models import PageRect, Rect
+
+from django.conf import settings
 
 SEPARATORS_PATTERN = re.compile('[pb\n]')
 
@@ -227,11 +229,27 @@ def get_accurate_cut(text1, text2, cut_json, pid):
     return char_lst, line_count, column_count, char_count_lst, add_count, wrong_count, confirm_count, min_x, min_y, max_x, max_y
 
 def fetch_cut_file(reel, vol_page):
+    if reel.reel_no <= 0 or vol_page == 0:
+        return ''
+    cut_filename = os.path.join(settings.BASE_DIR, 'logs/%s%s.cut' % (reel.image_prefix(), vol_page))
+    if os.path.exists( cut_filename ):
+        with open(cut_filename, 'r') as f:
+            data = f.read()
+            if data:
+                return data
     cut_url = '%s%s%s.cut' % (settings.IMAGE_URL_PREFIX, reel.url_prefix(), vol_page)
-    with urllib.request.urlopen(cut_url) as f:
-        print('fetch done: %s, page: %s' % (reel, vol_page))
-        data = f.read()
-        return data
+    print('wget ', cut_url)
+    try:
+        with urllib.request.urlopen(cut_url) as f:
+            print('fetch done: %s, page: %s' % (reel, vol_page))
+            data = f.read()
+            if data:
+                with open(cut_filename, 'wb') as fout:
+                    fout.write(data)
+            return data
+    except:
+       print('no data: ', cut_url)
+       return ''
 
 def fetch_col_file(reel, vol_page):
     url = '%s%s%s.col' % (settings.IMAGE_URL_PREFIX, reel.url_prefix(), vol_page)
@@ -332,7 +350,7 @@ def clean_sutra_text(text):
     text = text.replace('\r\n', '\n').replace('\n\n', '\n')
     return SUTRA_CLEAN_PATTERN.sub('', text)
 
-PUNCT_CHARACTERS = '：，。；、\n'
+PUNCT_CHARACTERS = '：，。；、！？\n'
 def extract_punct(text):
     pos = 0
     punct_lst = []
@@ -385,6 +403,8 @@ def extract_page_line_separators(text):
             if i == (line_cnt - 1): # 一页中最后一行
                 if page_index != (page_count - 1): # 非最后一页
                     separators.append( (pos, 'p') )
+            # elif lines[i] == 'b': # TODO
+            #     separators.append( (pos, 'b') )
             else:
                 separators.append( (pos, '\n') )
             i += 1

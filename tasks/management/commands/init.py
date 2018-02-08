@@ -23,7 +23,7 @@ class Command(BaseCommand):
         try:
             admin = Staff.objects.get(username='admin')
         except:
-            admin = Staff(email='thinr@163.com', username='admin')
+            admin = Staff(email='admin@example.com', username='admin')
             admin.set_password('admin')
             admin.is_admin = True
             admin.save()
@@ -53,6 +53,10 @@ class Command(BaseCommand):
             start_vol_page=1, end_vol=27, end_vol_page=23, edition_type=Reel.EDITION_TYPE_CHECKED,
             path1='27')
             huayan_yb_1.save()
+
+        try:
+            reel_ocr_text_yb_1 = ReelOCRText.objects.get(reel=huayan_yb_1)
+        except:
             text = get_reel_text(huayan_yb_1)
             #filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_yb.sid)
             #with open(filename, 'r') as f:
@@ -60,16 +64,20 @@ class Command(BaseCommand):
             reel_ocr_text_yb_1 = ReelOCRText(reel=huayan_yb_1, text = text)
             reel_ocr_text_yb_1.save()
 
-        filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
-        with open(filename, 'r') as f:
-            text = f.read()
-            ReelCorrectText(reel=huayan_yb_1, text=text).save()
+        # try:
+        #     reelcorrecttext = ReelCorrectText.objects.get(reel=huayan_yb_1)
+        # except:
+        #     filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
+        #     with open(filename, 'r') as f:
+        #         text = f.read()
+        #         reelcorrecttext = ReelCorrectText(reel=huayan_yb_1, text=text)
+        #         reelcorrecttext.save()
 
-        # 得到精确的切分数据
-        try:
-            compute_accurate_cut(huayan_yb_1)
-        except Exception:
-            traceback.print_exc()
+        # # 得到精确的切分数据
+        # try:
+        #     compute_accurate_cut(huayan_yb_1)
+        # except Exception:
+        #     traceback.print_exc()
 
         # 高丽第1卷
         GL = Tripitaka.objects.get(code='GL')
@@ -85,14 +93,16 @@ class Command(BaseCommand):
             huayan_gl_1 = Reel(sutra=huayan_gl, reel_no=1, start_vol=14,
             start_vol_page=31, end_vol=14, end_vol_page=37, edition_type=Reel.EDITION_TYPE_CHECKED,
             path1='80', path2='1')
+            huayan_gl_1.save()
+
+        try:
+            reelcorrecttext_gl = ReelCorrectText.objects.get(reel=huayan_gl_1)
+        except:
             filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_gl.sid)
             with open(filename, 'r') as f:
                 text = f.read()
-                huayan_gl_1.save()
-                reel_ocr_text = ReelOCRText(reel=huayan_gl_1, text = text)
-                reel_ocr_text.save()
-                reelcorrecttext = ReelCorrectText(reel=huayan_gl_1, text=text)
-                reelcorrecttext.save()
+                reelcorrecttext_gl = ReelCorrectText(reel=huayan_gl_1, text=text)
+                reelcorrecttext_gl.save()
 
         # create BatchTask
         BatchTask.objects.all().delete()
@@ -110,7 +120,7 @@ class Command(BaseCommand):
         separators_json = json.dumps(separators, separators=(',', ':'))
 
         # 文字校对
-        diff_lst, base_text = CompareReel.generate_compare_reel(reelcorrecttext.text, reel_ocr_text_yb_1.text)
+        diff_lst, base_text = CompareReel.generate_compare_reel(reelcorrecttext_gl.text, reel_ocr_text_yb_1.text)
         compare_reel = CompareReel(reel=huayan_yb_1, base_reel=huayan_gl_1, base_text=base_text)
         compare_reel.save()
 

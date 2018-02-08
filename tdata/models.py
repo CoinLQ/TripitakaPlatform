@@ -33,6 +33,7 @@ class Tripitaka(models.Model):
     path2_name = models.CharField('存储层次2中文名', max_length=16, blank=True, default='')
     path3_char = models.CharField('存储层次3字母', max_length=1, blank=True, default='')
     path3_name = models.CharField('存储层次3中文名', max_length=16, blank=True, default='')
+    cut_ready = models.BooleanField(verbose_name='切分数据状态', default=False)
 
     class Meta:
         verbose_name = '实体藏'
@@ -145,6 +146,12 @@ class Reel(models.Model):
         filename_str = self.path_str()
         path = filename_str.replace('_', '/')
         s = '/%s/%s/%s_%s_' % (tcode, path, tcode, filename_str)
+        return s
+
+    def image_prefix(self):
+        tcode = self.sutra.sid[0:2]
+        filename_str = self.path_str()
+        s = '%s_%s_' % (tcode, filename_str)
         return s
 
     def path_str(self):

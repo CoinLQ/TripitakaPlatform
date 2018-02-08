@@ -9,3 +9,4 @@ static/css
 static/fonts
 .pyc
 *.log
+logs

@@ -20,19 +20,22 @@
     width: 150px;
     border: 0;
 }
-tr:nth-child(even) {
+/* tr:nth-child(even) {
     background-color: #f8f8f9;
-}
+} */
 .canvas-pane {
     box-shadow: 0px 0px 1px 2px #363E4E;
-    height: 45%;
+    height: 75%;
     overflow: scroll;
 }
 .collate-pane {
     box-shadow: 0px 0px 1px 2px #363E4E;
     margin-top: 15px;
     overflow: scroll;
-    height: 53%;
+    height: 23%;
+}
+.highlight-compare {
+    background: lightblue;
 }
 .submit-pane {
     margin-top: 5px;

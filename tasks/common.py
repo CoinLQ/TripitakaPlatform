@@ -403,8 +403,8 @@ def extract_page_line_separators(text):
             if i == (line_cnt - 1): # 一页中最后一行
                 if page_index != (page_count - 1): # 非最后一页
                     separators.append( (pos, 'p') )
-            # elif lines[i] == 'b': # TODO
-            #     separators.append( (pos, 'b') )
+            elif lines[i] == 'b':
+                separators.append( (pos, 'b') )
             else:
                 separators.append( (pos, '\n') )
             i += 1

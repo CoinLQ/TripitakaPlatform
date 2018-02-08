@@ -15,9 +15,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.conf.urls.static import static
-from django.urls import include, path
+from django.urls import include, path, re_path
 from django.conf.urls import url
-
 from tasks.views.correct import *
 from tasks.views.judge import *
 from tasks.views.punct import *
@@ -32,12 +31,19 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls')),
     url(r'^api/', include('api.urls')),
     path('correct/<int:task_id>/', do_correct_task, name='do_correct_task'),
-    path('correct_verify/<int:task_id>/', do_correct_verify_task, name='do_correct_verify_task'),
+    path('verify_correct/<int:task_id>/', do_correct_verify_task, name='do_correct_verify_task'),
     path('sutra_pages/<pid>/view', sutra_page_detail, name='sutra_page_detail'),
     path('judge/<int:task_id>/', do_judge_task, name='do_judge_task'),
-    path('judge_verify/<int:task_id>/', do_judge_verify_task, name='do_judge_verify_task'),
+    path('verify_judge/<int:task_id>/', do_judge_verify_task, name='do_judge_verify_task'),
     path('punct/<int:task_id>/', do_punct_task, name='do_punct_task'),
 
     path('tools/cutfixed_pages/', cutfixed_pages, name='cutfixed_pages'),
     path('tools/cutfixed_pages/<pid>/', cutfixed_page_detail, name='cutfixed_page_detail'),
+]
+
+# # 通用URL映射，必须放在最后
+urlpatterns += [
+    # 通用页面URL映射，必须放在最后
+    url(r'^api/v1', include('api.common_urls',
+                             namespace='common_api')),
 ]

@@ -8,7 +8,8 @@
 }
 .diff-text-pane {
     padding: 0 15px;
-    height: 95%;
+    /* height: 95%; */
+    height: 75%;
     overflow: scroll;
     box-shadow: 0px 0px 1px 2px #363E4E;
 }
@@ -25,7 +26,7 @@
 } */
 .canvas-pane {
     box-shadow: 0px 0px 1px 2px #363E4E;
-    height: 75%;
+    height: 95%;
     overflow: scroll;
 }
 .collate-pane {
@@ -52,11 +53,11 @@
     margin: 20px 20px;
 }
 .reel-text-compare {
-    font-size: 18px;
+    font-size: 22px;
     height: 580px;
 }
 .reel-textarea {
-    font-size: 18px;
+    font-size: 22px;
     width: 400px;
     height: 400px;
 }
@@ -79,7 +80,7 @@
     background-color: #fdd;
 }
 .seg-row {
-    font-size: 20px;
+    font-size: 26px;
 }
 .doubt {
     background-color: #fdd;

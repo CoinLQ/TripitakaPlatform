@@ -8,6 +8,8 @@
       <div class="canvas-pane">
         <canvas id="page-canvas"></canvas>
       </div>
+    </div>
+    <div class="col-md-5 right-pane">
       <div class="collate-pane">
         <div style="text-align: center; background-color: #1A9BFC; color: white;">
           <label for="compare" style="padding-top: 3;">差异文本列表</label>
@@ -24,23 +26,22 @@
             >按字顺序</option>
           </select>
         </div>
-        <table class="table table-bordered table-condensed">
+        <table class="table table-bordered">
           <thead style="background-color: darkorange;">
             <tr>
-              <th width="40%"> OCR </th>
               <th width="40%"> 比对本 </th>
+              <th width="40%"> OCR </th>
               <th> 校对结果 </th>
               <th> </th>
             </tr>
           </thead>
           <tbody>
                   {% if sort_index_lst %}
-            <!-- <a href="/correct/{{ task.id }}/">阅读排序</a> -->
                   {% for seg_index, ch in sort_index_lst %}
                   {% set seg=segs[seg_index] %}
             <tr class="seg-row" id="segrow_{{ seg.id }}" seg-index="{{ seg_index }}" seg-id="{{ seg.id }}">
-              <td class="ocr-text"> {{ seg.ocr_text }} </td>
               <td class="base-text"> {{ seg.base_text }} </td>
+              <td class="ocr-text"> {{ seg.ocr_text }} </td>
               <td class="selected-text">
                 <textarea class="segtext{% if seg.doubt_comment %} doubt{% endif %}" rows="1" id="segtext_{{ seg.id }}" name="segtext_{{ seg.id }}" index="{{ seg_index }}">{{ seg.selected_text }}</textarea>
                 <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value=""/>
@@ -57,7 +58,7 @@
                         <h4 class="modal-title">存疑意见</h4>
                       </div>
                       <div class="modal-body">
-                        <textarea class="doubt-textarea" name="segdoubt_{{ seg.id }}" id="segdoubt_{{ seg.id }}" rows="3" cols="40">{{ seg.doubt_comment }}</textarea>
+                        <textarea class="doubt-textarea" name="segdoubt_{{ seg.id }}" id="segdoubt_{{ seg.id }}" rows="3" cols="35">{{ seg.doubt_comment }}</textarea>
                       </div>
                       <div class="modal-footer">
                         <a type="button" class="btn btn-primary doubt-cancel" seg-id="{{ seg.id }}" data-dismiss="modal">取消</a>
@@ -70,7 +71,6 @@
             </tr>
                   {% endfor %}
                   {% else %}
-            <!-- <a href="/correct/{{ task.id }}/?order_by=char">按字排序</a> -->
                   {% for seg in segs %}
                   {% if seg.ocr_text != seg.base_text %}
             <tr class="seg-row" id="segrow_{{ seg.id }}" seg-index="{{ loop.index0 }}" seg-id="{{ seg.id }}">
@@ -96,7 +96,7 @@
                         <h4 class="modal-title">存疑意见</h4>
                       </div>
                       <div class="modal-body">
-                        <textarea class="doubt-textarea" name="segdoubt_{{ seg.id }}" id="segdoubt_{{ seg.id }}" rows="3" cols="40">{{ seg.doubt_comment }}</textarea>
+                        <textarea class="doubt-textarea" name="segdoubt_{{ seg.id }}" id="segdoubt_{{ seg.id }}" rows="3" cols="35">{{ seg.doubt_comment }}</textarea>
                       </div>
                       <div class="modal-footer">
                         <a type="button" class="btn btn-primary doubt-cancel" seg-id="{{ seg.id }}" data-dismiss="modal">取消</a>
@@ -113,8 +113,7 @@
           </tbody>
         </table>
       </div>
-    </div>
-    <div class="col-md-5 right-pane">
+
       <div class="diff-text-pane">
         <div class="reel-text-region-o">
           <ul class="nav nav-tabs">
@@ -225,6 +224,9 @@
               new_text_lst.push( text_lst[text_idx] );
               ++text_idx;
               pos = next_pos;
+              if (text_idx >= text_lst.length) {
+                break;
+              }
             } else {
               var cut_length = separators[sep_idx][0] - pos; // 插入前一部分
               if (text_lst[text_idx].type == 'equal') {
@@ -269,6 +271,13 @@
         }
       }
 
+      while (sep_idx < separators.length) {
+        new_text_lst.push({
+          'type': separators[sep_idx][1]
+        });
+        ++sep_idx;
+      }
+
       var page_no = 1;
       var line_no = 1;
       var char_no = 1;
@@ -300,7 +309,7 @@
           }
 
           if (new_text_lst[i].base_text != '') {
-            cmptexts.push('<span class="deletedtext"><del>' + new_text_lst[i].base_text + '</del></span>');
+            //cmptexts.push('<span class="deletedtext"><del>' + new_text_lst[i].base_text + '</del></span>');
           }
           if (new_text_lst[i].selected_text != '') {
             cmptexts.push('<span class="addedtext">' + new_text_lst[i].selected_text + '</span>');
@@ -316,6 +325,9 @@
             ++page_no;
             line_no = 1;
             char_no = 1;
+          } else if (type == 'b') {
+            cmptexts.push('<br /><br />');
+            reeltexts.push('\nb\n');
           } else if (type == '\n') {
             cmptexts.push('<br />');
             reeltexts.push('\n');
@@ -342,6 +354,8 @@
       $('.seg-diff').click(function() {
         var seg_id = $(this).attr('seg-id');
         var index = segid_index_map[seg_id];
+        $('.seg-diff').removeAttr('style');
+        $('#seg-diff-' + seg_id).attr('style', 'color:red;');
         load_page_image(index);
         let scrollTop = $('#segrow_' + seg_id).data('scrollTop')
         if (!scrollTop) {
@@ -351,7 +365,9 @@
           $('#segrow_' + seg_id).data('scrollTop', scrollTop);
         }
         $('.collate-pane').animate({scrollTop: scrollTop }, 500);
-        $('#segrow_' + seg_id).fadeOut(500).fadeIn(500);
+        $('.seg-row').removeClass('highlight-compare');
+        $('#segrow_' + seg_id).addClass('highlight-compare');
+        //$('#segrow_' + seg_id).fadeOut(500).fadeIn(500);
       });
     };
 
@@ -377,6 +393,9 @@
       var index = parseInt($(this).parent().parent().attr('seg-index'));
       segtext_change(index, $(this).val());
       load_reel_text();
+      var seg_id = $(this).parent().attr('seg-id');
+      $('.seg-diff').removeAttr('style');
+      $('#seg-diff-' + seg_id).attr('style', 'color:red;');
     });
     $('.ocr-text').dblclick(function() {
       var textarea = $(this).parent().find('textarea.segtext');
@@ -384,6 +403,9 @@
       segtext_change(index, segs[index].ocr_text);
       textarea.val(segs[index].selected_text);
       load_reel_text();
+      var seg_id = $(this).parent().attr('seg-id');
+      $('.seg-diff').removeAttr('style');
+      $('#seg-diff-' + seg_id).attr('style', 'color:red;');
     });
     $('.base-text').dblclick(function() {
       var textarea = $(this).parent().find('textarea.segtext');
@@ -391,6 +413,9 @@
       segtext_change(index, segs[index].base_text);
       textarea.val(segs[index].selected_text);
       load_reel_text();
+      var seg_id = $(this).parent().attr('seg-id');
+      $('.seg-diff').removeAttr('style');
+      $('#seg-diff-' + seg_id).attr('style', 'color:red;');
     });
     var setImg = function (img_url, x, y, w, h) {
         var canvas = document.getElementById("page-canvas");
@@ -441,6 +466,8 @@
       });
     };
     $('.seg-row').click(function() {
+      $('.seg-row').removeClass('highlight-compare');
+      $(this).addClass('highlight-compare');
       var seg_id = $(this).attr('seg-id');
       $('.seg-diff').removeAttr('style');
       $('#seg-diff-' + seg_id).attr('style', 'color:red;');
@@ -477,7 +504,7 @@
     load_page_image(0);
     $('#reel-basetext').html(base_text.replace(/^p\n/, '').replace(/\np\n/g, '<br />').replace(/\n/g, '<br />'))
 
-    $('textarea').each(function () {
+    $('textarea.segtext').each(function () {
       this.setAttribute('style', 'height:' + (this.scrollHeight) + 'px;overflow-y:hidden;');
     }).on('input', function () {
       this.style.height = 'auto';

@@ -8,7 +8,8 @@
 }
 .diff-text-pane {
     padding: 0 15px;
-    height: 95%;
+    /* height: 95%; */
+    height: 75%;
     overflow: scroll;
     box-shadow: 0px 0px 1px 2px #363E4E;
 }
@@ -20,19 +21,22 @@
     width: 150px;
     border: 0;
 }
-tr:nth-child(even) {
+/* tr:nth-child(even) {
     background-color: #f8f8f9;
-}
+} */
 .canvas-pane {
     box-shadow: 0px 0px 1px 2px #363E4E;
-    height: 45%;
+    height: 95%;
     overflow: scroll;
 }
 .collate-pane {
     box-shadow: 0px 0px 1px 2px #363E4E;
     margin-top: 15px;
     overflow: scroll;
-    height: 53%;
+    height: 23%;
+}
+.highlight-compare {
+    background: lightblue;
 }
 .submit-pane {
     margin-top: 5px;
@@ -49,11 +53,11 @@ tr:nth-child(even) {
     margin: 20px 20px;
 }
 .reel-text-compare {
-    font-size: 18px;
+    font-size: 22px;
     height: 580px;
 }
 .reel-textarea {
-    font-size: 18px;
+    font-size: 22px;
     width: 400px;
     height: 400px;
 }
@@ -76,7 +80,7 @@ tr:nth-child(even) {
     background-color: #fdd;
 }
 .seg-row {
-    font-size: 20px;
+    font-size: 26px;
 }
 .doubt {
     background-color: #fdd;

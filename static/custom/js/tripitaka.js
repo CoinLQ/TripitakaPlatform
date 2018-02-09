@@ -57,6 +57,8 @@ function extract_separators(text) {
             pos += lines[i].length;
             if (i == (lines.length - 1) && page_index != (pages.length - 1)) {
                 new_separators.push([pos, 'p']);
+            } if (lines[i] == 'b') {
+                new_separators.push([pos, 'b']);
             } else {
                 new_separators.push([pos, '\n']);
             }

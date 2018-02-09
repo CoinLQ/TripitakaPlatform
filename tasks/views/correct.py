@@ -9,7 +9,7 @@ from tdata.models import *
 from tasks.models import *
 from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, ReelText,\
 extract_page_line_separators
-from tasks.task_controller import publish_correct_result
+from tasks.task_controller import publish_correct_result, correct_submit_result
 
 import json, re
 from operator import attrgetter, itemgetter
@@ -102,60 +102,7 @@ def do_correct_task_post(request, task_id):
         if update_fields:
             task.save(update_fields=update_fields)
     if finished == '1':
-        # 检查一组的几个文字校对任务是否都已完成
-        correct_tasks = Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT)
-        all_finished = True
-        for correct_task in correct_tasks:
-            if correct_task.status != Task.STATUS_FINISHED:
-                all_finished = False
-        task_count = len(correct_tasks)
-        # 如果都已完成
-        if all_finished:
-            if task_count == 1:
-                publish_correct_result(task)
-            else:
-                # 查到文字校对审定任务
-                correct_verify_tasks = [task for task in Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT_VERIFY)]
-                if len(correct_verify_tasks) == 0:
-                    return redirect('/')
-                correct_verify_task = correct_verify_tasks[0]
-
-                # 比较一组的几个文字校对任务的结果
-                correctsegs_lst = [ [] ] * task_count
-                i = 0
-                while i < task_count:
-                    correctsegs_lst[i] = [ seg for seg in CorrectSeg.objects.filter(task=correct_tasks[i]).order_by('compare_seg_id') ]
-                    i += 1
-                correctsegs_verify = []
-                seg_count = len(correctsegs_lst[0])
-                i = 0
-                while i < seg_count:
-                    seg = CorrectSeg(task=correct_verify_task, compare_seg=correctsegs_lst[0][i].compare_seg)
-                    j = 0
-                    all_equal = True
-                    while j < task_count - 1:
-                        if correctsegs_lst[j][i].selected_text != correctsegs_lst[j+1][i].selected_text:
-                            all_equal = False
-                            break
-                        j += 1
-                    if all_equal: # TODO: 都相同的文本段是否需要保存？
-                        seg.diff_flag = 0
-                    seg.selected_text = correctsegs_lst[0][i].selected_text
-                    seg.position = correctsegs_lst[0][i].position
-                    seg.page_no = correctsegs_lst[0][i].page_no
-                    seg.line_no = correctsegs_lst[0][i].line_no
-                    seg.char_no = correctsegs_lst[0][i].char_no
-                    correctsegs_verify.append(seg)
-                    i += 1
-
-                with transaction.atomic():
-                    # 保存文字校对审定任务的correctsegs
-                    CorrectSeg.objects.bulk_create(correctsegs_verify)
-
-                    # 文字校对审定任务设为待领取
-                    Task.objects.filter(reel=task.reel,
-                    batch_task=task.batch_task,
-                    typ=Task.TYPE_CORRECT_VERIFY).update(separators=correct_tasks[0].separators, status=Task.STATUS_READY)
+        correct_submit_result(task)
     return redirect('do_correct_task', task_id=task_id)
 
 #@login_required
@@ -163,44 +110,7 @@ def do_correct_verify_task(request, task_id):
     if request.method == 'POST':
         return do_correct_verify_task_post(request, task_id)
     else:
-        task = get_object_or_404(Task, pk=task_id)
-        if task.status == Task.STATUS_NOT_READY:
-            return redirect('/')
-        correct_tasks = Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT)
-        correct_task_ids = [task.id for task in correct_tasks]
-        segs = []
-        for seg_verify in CorrectSeg.objects.filter(task=task).filter(~Q(diff_flag=0)).order_by('position'):
-            #print(seg_verify.id)
-            seg = {}
-            seg['id'] = seg_verify.id
-            seg['pos'] = seg_verify.position
-            correctsegs = list(CorrectSeg.objects.filter(compare_seg=seg_verify.compare_seg, task_id__in=correct_task_ids))
-            correctsegs.sort(key=attrgetter('task_id'))
-            correct_segs = []
-            for correctseg in correctsegs:
-                correct_segs.append({
-                    'selected_text': correctseg.selected_text,
-                    'doubt_comment': correctseg.doubt_comment,
-                })
-            seg['base_pos'] = correctsegs[0].position
-            seg['correct_segs'] = correct_segs
-            seg['selected_text'] = seg_verify.selected_text
-            seg['page_no'] = seg_verify.page_no
-            seg['line_no'] = seg_verify.line_no
-            seg['char_no'] = seg_verify.char_no
-            seg['doubt_comment'] = seg_verify.doubt_comment
-            segs.append(seg)
-        base_text = SEPARATORS_PATTERN.sub('', correct_tasks[0].result)
-        correct_count = len(correct_tasks)
-        return render(request, 'tasks/do_correct_verify_task.html', {'task': task,
-    'correct_tasks': correct_tasks,
-    'correct_count': correct_count,
-    'base_text': base_text,
-    'segs': segs,
-    'segs_json': json.dumps(segs),
-    'start_vol_page': task.reel.start_vol_page,
-    'image_url_prefix': settings.IMAGE_URL_PREFIX,
-    })
+        return render(request, 'tasks/do_correct_verify_task.html', {'task_id': task_id })
 
 def do_correct_verify_task_post(request, task_id):
     task = get_object_or_404(Task, pk=task_id)

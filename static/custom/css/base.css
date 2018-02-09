@@ -61,6 +61,11 @@
     width: 400px;
     height: 400px;
 }
+.correct-textarea {
+    font-size: 22px;
+    width: 600px;
+    height: 600px;
+}
 .page-img {
     position: fixed;
     overflow: scroll;

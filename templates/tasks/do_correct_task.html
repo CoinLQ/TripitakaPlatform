@@ -74,11 +74,11 @@
                   {% for seg in segs %}
                   {% if seg.ocr_text != seg.base_text %}
             <tr class="seg-row" id="segrow_{{ seg.id }}" seg-index="{{ loop.index0 }}" seg-id="{{ seg.id }}">
-              <td class="ocr-text">
-                {{ seg.ocr_text }}
-              </td>
               <td class="base-text">
                 {{ seg.base_text }}
+              </td>
+              <td class="ocr-text">
+                {{ seg.ocr_text }}
               </td>
               <td class="selected-text">
                 <textarea class="segtext{% if seg.doubt_comment %} doubt{% endif %}" rows="1" id="segtext_{{ seg.id }}" name="segtext_{{ seg.id }}">{{ seg.selected_text }}</textarea>
@@ -475,7 +475,7 @@
       load_page_image(index);
       let offset = $(this).attr('scrollTop')
       if (!offset) {
-        offset = $('div.diff-text-pane').scrollTop() + $('#seg-diff-' + seg_id).position().top - 60;
+        offset = $('div.diff-text-pane').scrollTop() + $('#seg-diff-' + seg_id).position().top - 360;
         $(this).attr('scrollTop', offset);
       }
       $('div.diff-text-pane').animate({

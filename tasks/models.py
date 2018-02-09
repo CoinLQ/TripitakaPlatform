@@ -45,7 +45,7 @@ class CompareReel(models.Model):
                 pos += (j2 - j1)
             elif tag == 'replace':
                 diff_lst.append( (3, base_pos, pos, base_text, text2[j1:j2]) )
-                base_pos += (i2 - i1)
+                base_pos += len(base_text)
                 pos += (j2 - j1)
             elif tag == 'delete':
                 if base_pos > 0 and i1 > 0:
@@ -53,7 +53,7 @@ class CompareReel(models.Model):
                         diff_lst.append( (1, base_pos-1, pos-1, text1[i1-1:i1] + base_text, text2[j1-1:j1]) )
                 else:
                     diff_lst.append( (1, base_pos, pos, base_text, '') )
-                base_pos += (i2 - i1)
+                base_pos += len(base_text)
         return diff_lst, ''.join(base_text_lst)
 
 class CompareSeg(models.Model):

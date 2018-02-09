@@ -1,25 +1,30 @@
 from rest_framework import serializers
 from .models import Task
-
+from django.conf import settings
 
 
 
 class TaskSerializer(serializers.ModelSerializer):
+    status = serializers.SerializerMethodField()
+    picked_at = serializers.DateTimeField(format=settings.DATETIME_FORMAT)
+    finished_at = serializers.DateTimeField(format=settings.DATETIME_FORMAT)
+
+
+    def get_status(self, obj):
+        return obj.get_status_display()
 
     class Meta:
         model = Task
         fields = '__all__'
 
-class CorrectTaskSerializer(serializers.ModelSerializer):
+
+class CorrectTaskSerializer(TaskSerializer):
     batch_task = serializers.SerializerMethodField()
     lqsutra_name = serializers.SerializerMethodField()
     tripitaka_name = serializers.SerializerMethodField()
     sutra = serializers.SerializerMethodField()
     reel_no = serializers.SerializerMethodField()
     priority = serializers.SerializerMethodField()
-
-    def get_status(self, obj):
-        return obj.get_status_display()
 
     def get_priority(self, obj):
         return obj.get_priority_display()
@@ -44,14 +49,15 @@ class CorrectTaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = ('batch_task', 'lqsutra_name', 'tripitaka_name', 'sutra', 'reel_no', 'priority', 'id')
+        fields = ('batch_task', 'lqsutra_name', 'tripitaka_name',
+        'sutra', 'reel_no', 'priority', 'id', 'status', 'picked_at', 'finished_at')
         read_only_fields = ('id', )
 
 class VerifyCorrectTaskSerializer(CorrectTaskSerializer):
     pass
 
 
-class JudgeTaskSerializer(serializers.ModelSerializer):
+class JudgeTaskSerializer(TaskSerializer):
     batch_task = serializers.SerializerMethodField()
     lqsutra_name = serializers.SerializerMethodField()
     lqreel_no = serializers.SerializerMethodField()
@@ -69,8 +75,10 @@ class JudgeTaskSerializer(serializers.ModelSerializer):
             return ''
 
     def get_base_tripitaka_name(self, obj):
-        return obj.base_reel.sutra.tripitaka.name
-
+        try:
+            return obj.base_reel.sutra.tripitaka.name
+        except:
+            return ''
     def get_lqreel_no(self, obj):
         try:
             return obj.lqreel.reel_no
@@ -82,7 +90,8 @@ class JudgeTaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = ('batch_task', 'lqsutra_name', 'base_tripitaka_name', 'lqreel_no', 'priority', 'id')
+        fields = ('batch_task', 'lqsutra_name', 'base_tripitaka_name',
+            'lqreel_no', 'priority', 'id',  'status', 'picked_at', 'finished_at')
         read_only_fields = ('id', )
 
 
@@ -99,7 +108,9 @@ class PunctTaskSerializer(JudgeTaskSerializer):
 
     class Meta:
         model = Task
-        fields = ('batch_task', 'lqsutra_name', 'base_tripitaka_name', 'lqreel_no', 'priority', 'progress', 'id')
+        fields = ('batch_task', 'lqsutra_name', 'base_tripitaka_name',
+        'lqreel_no', 'priority', 'progress', 'id',
+        'status', 'picked_at', 'finished_at')
         read_only_fields = ('id', )
 
 class VerifyPunctTaskSerializer(PunctTaskSerializer):

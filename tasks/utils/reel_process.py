@@ -26,9 +26,13 @@ class ReelProcess(object):
             sparses.append({"idx": j2, "offset": offset})
         return sparses
 
-    def reel_align_punct(self, base_reel_text, base_puncts, new_reel_text):
+    def new_puncts(self, base_reel_text, base_puncts, new_reel_text):
         sparses = self.gen_sparses(base_reel_text, new_reel_text)
         new_puncts = list(map(lambda x: [x[0]+self.nearest_rejust(sparses,x[0]), x[1]], base_puncts))
+        return new_puncts
+
+    def reel_align_punct(self, base_reel_text, base_puncts, new_reel_text):
+        new_puncts = self.new_puncts(base_reel_text, base_puncts, new_reel_text)
         begin=0
         result_text = ''
         for punct in new_puncts:

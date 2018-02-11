@@ -253,7 +253,7 @@ class Punct(models.Model):
     created_at = models.DateTimeField('创建时间', blank=True, null=True, auto_now_add=True)
 
     @staticmethod
-    def attach_new(task, reel_correct_text):
+    def create_new(task, reel_correct_text):
         '''
         增加新的标点信息
         '''

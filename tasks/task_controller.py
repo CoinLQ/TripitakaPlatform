@@ -261,7 +261,7 @@ def publish_correct_result(task):
         with transaction.atomic():
             reeltext_count = ReelCorrectText.objects.filter(task_id=task.id).count()
             if reeltext_count == 0:
-                reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task)
+                reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task, publisher=task.picker)
                 reel_correct_text.save()
     else: # 与最新的一份记录比较
         text1 = saved_reel_correct_texts[0].text
@@ -270,7 +270,7 @@ def publish_correct_result(task):
             with transaction.atomic():
                 reeltext_count = ReelCorrectText.objects.filter(task_id=task.id).count()
                 if reeltext_count == 0:
-                    reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task)
+                    reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task, publisher=task.picker)
                     reel_correct_text.save()
                     text_changed = True
         else:

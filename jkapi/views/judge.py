@@ -17,6 +17,7 @@ from tasks.models import *
 from jkapi.serializers import *
 from jkapi.permissions import *
 from tasks.task_controller import judge_submit_result, publish_judge_result
+from tasks.common import clean_separators
 
 import json, re
 from operator import attrgetter, itemgetter

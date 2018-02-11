@@ -4,6 +4,7 @@ from django.utils import timezone
 from jwt_auth.models import Staff
 from tdata.models import *
 from difflib import SequenceMatcher
+from tasks.utils.reel_process import ReelProcess
 import re
 
 class CompareReel(models.Model):
@@ -365,7 +366,24 @@ class Punct(models.Model):
     punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始标点结果，不为null表示标点任务和标点审定任务的结果
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
-    created_at = models.DateTimeField('创建时间', blank=True, null=True)
+    created_at = models.DateTimeField('创建时间', blank=True, null=True, auto_now_add=True)
+
+
+    @staticmethod
+    def attach_new(task, reel_correct_text):
+        '''
+        增加新的标点信息
+        '''
+        if Punct.objects.filter(task=task).first():
+            return
+        sutra_cb = Sutra.objects.get(lqsutra=task.reel.sutra.lqsutra, tripitaka=Tripitaka.objects.get(code='CB'))
+        reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=task.reel.reel_no)
+        # 这里找的CBETA来源的标点
+        punct = Punct.objects.filter(reel=reel_cb).first()
+        _puncts = ReelProcess().new_puncts(punct.reeltext.text, json.load(punct.punctuation), reel_correct_text)
+        task_puncts = json.dumps(_puncts, separators=(',', ':'))
+        return Punct.create(reel=task.reel, reeltext=reel_correct_text, task=task, punctuation=task_puncts)
+
 
 class LQPunct(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)

@@ -88,7 +88,7 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
         task.separators = separators_json
         task.save()
         task_lst.append(task)
-    
+
     correct_seg_lst = []
     for task in task_lst:
         compare_reel = task.compare_reel
@@ -249,7 +249,7 @@ def create_reeldiff_for_judge_task(lqreel, lqsutra):
     reel_lst[0] = reel
     reel_id_lst = [reel.id for reel in reel_lst]
     new_sutra_lst = [reel.sutra for reel in reel_lst]
-    
+
     reel_id_to_text = {}
     reel_id_to_reel_correct_text = {}
     for reel_correct_text in ReelCorrectText.objects.filter(reel_id__in=reel_id_lst):
@@ -271,7 +271,7 @@ def create_reeldiff_for_judge_task(lqreel, lqsutra):
     reeldiff = ReelDiff(lqsutra=lqsutra, reel_no=reel_no, base_text=reel_correct_text_lst[0])
     reeldiff.save()
     reeldiff.correct_texts.set(reel_correct_text_lst)
-    
+
     generate_reeldiff(reeldiff, new_sutra_lst, reel_lst, correct_text_lst)
     task_id_lst = [task.id for task in judge_task_lst]
     Task.objects.filter(id__in=task_id_lst).update(reeldiff=reeldiff, status=Task.STATUS_READY)
@@ -312,6 +312,7 @@ def publish_correct_result(task):
         # 得到精确的切分数据
         try:
             compute_accurate_cut(task.reel)
+            Punct.attach_new(task, reel_correct_text)
         except Exception:
             traceback.print_exc()
 
@@ -335,7 +336,7 @@ def publish_correct_result(task):
         print('没找到龙泉藏经卷对应的记录')
         logging.error('没找到龙泉藏经卷对应的记录')
         return None
-    
+
     create_reeldiff_for_judge_task(lqreel, lqsutra)
 
 def create_correct_result_diff(correct_tasks):
@@ -463,7 +464,7 @@ def judge_submit_result(task):
             diffsegresult = DiffSegResult(task_id=judge_verify_task.id, diffseg_id=diffsegresults_lst[0][i].diffseg_id)
             to_save_diffsegresults.append(diffsegresult)
     DiffSegResult.objects.bulk_create(to_save_diffsegresults)
-    
+
     # 设定校勘判取审定任务状态
     Task.objects.filter(id=judge_verify_task.id).update(status=Task.STATUS_READY)
 

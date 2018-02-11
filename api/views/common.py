@@ -128,7 +128,7 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
             return Response({"status": -1, "task_id": task.pk, "msg": "任务已被占用无法领取."})
 
 
-class CommonOwnAPIView(CommonListAPIView):
+class CommonHistoryAPIView(CommonListAPIView):
     filter_backends = (filters.SearchFilter, django_filters.rest_framework.DjangoFilterBackend)
     serializer_class = 'TaskSerializer'
 

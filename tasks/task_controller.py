@@ -281,7 +281,6 @@ def publish_correct_result(task):
         # 得到精确的切分数据
         try:
             compute_accurate_cut(task.reel)
-            task_puncts = Punct.create_new(task, reel_correct_text)
         except Exception:
             traceback.print_exc()
 
@@ -289,6 +288,7 @@ def publish_correct_result(task):
         # 检查是否有未就绪的基础标点任务，如果有，状态设为READY
         punct_tasks = list(Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY))
         if len(punct_tasks) > 0:
+            task_puncts = Punct.create_new(task, reel_correct_text)
             punct_task_ids = [task.id for task in punct_tasks]
             Task.objects.filter(id__in=punct_task_ids).update(reeltext=reel_correct_text, result=task_puncts, status=Task.STATUS_READY)
 

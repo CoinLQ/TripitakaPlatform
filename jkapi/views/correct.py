@@ -24,6 +24,7 @@ class CorrectTaskDetail(APIView):
             'task_id': task_id,
             'status': self.task.status,
             'result': self.task.result,
+            'cur_focus': self.task.cur_focus,
             'start_vol_page': self.task.reel.start_vol_page,
             'image_url_prefix': self.task.reel.url_prefix(),
             }
@@ -57,6 +58,8 @@ class CorrectSegUpdate(mixins.UpdateModelMixin, generics.GenericAPIView):
         serializer = CorrectSegSerializer(correctseg, data=request.data)
         if serializer.is_valid():
             serializer.save()
+            self.task.cur_focus = pk
+            self.task.save(update_fields=['cur_focus'])
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

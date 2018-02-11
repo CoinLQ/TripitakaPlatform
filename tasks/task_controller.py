@@ -105,27 +105,26 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
         pass
 
     # 标点以CBETA的结果为起点
+    task_puncts = '[]'
     try:
         CB = Tripitaka.objects.get(code='CB')
         sutra_cb = Sutra.objects.get(lqsutra=reel.sutra.lqsutra, tripitaka=CB)
         reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=reel.reel_no)
-        punct = Punct.objects.filter(reel=reel_cb)[0]
-        punctuation_json = punct.punctuation
-        
+        punct = Punct.objects.filter(reel=reel_cb)[0]        
+        _puncts = ReelProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), reelcorrecttext.text)
+        task_puncts = json.dumps(_puncts, separators=(',', ':'))
     except:
         pass
     for task_no in range(1, punct_times + 1):
         task = Task(batch_task=batchtask, typ=Task.TYPE_PUNCT, reel=reel,
-        reeltext=reelcorrecttext, result=punctuation_json, task_no=task_no,
+        reeltext=reelcorrecttext, result=task_puncts, task_no=task_no,
         status=status, publisher=batchtask.publisher)
         task.save()
-        if not Punct.objects.filter(task=task).first():
-            Punct.attach_new(task, reelcorrecttext)
 
     # 标点审定任务只有一次
     if punct_verify_times:
         task = Task(batch_task=batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=reel,
-        reeltext=reelcorrecttext, result=punctuation_json, task_no=task_no,
+        reeltext=reelcorrecttext, result='[]', task_no=task_no,
         status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
         task.save()
 
@@ -277,21 +276,21 @@ def publish_correct_result(task):
         else:
             return
 
+    task_puncts = '[]'
     if reel_correct_text:
         # 得到精确的切分数据
         try:
             compute_accurate_cut(task.reel)
-            Punct.attach_new(task, reel_correct_text)
+            task_puncts = Punct.attach_new(task, reel_correct_text)
         except Exception:
             traceback.print_exc()
 
-    # 基础标点任务
-    if reel_correct_text:
+        # 基础标点任务
         # 检查是否有未就绪的基础标点任务，如果有，状态设为READY
         punct_tasks = list(Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY))
         if len(punct_tasks) > 0:
             punct_task_ids = [task.id for task in punct_tasks]
-            Task.objects.filter(id__in=punct_task_ids).update(reeltext=reel_correct_text, status=Task.STATUS_READY)
+            Task.objects.filter(id__in=punct_task_ids).update(reeltext=reel_correct_text, result=task_puncts, status=Task.STATUS_READY)
 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra
@@ -467,11 +466,35 @@ def publish_judge_result(task):
             lqreeltext.save()
 
 def punct_submit_result(task):
+    verify_tasks = list(Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=task.reel))
+    if len(verify_tasks) == 0:
+        publish_punct_result(task)
+        return
+    verify_task = verify_tasks[0]
     punct_tasks = Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_PUNCT, reel=task.reel)
     if all([t.status == Task.STATUS_FINISHED for t in punct_tasks]):
-        Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=task.reel).update(status=Task.STATUS_READY)
-        for _task in Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=task.reel):
-            Punct.objects.filter(task=task).first().dup_to_verify_task(_task)
+        verify_task.status = Task.STATUS_READY
+        verify_task.result = punct_tasks[0].result
+        verify_task.save(update_fields=['status', 'result'])
 
+def publish_punct_result(task):
+    punct = Punct(reel=task.reel, reeltext=task.reeltext, \
+    punctuation=task.result, task=task)
+    punct.save()
 
+def lqpunct_submit_result(task):
+    verify_tasks = list(Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_LQPUNCT_VERIFY, lqreel=task.lqreel))
+    if len(verify_tasks) == 0:
+        publish_lqpunct_result(task)
+        return
+    verify_task = verify_tasks[0]
+    punct_tasks = Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_LQPUNCT, lqreel=task.lqreel)
+    if all([t.status == Task.STATUS_FINISHED for t in punct_tasks]):
+        verify_task.status = Task.STATUS_READY
+        verify_task.result = punct_tasks[0].result
+        verify_task.save(update_fields=['status', 'result'])
 
+def publish_lqpunct_result(task):
+    punct = LQPunct(reel=task.lqreel, lqreeltext=task.lqtext, \
+    punctuation=task.result, task=task)
+    punct.save()

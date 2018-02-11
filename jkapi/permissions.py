@@ -11,7 +11,10 @@ class IsTaskPickedByCurrentUser(permissions.BasePermission):
     def has_permission(self, request, view):
         task_id = view.kwargs['task_id']
         try:
-            view.task = Task.objects.get(pk=task_id)
+            task = Task.objects.get(pk=task_id)
+            if task.picker == request.user:
+                view.task = task
+                return True
         except:
-            return False
-        return True
+            pass
+        return False

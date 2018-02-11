@@ -10,7 +10,7 @@
 <div id="punct">
   <div class="container">
     <div class="row">
-      <div>
+      <div class="punct-region">
         <span v-for="punctseg in punctseg_lst">
           <span is="punct-show-seg" :punctseg="punctseg"></span>
         </span>
@@ -35,7 +35,7 @@
     el: '#punct',
     data: {
       reeltext: '',
-      punct: [],
+      puncts: [],
       punct_result: [],
       punctseg_lst: [],
       submit_title: '',
@@ -46,7 +46,7 @@
       axios.get('/api/punct/' + vm.sharedata.task_id + '/')
       .then(function(response) {
         vm.reeltext = response.data.reeltext;
-        vm.punct = response.data.punct;
+        vm.puncts = response.data.puncts;
         vm.sharedata.status = response.data.status;
         vm.punct_result = response.data.punct_result;
         vm.loadSutraText();
@@ -83,10 +83,9 @@
         console.log(this.punct_result);
       },
       loadSutraText: function() {
-        var puncts = [this.punct];
-        var colors = ['green'];
-        this.punctseg_lst = merge_text_punct(this.reeltext, puncts, this.punct_result, colors);
-        this.allowed_edit_punct_index = puncts.length - 1;
+        var colors = ['green', 'pink', 'red'];
+        this.punctseg_lst = merge_text_punct(this.reeltext, this.puncts, this.punct_result, colors);
+        this.allowed_edit_punct_index = this.puncts.length - 1;
       },
       submitPunctTask: function() {
         var vm = this;

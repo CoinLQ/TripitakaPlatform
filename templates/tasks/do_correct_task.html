@@ -39,7 +39,7 @@
       <div class="diff-text-pane">
         <div class="reel-text-region-o">
           <div id="reel-text-compare" class="reel-text-compare">
-            <span v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id"><span v-if="seg.tag == 1" v-html="seg.selected_text" :class="{ equaltextmodified: (seg.selected_text != seg.text2) }" @click="segClick(seg, index)" contenteditable="true" @input="segInput(seg, index, $event)"></span><span v-if="seg.tag == 2" v-html="seg.selected_text" class="difftext" :class="{ difftextsel: (segid == seg.id) }" @click="segClick(seg, index)" contenteditable="true" @input="segInput(seg, index, $event)"></span><span v-if="seg.tag == 3" v-html="seg.selected_text"></span><span v-if="seg.tag == 4" contenteditable="true" @click="segLinefeedClick(seg, index)" @input="segLinefeedInput(seg, index, $event)" v-html="getLineFeedHtml(seg)"></span></span>
+            <span v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id"><span v-if="seg.tag == 1" v-html="seg.selected_text" :class="{ equaltextmodified: (seg.selected_text != seg.text2) }" @click="segClick(seg, index)" contenteditable="true" @input="segInput(seg, index, $event)"></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" class="difftext" :class="{ difftextsel: (segid == seg.id) }" @click="segClick(seg, index)" contenteditable="true" @input="segInput(seg, index, $event)"></span><span v-if="seg.tag == 3" v-html="seg.selected_text"></span><span v-if="seg.tag == 4" contenteditable="true" @click="segLinefeedClick(seg, index)" @input="segLinefeedInput(seg, index, $event)" v-html="getLineFeedHtml(seg)"></span></span>
           </div>
         </div>
       </div>
@@ -91,6 +91,12 @@
           return 'seg-row-sel';
         }
         return 'seg-row';
+      },
+      getSegText: function(seg) {
+        if (seg.selected_text != '') {
+          return seg.selected_text;
+        }
+        return ' ';
       },
       setImg: function(img_url, x, y, w, h) {
         //console.log('setImg: ', img_url)

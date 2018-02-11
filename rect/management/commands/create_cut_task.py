@@ -26,7 +26,6 @@ class Command(BaseCommand):
         schedule_no="schedule1", cc_threshold=1)
         schedule.save()
         schedule.refresh_from_db()
-        #import pdb;pdb.set_trace()
         schedule.reels.add(huayan_yb_1)
         Schedule_Task_Statistical(schedule=schedule).save()
         time.sleep(2)

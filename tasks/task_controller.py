@@ -111,6 +111,7 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
         reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=reel.reel_no)
         punct = Punct.objects.filter(reel=reel_cb)[0]
         punctuation_json = punct.punctuation
+        
     except:
         pass
     for task_no in range(1, punct_times + 1):
@@ -118,12 +119,14 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
         reeltext=reelcorrecttext, result=punctuation_json, task_no=task_no,
         status=status, publisher=batchtask.publisher)
         task.save()
+        if not Punct.objects.filter(task=task).first():
+            Punct.attach_new(task, reelcorrecttext)
 
     # 标点审定任务只有一次
     if punct_verify_times:
         task = Task(batch_task=batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=reel,
         reeltext=reelcorrecttext, result=punctuation_json, task_no=task_no,
-        status=status, publisher=batchtask.publisher)
+        status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
         task.save()
 
 # 从龙泉大藏经来发布
@@ -464,4 +467,11 @@ def publish_judge_result(task):
             lqreeltext.save()
 
 def punct_submit_result(task):
-    pass
+    punct_tasks = Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_PUNCT, reel=task.reel)
+    if all([t.status == Task.STATUS_FINISHED for t in punct_tasks]):
+        Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=task.reel).update(status=Task.STATUS_READY)
+        for _task in Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=task.reel):
+            Punct.objects.filter(task=task).first().dup_to_verify_task(_task)
+
+
+

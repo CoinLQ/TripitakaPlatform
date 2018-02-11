@@ -60,12 +60,12 @@ class Command(BaseCommand):
 
         task1 = Task(id=7, batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
         reeltext=reelcorrecttext, result=punctuation_json,
-        task_no=1, status=Task.STATUS_NOT_READY,
+        task_no=1, status=Task.STATUS_READY,
         publisher=admin, picker=admin)
         task1.save()
         task2 = Task(id=8, batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
         reeltext=reelcorrecttext, result=punctuation_json,
-        task_no=2, status=Task.STATUS_NOT_READY,
+        task_no=2, status=Task.STATUS_READY,
         publisher=admin, picker=admin)
         task2.save()
 

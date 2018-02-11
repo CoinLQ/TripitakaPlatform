@@ -318,7 +318,6 @@ def generate_correct_result(task):
     text_lst = result.replace('p', '\np\n').replace('b', '\nb\n').split('\n')
     new_text_lst = [text for text in text_lst if text != '']
     task.result = '\n'.join(new_text_lst)
-    print(task.result)
     task.save(update_fields=['result'])
 
 def correct_submit(task):
@@ -479,7 +478,7 @@ def punct_submit_result(task):
 
 def publish_punct_result(task):
     punct = Punct(reel=task.reel, reeltext=task.reeltext, \
-    punctuation=task.result, task=task)
+    punctuation=task.result, task=task, publisher=task.picker)
     punct.save()
 
 def lqpunct_submit_result(task):
@@ -496,5 +495,5 @@ def lqpunct_submit_result(task):
 
 def publish_lqpunct_result(task):
     punct = LQPunct(reel=task.lqreel, lqreeltext=task.lqtext, \
-    punctuation=task.result, task=task)
+    punctuation=task.result, task=task, publisher=task.picker)
     punct.save()

@@ -18,6 +18,8 @@ def get_accurate_cut(text1, text2, cut_json, pid):
     """
     用于文字校对后的文本比对，text1是文字校对审定后得到的精确本，text2是OCR原始结果，都包含换行和换页标记。
     """
+    text1 = text1.replace('b\n', '')
+    text2 = text2.replace('b\n', '')
     cut = json.loads(cut_json)
     old_char_lst = cut['char_data']
     old_char_lst_length = len(old_char_lst)
@@ -273,7 +275,7 @@ def compute_accurate_cut(reel):
         return None
     reel_correct_text = reel_correct_texts[0]
     correct_pagetexts = reel_correct_text.text[2:].split('\np\n')
-    print('page_count: ', len(pagetexts), len(correct_pagetexts))
+    #print('page_count: ', len(pagetexts), len(correct_pagetexts))
     page_count = len(pagetexts)
     correct_page_count = len(correct_pagetexts)
     for i in range(page_count):

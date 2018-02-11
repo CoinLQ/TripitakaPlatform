@@ -99,10 +99,6 @@ class Task(models.Model):
     task_no = models.SmallIntegerField('组合任务序号', choices=TASK_NO_CHOICES)
     status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1)
 
-    # 文字校对相关
-    separators = models.TextField('页行分隔符', blank=True, null=True)
-    result_diff = models.ForeignKey('CorrectResultDiff', on_delete=models.SET_NULL, blank=True, null=True)
-
     # 校勘判取相关
     reeldiff = models.ForeignKey('ReelDiff', on_delete=models.SET_NULL, blank=True, null=True)
     # 标点相关
@@ -145,23 +141,6 @@ class CorrectSeg(models.Model):
     char_no = models.SmallIntegerField('行中字序号', default=-1)
     #存疑相关
     doubt_comment = models.TextField('存疑意见', default='', blank=True)
-
-class CorrectResultDiff(models.Model):
-    task1 = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task1_result_diff')
-    task2 = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task2_result_diff')
-
-class CorrectDiffSeg(models.Model):
-    result_diff = models.ForeignKey(CorrectResultDiff, on_delete=models.CASCADE)
-    position = models.IntegerField('文本段位置')
-    page_no = models.SmallIntegerField('卷中页序号', default=-1)
-    line_no = models.SmallIntegerField('页中行序号', default=-1)
-    char_no = models.SmallIntegerField('行中字序号', default=-1)
-    text1 = models.TextField('任务1文本', default='')
-    text2 = models.TextField('任务2文本', default='')
-    selected_text = models.TextField('修正文本', default='', blank=True)
-
-    class Meta:
-        ordering = ['id']
 
 class ReelCorrectText(models.Model):
     reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)

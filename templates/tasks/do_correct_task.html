@@ -13,10 +13,17 @@
         <table class="table table-bordered">
           <thead style="background-color: darkorange;">
             <tr>
+              {% if task.typ == 1 %}
               <th width="40%"> 比对本 </th>
               <th width="40%"> OCR </th>
               <th> 校对结果 </th>
               <th> </th>
+              {% else %}
+              <th width="40%"> 校一 </th>
+              <th width="40%"> 校二 </th>
+              <th> 我的校对结果 </th>
+              <th> </th>
+              {% endif %}
             </tr>
           </thead>
           <tbody>
@@ -38,7 +45,7 @@
       </div>
       <div class="submit-pane">
         <div class="correct-submit-o">
-          <button type="submit" class="btn btn-primary" id="finished-task" @click="finishTask()">完成</button>
+          <button type="submit" class="btn btn-primary" id="finished-task" :disabled="sharedata.status == 4" @click="finishTask()">完成</button>
         </div>
       </div>
     </div>
@@ -46,7 +53,6 @@
 </form>
 {% endblock %}
 {% block foot_script %}
-<script src="{{ static('custom/js/correct.js') }}"></script>
 <script>
   var app = new Vue({
     el: '#correct',
@@ -60,14 +66,13 @@
       char_no: 1,
       row_in_text: 1,
       submit_title: '',
-      sharedata: {task_id: {{ task_id }}, status: 0, correctsegs: []  }
+      sharedata: {task_id: {{ task.id }}, status: 0, correctsegs: []  }
     },
     created: function() {
       var vm = this
       axios.get('/api/correct/' + vm.sharedata.task_id + '/')
       .then(function(response) {
         vm.result = response.data.result;
-        vm.oldresult = response.data.result;
         vm.sharedata.status = response.data.status;
         vm.start_vol_page = response.data.start_vol_page;
         vm.image_url_prefix = response.data.image_url_prefix;
@@ -252,6 +257,7 @@
         var vm = this;
         axios.post('/api/correct/' + this.sharedata.task_id + '/finish/')
         .then(function(response) {
+          vm.sharedata.status = response.data.status;
           alert('提交成功！');
         })
         .catch(function (error) {

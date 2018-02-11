@@ -340,10 +340,25 @@ def create_correct_result_diff(correct_tasks):
     CorrectDiffSeg.objects.bulk_create(diffsegs)
     return result_diff
 
-def correct_submit_result(task):
+CORRECT_RESULT_FILTER = re.compile('[ 　ac-oq-zA-Z0-9.?\-",/，。、：]')
+def generate_correct_result(task):
+    text_lst = []
+    for correctseg in CorrectSeg.objects.filter(task=task).order_by('id'):
+        text_lst.append(correctseg.selected_text)
+    result = ''.join(text_lst)
+    result = CORRECT_RESULT_FILTER.sub('', result)
+    # 清除空行
+    text_lst = result.replace('p', '\np\n').replace('b', '\nb\n').split('\n')
+    new_text_lst = [text for text in text_lst if text != '']
+    task.result = '\n'.join(new_text_lst)
+    print(task.result)
+    task.save(update_fields=['result'])
+
+def correct_submit(task):
     '''
     文字校对提交结果
     '''
+    generate_correct_result(task)
     # 检查一组的几个文字校对任务是否都已完成
     correct_tasks = Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT).order_by('task_no')
     all_finished = True
@@ -355,7 +370,7 @@ def correct_submit_result(task):
     if all_finished:
         if task_count == 1:
             publish_correct_result(task)
-        else:
+        elif task_count == 2:
             # 查到文字校对审定任务
             correct_verify_tasks = list(Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT_VERIFY))
             if len(correct_verify_tasks) == 0:
@@ -363,13 +378,19 @@ def correct_submit_result(task):
             correct_verify_task = correct_verify_tasks[0]
 
             # 比较一组的两个文字校对任务的结果
-            result_diff = create_correct_result_diff(correct_tasks)            
+            correctsegs = OCRCompare.generate_compare_reel(correct_tasks[0].result, correct_tasks[1].result)
+            for correctseg in correctsegs:
+                correctseg.task = correct_verify_task
+                correctseg.id = None
+            CorrectSeg.objects.bulk_create(correctsegs)        
 
             # 文字校对审定任务设为待领取
             correct_verify_task.status = Task.STATUS_READY
-            correct_verify_task.result = correct_tasks[0].result
-            correct_verify_task.result_diff = result_diff
-            correct_verify_task.save(update_fields=['status', 'result', 'result_diff', 'separators'])
+            correct_verify_task.save(update_fields=['status'])
+
+def correct_verify_submit(task):
+    generate_correct_result(task)
+    publish_correct_result(task)
 
 def judge_submit_result(task):
     '''

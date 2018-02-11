@@ -171,6 +171,10 @@ lqmark_times = 0, lqmark_verify_times = 0):
     '''
     reel_lst格式： [(lqsutra, reel_no), (lqsutra, reel_no)]
     '''
+    # 文字校对任务数最多只2个
+    if correct_times > 2:
+        correct_times = 2
+
     for lqsutra, reel_no in reel_lst:
         # 创建文字校对任务
         origin_sutra_lst = list(lqsutra.sutra_set.all())
@@ -334,11 +338,70 @@ def publish_correct_result(task):
     
     create_reeldiff_for_judge_task(lqreel, lqsutra)
 
-def correct_submit_result():
+def create_correct_result_diff(correct_tasks):
+    text1 = correct_tasks[0].result
+    text2 = correct_tasks[1].result
+    result_diff = CorrectResultDiff(task1=correct_tasks[0], task2=correct_tasks[1])
+    result_diff.save()
+    diffsegs = []
+    diff_lst = []
+    pos = 0
+    page_no = 0
+    line_no = 0
+    char_no = 0
+    opcodes = SequenceMatcher(None, text1, text2, False).get_opcodes()
+    for tag, i1, i2, j1, j2 in opcodes:
+        if tag != 'equal':
+            diffseg = CorrectDiffSeg(result_diff=result_diff, position=pos,
+            page_no=page_no, line_no=line_no, char_no=char_no,
+            text1=text1[i1:i2], text2=text2[j1:j2], selected_text=text1[i1:i2])
+            diffsegs.append(diffseg)
+        pos += (i2 - i1)
+        for ch in text1[i1:i2]:
+            if ch == 'p':
+                page_no += 1
+                line_no = 0
+                char_no = 0
+            elif ch == '\n':
+                line_no += 1
+                char_no = 1
+            else:
+                char_no += 1
+
+    CorrectDiffSeg.objects.bulk_create(diffsegs)
+    return result_diff
+
+def correct_submit_result(task):
     '''
     文字校对提交结果
     '''
-    pass
+    # 检查一组的几个文字校对任务是否都已完成
+    correct_tasks = Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT).order_by('task_no')
+    all_finished = True
+    for correct_task in correct_tasks:
+        if correct_task.status != Task.STATUS_FINISHED:
+            all_finished = False
+    task_count = len(correct_tasks)
+    # 如果都已完成
+    if all_finished:
+        if task_count == 1:
+            publish_correct_result(task)
+        else:
+            # 查到文字校对审定任务
+            correct_verify_tasks = list(Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT_VERIFY))
+            if len(correct_verify_tasks) == 0:
+                return 
+            correct_verify_task = correct_verify_tasks[0]
+
+            # 比较一组的两个文字校对任务的结果
+            result_diff = create_correct_result_diff(correct_tasks)            
+
+            # 文字校对审定任务设为待领取
+            correct_verify_task.status = Task.STATUS_READY
+            correct_verify_task.result = correct_tasks[0].result
+            correct_verify_task.result_diff = result_diff
+            correct_verify_task.separators = correct_tasks[0].separators
+            correct_verify_task.save(update_fields=['status', 'result', 'result_diff', 'separators'])
 
 def judge_submit_result(task):
     '''

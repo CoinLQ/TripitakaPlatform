@@ -221,9 +221,24 @@
       },
       segInput: function(seg, index, e) {
         var newtext = e.target.innerText;
-        console.log('segInput: ', newtext);
+        var selection = window.getSelection();
+        var cursor_offset = selection.focusOffset;
+        console.log('segInput: ', e, newtext, seg.selected_text, cursor_offset);
         // TODO: prevent specific chars
         seg.selected_text = newtext;
+        setTimeout(function(){
+          var textNode = e.target.firstChild;
+          var caret = cursor_offset;
+          var range = document.createRange();
+          range.selectNode(textNode)
+          range.setStart(textNode, caret);
+          range.collapse(true);
+          e.target.focus();
+          selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range); 
+        }, 10);
+
         this.updateCorrectSeg(seg);
       },
       segLinefeedInput: function(seg, index, e) {

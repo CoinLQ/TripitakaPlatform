@@ -24,13 +24,24 @@ class OCRCompare(object):
             i += 1
 
     @classmethod
+    def split_text_by_b(cls, result_lst, text):
+        segs = text.split('b')
+        i = 0
+        count = len(segs)
+        while i < count:
+            cls.split_text_by_linefeed(result_lst, segs[i])
+            if i < count - 1:
+                result_lst.append('b')
+            i += 1
+
+    @classmethod
     def split_text(cls, text):
         result_lst = []
         segs = text.split('p')
         i = 0
         count = len(segs)
         while i < count:
-            cls.split_text_by_linefeed(result_lst, segs[i])
+            cls.split_text_by_b(result_lst, segs[i])
             if i < count - 1:
                 result_lst.append('p')
             i += 1

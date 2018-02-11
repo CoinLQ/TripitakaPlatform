@@ -35,9 +35,6 @@
     overflow: scroll;
     height: 23%;
 }
-.highlight-compare {
-    background: lightblue;
-}
 .submit-pane {
     margin-top: 5px;
 }
@@ -83,6 +80,20 @@
 }
 .difftext {
     background-color: #fdd;
+}
+.difftextsel {
+    color: red;
+    background-color: #fdd;
+}
+.equaltextmodified {
+    background-color: #cfc;
+}
+.seg-row-sel {
+    font-size: 26px;
+    background: lightblue;
+}
+.highlight-compare {
+    background: lightblue;
 }
 .seg-row {
     font-size: 26px;

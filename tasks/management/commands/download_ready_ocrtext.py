@@ -33,7 +33,7 @@ class Command(BaseCommand):
                         reel_ocr_text = None
                     if not reel_ocr_text:
                         print('reel: ', reel)
-                        text = get_reel_text(reel)
+                        text, reel_text_info = get_reel_text(reel)
                         if text:
                             reel_ocr_text = ReelOCRText(reel=reel, text = text)
                             reel_ocr_text_lst.append(reel_ocr_text)

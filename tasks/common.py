@@ -11,6 +11,9 @@ from django.conf import settings
 
 SEPARATORS_PATTERN = re.compile('[pb\n]')
 
+def compact_json_dumps(obj):
+    return json.dumps(obj, separators=(',', ':'))
+
 def get_accurate_cut(text1, text2, cut_json, pid):
     """
     用于文字校对后的文本比对，text1是文字校对审定后得到的精确本，text2是OCR原始结果，都包含换行和换页标记。
@@ -469,20 +472,34 @@ def get_reel_text(reel):
     for vol_page in range(reel.start_vol_page, reel.end_vol_page+1):
         data = fetch_cut_file(reel, vol_page)
         if not data:
-            return ''
+            pages.append( 'p\n' )
+            continue
         json_data = json.loads(data)
-        chars = ['p\n']
-        last_line_no = 1
+        chars = ['p']
+        last_line_no = 0
         last_char_no = 0
+        last_x = 0
+        avg_x = 0
+        total_x = 0
         for char_data in json_data['char_data']:
             line_no = int(char_data['line_no'])
             char_no = int(char_data['char_no'])
+            x = char_data['x']
+            w = char_data['w']
             if line_no != last_line_no:
                 chars.append('\n')
+                if last_line_no:
+                    avg_x = total_x / last_char_no
+                    total_x = 0
+                    if (x - avg_x) > 5*w:
+                        chars.append('b\n')
                 last_char_no = 0
+            total_x += x
             if char_no != last_char_no + 1:
                 print('%s char_no error: ' % reel, reel.reel_no, vol_page, line_no, char_no)
-                return ''
+                last_line_no = 0
+                chars = ['p']
+                break
             chars.append(char_data['ch'])
             last_line_no = line_no
             last_char_no = char_no

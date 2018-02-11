@@ -7,6 +7,7 @@ from difflib import SequenceMatcher
 import re
 
 class CompareReel(models.Model):
+    batchtask = models.ForeignKey('BatchTask', on_delete=models.CASCADE)
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE, related_name='compare_set')
     base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本')
     base_text = models.TextField('基础本文本', default='') # 可能会截断最后的一部分
@@ -23,36 +24,72 @@ class CompareReel(models.Model):
         """
         SEPARATORS_PATTERN = re.compile('[pb\n]')
         text1 = SEPARATORS_PATTERN.sub('', text1)
-        text2 = SEPARATORS_PATTERN.sub('', text2)
+        # text2 = SEPARATORS_PATTERN.sub('', text2)
         base_text_lst = []
         diff_lst = []
         base_pos = 0
         pos = 0
-        opcodes = SequenceMatcher(None, text1, text2, False).get_opcodes()
+        opcodes = SequenceMatcher(lambda x: x in 'pb\n', text1, text2, False).get_opcodes()
         for tag, i1, i2, j1, j2 in opcodes:
+            print(tag, text1[i1:i2], text2[j1:j2])
             if ((i2-i1) - (j2-j1) > 30):
                 base_text = ''
             else:
                 base_text = text1[i1:i2]
                 base_text_lst.append(text1[i1:i2])
             if tag == 'equal':
-                base_pos += (i2 - i1)
-                pos += (i2 - i1)
+                pass
             elif tag == 'insert':
                 base_text = ''
-                diff_lst.append( (2, base_pos, pos, base_text, text2[j1:j2]) )
-                pos += (j2 - j1)
+                k1 = j1
+                while k1 < j2:
+                    while k1 < j2:
+                        if text2[k1] not in 'pb\n':
+                            break
+                        k1 += 1
+                    if k1 >= j2:
+                        break
+                    k2 = k1
+                    while k2 < j2:
+                        if text2[k2] in 'pb\n':
+                            break
+                        k2 += 1
+                    diff_lst.append( (2, base_pos, pos + (k1-j1), '', text2[k1:k2]) )
+                    if k2 >= j2:
+                        break
+                    k1 = k2 + 1
+                #diff_lst.append( (2, base_pos, pos, base_text, text2[j1:j2]) )
             elif tag == 'replace':
-                diff_lst.append( (3, base_pos, pos, base_text, text2[j1:j2]) )
-                base_pos += len(base_text)
-                pos += (j2 - j1)
+                #diff_lst.append( (3, base_pos, pos, base_text, text2[j1:j2]) )
+                k1 = j1
+                first = True
+                while k1 < j2:
+                    while k1 < j2:
+                        if text2[k1] not in 'pb\n':
+                            break
+                        k1 += 1
+                    k2 = k1
+                    while k2 < j2:
+                        if text2[k2] in 'pb\n':
+                            break
+                        k2 += 1
+                    if first:
+                        diff_lst.append( (3, base_pos, pos + (k1-j1), base_text, text2[k1:k2]) )
+                        first = False
+                    else:
+                        if k1 < k2:
+                            diff_lst.append( (2, base_pos + len(base_text), pos + (k1-j1), '', text2[k1:k2]) )
+                    if k2 >= j2:
+                        break
+                    k1 = k2 + 1
             elif tag == 'delete':
                 if base_pos > 0 and i1 > 0:
                     if base_text != '':
                         diff_lst.append( (1, base_pos-1, pos-1, text1[i1-1:i1] + base_text, text2[j1-1:j1]) )
                 else:
                     diff_lst.append( (1, base_pos, pos, base_text, '') )
-                base_pos += len(base_text)
+            base_pos += len(base_text)
+            pos += (j2 - j1)
         return diff_lst, ''.join(base_text_lst)
 
 class CompareSeg(models.Model):
@@ -159,7 +196,6 @@ class Task(models.Model):
     status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1)
 
     # 文字校对相关
-    compare_reel = models.ForeignKey(CompareReel, on_delete=models.SET_NULL, blank=True, null=True)
     separators = models.TextField('页行分隔符', blank=True, null=True)
     result_diff = models.ForeignKey('CorrectResultDiff', on_delete=models.SET_NULL, blank=True, null=True)
 
@@ -189,15 +225,20 @@ class Task(models.Model):
         search_fields = ('id', 'result', 'created_at')
 
 class CorrectSeg(models.Model):
+    TAG_EQUAL = 1
+    TAG_DIFF = 2
+    TAG_P = 3
+    TAG_LINEFEED = 4
+
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
-    compare_seg = models.ForeignKey(CompareSeg, on_delete=models.CASCADE)
-    selected_text = models.TextField('修正文本', default='', blank=True)
+    tag = models.SmallIntegerField('差异Tag', default=1)
     position = models.IntegerField('在校正本中的位置', default=0)
+    text1 = models.TextField('文本1', default='', blank=True)
+    text2 = models.TextField('文本2', default='', blank=True)
+    selected_text = models.TextField('修正文本', default='', blank=True)
     page_no = models.SmallIntegerField('卷中页序号', default=-1)
     line_no = models.SmallIntegerField('页中行序号', default=-1)
     char_no = models.SmallIntegerField('行中字序号', default=-1)
-    #用于文字校对审定，0表示甲乙结果一致并且选择了此一致的结果，1表示选择甲的结果，2表示选择乙的结果，-1表示新结果
-    diff_flag = models.SmallIntegerField('甲乙差异标记', default=-1)
     #存疑相关
     doubt_comment = models.TextField('存疑意见', default='', blank=True)
 

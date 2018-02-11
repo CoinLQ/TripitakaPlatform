@@ -63,8 +63,8 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    #'TripitakaPlatform.jwt_auth_middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'TripitakaPlatform.jwt_auth_middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
 #    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -188,6 +188,8 @@ JWT_AUTH = {
     'JWT_AUTH_COOKIE': 'auth',
     'JWT_COOKIE_DOMAIN': 'lqdzj.cn',
 }
+
+AUTH_USER_MODEL='jwt_auth.Staff'
 
 CORS_ORIGIN_ALLOW_ALL = True
 

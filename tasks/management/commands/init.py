@@ -57,9 +57,8 @@ class Command(BaseCommand):
 
         try:
             reel_ocr_text_yb_1 = ReelOCRText.objects.get(reel=huayan_yb_1)
-            reel_text_info_json = extract_reel_text_info_json(reel_ocr_text_yb_1.text)
         except:
-            text, reel_text_info_json = get_reel_text(huayan_yb_1)
+            text = get_reel_text(huayan_yb_1)
             #filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_yb.sid)
             #with open(filename, 'r') as f:
             #    huayan_yb_1.text = f.read()
@@ -119,29 +118,20 @@ class Command(BaseCommand):
         # create Tasks
         # Correct Task
         separators = extract_page_line_separators(reel_ocr_text_yb_1.text)
-        separators_json = compact_json_dumps(separators)
 
         # 文字校对
         task1 = Task(id=1, batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_gl_1, task_no=1, status=Task.STATUS_READY,
         publisher=admin)
-        task1.separators = separators_json
-        task1.reel_text_info = reel_text_info_json
         task1.reel = huayan_yb_1
-        task1.result = reel_ocr_text_yb_1.text
         task1.save()
 
         task2 = Task(id=2, batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_gl_1, task_no=2, status=Task.STATUS_READY,
         publisher=admin)
-        task2.separators = separators_json
-        task2.reel_text_info = reel_text_info_json
         task2.reel = huayan_yb_1
-        task2.result = reel_ocr_text_yb_1.text
-        #task2.base_reel = huayan_gl_1
         task2.save()
 
         task3 = Task(id=3, batch_task=batch_task, typ=Task.TYPE_CORRECT_VERIFY, base_reel=huayan_gl_1, task_no=0, status=Task.STATUS_NOT_READY,
         publisher=admin)
-        #task3.separators = separators_json
         task3.reel = huayan_yb_1
         task3.save()
         

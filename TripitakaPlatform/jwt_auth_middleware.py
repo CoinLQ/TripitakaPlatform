@@ -28,9 +28,8 @@ class AuthenticationMiddleware(MiddlewareMixin):
             "'django.contrib.sessions.middleware.SessionMiddleware' before "
             "'django.contrib.auth.middleware.AuthenticationMiddleware'."
         ) % ("_CLASSES" if settings.MIDDLEWARE is None else "")
-        #request.user = SimpleLazyObject(lambda: JWTAuth.get_user_from_request(request))
-        #request.user = JWTAuth.get_user_from_request(request)
-        request.user = Staff.objects.get(username='admin')
+        request.user = JWTAuth.get_user_from_request(request)
+        #request.user = Staff.objects.get(username='admin')
 
 class JWTAuth:
     @classmethod

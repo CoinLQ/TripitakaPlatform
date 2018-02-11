@@ -9,6 +9,7 @@ from tasks.models import *
 from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, ReelText, \
 extract_page_line_separators, clean_separators, compute_accurate_cut
 from tasks.reeldiff_processor import generate_reeldiff
+from tasks.ocr_compare import OCRCompare
 
 import json, re, logging, traceback
 from operator import attrgetter, itemgetter
@@ -40,9 +41,6 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
     separators = extract_page_line_separators(reel_ocr_text.text)
     separators_json = json.dumps(separators, separators=(',', ':'))
 
-    compare_reels = []
-    compare_reel_to_diff_lst = {}
-    compare_reel_to_compare_segs = {}
     for base_reel in base_reel_lst:
         reel_correct_texts = list(ReelCorrectText.objects.filter(reel=base_reel).order_by('-id')[0:1])
         if not reel_correct_texts:
@@ -64,49 +62,20 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
                 reel_correct_texts = list(ReelCorrectText.objects.filter(reel=base_reel_prev).order_by('-id')[0:1])
                 if reel_correct_texts:
                     base_text = reel_correct_texts[0].text + base_text
+        correctsegs = OCRCompare.generate_compare_reel(base_text, reel_ocr_text.text)
 
-        diff_lst, base_reel_text = CompareReel.generate_compare_reel(base_text, reel_ocr_text.text)
-        compare_reel = CompareReel(reel=reel, base_reel=base_reel, base_text=base_reel_text)
-        compare_reel.save()
-        compare_reels.append(compare_reel)
-        compare_reel_to_diff_lst[compare_reel.id] = diff_lst
-
-        compare_segs = []
-        for tag, base_pos, pos, base_text, ocr_text in diff_lst:
-            compare_seg = CompareSeg(compare_reel=compare_reel,
-            base_pos=base_pos, ocr_text=ocr_text, base_text=base_text)
-            compare_segs.append(compare_seg)
-        CompareSeg.objects.bulk_create(compare_segs)
-        compare_reel_to_compare_segs[compare_reel.id] = compare_segs
-
-    task_lst = []
+    task_id_lst = []
     for task_no in range(1, correct_times + 1):
         task = Task(batch_task=batchtask, reel=reel, typ=Task.TYPE_CORRECT, task_no=task_no, status=Task.STATUS_NOT_READY,
         publisher=batchtask.publisher)
-        compare_reel = compare_reels[(task.task_no % 2) - 1]
-        task.compare_reel = compare_reel
         task.separators = separators_json
         task.save()
-        task_lst.append(task)
 
-    correct_seg_lst = []
-    for task in task_lst:
-        compare_reel = task.compare_reel
-        base_reel = compare_reel.base_reel
-        reel = compare_reel.reel
-        diff_lst = compare_reel_to_diff_lst[compare_reel.id]
-        compare_segs = compare_reel_to_compare_segs[compare_reel.id]
-        i = 0
-        for tag, base_pos, pos, base_text, ocr_text in diff_lst:
-            compare_seg = compare_segs[i]
-            correct_seg = CorrectSeg(task=task, compare_seg=compare_seg)
-            correct_seg.selected_text = compare_seg.ocr_text
-            correct_seg.position = pos
-            correct_seg_lst.append(correct_seg)
-            i += 1
-        task.status = Task.STATUS_READY
-    CorrectSeg.objects.bulk_create(correct_seg_lst)
-    task_id_lst = [task.id for task in task_lst]
+        for correctseg in correctsegs:
+            correctseg.task = task
+            correctseg.id = None
+        CorrectSeg.objects.bulk_create(correctsegs)
+        task_id_lst.append(task.id)
     Task.objects.filter(id__in=task_id_lst).update(status=Task.STATUS_READY) # 实际修改任务状态
 
     if correct_verify_times:
@@ -401,7 +370,6 @@ def correct_submit_result(task):
             correct_verify_task.status = Task.STATUS_READY
             correct_verify_task.result = correct_tasks[0].result
             correct_verify_task.result_diff = result_diff
-            correct_verify_task.separators = correct_tasks[0].separators
             correct_verify_task.save(update_fields=['status', 'result', 'result_diff', 'separators'])
 
 def judge_submit_result(task):

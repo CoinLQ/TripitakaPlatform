@@ -1,11 +1,9 @@
 from django.contrib import admin
 
-from .models import CompareReel, CompareSeg, BatchTask, Task, CorrectSeg,\
+from .models import BatchTask, Task, CorrectSeg,\
 ReelDiff, DiffSeg, DiffSegText, DiffSegResult, ReelCorrectText, LQReelText,\
 Punct, LQPunct, CorrectResultDiff, CorrectDiffSeg
 
-admin.site.register(CompareReel)
-admin.site.register(CompareSeg)
 admin.site.register(BatchTask)
 admin.site.register(Task)
 admin.site.register(CorrectSeg)

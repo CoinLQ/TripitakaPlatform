@@ -42,9 +42,6 @@ class Command(BaseCommand):
             with open(filename, 'r') as f:
                 text = f.read()
             punctuation, text = extract_punct(text)
-            reel_ocr_text = ReelOCRText(reel=huayan_cb_1, text = text)
-            reel_ocr_text.save()
-            
             reelcorrecttext = ReelCorrectText(reel=huayan_cb_1, text=text)
             reelcorrecttext.save()
             punctuation_json = json.dumps(punctuation, separators=(',', ':'))
@@ -54,21 +51,48 @@ class Command(BaseCommand):
         # create BatchTask
         batch_task = BatchTask.objects.all()[0]
 
-        huayan_gl = Sutra.objects.get(sid='GL000800')
-        huayan_gl_1 = Reel.objects.get(sutra=huayan_gl, reel_no=1)
+        YB = Tripitaka.objects.get(code='YB')
+        huayan_yb = Sutra.objects.get(sid='YB000860')
+        huayan_yb_1 = Reel.objects.get(sutra=huayan_yb, reel_no=1)
 
         # 标点
         Task.objects.filter(batch_task=batch_task, typ=Task.TYPE_PUNCT).delete()
 
         task1 = Task(id=7, batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
         reeltext=reelcorrecttext, result=punctuation_json,
-        task_no=1, status=Task.STATUS_READY,
-        publisher=admin)
+        task_no=1, status=Task.STATUS_NOT_READY,
+        publisher=admin, picker=admin)
         task1.save()
         task2 = Task(id=8, batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
         reeltext=reelcorrecttext, result=punctuation_json,
-        task_no=1, status=Task.STATUS_READY,
-        publisher=admin)
+        task_no=2, status=Task.STATUS_NOT_READY,
+        publisher=admin, picker=admin)
         task2.save()
 
+        task1 = Task(id=9, batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_yb_1,
+        task_no=1, status=Task.STATUS_NOT_READY,
+        publisher=admin, picker=admin)
+        task1.save()
+        task2 = Task(id=10, batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_yb_1,
+        task_no=2, status=Task.STATUS_NOT_READY,
+        publisher=admin, picker=admin)
+        task2.save()
+
+        filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
+        with open(filename, 'r') as f:
+            huayan_yb_1_text = f.read()
+        tasks = list(Task.objects.filter(batch_task=batch_task, typ=Task.TYPE_CORRECT, reel=huayan_yb_1))
+        for task in tasks:
+            task.result = huayan_yb_1_text
+            task.status = Task.STATUS_FINISHED
+            task.save(update_fields=['result', 'status'])
+            correct_submit(task)
+
+        tasks = list(Task.objects.filter(batch_task=batch_task, typ=Task.TYPE_CORRECT_VERIFY, reel=huayan_yb_1))
+        if tasks:
+            task = tasks[0]
+            task.result = huayan_yb_1_text
+            task.status = Task.STATUS_FINISHED
+            task.save(update_fields=['result', 'status'])
+            correct_verify_submit(task)
 

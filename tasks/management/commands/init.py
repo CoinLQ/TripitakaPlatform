@@ -117,8 +117,6 @@ class Command(BaseCommand):
 
         # create Tasks
         # Correct Task
-        separators = extract_page_line_separators(reel_ocr_text_yb_1.text)
-
         # 文字校对
         task1 = Task(id=1, batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_gl_1, task_no=1, status=Task.STATUS_READY,
         publisher=admin)

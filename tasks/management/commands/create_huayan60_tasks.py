@@ -18,6 +18,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
         try:
+            auth.models.User.objects.create_superuser('admin', 'admin@example.com', 'longquan')
+        except:
+            pass
+        try:
             admin = Staff.objects.get(username='admin')
         except:
             admin = Staff(email='admin@example.com', username='admin')

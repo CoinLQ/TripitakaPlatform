@@ -7,8 +7,6 @@ from django.db.models import Q
 
 from tdata.models import *
 from tasks.models import *
-from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, ReelText,\
-extract_page_line_separators
 
 import json, re
 from operator import attrgetter, itemgetter

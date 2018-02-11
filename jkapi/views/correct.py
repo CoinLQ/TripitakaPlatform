@@ -11,8 +11,6 @@ from tdata.models import *
 from tasks.models import *
 from jkapi.serializers import *
 from jkapi.permissions import *
-from tasks.common import judge_merge_text_punct, ReelText, \
-extract_page_line_separators, clean_separators
 from tasks.task_controller import correct_submit, correct_verify_submit
 
 import json, re

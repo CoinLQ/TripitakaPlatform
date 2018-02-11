@@ -281,7 +281,7 @@ def publish_correct_result(task):
         # 得到精确的切分数据
         try:
             compute_accurate_cut(task.reel)
-            task_puncts = Punct.attach_new(task, reel_correct_text)
+            task_puncts = Punct.create_new(task, reel_correct_text)
         except Exception:
             traceback.print_exc()
 

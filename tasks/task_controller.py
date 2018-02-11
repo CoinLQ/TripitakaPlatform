@@ -308,39 +308,6 @@ def publish_correct_result(task):
 
     create_reeldiff_for_judge_task(lqreel, lqsutra)
 
-def create_correct_result_diff(correct_tasks):
-    text1 = correct_tasks[0].result
-    text2 = correct_tasks[1].result
-    result_diff = CorrectResultDiff(task1=correct_tasks[0], task2=correct_tasks[1])
-    result_diff.save()
-    diffsegs = []
-    diff_lst = []
-    pos = 0
-    page_no = 0
-    line_no = 0
-    char_no = 0
-    opcodes = SequenceMatcher(None, text1, text2, False).get_opcodes()
-    for tag, i1, i2, j1, j2 in opcodes:
-        if tag != 'equal':
-            diffseg = CorrectDiffSeg(result_diff=result_diff, position=pos,
-            page_no=page_no, line_no=line_no, char_no=char_no,
-            text1=text1[i1:i2], text2=text2[j1:j2], selected_text=text1[i1:i2])
-            diffsegs.append(diffseg)
-        pos += (i2 - i1)
-        for ch in text1[i1:i2]:
-            if ch == 'p':
-                page_no += 1
-                line_no = 0
-                char_no = 0
-            elif ch == '\n':
-                line_no += 1
-                char_no = 1
-            else:
-                char_no += 1
-
-    CorrectDiffSeg.objects.bulk_create(diffsegs)
-    return result_diff
-
 CORRECT_RESULT_FILTER = re.compile('[ 　ac-oq-zA-Z0-9.?\-",/，。、：]')
 def generate_correct_result(task):
     text_lst = []

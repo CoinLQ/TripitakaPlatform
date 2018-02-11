@@ -101,9 +101,3 @@ class CorrectSegSerializer(serializers.ModelSerializer):
         model = CorrectSeg
         fields = ('id', 'tag', 'position', 'text1', 'text2', 'selected_text', 'page_no', 'line_no', 'char_no', 'doubt_comment')
         read_only_fields = ('id', 'tag', 'position', 'text1', 'text2', 'page_no', 'line_no', 'char_no')
-
-class CorrectDiffSegSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CorrectDiffSeg
-        fields = ('id', 'position', 'page_no', 'line_no', 'char_no', 'text1', 'text2', 'selected_text')
-        read_only_fields = ('id', 'position', 'page_no', 'line_no', 'char_no', 'text1', 'text2')

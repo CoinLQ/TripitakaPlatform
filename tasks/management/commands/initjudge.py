@@ -112,10 +112,7 @@ class Command(BaseCommand):
         filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % 'YB000860')
         with open(filename, 'r') as f:
             correct_text = f.read()
-            separators = extract_page_line_separators(correct_text)
-            separators_json = json.dumps(separators, separators=(',', ':'))
             correct_task.result = correct_text
-            correct_task.separators = separators_json
             Task.objects.filter(id=correct_task.id).update(result=correct_text, separators=separators_json)
             ReelCorrectText.objects.filter(task=correct_task).delete()
             publish_correct_result(correct_task)

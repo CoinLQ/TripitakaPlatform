@@ -7,7 +7,7 @@ from django.db.models import Q
 from tdata.models import *
 from tasks.models import *
 from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, ReelText, \
-extract_page_line_separators, clean_separators, compute_accurate_cut
+clean_separators, compute_accurate_cut
 from tasks.reeldiff_processor import generate_reeldiff
 from tasks.ocr_compare import OCRCompare
 
@@ -38,8 +38,6 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
         print('no ocr text')
         return None
     reel_ocr_text = reel_ocr_texts[0]
-    separators = extract_page_line_separators(reel_ocr_text.text)
-    separators_json = json.dumps(separators, separators=(',', ':'))
 
     for base_reel in base_reel_lst:
         reel_correct_texts = list(ReelCorrectText.objects.filter(reel=base_reel).order_by('-id')[0:1])
@@ -68,7 +66,6 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
     for task_no in range(1, correct_times + 1):
         task = Task(batch_task=batchtask, reel=reel, typ=Task.TYPE_CORRECT, task_no=task_no, status=Task.STATUS_NOT_READY,
         publisher=batchtask.publisher)
-        task.separators = separators_json
         task.save()
 
         for correctseg in correctsegs:

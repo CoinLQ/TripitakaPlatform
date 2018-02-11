@@ -35,7 +35,7 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
     print('create_correct_tasks: ', reel)
     reel_ocr_texts = list(ReelOCRText.objects.filter(reel=reel))
     if len(reel_ocr_texts) == 0:
-        print('no ocr text')
+        print('no ocr text for reel: ', reel)
         return None
     reel_ocr_text = reel_ocr_texts[0]
 

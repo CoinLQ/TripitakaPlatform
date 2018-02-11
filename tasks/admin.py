@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from .models import BatchTask, Task, CorrectSeg,\
 ReelDiff, DiffSeg, DiffSegText, DiffSegResult, ReelCorrectText, LQReelText,\
-Punct, LQPunct, CorrectResultDiff, CorrectDiffSeg
+Punct, LQPunct
 
 admin.site.register(BatchTask)
 admin.site.register(Task)
@@ -15,5 +15,3 @@ admin.site.register(ReelCorrectText)
 admin.site.register(LQReelText)
 admin.site.register(Punct)
 admin.site.register(LQPunct)
-admin.site.register(CorrectResultDiff)
-admin.site.register(CorrectDiffSeg)

@@ -10,8 +10,7 @@ from ccapi.views.tasks import CCTaskViewSet, ClassifyTaskViewSet, \
                          PageTaskViewSet, DelTaskViewSet
 from jkapi.views.correct import CorrectTaskDetail, \
 CorrectSegList, CorrectSegUpdate, \
-CorrectDiffSegList, CorrectDiffSegUpdate, \
-CorrectVerifyTaskDetail, FinishCorrectTask
+FinishCorrectTask
 from jkapi.views.judge import DiffSegResultList, DiffSegResultUpdate, \
 JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected
 from jkapi.views.punct import PunctTaskDetail
@@ -34,9 +33,6 @@ urlpatterns = [
     url(r'^correct/(?P<task_id>[0-9]+)/correctsegs/$', CorrectSegList.as_view()),
     url(r'^correct/(?P<task_id>[0-9]+)/correctsegs/(?P<pk>[0-9]+)/$', CorrectSegUpdate.as_view()),
     url(r'^correct/(?P<task_id>[0-9]+)/finish/$', FinishCorrectTask.as_view()),
-    url(r'^verify_correct/(?P<task_id>[0-9]+)/$', CorrectVerifyTaskDetail.as_view()),
-    url(r'^verify_correct/(?P<task_id>[0-9]+)/correctdiffsegs/$', CorrectDiffSegList.as_view()),
-    url(r'^verify_correct/(?P<task_id>[0-9]+)/correctdiffsegs/(?P<pk>[0-9]+)/$', CorrectDiffSegUpdate.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/$', JudgeTaskDetail.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/finish/$', FinishJudgeTask.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/allselected/$', DiffSegResultAllSelected.as_view()),

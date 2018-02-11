@@ -321,10 +321,15 @@ class Punct(models.Model):
         reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=task.reel.reel_no)
         # 这里找的CBETA来源的标点
         punct = Punct.objects.filter(reel=reel_cb).first()
-        _puncts = ReelProcess().new_puncts(punct.reeltext.text, json.load(punct.punctuation), reel_correct_text)
+        import pdb;pdb.set_trace()
+        _puncts = ReelProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), reel_correct_text.text)
         task_puncts = json.dumps(_puncts, separators=(',', ':'))
-        return Punct.create(reel=task.reel, reeltext=reel_correct_text, task=task, punctuation=task_puncts)
+        return Punct.objects.create(reel=task.reel, reeltext=reel_correct_text, task=task, punctuation=task_puncts)
 
+    def dup_to_verify_task(self, task):
+        if task.typ != Task.TYPE_PUNCT_VERIFY or Punct.objects.filter(task=task).first():
+            return
+        Punct.objects.create(reel=self.reel, reeltext=self.reeltext, task=task, punctuation=self.punctuation)
 
 class LQPunct(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)

@@ -22,8 +22,8 @@ class PunctTaskDetail(APIView):
     def get(self, request, task_id, format=None):
         reeltext = self.task.reeltext
         text = SEPARATORS_PATTERN.sub('', reeltext.text)
-        puncts = Punct.objects.filter(reeltext=reeltext).all()[0:1]
-        punct = json.loads(puncts[0].punctuation)
+        puncts = Punct.objects.filter(task=self.task).first()
+        punct = json.loads(puncts.punctuation)
         response = {
             'task_id': task_id,
             'status': self.task.status,
@@ -35,9 +35,10 @@ class PunctTaskDetail(APIView):
 
     def post(self, request, task_id, format=None):
         if 'punct_result' in request.data:
-            self.task.result = json.dumps(request.data['punct_result'],
-            separators=(',', ':'))
+            punct_json = json.dumps(request.data['punct_result'],separators=(',', ':'))
+            self.task.result = punct_json
             self.task.save(update_fields=['result'])
+            Punct.objects.filter(task=self.task).update(punctuation=punct_json)
         if 'finished' in request.data:
             self.task.status = Task.STATUS_FINISHED
             self.task.save(update_fields=['result'])

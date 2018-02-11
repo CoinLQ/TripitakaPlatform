@@ -99,6 +99,10 @@ class Task(models.Model):
     base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本', blank=True, null=True)
     task_no = models.SmallIntegerField('组合任务序号', choices=TASK_NO_CHOICES)
     status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1)
+    
+    # 用于记录当前工作的条目，下次用户进入任务时直接到此。
+    # 文字校对，表示CorrectSeg的id；校勘判取表示page
+    cur_focus = models.SmallIntegerField('当前工作的条目', default=0)
 
     # 校勘判取相关
     reeldiff = models.ForeignKey('ReelDiff', on_delete=models.SET_NULL, blank=True, null=True)

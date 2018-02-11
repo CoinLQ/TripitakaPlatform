@@ -27,7 +27,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(seg, index) in sharedata.correctsegs" :class="getSegRowClass(seg)" @click="segrowClickHandler(seg, index, $event)" :id="'segrow-' + seg.id">
+            <tr v-for="(seg, index) in sharedata.correctsegs" :class="getSegRowClass(seg)" @click="segrowClickHandler(seg)" :id="'segrow-' + seg.id">
               <td v-if="seg.tag == 2" v-html="seg.text1" @dblclick="selectText(seg, index, 1)"></td>
               <td v-if="seg.tag == 2"v-html="seg.text2" @dblclick="selectText(seg, index, 2)"></td>
               <td v-if="seg.tag == 2"><textarea rows="1" v-model="seg.selected_text" @input="segrowInput(seg, index)"></textarea></td>
@@ -39,7 +39,7 @@
       <div class="diff-text-pane">
         <div class="reel-text-region-o">
           <div id="reel-text-compare" class="reel-text-compare">
-            <span v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id"><span v-if="seg.tag == 1" v-html="seg.selected_text" :class="{ equaltextmodified: (seg.selected_text != seg.text2) }" @click="segClick(seg, index)" contenteditable="true" @input="segInput(seg, index, $event)"></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" class="difftext" :class="{ difftextsel: (segid == seg.id) }" @click="segClick(seg, index)" contenteditable="true" @input="segInput(seg, index, $event)"></span><span v-if="seg.tag == 3" v-html="seg.selected_text" contenteditable="true" @input="segParagraphMarkInput(seg, index, $event)"></span><span v-if="seg.tag == 4" contenteditable="true" @click="segLinefeedClick(seg, index)" @input="segLinefeedInput(seg, index, $event)" v-html="getLineFeedHtml(seg)"></span></span>
+            <span v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id"><span v-if="seg.tag == 1" v-html="seg.selected_text" :class="{ equaltextmodified: (seg.selected_text != seg.text2) }" @click="segClick(seg)" contenteditable="true" @input="segInput(seg, index, $event)"></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" class="difftext" :class="{ difftextsel: (segid == seg.id) }" @click="segClick(seg)" contenteditable="true" @input="segInput(seg, index, $event)"></span><span v-if="seg.tag == 3" v-html="seg.selected_text" contenteditable="true" @input="segParagraphMarkInput(seg, index, $event)"></span><span v-if="seg.tag == 4" contenteditable="true" @click="segLinefeedClick(seg, index)" @input="segLinefeedInput(seg, index, $event)" v-html="getLineFeedHtml(seg)"></span></span>
           </div>
         </div>
       </div>
@@ -76,6 +76,7 @@
         vm.sharedata.status = response.data.status;
         vm.start_vol_page = response.data.start_vol_page;
         vm.image_url_prefix = response.data.image_url_prefix;
+        vm.segid = response.data.cur_focus;
         if (vm.sharedata.status == 4) {
           vm.submit_title = '已完成';
         } else {
@@ -165,24 +166,17 @@
           seg.selected_text = seg.text2;
         }
         this.updateCorrectSeg(seg);
-        //this.segchange(seg, index);
       },
-      segrowClickHandler: function(seg, index, event) {
-        console.log('segrowClickHandler')
+      segrowClickHandler: function(seg) {
         this.segid = seg.id;
         var selection = window.getSelection();
-        console.log(selection)
+        //console.log(selection)
         var cursor_offset = selection.focusOffset;
         this.page_no = seg.page_no;
         this.line_no = seg.line_no;
         this.char_no = seg.char_no + cursor_offset;
         this.loadImage();
-
-        // move segdiff to view
-        var offset = $('div.diff-text-pane').scrollTop() + $('#segdiff-' + seg.id).position().top - 360;
-        $('div.diff-text-pane').animate({
-          scrollTop: offset
-        }, 500);
+        this.moveSegDiffToView(seg.id);
 
         // this.position = seg.position;
         // var textarea = document.getElementById('correct-textarea');
@@ -194,18 +188,27 @@
         // console.log(lineHeight, textarea.scrollTop, this.row_in_text)
         // textarea.scrollTop = lineHeight * (this.row_in_text - 1);
       },
-      segClick: function(seg, index) {
-        // 文本差异的correctseg进入可视区
-        this.segid = seg.id;
-        let scrollTop = $('#segrow-' + seg.id).data('scrollTop')
+      moveSegDiffToView: function(segid) {
+        // move segdiff to view
+        var offset = $('div.diff-text-pane').scrollTop() + $('#segdiff-' + segid).position().top - 360;
+        $('div.diff-text-pane').animate({
+          scrollTop: offset
+        }, 500);
+      },
+      moveSegRowToView: function(segid) {
+        let scrollTop = $('#segrow-' + segid).data('scrollTop')
         if (!scrollTop) {
-          scrollTop = $('#segrow-' + seg.id).position().top
+          scrollTop = $('#segrow-' + segid).position().top
                     - $('.collate-pane').offset().top
                     + $('.collate-pane').scrollTop();
-          $('#segrow-' + seg.id).data('scrollTop', scrollTop);
+          $('#segrow-' + segid).data('scrollTop', scrollTop);
         }
         $('.collate-pane').animate({scrollTop: scrollTop }, 500);
-
+      },
+      segClick: function(seg) {
+        // 文本差异的correctseg进入可视区
+        this.segid = seg.id;
+        this.moveSegRowToView(seg.id);
         var selection = window.getSelection();
         var cursor_offset = selection.focusOffset;
         this.page_no = seg.page_no;
@@ -266,7 +269,18 @@
           vm.sharedata.correctsegs = response.data;
           for(var i = 0; i < vm.sharedata.correctsegs.length; ++i) {
             var seg = vm.sharedata.correctsegs[i];
+            if (seg.id == vm.segid) {
+              vm.page_no = seg.page_no;
+              vm.line_no = seg.line_no;
+              vm.char_no = seg.char_no;
+            }
           }
+
+          vm.loadImage();
+          setTimeout(function() {
+            vm.moveSegRowToView(vm.segid);
+            vm.moveSegDiffToView(vm.segid);
+          }, 1000);
         });
       },
       updateCorrectSeg: function(seg) {

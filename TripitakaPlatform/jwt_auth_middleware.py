@@ -28,7 +28,12 @@ class AuthenticationMiddleware(MiddlewareMixin):
             "'django.contrib.sessions.middleware.SessionMiddleware' before "
             "'django.contrib.auth.middleware.AuthenticationMiddleware'."
         ) % ("_CLASSES" if settings.MIDDLEWARE is None else "")
-        request.user = JWTAuth.get_user_from_request(request)
+        if hasattr(request.user, '_wrapped') and hasattr(request.user, '_setup'):
+            if request.user._wrapped.__class__ == object:
+                request.user._setup()
+            request.user = request.user._wrapped
+        if type(request.user).__name__ != 'Staff':
+            request.user = JWTAuth.get_user_from_request(request)
         #request.user = Staff.objects.get(username='admin')
 
 class JWTAuth:

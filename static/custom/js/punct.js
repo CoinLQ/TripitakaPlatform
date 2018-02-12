@@ -202,7 +202,7 @@ Vue.component('punct-show-seg', {
                 }, 100);
             } else {
                 e.target.innerHTML = this.merged_html;
-\                setTimeout(function(){
+                setTimeout(function(){
                     var focusNode = e.target.childNodes[focusNodeIndex];
                     var range = document.createRange();
                     range.selectNode(focusNode);

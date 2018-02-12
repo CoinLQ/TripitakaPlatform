@@ -123,7 +123,6 @@ class Command(BaseCommand):
                 correctseg.id = None
             CorrectSeg.objects.bulk_create(correctsegs)
 
-        return 
         # 用于测试计算精确切分数据
         try:
             reelcorrecttext = ReelCorrectText.objects.get(reel=huayan_yb_1)

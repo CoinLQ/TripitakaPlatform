@@ -52,8 +52,6 @@ class Command(BaseCommand):
         except Exception:
             traceback.print_exc()
 
-        return None
-
         # CBETA第1卷
         CB = Tripitaka.objects.get(code='CB')
         try:

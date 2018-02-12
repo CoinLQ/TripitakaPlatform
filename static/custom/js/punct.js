@@ -104,11 +104,11 @@ function merge_text_punct(text, puncts, punct_result) {
 
 var PUNCT_LIST = '：，。；、！？\n';
 Vue.component('punct-show-seg', {
-    props: ['punctseg'],
+    props: ['punctseg', 'sharedata'],
     template: '\
       <span v-if="punctseg.type == 1" contenteditable="true" @input.stop.prevent="inputHandler" v-html="merged_html"></span>\
-      <span v-else-if="punctseg.type == 2" v-bind:class="punctseg.cls">{{ punctseg.text }}</span>\
-      <span v-else-if="punctseg.type == 3"><br /></span>\
+      <span v-else-if="punctseg.type == 2 && sharedata.show_refpunct" v-bind:class="punctseg.cls">{{ punctseg.text }}</span>\
+      <span v-else-if="punctseg.type == 3 && sharedata.show_refpunct"><br /></span>\
     ',
     data: function() {
         return {

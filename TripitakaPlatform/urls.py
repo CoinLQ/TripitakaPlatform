@@ -28,7 +28,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('xadmin/', xadmin.site.urls),
     url(r'^auth/', include("jwt_auth.urls", namespace="api-auth")),
-    url(r'^api-auth/', include('rest_framework.urls')),
     url(r'^api/', include('api.urls')),
     path('correct/<int:task_id>/', do_correct_task, name='do_correct_task'),
     path('verify_correct/<int:task_id>/', do_correct_task, name='do_correct_task'),

@@ -189,21 +189,29 @@
         // textarea.scrollTop = lineHeight * (this.row_in_text - 1);
       },
       moveSegDiffToView: function(segid) {
-        // move segdiff to view
-        var offset = $('div.diff-text-pane').scrollTop() + $('#segdiff-' + segid).position().top - 360;
-        $('div.diff-text-pane').animate({
-          scrollTop: offset
-        }, 500);
+        try {
+          // move segdiff to view
+          var offset = $('div.diff-text-pane').scrollTop() + $('#segdiff-' + segid).position().top - 360;
+          $('div.diff-text-pane').animate({
+            scrollTop: offset
+          }, 500);
+        } catch(err) {
+          console.log('moveSegDiffToView: ', err)
+        }
       },
       moveSegRowToView: function(segid) {
-        let scrollTop = $('#segrow-' + segid).data('scrollTop')
-        if (!scrollTop) {
-          scrollTop = $('#segrow-' + segid).position().top
-                    - $('.collate-pane').offset().top
-                    + $('.collate-pane').scrollTop();
-          $('#segrow-' + segid).data('scrollTop', scrollTop);
+        try {
+          let scrollTop = $('#segrow-' + segid).data('scrollTop')
+          if (!scrollTop) {
+            scrollTop = $('#segrow-' + segid).position().top
+                      - $('.collate-pane').offset().top
+                      + $('.collate-pane').scrollTop();
+            $('#segrow-' + segid).data('scrollTop', scrollTop);
+          }
+          $('.collate-pane').animate({scrollTop: scrollTop }, 500);
+        } catch(err) {
+          console.log('moveSegRowToView: ', err)
         }
-        $('.collate-pane').animate({scrollTop: scrollTop }, 500);
       },
       segClick: function(seg) {
         // 文本差异的correctseg进入可视区

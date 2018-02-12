@@ -14,6 +14,7 @@ from tasks.ocr_compare import OCRCompare
 import json, re, logging, traceback
 from operator import attrgetter, itemgetter
 from difflib import SequenceMatcher
+from background_task import background
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +229,7 @@ def create_reeldiff_for_judge_task(lqreel, lqsutra):
             reel_id_to_text[reel_id] = reel_correct_text.text
             reel_id_to_reel_correct_text[reel_id] = reel_correct_text
     if len(reel_id_to_text) != len(reel_lst):
-        print('reel_id_to_text', reel_id_to_created_at, reel_lst)
+        print('reel_id_to_text', reel_lst)
         logging.info('此卷的文字校对还未完成，暂时不触发校勘判取任务')
         return None
     correct_text_lst = []
@@ -500,3 +501,48 @@ def publish_lqpunct_result(task):
     punct = LQPunct(reel=task.lqreel, lqreeltext=task.lqtext, \
     punctuation=task.result, task=task, publisher=task.picker)
     punct.save()
+
+@background(schedule=0)
+def correct_submit_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    correct_submit(task)
+
+@background(schedule=0)
+def correct_verify_submit_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    correct_verify_submit(task)
+
+@background(schedule=0)
+def publish_correct_result_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    publish_correct_result(task)
+
+@background(schedule=0)
+def judge_submit_result_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    judge_submit_result(task)
+
+@background(schedule=0)
+def publish_judge_result_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    publish_judge_result(task)
+
+@background(schedule=0)
+def punct_submit_result_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    punct_submit_result(task)
+
+@background(schedule=0)
+def publish_punct_result_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    publish_punct_result(task)
+
+@background(schedule=0)
+def lqpunct_submit_result_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    lqpunct_submit_result(task)
+
+@background(schedule=0)
+def publish_lqpunct_result_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    publish_lqpunct_result(task)

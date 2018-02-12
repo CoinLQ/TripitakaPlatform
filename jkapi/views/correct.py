@@ -11,7 +11,7 @@ from tdata.models import *
 from tasks.models import *
 from jkapi.serializers import *
 from jkapi.permissions import *
-from tasks.task_controller import correct_submit, correct_verify_submit
+from tasks.task_controller import correct_submit_async, correct_verify_submit_async
 
 import json, re
 from operator import attrgetter, itemgetter
@@ -71,7 +71,7 @@ class FinishCorrectTask(APIView):
         self.task.save(update_fields=['status'])
         # TODO: changed to background job
         if self.task.typ == Task.TYPE_CORRECT:
-            correct_submit(self.task)
+            correct_submit_async(task_id)
         elif self.task.typ == Task.TYPE_CORRECT_VERIFY:
-            correct_verify_submit(self.task)
+            correct_verify_submit_async(task_id)
         return Response({'task_id': task_id, 'status': self.task.status})

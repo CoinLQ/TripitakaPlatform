@@ -24,7 +24,7 @@ class PunctTaskDetail(APIView):
             reeltext = self.task.reeltext
             text = SEPARATORS_PATTERN.sub('', reeltext.text)
             puncts = []
-            for punct in Punct.objects.filter(reel=self.task.reel)[0:1]:
+            for punct in Punct.objects.filter(reeltext=self.task.reeltext)[0:1]:
                 punctuation = json.loads(punct.punctuation)
                 puncts.append(punctuation)
         elif self.task.typ == Task.TYPE_PUNCT_VERIFY:
@@ -37,7 +37,7 @@ class PunctTaskDetail(APIView):
             lqreeltext = self.task.lqtext
             text = SEPARATORS_PATTERN.sub('', lqreeltext.text)
             puncts = []
-            for punct in LQPunct.objects.filter(lqreel=self.task.lqreel)[0:1]:
+            for punct in LQPunct.objects.filter(lqreeltext=self.task.lqtext)[0:1]:
                 punctuation = json.loads(punct.punctuation)
                 puncts.append(punctuation)
         elif self.task.typ == Task.TYPE_LQPUNCT_VERIFY:

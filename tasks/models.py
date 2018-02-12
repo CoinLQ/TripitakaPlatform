@@ -257,14 +257,12 @@ class Punct(models.Model):
     created_at = models.DateTimeField('创建时间', blank=True, null=True, auto_now_add=True)
 
     @staticmethod
-    def create_new(task, reel_correct_text):
+    def create_new(reel, reel_correct_text):
         '''
         增加新的标点信息
         '''
-        if Punct.objects.filter(task=task).first():
-            return '[]'
-        sutra_cb = Sutra.objects.get(lqsutra=task.reel.sutra.lqsutra, tripitaka=Tripitaka.objects.get(code='CB'))
-        reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=task.reel.reel_no)
+        sutra_cb = Sutra.objects.get(lqsutra=reel.sutra.lqsutra, tripitaka=Tripitaka.objects.get(code='CB'))
+        reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=reel.reel_no)
         # 这里找的CBETA来源的标点
         punct = Punct.objects.filter(reel=reel_cb).first()
         #import pdb;pdb.set_trace()

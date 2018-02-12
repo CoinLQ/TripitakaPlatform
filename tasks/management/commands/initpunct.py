@@ -78,21 +78,12 @@ class Command(BaseCommand):
         publisher=admin, picker=admin)
         task2.save()
 
-        filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
-        with open(filename, 'r') as f:
-            huayan_yb_1_text = f.read()
-        tasks = list(Task.objects.filter(batch_task=batch_task, typ=Task.TYPE_CORRECT, reel=huayan_yb_1))
-        for task in tasks:
-            task.result = huayan_yb_1_text
-            task.status = Task.STATUS_FINISHED
-            task.save(update_fields=['result', 'status'])
-            correct_submit(task)
-
-        tasks = list(Task.objects.filter(batch_task=batch_task, typ=Task.TYPE_CORRECT_VERIFY, reel=huayan_yb_1))
-        if tasks:
-            task = tasks[0]
-            task.result = huayan_yb_1_text
-            task.status = Task.STATUS_FINISHED
-            task.save(update_fields=['result', 'status'])
-            correct_verify_submit(task)
+        punct_tasks = list(Task.objects.filter(reel=huayan_yb_1, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY))
+        print(punct_tasks)
+        if len(punct_tasks) > 0:
+            task_puncts = Punct.create_new(huayan_cb_1, reelcorrecttext)
+            punct = Punct(reel=huayan_cb_1, reeltext=reelcorrecttext, punctuation=task_puncts)
+            punct.save()
+            punct_task_ids = [task.id for task in punct_tasks]
+            Task.objects.filter(id__in=punct_task_ids).update(reeltext=reelcorrecttext, result=task_puncts, status=Task.STATUS_READY)
 

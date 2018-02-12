@@ -59,9 +59,6 @@ class Command(BaseCommand):
             reel_ocr_text_yb_1 = ReelOCRText.objects.get(reel=huayan_yb_1)
         except:
             text = get_reel_text(huayan_yb_1)
-            #filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_yb.sid)
-            #with open(filename, 'r') as f:
-            #    huayan_yb_1.text = f.read()
             reel_ocr_text_yb_1 = ReelOCRText(reel=huayan_yb_1, text = text)
             reel_ocr_text_yb_1.save()
 

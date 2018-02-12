@@ -1,7 +1,7 @@
 from django.db.models import Min, Sum
 from django.db import connection, transaction
 from celery import shared_task
-from cutrect import email_if_fails
+from TripitakaPlatform import email_if_fails
 from rect.models import Schedule, Schedule_Task_Statistical, SliceType, \
                         CharClassifyPlan, allocateTasks, CCTask, ClassifyTask, \
                         DelTask, PageTask, ReviewTask, AbsentTask, TaskStatus

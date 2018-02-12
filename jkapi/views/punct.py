@@ -68,13 +68,13 @@ class PunctTaskDetail(APIView):
             self.task.save(update_fields=update_fields)
         if self.task.status == Task.STATUS_FINISHED:
             if self.task.typ == Task.TYPE_PUNCT:
-                punct_submit_result(self.task)
+                punct_submit_result_async(task_id)
             elif self.task.typ == Task.TYPE_PUNCT_VERIFY:
-                publish_punct_result(self.task)
+                publish_punct_result_async(task_id)
             elif self.task.typ == Task.TYPE_LQPUNCT:
-                lqpunct_submit_result(self.task)
+                lqpunct_submit_result_async(task_id)
             elif self.task.typ == Task.TYPE_LQPUNCT_VERIFY:
-                publish_lqpunct_result(self.task)
+                publish_lqpunct_result_async(task_id)
         response = {
             'task_id': task_id,
             'status': self.task.status,

@@ -48,11 +48,11 @@ class Command(BaseCommand):
                 text = f.read()
                 ReelCorrectText(reel=huayan_ql_1, text=text).save()
 
-        # 得到精确的切分数据
-        # try:
-        #     compute_accurate_cut(huayan_ql_1)
-        # except Exception:
-        #     traceback.print_exc()
+        #得到精确的切分数据
+        try:
+            compute_accurate_cut(huayan_ql_1)
+        except Exception:
+            traceback.print_exc()
 
         # CBETA第1卷
         CB = Tripitaka.objects.get(code='CB')
@@ -94,17 +94,17 @@ class Command(BaseCommand):
         ReelDiff.objects.all().delete()
 
         task1 = Task(id=4, batch_task=batch_task, typ=Task.TYPE_JUDGE, lqreel=lqreel, base_reel=huayan_cb_1, task_no=1, status=Task.STATUS_NOT_READY,
-        publisher=admin)
+        publisher=admin, picker=admin)
         task1.lqreel = lqreel
         task1.save()
 
         task2 = Task(id=5, batch_task=batch_task, typ=Task.TYPE_JUDGE, lqreel=lqreel, base_reel=huayan_cb_1, task_no=2, status=Task.STATUS_NOT_READY,
-        publisher=admin)
+        publisher=admin, picker=admin)
         task2.lqreel = lqreel
         task2.save()
 
         task3 = Task(id=6, batch_task=batch_task, typ=Task.TYPE_JUDGE_VERIFY, lqreel=lqreel, base_reel=huayan_cb_1, task_no=0, status=Task.STATUS_NOT_READY,
-        publisher=admin)
+        publisher=admin, picker=admin)
         task3.lqreel = lqreel
         task3.save()
 
@@ -113,15 +113,15 @@ class Command(BaseCommand):
         with open(filename, 'r') as f:
             correct_text = f.read()
             correct_task.result = correct_text
-            Task.objects.filter(id=correct_task.id).update(result=correct_text, separators=separators_json)
+            Task.objects.filter(id=correct_task.id).update(result=correct_text)
             ReelCorrectText.objects.filter(task=correct_task).delete()
             publish_correct_result(correct_task)
 
-            # # 得到精确的切分数据
-            # try:
-            #     compute_accurate_cut(correct_task.reel)
-            # except Exception:
-            #     traceback.print_exc()
+            # 得到精确的切分数据
+            try:
+                compute_accurate_cut(correct_task.reel)
+            except Exception:
+                traceback.print_exc()
 
         tasks = list(Task.objects.filter(id__in=[4, 5]).all())
         for task in tasks:

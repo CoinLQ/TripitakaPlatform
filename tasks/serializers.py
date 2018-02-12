@@ -100,7 +100,23 @@ class VerifyJudgeTaskSerializer(JudgeTaskSerializer):
     pass
 
 
-class PunctTaskSerializer(JudgeTaskSerializer):
+class PunctTaskSerializer(CorrectTaskSerializer):
+    progress = serializers.SerializerMethodField()
+
+    def get_progress(self, obj):
+        return "%s标" % obj.progress
+
+    class Meta:
+        model = Task
+        fields = ('batch_task', 'lqsutra_name', 'tripitaka_name',
+        'sutra',  'reel_no', 'priority', 'progress', 'id',
+        'status', 'picked_at', 'finished_at')
+        read_only_fields = ('id', )
+
+class VerifyPunctTaskSerializer(PunctTaskSerializer):
+    pass
+
+class LqpunctTaskSerializer(JudgeTaskSerializer):
     progress = serializers.SerializerMethodField()
 
     def get_progress(self, obj):
@@ -109,15 +125,8 @@ class PunctTaskSerializer(JudgeTaskSerializer):
     class Meta:
         model = Task
         fields = ('batch_task', 'lqsutra_name', 'base_tripitaka_name',
-        'lqreel_no', 'priority', 'progress', 'id',
-        'status', 'picked_at', 'finished_at')
+            'lqreel_no', 'priority', 'progress', 'id',  'status', 'picked_at', 'finished_at')
         read_only_fields = ('id', )
 
-class VerifyPunctTaskSerializer(PunctTaskSerializer):
-    pass
-
-class LqpunctTaskSerializer(PunctTaskSerializer):
-    pass
-
-class VerifyLqpunctTaskSerializer(PunctTaskSerializer):
+class VerifyLqpunctTaskSerializer(LqpunctTaskSerializer):
     pass

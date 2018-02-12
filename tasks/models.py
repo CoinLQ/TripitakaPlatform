@@ -68,10 +68,10 @@ class Task(models.Model):
 
     TASK_NO_CHOICES = (
         (0, '无序号'),
-        (1, '甲'),
-        (2, '乙'),
-        (3, '丙'),
-        (4, '丁'),
+        (1, '一'),
+        (2, '二'),
+        (3, '三'),
+        (4, '四'),
     )
 
     STATUS_NOT_READY = 1
@@ -95,10 +95,10 @@ class Task(models.Model):
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE, related_name='tasks',
     blank=True, null=True)
     lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE, blank=True, null=True)
-    typ = models.SmallIntegerField('任务类型', choices=TYPE_CHOICES)
+    typ = models.SmallIntegerField('任务类型', choices=TYPE_CHOICES, db_index=True)
     base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本', blank=True, null=True)
     task_no = models.SmallIntegerField('组合任务序号', choices=TASK_NO_CHOICES)
-    status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1)
+    status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1, db_index=True)
     
     # 用于记录当前工作的条目，下次用户进入任务时直接到此。
     # 文字校对，表示CorrectSeg的id；校勘判取表示page

@@ -115,17 +115,16 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
             q = self.model.Config.filter_queryset(self.request, q)
         return q
 
-
-    @redis_lock
     def obtain_task(self, request, pk):
-        task = Task.objects.get(pk=pk)
-        if not task.picker:
-            task.picker = request.user
-            task.picked_at = timezone.now()
-            task.save()
-            return Response({"status": 0, "task_id": task.pk})
+        count = Task.objects.filter(pk=pk, status=Task.STATUS_READY, picker=None)\
+        .update(
+            picker=request.user,
+            picked_at=timezone.now(),
+            status=Task.STATUS_PROCESSING)
+        if count == 1:
+            return Response({"status": 0, "task_id": pk})
         else:
-            return Response({"status": -1, "task_id": task.pk, "msg": "任务已被占用无法领取."})
+            return Response({"status": -1, "task_id": pk, "msg": "任务已被占用无法领取."})
 
 
 class CommonHistoryAPIView(CommonListAPIView):
@@ -162,7 +161,7 @@ class CommonHistoryAPIView(CommonListAPIView):
         serialize_name = self.model.__name__ + 'Serializer'
         if (self.model_name in TASK_MODELS):
             serialize_name = underscore_to_camelcase(self.model_name) + 'TaskSerializer'
-        print(serialize_name)
+        #print(serialize_name)
         module_str = '%s.serializers' % self.app_name
         serializer_module = sys.modules[module_str]
 

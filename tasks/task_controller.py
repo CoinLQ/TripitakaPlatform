@@ -242,6 +242,11 @@ def create_reeldiff_for_judge_task(lqreel, lqsutra):
     reeldiff.correct_texts.set(reel_correct_text_lst)
 
     generate_reeldiff(reeldiff, new_sutra_lst, reel_lst, correct_text_lst)
+    for task in judge_task_lst:
+        for diffseg in reeldiff.diffseg_set.all():
+            diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text='')
+            diffsegresult.save()
+
     task_id_lst = [task.id for task in judge_task_lst]
     Task.objects.filter(id__in=task_id_lst).update(reeldiff=reeldiff, status=Task.STATUS_READY)
     judge_verify_task_lst = list(Task.objects.filter(lqreel=lqreel, typ=Task.TYPE_JUDGE_VERIFY, status=Task.STATUS_NOT_READY))

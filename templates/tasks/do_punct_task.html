@@ -68,7 +68,6 @@
         return ch_lst.join('');
       },
       merge_punct_lst: function() {
-        console.log(this.punct_result);
         var orig_idx = 0;
         var orig_count = this.punct_result.length;
         var new_punct_result = [];
@@ -80,7 +79,6 @@
           }
         }
         this.punct_result = new_punct_result;
-        console.log(this.punct_result);
       },
       loadSutraText: function() {
         var colors = ['green', 'pink', 'red'];

@@ -120,6 +120,7 @@ function merge_text_punct(text, puncts, punct_result, colors) {
                 };
                 punctseg_lst.push(punctseg);
                 text_idx = text.length;
+                console.log(punctseg_lst)
             } else {
                 break;
             }
@@ -180,14 +181,13 @@ Vue.component('punct-show-seg', {
                 html_lst.push(text.substr(text_idx));
             }
             this.merged_html = html_lst.join('');
-            console.log('merged: ', this.merged_html);
+            //console.log('merged: ', this.merged_html);
         },
         inputHandler: function(e) {
             var selection = window.getSelection();
             var cursor_offset = selection.focusOffset;
 
             var newtext = e.target.innerText;
-            console.log(newtext);
             if (this.cleanPunct(newtext) == this.cleanPunct(this.punctseg.text)) {
                 var new_user_puncts = [];
                 var offset = 0;
@@ -200,7 +200,6 @@ Vue.component('punct-show-seg', {
                     }
                 }
                 this.punctseg.user_puncts = new_user_puncts;
-                console.log(this.punctseg.user_puncts);
                 // // set cursor position
                 // window.el = e.target;
                 // setTimeout(function(){

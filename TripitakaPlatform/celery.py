@@ -9,9 +9,9 @@ import traceback
 from django.core.mail import send_mail
 
 # set the default Django settings module for the 'celery' program.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'cutrect.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'TripitakaPlatform.settings')
 
-app = Celery('cutrect')
+app = Celery('TripitakaPlatform')
 
 app.config_from_object('django.conf:settings', namespace='CELERY')
 

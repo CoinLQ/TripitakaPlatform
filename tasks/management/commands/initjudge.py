@@ -35,24 +35,24 @@ class Command(BaseCommand):
             huayan_ql_1 = Reel.objects.get(sutra=huayan_ql, reel_no=1)
         except:
             huayan_ql_1 = Reel(sutra=huayan_ql, reel_no=1, start_vol=24,
-            start_vol_page=2, end_vol=24, end_vol_page=17, edition_type=Reel.EDITION_TYPE_CHECKED,
+            start_vol_page=1, end_vol=24, end_vol_page=17, edition_type=Reel.EDITION_TYPE_CHECKED,
             path1='24')
             huayan_ql_1.save()
-            filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_ql.sid)
-            with open(filename, 'r') as f:
-                text = f.read()
-                reel_ocr_text = ReelOCRText(reel=huayan_ql_1, text = text)
-                reel_ocr_text.save()
-            filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_ql.sid)
-            with open(filename, 'r') as f:
-                text = f.read()
-                ReelCorrectText(reel=huayan_ql_1, text=text).save()
+        text = get_reel_text(huayan_ql_1)
+        reel_ocr_text = ReelOCRText(reel=huayan_ql_1, text = text)
+        reel_ocr_text.save()
+        filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_ql.sid)
+        with open(filename, 'r') as f:
+            text = f.read()
+            ReelCorrectText(reel=huayan_ql_1, text=text).save()
 
-        #得到精确的切分数据
+        # 得到精确的切分数据
         try:
             compute_accurate_cut(huayan_ql_1)
         except Exception:
             traceback.print_exc()
+
+        return None
 
         # CBETA第1卷
         CB = Tripitaka.objects.get(code='CB')
@@ -117,16 +117,16 @@ class Command(BaseCommand):
             ReelCorrectText.objects.filter(task=correct_task).delete()
             publish_correct_result(correct_task)
 
-            # 得到精确的切分数据
-            try:
-                compute_accurate_cut(correct_task.reel)
-            except Exception:
-                traceback.print_exc()
+        #     # 得到精确的切分数据
+        #     try:
+        #         compute_accurate_cut(correct_task.reel)
+        #     except Exception:
+        #         traceback.print_exc()
 
-        tasks = list(Task.objects.filter(id__in=[4, 5]).all())
-        for task in tasks:
-            for diffseg in task.reeldiff.diffseg_set.all():
-                diffsegtexts = list(DiffSegText.objects.filter(diffseg=diffseg, tripitaka=CB))
-                if len(diffsegtexts) == 1:
-                    diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text=diffsegtexts[0].text, selected=1)
-                    diffsegresult.save()
+        # tasks = list(Task.objects.filter(id__in=[4, 5]).all())
+        # for task in tasks:
+        #     for diffseg in task.reeldiff.diffseg_set.all():
+        #         diffsegtexts = list(DiffSegText.objects.filter(diffseg=diffseg, tripitaka=CB))
+        #         if len(diffsegtexts) == 1:
+        #             diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text=diffsegtexts[0].text, selected=1)
+        #             diffsegresult.save()

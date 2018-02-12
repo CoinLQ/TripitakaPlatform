@@ -35,6 +35,7 @@ def get_accurate_cut(text1, text2, cut_json, pid):
     char_lst_length = 0
     opcodes = SequenceMatcher(None, text1, text2, False).get_opcodes()
     for tag, i1, i2, j1, j2 in opcodes:
+        #print(tag, text1[i1:i2], text2[j1:j2])
         if tag == 'equal':
             i = i1
             while i < i2:
@@ -43,6 +44,9 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                     char_no = 1
                 else:
                     char_data = old_char_lst[char_index]
+                    #print('move: ', char_data['ch'], char_data['line_no'], char_data['char_no'], line_no, char_no)
+                    if text1[i] != char_data['ch']:
+                        raise Exception()
                     char_data['line_no'] = line_no
                     char_data['char_no'] = char_no
                     char_lst.append(char_data)
@@ -288,6 +292,8 @@ def compute_accurate_cut(reel):
         page_code = '%s_%s_%s%s' % (sid[0:2], reel.path_str(), vol_page, '') # YB_1_1
         if i < correct_page_count:
             try:
+                #print('vol_page: ', vol_page)
+                #print('%s\n----------\n%s\n----------' % (correct_pagetexts[i], pagetexts[i]))
                 char_lst, line_count, column_count, char_count_lst, cut_add_count, cut_wrong_count, cut_confirm_count, min_x, min_y, max_x, max_y = \
                 get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
                 cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
@@ -306,8 +312,11 @@ def compute_accurate_cut(reel):
                 cut_verify_count=cut_verify_count,
                 page_code = page_code)
             except:
+                print('get_accurate_cut failed')
                 cut_info_json = cut_file
                 char_count_lst = []
+                cut_info = json.loads(cut_file)
+                char_lst = cut_info['char_data']
                 page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=page_no,
                 text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
                 page_code = page_code)
@@ -344,7 +353,11 @@ def compute_accurate_cut(reel):
         for char_info in char_lst:
             line_no=char_info['line_no']
             char_no=char_info['char_no']
-            rect = Rect(x=char_info['x'], y=char_info['y'], w=char_info['w'], h=char_info['h'],
+            x = char_info.get('x', 0)
+            y = char_info.get('y', 0)
+            w = char_info.get('w', 0)
+            h = char_info.get('h', 0)
+            rect = Rect(x=x, y=y, w=w, h=h,
             ch=char_info['ch'], cc=char_info.get('cc', 1), wcc=char_info.get('wcc', 1),
             line_no=line_no, char_no=char_no, page_pid=pid, reel_id=reel.id)
             Rect.normalize(rect)

@@ -155,6 +155,7 @@ Vue.component('punct-show-seg', {
             var selection = window.getSelection();
             var cursor_offset = selection.focusOffset;
             var focusNode = selection.focusNode;
+            var parentNode = focusNode.parentNode;
             var focusNodeIndex = this.getNodeIndex(focusNode);
             //console.log('focusNode: ', focusNode, focusNodeIndex, e.target )
 
@@ -187,6 +188,8 @@ Vue.component('punct-show-seg', {
                         selection.removeAllRanges();
                         selection.addRange(range);
                     } else {
+                        //console.log(focusNode, parentNode)
+                        var textNode = focusNode;
                         var range = document.createRange();
                         range.selectNode(textNode);
                         range.setStart(textNode, 1);
@@ -198,8 +201,8 @@ Vue.component('punct-show-seg', {
                     }
                 }, 100);
             } else {
-                e.target.innerText = this.punctseg.text;
-                setTimeout(function(){
+                e.target.innerHTML = this.merged_html;
+\                setTimeout(function(){
                     var focusNode = e.target.childNodes[focusNodeIndex];
                     var range = document.createRange();
                     range.selectNode(focusNode);
@@ -209,9 +212,8 @@ Vue.component('punct-show-seg', {
                     selection = window.getSelection();
                     selection.removeAllRanges();
                     selection.addRange(range); 
-                }, 100);
+                }, 20);
             }
-            //console.log(e, cursor_offset);
         }
     }
 });

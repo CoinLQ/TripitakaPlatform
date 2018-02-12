@@ -46,21 +46,21 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
         model = self.model
         if (model_name in TASK_MODELS):
             if model_name == 'correct':
-                return model.objects.filter(typ=model.TYPE_CORRECT, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_CORRECT, status=Task.STATUS_READY)
             elif model_name == 'verify_correct':
-                return model.objects.filter(typ=model.TYPE_CORRECT_VERIFY, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_CORRECT_VERIFY, status=Task.STATUS_READY)
             elif model_name == 'judge':
-                return model.objects.filter(typ=model.TYPE_JUDGE, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_JUDGE, status=Task.STATUS_READY)
             elif model_name =='verify_judge':
-                return model.objects.filter(typ=model.TYPE_JUDGE_VERIFY, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_JUDGE_VERIFY, status=Task.STATUS_READY)
             elif model_name == 'punct':
-                return model.objects.filter(typ=model.TYPE_PUNCT, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_PUNCT, status=Task.STATUS_READY)
             elif model_name =='verify_punct':
-                return model.objects.filter(typ=model.TYPE_PUNCT_VERIFY, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_PUNCT_VERIFY, status=Task.STATUS_READY)
             elif model_name == 'lqpunct':
-                return model.objects.filter(typ=model.TYPE_LQPUNCT, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_LQPUNCT, status=Task.STATUS_READY)
             elif model_name =='verify_lqpunct':
-                return model.objects.filter(typ=model.TYPE_LQPUNCT_VERIFY, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_LQPUNCT_VERIFY, status=Task.STATUS_READY)
         else:
             return model.objects.all()
 
@@ -152,7 +152,7 @@ class CommonHistoryAPIView(CommonListAPIView):
             elif model_name == 'lqpunct':
                 return model.objects.filter(typ=model.TYPE_LQPUNCT, picker=request.user)
             elif model_name =='verify_lqpunct':
-                return model.objects.filter(typ=model.TYPE_LQPUNCT_VERIFY, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_LQPUNCT_VERIFY, picker=request.user)
         else:
             return model.objects.all()
 

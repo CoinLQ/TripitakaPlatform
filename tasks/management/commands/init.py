@@ -64,20 +64,20 @@ class Command(BaseCommand):
             reel_ocr_text_yb_1 = ReelOCRText(reel=huayan_yb_1, text = text)
             reel_ocr_text_yb_1.save()
 
-        # try:
-        #     reelcorrecttext = ReelCorrectText.objects.get(reel=huayan_yb_1)
-        # except:
-        #     filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
-        #     with open(filename, 'r') as f:
-        #         text = f.read()
-        #         reelcorrecttext = ReelCorrectText(reel=huayan_yb_1, text=text)
-        #         reelcorrecttext.save()
+        try:
+            reelcorrecttext = ReelCorrectText.objects.get(reel=huayan_yb_1)
+        except:
+            filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
+            with open(filename, 'r') as f:
+                text = f.read()
+                reelcorrecttext = ReelCorrectText(reel=huayan_yb_1, text=text)
+                reelcorrecttext.save()
 
-        # # 得到精确的切分数据
-        # try:
-        #     compute_accurate_cut(huayan_yb_1)
-        # except Exception:
-        #     traceback.print_exc()
+        # 得到精确的切分数据
+        try:
+            compute_accurate_cut(huayan_yb_1)
+        except Exception:
+            traceback.print_exc()
 
         # 高丽第1卷
         GL = Tripitaka.objects.get(code='GL')
@@ -145,7 +145,7 @@ class Command(BaseCommand):
         #task3.separators = separators_json
         task3.reel = huayan_yb_1
         task3.save()
-        
+
         compare_segs = []
         correct_segs_lst = []
         for tag, base_pos, pos, base_text, ocr_text in diff_lst:

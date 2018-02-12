@@ -321,7 +321,6 @@ class Punct(models.Model):
         reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=task.reel.reel_no)
         # 这里找的CBETA来源的标点
         punct = Punct.objects.filter(reel=reel_cb).first()
-        import pdb;pdb.set_trace()
         _puncts = ReelProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), reel_correct_text.text)
         task_puncts = json.dumps(_puncts, separators=(',', ':'))
         return Punct.objects.create(reel=task.reel, reeltext=reel_correct_text, task=task, punctuation=task_puncts)

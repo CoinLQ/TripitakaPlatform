@@ -3,20 +3,23 @@ from rect.models import Schedule, Rect, CCTask, SliceType
 from rect.models import Tripitaka, Sutra, Reel, Page, Rect, PageRect
 from ccapi.serializer import *
 from datetime import date
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django_bulk_update import helper
 from tasks.management.commands import init
+from rect.lib.arrange_rect import ArrangeRect
+import json
 
 class BaseModelTest(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        with open('data/tripitaka_list.txt', 'r') as f:
-            for line in f.readlines():
-                code, name, shortname = line.rstrip().split()
-                tripitaka = Tripitaka(code=code, name=name, shortname=shortname)
-                tripitaka.save()
-        init.Command().handle()
+        # with open('data/tripitaka_list.txt', 'r') as f:
+        #     for line in f.readlines():
+        #         code, name, shortname = line.rstrip().split()
+        #         tripitaka = Tripitaka(code=code, name=name, shortname=shortname)
+        #         tripitaka.save()
+        # init.Command().handle()
         cls.prepare_gl()
         cls.prepare_yb()
 
@@ -29,7 +32,7 @@ class BaseModelTest(TestCase):
         pass
 
 
-    def test_bulk_create_rect(self):
+    def _test_bulk_create_rect(self):
         count = Rect.objects.count()
         rects =  [{
             "w": 34,
@@ -81,7 +84,7 @@ class BaseModelTest(TestCase):
         self.assertEquals(Rect.objects.count(), count+2)
 
 
-    def test_bulk_update_rect(self):
+    def _test_bulk_update_rect(self):
         total = Rect.objects.count()
         rects = [rect.serialize_set for rect in Rect.objects.all().order_by('-id')[:100]]
         for r in rects[:10]:
@@ -96,7 +99,7 @@ class BaseModelTest(TestCase):
         print(all_changed)
         self.assertEquals(Rect.objects.count(), total+10)
 
-    def test_reformat_page(self):
+    def _test_reformat_page(self):
         page_pid = 'YB000860_001_02_0'
         count = Rect.objects.count()
         # print(Rect.objects.filter(page_pid=page_pid).values_list('cid', flat=True))
@@ -104,7 +107,7 @@ class BaseModelTest(TestCase):
         # print(Rect.objects.filter(page_pid=page_pid).values_list('cid', flat=True))
         self.assertEquals(Rect.objects.count(), count)
 
-    def test_rebuild_page(self):
+    def _test_rebuild_page(self):
         count = len(PageRect.objects.first().rect_set)
         page_rect = PageRect.objects.first()
         page_rect.rebuild_rect()
@@ -112,6 +115,17 @@ class BaseModelTest(TestCase):
         # print(Rect.objects.first().__dict__)
         self.assertEquals(len(PageRect.objects.first().rect_set), count)
 
-    def test_make_pagerect_demo(self):
+    def _test_make_pagerect_demo(self):
         page = Page.objects.filter(pid='YB000860_001_02_0')
         page.first().pagerects.first().make_annotate()
+
+    def test_pagerect_align(self):
+        data_path = "%s/rect/test_data/" % settings.BASE_DIR
+        # for n in range(1, 100):
+        #     page_cut = "YB_27_%d.cut" % n
+        for n in [2]: #range(1, 25):
+            page_cut = "QL_24_%d.cut" % n
+            print(page_cut)
+            cut_file = data_path + page_cut
+            cut_info = json.loads(open(cut_file, 'r').read())['char_data']
+            print(ArrangeRect.resort_rects_from_list(cut_info))

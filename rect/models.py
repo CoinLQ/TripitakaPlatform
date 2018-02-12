@@ -229,8 +229,9 @@ class PageRect(models.Model):
 
     @classmethod
     def align_rects_bypage(cls, pagerect, rects):
+        tp = str(pagerect.reel)[0:2]
         ret = True
-        columns, column_len = ArrangeRect.resort_rects_from_qs(rects)
+        columns, column_len = ArrangeRect.resort_rects_from_qs(rects, tp)
         page = pagerect.page
         rect_list = list()
         for lin_n, line in columns.items():
@@ -271,8 +272,8 @@ class PageRect(models.Model):
             myfont = ImageFont.truetype(settings.BASE_DIR + "/static/fonts/SourceHanSerifTC-Bold.otf", 11)
         elif sys.platform == 'darwin':
             myfont = ImageFont.truetype("/Library/Fonts/Songti.ttc", 12)
-
-        columns, column_len = ArrangeRect.resort_rects_from_qs(self.rect_set)
+        tp = str(self.reel)[0:2]
+        columns, column_len = ArrangeRect.resort_rects_from_qs(self.rect_set, tp)
         for lin_n, line in columns.items():
             for col_n, _r in enumerate(line, start=1):
                 rect = DotMap(_r)

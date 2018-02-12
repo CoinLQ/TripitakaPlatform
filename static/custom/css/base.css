@@ -143,3 +143,16 @@ ul.diffseg-region {
     overflow: scroll;
     border: 1px #ccc solid;
 }
+.punct1 {
+    color: green;
+}
+.punct2 {
+    color: pink;
+}
+.punct3 {
+    color: blue;
+}
+.userpunct {
+    color:red;
+    font-size:18px;
+}

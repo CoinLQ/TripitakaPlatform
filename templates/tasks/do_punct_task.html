@@ -81,8 +81,7 @@
         this.punct_result = new_punct_result;
       },
       loadSutraText: function() {
-        var colors = ['green', 'pink', 'red'];
-        this.punctseg_lst = merge_text_punct(this.reeltext, this.puncts, this.punct_result, colors);
+        this.punctseg_lst = merge_text_punct(this.reeltext, this.puncts, this.punct_result);
         this.allowed_edit_punct_index = this.puncts.length - 1;
       },
       submitPunctTask: function() {

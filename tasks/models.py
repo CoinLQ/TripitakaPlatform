@@ -264,11 +264,13 @@ class Punct(models.Model):
         sutra_cb = Sutra.objects.get(lqsutra=reel.sutra.lqsutra, tripitaka=Tripitaka.objects.get(code='CB'))
         reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=reel.reel_no)
         # 这里找的CBETA来源的标点
-        punct = Punct.objects.filter(reel=reel_cb).first()
-        #import pdb;pdb.set_trace()
-        _puncts = ReelProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), reel_correct_text.text)
-        task_puncts = json.dumps(_puncts, separators=(',', ':'))
-        return task_puncts
+        try:
+            punct = Punct.objects.filter(reel=reel_cb).first()
+            _puncts = ReelProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), reel_correct_text.text)
+            task_puncts = json.dumps(_puncts, separators=(',', ':'))
+            return task_puncts
+        except:
+            return '[]'
 
 class LQPunct(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)

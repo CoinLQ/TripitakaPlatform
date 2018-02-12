@@ -12,8 +12,11 @@
     <div class="row">
       <div class="punct-region">
         <span v-for="punctseg in punctseg_lst">
-          <span is="punct-show-seg" :punctseg="punctseg"></span>
+          <span is="punct-show-seg" :punctseg="punctseg" :sharedata="sharedata"></span>
         </span>
+      </div>
+      <div>
+        <input type="checkbox" v-model="sharedata.show_refpunct" id="show_refpunct" /><label for="show_refpunct">显示参考标点</label>
       </div>
     </div>
     <div class="row">
@@ -39,7 +42,7 @@
       punct_result: [],
       punctseg_lst: [],
       submit_title: '',
-      sharedata: {task_id: {{ task_id }}, status: 4  }
+      sharedata: {task_id: {{ task_id }}, status: 4, show_refpunct: true  }
     },
     created: function() {
       var vm = this;

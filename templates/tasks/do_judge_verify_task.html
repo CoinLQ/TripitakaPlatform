@@ -152,30 +152,32 @@
             diffseg_ids.push(diffsegresults[i].diffseg.id);
           }
 
-          var diffseg_id_to_judge_results = {};
-          for (var i = 0; i < vm.sharedata.judge_task_ids.length; ++i) {
-            var task_id = vm.sharedata.judge_task_ids[i];
-            url = '/api/judge/' + task_id + '/diffsegresults/?diffseg_id=' + diffseg_ids.join(',');
-            axios.get(url).then(function(response) {
-              var results = response.data.results;
-              for (var j = 0; j < results.length; ++j) {
-                var diffseg_id = results[j].diffseg.id;
-                var diffsegresult = results[j];
-                if (diffseg_id in diffseg_id_to_judge_results) {
-                  diffseg_id_to_judge_results[diffseg_id].push(diffsegresult);
-                } else {
-                  diffseg_id_to_judge_results[diffseg_id] = [diffsegresult];
+          if (diffseg_ids.length > 0) {
+            var diffseg_id_to_judge_results = {};
+            for (var i = 0; i < vm.sharedata.judge_task_ids.length; ++i) {
+              var task_id = vm.sharedata.judge_task_ids[i];
+              url = '/api/judge/' + task_id + '/diffsegresults/?diffseg_id=' + diffseg_ids.join(',');
+              axios.get(url).then(function(response) {
+                var results = response.data.results;
+                for (var j = 0; j < results.length; ++j) {
+                  var diffseg_id = results[j].diffseg.id;
+                  var diffsegresult = results[j];
+                  if (diffseg_id in diffseg_id_to_judge_results) {
+                    diffseg_id_to_judge_results[diffseg_id].push(diffsegresult);
+                  } else {
+                    diffseg_id_to_judge_results[diffseg_id] = [diffsegresult];
+                  }
                 }
-              }
 
-              for (var i = 0; i < diffsegresults.length; ++i) {
-                var diffseg_id = diffsegresults[i].diffseg.id;
-                diffsegresults[i].judge_results = diffseg_id_to_judge_results[diffseg_id];
-              }
+                for (var i = 0; i < diffsegresults.length; ++i) {
+                  var diffseg_id = diffsegresults[i].diffseg.id;
+                  diffsegresults[i].judge_results = diffseg_id_to_judge_results[diffseg_id];
+                }
 
-              vm.sharedata.diffsegresults = diffsegresults;
-              vm.sharedata.segindex = 0;
-            });
+                vm.sharedata.diffsegresults = diffsegresults;
+                vm.sharedata.segindex = 0;
+              });
+            }
           }
         });
       },

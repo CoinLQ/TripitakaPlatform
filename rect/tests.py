@@ -3,9 +3,12 @@ from rect.models import Schedule, Rect, CCTask, SliceType
 from rect.models import Tripitaka, Sutra, Reel, Page, Rect, PageRect
 from ccapi.serializer import *
 from datetime import date
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django_bulk_update import helper
 from tasks.management.commands import init
+from rect.lib.arrange_rect import ArrangeRect
+import json
 
 class BaseModelTest(TestCase):
 
@@ -29,7 +32,7 @@ class BaseModelTest(TestCase):
         pass
 
 
-    def test_bulk_create_rect(self):
+    def _test_bulk_create_rect(self):
         count = Rect.objects.count()
         rects =  [{
             "w": 34,
@@ -81,7 +84,7 @@ class BaseModelTest(TestCase):
         self.assertEquals(Rect.objects.count(), count+2)
 
 
-    def test_bulk_update_rect(self):
+    def _test_bulk_update_rect(self):
         total = Rect.objects.count()
         rects = [rect.serialize_set for rect in Rect.objects.all().order_by('-id')[:100]]
         for r in rects[:10]:
@@ -115,3 +118,16 @@ class BaseModelTest(TestCase):
     def test_make_pagerect_demo(self):
         page = Page.objects.filter(pid='YB000860_001_02_0')
         page.first().pagerects.first().make_annotate()
+
+    def _test_pagerect_align(self):
+        data_path = "%s/rect/test_data/" % settings.BASE_DIR
+        # for n in range(1, 100):
+        #     page_cut = "YB_27_%d.cut" % n
+        # for n in range(1, 50):
+        #     page_cut = "QL_24_%d.cut" % n
+        for n in range(1, 4):
+            page_cut = "ZH_24_%d.cut" % n
+            print(page_cut)
+            cut_file = data_path + page_cut
+            cut_info = json.loads(open(cut_file, 'r').read())
+            print(len(ArrangeRect.resort_rects_from_josndata(cut_info)))

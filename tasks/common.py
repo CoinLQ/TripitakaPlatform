@@ -240,7 +240,7 @@ def get_accurate_cut(text1, text2, cut_json, pid):
 def fetch_cut_file(reel, vol_page):
     if reel.reel_no <= 0 or vol_page == 0:
         return ''
-    cut_filename = os.path.join(settings.BASE_DIR, 'logs/%s%s.cut' % (reel.image_prefix(), vol_page))
+    cut_filename = "%s/logs/%s%s.cut" % (settings.BASE_DIR, reel.image_prefix(), vol_page)
     if os.path.exists( cut_filename ):
         with open(cut_filename, 'r') as f:
             data = f.read()
@@ -252,13 +252,14 @@ def fetch_cut_file(reel, vol_page):
         with urllib.request.urlopen(cut_url) as f:
             print('fetch done: %s, page: %s' % (reel, vol_page))
             data = f.read()
-            if data:
-                with open(cut_filename, 'wb') as fout:
-                    fout.write(data)
-            return data
     except:
        print('no data: ', cut_url)
        return ''
+    # '' 串不写
+    if data:
+        with open(cut_filename, 'wb') as fout:
+            fout.write(data)
+    return data
 
 def fetch_col_file(reel, vol_page):
     url = '%s%s%s.col' % (settings.IMAGE_URL_PREFIX, reel.url_prefix(), vol_page)

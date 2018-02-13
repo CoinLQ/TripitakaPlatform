@@ -78,12 +78,11 @@ class Command(BaseCommand):
         publisher=admin, picker=admin)
         task2.save()
 
-        punct_tasks = list(Task.objects.filter(reel=huayan_yb_1, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY))
-        print(punct_tasks)
-        if len(punct_tasks) > 0:
-            task_puncts = Punct.create_new(huayan_cb_1, reelcorrecttext)
-            punct = Punct(reel=huayan_cb_1, reeltext=reelcorrecttext, punctuation=task_puncts)
-            punct.save()
-            punct_task_ids = [task.id for task in punct_tasks]
-            Task.objects.filter(id__in=punct_task_ids).update(reeltext=reelcorrecttext, result=task_puncts, status=Task.STATUS_READY)
+        # punct_tasks = list(Task.objects.filter(reel=huayan_yb_1, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY))
+        # if len(punct_tasks) > 0:
+        #     task_puncts = Punct.create_new(huayan_cb_1, reelcorrecttext)
+        #     punct = Punct(reel=huayan_cb_1, reeltext=reelcorrecttext, punctuation=task_puncts)
+        #     punct.save()
+        #     punct_task_ids = [task.id for task in punct_tasks]
+        #     Task.objects.filter(id__in=punct_task_ids).update(reeltext=reelcorrecttext, result=task_puncts, status=Task.STATUS_READY)
 

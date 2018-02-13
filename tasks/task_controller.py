@@ -258,6 +258,7 @@ def publish_correct_result(task):
     '''
     发布文字校对的结果，供校勘判取使用
     '''
+    print('publish_correct_result')
     sutra = task.reel.sutra
     reel_no = task.reel.reel_no
     reel_correct_text = None
@@ -384,7 +385,8 @@ def judge_submit_result(task):
     if not all_finished:
         return None
 
-    judge_verify_tasks = list(Task.objects.filter(batch_task_id=task.batch_task_id, lqreel_id=lqreel.id, typ=Task.TYPE_JUDGE_VERIFY).all())
+    judge_verify_tasks = list(Task.objects.filter(batch_task_id=task.batch_task_id,
+    lqreel_id=lqreel.id, typ=Task.TYPE_JUDGE_VERIFY, status=Task.STATUS_NOT_READY).all())
     if len(judge_verify_tasks) == 0:
         # 直接发布校勘判取结果
         # publish_judge_result(task)
@@ -472,6 +474,19 @@ def publish_judge_result(task):
         if lqreeltext_count == 0:
             lqreeltext = LQReelText(lqreel=task.lqreel, text=''.join(text_lst), task=task, publisher=task.picker)
             lqreeltext.save()
+
+            sutra_cb = Sutra.objects.get(lqsutra=task.lqreel.lqsutra, tripitaka=Tripitaka.objects.get(code='CB'))
+            reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=task.lqreel.reel_no)
+            punct = Punct.objects.filter(reel=reel_cb).first()
+            _puncts = ReelProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), lqreeltext.text)
+            task_puncts = json.dumps(_puncts, separators=(',', ':'))
+
+            punct = LQPunct(lqreel=task.lqreel, lqreeltext=lqreeltext, punctuation=task_puncts)
+            punct.save()
+
+            # 检查是否有未就绪的定本标点任务，如果有，状态设为READY
+            Task.objects.filter(lqreel=task.lqreel, typ=Task.TYPE_LQPUNCT, status=Task.STATUS_NOT_READY)\
+            .update(lqtext=lqreeltext, result=task_puncts, status=Task.STATUS_READY)
 
 def punct_submit_result(task):
     verify_tasks = list(Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=task.reel))

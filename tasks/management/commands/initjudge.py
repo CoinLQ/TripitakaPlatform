@@ -74,6 +74,11 @@ class Command(BaseCommand):
             lqreel = LQReel(lqsutra=lqsutra, reel_no=1)
             lqreel.save()
 
+        YB = Tripitaka.objects.get(code='YB')
+        huayan_yb = Sutra.objects.get(sid='YB000860')
+        huayan_yb_1 = Reel.objects.get(sutra=huayan_yb, reel_no=1)
+        ReelCorrectText.objects.filter(reel=huayan_yb_1).delete()
+
         # create BatchTask
         priority = 2
         CORRECT_TIMES = 2
@@ -92,17 +97,17 @@ class Command(BaseCommand):
         ReelDiff.objects.all().delete()
 
         task1 = Task(id=4, batch_task=batch_task, typ=Task.TYPE_JUDGE, lqreel=lqreel, base_reel=huayan_cb_1, task_no=1, status=Task.STATUS_NOT_READY,
-        publisher=admin, picker=admin)
+        publisher=admin)
         task1.lqreel = lqreel
         task1.save()
 
         task2 = Task(id=5, batch_task=batch_task, typ=Task.TYPE_JUDGE, lqreel=lqreel, base_reel=huayan_cb_1, task_no=2, status=Task.STATUS_NOT_READY,
-        publisher=admin, picker=admin)
+        publisher=admin)
         task2.lqreel = lqreel
         task2.save()
 
         task3 = Task(id=6, batch_task=batch_task, typ=Task.TYPE_JUDGE_VERIFY, lqreel=lqreel, base_reel=huayan_cb_1, task_no=0, status=Task.STATUS_NOT_READY,
-        publisher=admin, picker=admin)
+        publisher=admin)
         task3.lqreel = lqreel
         task3.save()
 
@@ -121,10 +126,12 @@ class Command(BaseCommand):
         #     except Exception:
         #         traceback.print_exc()
 
-        # tasks = list(Task.objects.filter(id__in=[4, 5]).all())
-        # for task in tasks:
-        #     for diffseg in task.reeldiff.diffseg_set.all():
-        #         diffsegtexts = list(DiffSegText.objects.filter(diffseg=diffseg, tripitaka=CB))
-        #         if len(diffsegtexts) == 1:
-        #             diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text=diffsegtexts[0].text, selected=1)
-        #             diffsegresult.save()
+        tasks = list(Task.objects.filter(id__in=[4, 5]).all())
+        for task in tasks:
+            for diffseg in task.reeldiff.diffseg_set.all():
+                diffsegtexts = list(DiffSegText.objects.filter(diffseg=diffseg, tripitaka=YB))
+                if len(diffsegtexts) == 1:
+                    diffsegresult = DiffSegResult.objects.get(task=task, diffseg=diffseg)
+                    diffsegresult.selected_text = diffsegtexts[0].text
+                    diffsegresult.selected = 1
+                    diffsegresult.save()

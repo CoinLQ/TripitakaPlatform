@@ -231,10 +231,10 @@ class PageRect(models.Model):
     def align_rects_bypage(cls, pagerect, rects):
         tp = str(pagerect.reel)[0:2]
         ret = True
-        columns, column_len = ArrangeRect.resort_rects_from_qs(rects, tp)
+        columns = ArrangeRect.resort_rects_from_qs(rects, tp)
         page = pagerect.page
         rect_list = list()
-        for lin_n, line in columns.items():
+        for lin_n, line in enumerate(columns, start=1):
             for col_n, _r in enumerate(line, start=1):
                 _rect = _r
                 _rect['line_no'] = lin_n
@@ -273,15 +273,15 @@ class PageRect(models.Model):
         elif sys.platform == 'darwin':
             myfont = ImageFont.truetype("/Library/Fonts/Songti.ttc", 12)
         tp = str(self.reel)[0:2]
-        columns, column_len = ArrangeRect.resort_rects_from_qs(self.rect_set, tp)
-        for lin_n, line in columns.items():
+        columns = ArrangeRect.resort_rects_from_qs(self.rect_set, tp)
+        for lin_n, line in enumerate(columns, start=1):
             for col_n, _r in enumerate(line, start=1):
                 rect = DotMap(_r)
                 # draw a semi-transparent rect on the temporary image
                 draw.rectangle(((rect.x, rect.y), (rect.x + int(rect.w), rect.y + int(rect.h))),
                                  fill=(0, 0, 0, 120))
                 anno_str = u"%s-%s" % (lin_n, col_n)
-                draw.text((rect.x, rect.y), anno_str, font=myfont, fill=(200, 255, 255))
+                draw.text((rect.x, rect.y), anno_str, font=myfont, fill=(255, 0, 120))
         source_img = Image.alpha_composite(source_img, tmp)
         source_img.save(out_file, "JPEG")
 

@@ -14,12 +14,12 @@ class BaseModelTest(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        # with open('data/tripitaka_list.txt', 'r') as f:
-        #     for line in f.readlines():
-        #         code, name, shortname = line.rstrip().split()
-        #         tripitaka = Tripitaka(code=code, name=name, shortname=shortname)
-        #         tripitaka.save()
-        # init.Command().handle()
+        with open('data/tripitaka_list.txt', 'r') as f:
+            for line in f.readlines():
+                code, name, shortname = line.rstrip().split()
+                tripitaka = Tripitaka(code=code, name=name, shortname=shortname)
+                tripitaka.save()
+        init.Command().handle()
         cls.prepare_gl()
         cls.prepare_yb()
 
@@ -99,7 +99,7 @@ class BaseModelTest(TestCase):
         print(all_changed)
         self.assertEquals(Rect.objects.count(), total+10)
 
-    def _test_reformat_page(self):
+    def test_reformat_page(self):
         page_pid = 'YB000860_001_02_0'
         count = Rect.objects.count()
         # print(Rect.objects.filter(page_pid=page_pid).values_list('cid', flat=True))
@@ -107,7 +107,7 @@ class BaseModelTest(TestCase):
         # print(Rect.objects.filter(page_pid=page_pid).values_list('cid', flat=True))
         self.assertEquals(Rect.objects.count(), count)
 
-    def _test_rebuild_page(self):
+    def test_rebuild_page(self):
         count = len(PageRect.objects.first().rect_set)
         page_rect = PageRect.objects.first()
         page_rect.rebuild_rect()
@@ -115,17 +115,19 @@ class BaseModelTest(TestCase):
         # print(Rect.objects.first().__dict__)
         self.assertEquals(len(PageRect.objects.first().rect_set), count)
 
-    def _test_make_pagerect_demo(self):
+    def test_make_pagerect_demo(self):
         page = Page.objects.filter(pid='YB000860_001_02_0')
         page.first().pagerects.first().make_annotate()
 
-    def test_pagerect_align(self):
+    def _test_pagerect_align(self):
         data_path = "%s/rect/test_data/" % settings.BASE_DIR
         # for n in range(1, 100):
         #     page_cut = "YB_27_%d.cut" % n
-        for n in [2]: #range(1, 25):
-            page_cut = "QL_24_%d.cut" % n
+        # for n in range(1, 50):
+        #     page_cut = "QL_24_%d.cut" % n
+        for n in range(1, 4):
+            page_cut = "ZH_24_%d.cut" % n
             print(page_cut)
             cut_file = data_path + page_cut
-            cut_info = json.loads(open(cut_file, 'r').read())['char_data']
-            print(ArrangeRect.resort_rects_from_list(cut_info))
+            cut_info = json.loads(open(cut_file, 'r').read())
+            print(len(ArrangeRect.resort_rects_from_josndata(cut_info)))

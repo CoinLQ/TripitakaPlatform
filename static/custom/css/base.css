@@ -136,6 +136,10 @@ ul.diffseg-region {
 .diffseg-btn {
     margin-right: 10px;
 }
+.diffseg-image {
+    width: 100px;
+    overflow: scroll;
+}
 .punct-region {
     padding: 10px;
     height: 700px;

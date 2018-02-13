@@ -190,7 +190,7 @@ function judge_merge_text_punct(text, diffseg_pos_lst, punct_lst) {
                 }
                 if (pos == diffseg_endpos) {
                     obj = {
-                        'diffseg_no': diffseg_pos_lst[diffseg_idx].diffseg_no,
+                        'diffseg_id': diffseg_pos_lst[diffseg_idx].diffseg_id,
                         'type': SEG_NOTEXT
                     };
                     result.push(obj);
@@ -198,7 +198,7 @@ function judge_merge_text_punct(text, diffseg_pos_lst, punct_lst) {
                     diffseg_endpos = text.length + 1;
                 } else {
                     obj = {
-                        'diffseg_no': diffseg_pos_lst[diffseg_idx].diffseg_no,
+                        'diffseg_id': diffseg_pos_lst[diffseg_idx].diffseg_id,
                         'type': SEG_TEXT,
                         'text': []
                     };
@@ -257,7 +257,7 @@ Vue.component('diffseg-box', {
     },
     methods: {
         click: function() {
-            this.sharedata.diffseg_no = this.diffsegresult.diffseg.diffseg_no;
+            this.sharedata.diffseg_id = this.diffsegresult.diffseg.id;
             this.$emit('segfocus');
             console.log('emit segfocus')
         },
@@ -382,7 +382,7 @@ Vue.component('diffseg-box-verify', {
     },
     methods: {
         click: function() {
-            this.sharedata.diffseg_no = this.diffsegresult.diffseg.diffseg_no;
+            this.sharedata.diffseg_id = this.diffsegresult.diffseg.id;
             this.$emit('segfocus');
             console.log('emit segfocus1')
         },
@@ -470,10 +470,10 @@ Vue.component('sutra-unit', {
     <span>\
         <span v-if="data.type == 0">{{ data.text }}</span>\
         <span v-else-if="data.type == 1" tag="br"><br /></span>\
-        <span v-else-if="data.type == 2"><a href="#" :diffsegno="data.diffseg_no" :class="className"><span class="diffseg-tag-white"></span></a></span>\
-        <span v-else-if="data.type == 3"><a href="#" :diffsegno="data.diffseg_no" :class="className">{{ data.text }}</a></span>\
+        <span v-else-if="data.type == 2"><a href="#" :diffsegno="data.diffseg_id" :class="className" @click="showImage()"><span class="diffseg-tag-white"></span></a></span>\
+        <span v-else-if="data.type == 3"><a href="#" :diffsegno="data.diffseg_id" :class="className" @click="showImage()">{{ data.text }}</a></span>\
         <span v-else>\
-            <a href="#" :diffsegno="data.diffseg_no" :class="className">\
+            <a href="#" :diffsegno="data.diffseg_id" :class="className" @click="showImage()">\
                 <span v-for="(line, index) in data.lines" tag="seg">{{ line }}<br v-if="index < data.lines.length-1" /></span>\
             </a>\
         </span>\
@@ -482,17 +482,24 @@ Vue.component('sutra-unit', {
     computed: {
         className: function() {
             if (this.data.type == 2) {
-                if (this.sharedata.diffseg_no == this.data.diffseg_no) {
+                if (this.sharedata.diffseg_id == this.data.diffseg_id) {
                     return 'diffseg-tag-notext-selected';
                 } else {
                     return 'diffseg-tag-notext';
                 }
             } else if (this.data.type == 3) {
-                if (this.sharedata.diffseg_no == this.data.diffseg_no) {
+                if (this.sharedata.diffseg_id == this.data.diffseg_id) {
                     return 'diffseg-tag-selected';
                 }
             }
             return '';
+        }
+    },
+    methods: {
+        showImage: function() {
+            this.sharedata.image_diffseg_id = this.data.diffseg_id;
+            console.log(this.sharedata.image_diffseg_id);
+            this.sharedata.judgeImageDialogVisible = true;
         }
     }
 })
@@ -942,6 +949,67 @@ Vue.component('show-split-dialog', {
         },
         handleCancel: function() {
             this.sharedata.showSplitDialogVisible = false;
+        }
+    }
+})
+
+Vue.component('judge-image-dialog', {
+    props: ['sharedata'],
+    template: '\
+    <el-dialog title="" :visible.sync="sharedata.judgeImageDialogVisible" width="50%" @open="handleOpen" :before-close="handleOK">\
+        <table class="table table-condensed">\
+            <tbody>\
+            <tr>\
+            <td v-for="(image, index) in images">{{ image.tname }}</td>\
+            </tr>\
+            <tr class="diffseg-image">\
+            <td v-for="(image, index) in images"><img :src="image.url" /></td>\
+            </tr>\
+            </tbody>\
+        </table>\
+    </el-dialog>\
+    ',
+    data: function () {
+        return {
+            images: []
+        }
+    },
+    methods: {
+        generateItems: function(diffseg) {
+            this.images = [];
+            var image_url_prefix = this.sharedata.image_url_prefix;
+            var tripitaka_info = this.sharedata.tripitaka_info;
+            var diffsegtexts = diffseg.diffsegtexts;
+            var length = diffsegtexts.length;
+            for (var i = 0; i < length; ++i) {
+                var tid = diffsegtexts[i].tripitaka.id;
+                var tname = diffsegtexts[i].tripitaka.shortname;
+                var start_char_pos = diffsegtexts[i].start_char_pos;
+                var start_vol_page = tripitaka_info[tid].start_vol_page;
+                var page_no = start_char_pos.substr(13, 2);
+                var vol_page = parseInt(page_no) - 1 + start_vol_page;
+                var line_no = start_char_pos.substr(18, 2);
+                var url = image_url_prefix + tripitaka_info[tid].url_prefix + 'c' + vol_page + '0' + line_no + '.jpg';
+                //console.log('char_pos: ', start_char_pos, page_no, vol_page, line_no, url);
+                if (tname != '丽再' && tname != 'CBETA') {
+                    this.images.push({
+                        tid: tid,
+                        tname: tname,
+                        url: url
+                    });
+                }
+            }
+        },
+        handleOpen: function () {
+            var vm = this;
+            axios.get('/api/judge/' + vm.sharedata.task_id + '/diffsegs/' + vm.sharedata.image_diffseg_id)
+            .then(function(response) {
+                var diffseg = response.data;
+                vm.generateItems(diffseg);
+            });
+        },
+        handleOK: function () {
+            this.sharedata.judgeImageDialogVisible = false;
         }
     }
 })

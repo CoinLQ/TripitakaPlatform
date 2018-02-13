@@ -54,6 +54,14 @@ class JudgeTaskDetail(APIView):
         base_text = clean_separators(self.task.reeldiff.base_text.text)
         diffseg_pos_lst = self.task.reeldiff.diffseg_pos_lst
         base_reel = self.task.reeldiff.base_text.reel
+        tripitaka_info = {}
+        lqsutra = self.task.lqreel.lqsutra
+        for sutra in lqsutra.sutra_set.all():
+            reel = Reel.objects.get(sutra=sutra, reel_no=self.task.lqreel.reel_no)
+            tripitaka_info[sutra.tripitaka_id] = {
+                'url_prefix': reel.url_prefix(),
+                'start_vol_page': reel.start_vol_page,
+            }
         puncts = base_reel.punct_set.all()[0:1]
         punct = puncts[0]
         response = {
@@ -63,6 +71,8 @@ class JudgeTaskDetail(APIView):
             'diffseg_pos_lst': json.loads(diffseg_pos_lst),
             'punct_lst': json.loads(punct.punctuation),
             'base_tripitaka_id': base_reel.sutra.tripitaka_id,
+            'image_url_prefix': settings.IMAGE_URL_PREFIX,
+            'tripitaka_info': tripitaka_info,
             }
         return Response(response)
 
@@ -102,4 +112,10 @@ class MergeList(APIView):
         diffsegresults_next = list(DiffSegResult.objects.filter(task_id=task_id, id__gt=diffsegresult_id).order_by('id')[0:2])
         diffsegresults.extend(diffsegresults_next)
         serializer = DiffSegResultSerializer(diffsegresults, many=True)
+        return Response(serializer.data)
+
+class DiffSegDetail(APIView):
+    def get(self, request, task_id, pk, format=None):
+        instance = DiffSeg.objects.get(pk=pk)
+        serializer = DiffSegSerializer(instance)
         return Response(serializer.data)

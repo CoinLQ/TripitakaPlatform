@@ -12,6 +12,7 @@ rm -f rect/migrations/000*
 ./manage.py makemigrations tasks
 ./manage.py makemigrations rect
 cp rect/sql/*.py rect/migrations/.
+mkdir logs
 ./manage.py migrate
 ./manage.py import_tripitaka_list
 ./manage.py set_cut_ready

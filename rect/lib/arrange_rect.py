@@ -9,14 +9,9 @@ class ArrangeRect(object):
         rects = cut_info['char_data']
         tp = cut_info['img_code'][0:2]
         columns = cls.resort_rects_from_rectset(rects)
-        # cut_result = list(map(lambda m: ArrangeRect.normalize(m), rects))
-        # columns = []
-        # while cut_result:
-        #     columns.append(Line._pick_one_column(cut_result))
 
-        #return SplitBar.bar_line_array(columns, tp)
-        return SplitBar.bared_columns(columns, tp)
-        #return columns
+        #return SplitBar().bar_line_array(columns, tp)
+        return SplitBar().bared_columns(columns, tp)
 
     @classmethod
     def resort_rects_from_rectset(cls, rect_set):
@@ -29,7 +24,7 @@ class ArrangeRect(object):
     @classmethod
     def resort_rects_from_qs(cls, rects, tp):
         columns = cls.resort_rects_from_rectset(rects)
-        return SplitBar.bared_columns(columns, tp)
+        return SplitBar().bared_columns(columns, tp)
 
     @staticmethod
     def _normalize(r):

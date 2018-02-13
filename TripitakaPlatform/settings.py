@@ -177,7 +177,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
     'DEFAULT_AUTHENTICATION_CLASSES': (
     'jwt_auth.authentication.JWTAuthentication',
-    'rest_framework.authentication.SessionAuthentication',
+    #'rest_framework.authentication.SessionAuthentication',
+    'TripitakaPlatform.authentication.CsrfExemptSessionAuthentication',
     )
 }
 

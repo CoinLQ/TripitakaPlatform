@@ -8,7 +8,11 @@ from ccapi.views.rects import PageRectViewSet, RectViewSet, \
                         ScheduleViewSet
 from ccapi.views.tasks import CCTaskViewSet, ClassifyTaskViewSet, \
                          PageTaskViewSet, DelTaskViewSet
-from jkapi.views.judge import DiffSegResultList, DiffSegResultUpdate, JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected
+from jkapi.views.correct import CorrectTaskDetail, \
+CorrectSegList, CorrectSegUpdate, \
+FinishCorrectTask
+from jkapi.views.judge import DiffSegResultList, DiffSegResultUpdate, \
+JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected
 from jkapi.views.punct import PunctTaskDetail
 
 router = routers.DefaultRouter()
@@ -25,6 +29,10 @@ router.register(r'page', PageViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),
+    url(r'^correct/(?P<task_id>[0-9]+)/$', CorrectTaskDetail.as_view()),
+    url(r'^correct/(?P<task_id>[0-9]+)/correctsegs/$', CorrectSegList.as_view()),
+    url(r'^correct/(?P<task_id>[0-9]+)/correctsegs/(?P<pk>[0-9]+)/$', CorrectSegUpdate.as_view()),
+    url(r'^correct/(?P<task_id>[0-9]+)/finish/$', FinishCorrectTask.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/$', JudgeTaskDetail.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/finish/$', FinishJudgeTask.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/allselected/$', DiffSegResultAllSelected.as_view()),

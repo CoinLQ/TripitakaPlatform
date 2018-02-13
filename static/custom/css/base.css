@@ -35,9 +35,6 @@
     overflow: scroll;
     height: 23%;
 }
-.highlight-compare {
-    background: lightblue;
-}
 .submit-pane {
     margin-top: 5px;
 }
@@ -61,6 +58,11 @@
     width: 400px;
     height: 400px;
 }
+.correct-textarea {
+    font-size: 22px;
+    width: 600px;
+    height: 600px;
+}
 .page-img {
     position: fixed;
     overflow: scroll;
@@ -78,6 +80,20 @@
 }
 .difftext {
     background-color: #fdd;
+}
+.difftextsel {
+    color: red;
+    background-color: #fdd;
+}
+.equaltextmodified {
+    background-color: #cfc;
+}
+.seg-row-sel {
+    font-size: 26px;
+    background: lightblue;
+}
+.highlight-compare {
+    background: lightblue;
 }
 .seg-row {
     font-size: 26px;
@@ -119,4 +135,24 @@ ul.diffseg-region {
 }
 .diffseg-btn {
     margin-right: 10px;
+}
+.punct-region {
+    padding: 10px;
+    height: 700px;
+    margin: 20px;
+    overflow: scroll;
+    border: 1px #ccc solid;
+}
+.punct1 {
+    color: green;
+}
+.punct2 {
+    color: pink;
+}
+.punct3 {
+    color: blue;
+}
+.userpunct {
+    color:red;
+    font-size:18px;
 }

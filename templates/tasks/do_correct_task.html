@@ -1,8 +1,7 @@
 {% extends "base.html" %}
-{% block title %}{{ task.reel }}文字校对{% endblock %}
+{% block title %}文字校对{% endblock %}
 {% block content %}
-<form action="" method="POST">
-      {{ csrf_input }}
+<div id="correct">
   <div class="content-container">
     <div class="col-md-7 left-pane">
       <div class="canvas-pane">
@@ -11,144 +10,42 @@
     </div>
     <div class="col-md-5 right-pane">
       <div class="collate-pane">
-        <div style="text-align: center; background-color: #1A9BFC; color: white;">
-          <label for="compare" style="padding-top: 3;">差异文本列表</label>
-          <select name="compare" id="compare" onchange="self.location.href=options[selectedIndex].value" style="float: right; margin-top: 2px; background-color: #189ACA;">
-            <option value="/correct/{{ task.id }}/"
-            {% if not sort_index_lst %}
-            selected="selected"
-            {% endif %}
-            >阅读顺序</option>
-            <option value="/correct/{{ task.id }}/?order_by=char"
-            {% if sort_index_lst %}
-            selected="selected"
-            {% endif %}
-            >按字顺序</option>
-          </select>
-        </div>
         <table class="table table-bordered">
           <thead style="background-color: darkorange;">
             <tr>
+              {% if task.typ == 1 %}
               <th width="40%"> 比对本 </th>
               <th width="40%"> OCR </th>
               <th> 校对结果 </th>
               <th> </th>
+              {% else %}
+              <th width="40%"> 校一 </th>
+              <th width="40%"> 校二 </th>
+              <th> 我的校对结果 </th>
+              <th> </th>
+              {% endif %}
             </tr>
           </thead>
           <tbody>
-                  {% if sort_index_lst %}
-                  {% for seg_index, ch in sort_index_lst %}
-                  {% set seg=segs[seg_index] %}
-            <tr class="seg-row" id="segrow_{{ seg.id }}" seg-index="{{ seg_index }}" seg-id="{{ seg.id }}">
-              <td class="base-text"> {{ seg.base_text }} </td>
-              <td class="ocr-text"> {{ seg.ocr_text }} </td>
-              <td class="selected-text">
-                <textarea class="segtext{% if seg.doubt_comment %} doubt{% endif %}" rows="1" id="segtext_{{ seg.id }}" name="segtext_{{ seg.id }}" index="{{ seg_index }}">{{ seg.selected_text }}</textarea>
-                <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value=""/>
-                <input type="hidden" name="segline_{{ seg.id }}" id="segline_{{ seg.id }}" value=""/>
-                <input type="hidden" name="segchar_{{ seg.id }}" id="segchar_{{ seg.id }}" value=""/>
-                <input type="hidden" name="segpos_{{ seg.id }}" id="segpos_{{ seg.id }}" value=""/>
-              </td>
-              <td>
-                <a class="btn btn-default doubt-btn" data-toggle="modal" data-target="#doubt-modal-{{ seg.id }}">存疑</a>
-                <div class="modal" id="doubt-modal-{{seg.id}}" tabindex="-1" role="dialog" aria-labelledby="modalLabel">
-                  <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h4 class="modal-title">存疑意见</h4>
-                      </div>
-                      <div class="modal-body">
-                        <textarea class="doubt-textarea" name="segdoubt_{{ seg.id }}" id="segdoubt_{{ seg.id }}" rows="3" cols="35">{{ seg.doubt_comment }}</textarea>
-                      </div>
-                      <div class="modal-footer">
-                        <a type="button" class="btn btn-primary doubt-cancel" seg-id="{{ seg.id }}" data-dismiss="modal">取消</a>
-                        <a type="button" class="btn btn-primary doubt-ok" seg-id="{{ seg.id }}" data-dismiss="modal">确定</a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </td>
+            <tr v-for="(seg, index) in sharedata.correctsegs" :class="getSegRowClass(seg)" @click="segrowClickHandler(seg)" :id="'segrow-' + seg.id">
+              <td v-if="seg.tag == 2" v-html="seg.text1" @dblclick="selectText(seg, index, 1)"></td>
+              <td v-if="seg.tag == 2"v-html="seg.text2" @dblclick="selectText(seg, index, 2)"></td>
+              <td v-if="seg.tag == 2"><textarea rows="1" v-model="seg.selected_text" @input="segrowInput(seg, index)"></textarea></td>
             </tr>
-                  {% endfor %}
-                  {% else %}
-                  {% for seg in segs %}
-                  {% if seg.ocr_text != seg.base_text %}
-            <tr class="seg-row" id="segrow_{{ seg.id }}" seg-index="{{ loop.index0 }}" seg-id="{{ seg.id }}">
-              <td class="base-text">
-                {{ seg.base_text }}
-              </td>
-              <td class="ocr-text">
-                {{ seg.ocr_text }}
-              </td>
-              <td class="selected-text">
-                <textarea class="segtext{% if seg.doubt_comment %} doubt{% endif %}" rows="1" id="segtext_{{ seg.id }}" name="segtext_{{ seg.id }}">{{ seg.selected_text }}</textarea>
-                <input type="hidden" name="segpage_{{ seg.id }}" id="segpage_{{ seg.id }}" value=""/>
-                <input type="hidden" name="segline_{{ seg.id }}" id="segline_{{ seg.id }}" value=""/>
-                <input type="hidden" name="segchar_{{ seg.id }}" id="segchar_{{ seg.id }}" value=""/>
-                <input type="hidden" name="segpos_{{ seg.id }}" id="segpos_{{ seg.id }}" value=""/>
-              </td>
-              <td>
-                <a class="btn btn-default doubt-btn" data-toggle="modal" data-target="#doubt-modal-{{ seg.id }}">存疑</a>
-                <div class="modal" id="doubt-modal-{{seg.id}}" tabindex="-1" role="dialog" aria-labelledby="modalLabel">
-                  <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h4 class="modal-title">存疑意见</h4>
-                      </div>
-                      <div class="modal-body">
-                        <textarea class="doubt-textarea" name="segdoubt_{{ seg.id }}" id="segdoubt_{{ seg.id }}" rows="3" cols="35">{{ seg.doubt_comment }}</textarea>
-                      </div>
-                      <div class="modal-footer">
-                        <a type="button" class="btn btn-primary doubt-cancel" seg-id="{{ seg.id }}" data-dismiss="modal">取消</a>
-                        <a type="button" class="btn btn-primary doubt-ok" seg-id="{{ seg.id }}" data-dismiss="modal">确定</a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </td>
-            </tr>
-                  {% endif %}
-                  {% endfor %}
-                  {% endif %}
           </tbody>
         </table>
       </div>
 
       <div class="diff-text-pane">
         <div class="reel-text-region-o">
-          <ul class="nav nav-tabs">
-            <li class="nav-item">
-            <a class="nav-link active" data-toggle="tab" href="#panel1" role="tab">比对结果</a>
-            </li>
-            <li class="nav-item">
-            <a class="nav-link" data-toggle="tab" href="#panel2" role="tab">卷文本</a>
-            </li>
-            <li class="nav-item">
-            <a class="nav-link" data-toggle="tab" href="#panel3" role="tab">CBETA</a>
-            </li>
-          </ul>
-          <div class="tab-content">
-            <div class="tab-pane active" id="panel1" role="tabpanel">
-              <div id="reel-text-compare" class="reel-text-compare">
-              </div>
-            </div>
-            <div class="tab-pane" id="panel2" role="tabpanel">
-              <div class="form-group">
-                <textarea id="reel-text" name="reel_text" class="reel-textarea"></textarea>
-              </div>
-            </div>
-            <div class="tab-pane" id="panel3" role="tabpanel">
-              <div id="reel-basetext" class="reel-basetext">
-              </div>
-            </div>
+          <div id="reel-text-compare" class="reel-text-compare">
+            <span v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id"><span v-if="seg.tag == 1" v-html="seg.selected_text" :class="{ equaltextmodified: (seg.selected_text != seg.text2) }" @click="segClick(seg)" contenteditable="true" @input="segInput(seg, index, $event)"></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" class="difftext" :class="{ difftextsel: (segid == seg.id) }" @click="segClick(seg)" contenteditable="true" @input="segInput(seg, index, $event)"></span><span v-if="seg.tag == 3" v-html="seg.selected_text" contenteditable="true" @input="segParagraphMarkInput(seg, index, $event)"></span><span v-if="seg.tag == 4" contenteditable="true" @click="segLinefeedClick(seg, index)" @input="segLinefeedInput(seg, index, $event)" v-html="getLineFeedHtml(seg)"></span></span>
           </div>
         </div>
       </div>
       <div class="submit-pane">
         <div class="correct-submit-o">
-          <input type="hidden" id="input-finished" name="finished" value="0"/>
-          <button type="submit" class="btn btn-primary">暂存</button>
-          <button type="submit" class="btn btn-primary" id="finished-task">完成</button>
+          <button type="submit" class="btn btn-primary" id="finished-task" :disabled="sharedata.status == 4" @click="finishTask()">完成</button>
         </div>
       </div>
     </div>
@@ -157,361 +54,266 @@
 {% endblock %}
 {% block foot_script %}
 <script>
-  $(function(){
-    var base_text = '{{ base_text|safe }}';
-    var segs = {{ segs_json|safe }};
-    var separators = {{ task.separators|safe }};
-    var segid_index_map = {};
-    for (var i = 0; i < segs.length; ++i) {
-      segid_index_map[segs[i].id] = i;
-    }
-
-    $('#finished-task').click(function(e) {
-      $('#input-finished').val('1');
-    });
-
-    // $('#reel-text').keydown(function(e) {
-    //   if (e.which != 13 && e.which != 80 && e.which != 8 && e.which != 46) {
-    //     return false;
-    //   }
-    // });
-    $('#reel-text').change(function(e){
-      separators = extract_separators($(this).val());
-    })
-
-    var load_reel_text = function() {
-      var cmptexts = [];
-      var reeltexts = ['p\n'];
-      var base_length = base_text.length;
-
-      var text_lst = [];
-      var base_pos = 0;
-      // 先将seg与base_text合并
-      var seg_idx = 0;
-      while (seg_idx < segs.length) {
-        // seg前的文本
-        //console.log('seg: ', segs[seg_idx], seg_idx);
-        if (segs[seg_idx].base_pos > base_pos) {
-          var length = segs[seg_idx].base_pos - base_pos;
-          text_lst.push( {
-            'type': 'equal',
-            'selected_text': base_text.substr(base_pos, length)
-          });
-        }
-
-        // 处理当前seg
-        text_lst.push( {
-          'type': 'diff',
-          'base_text': segs[seg_idx].base_text,
-          'selected_text': segs[seg_idx].selected_text,
-          'seg_index': seg_idx
-        });
-        base_pos = segs[seg_idx].base_pos + segs[seg_idx].base_text.length;
-        ++seg_idx;
-      }
-
-      // 将separators与text_lst合并
-      var sep_idx = 0;
-      var pos = 0;
-      var new_text_lst = [];
-      var text_idx = 0;
-      while (text_idx < text_lst.length) {
-        if (sep_idx < separators.length) {
-          while (pos < separators[sep_idx][0]) {
-            //插入separator位置前的文本
-            var next_pos = pos + text_lst[text_idx].selected_text.length;
-            if (next_pos <= separators[sep_idx][0]) { // 直接插入
-              new_text_lst.push( text_lst[text_idx] );
-              ++text_idx;
-              pos = next_pos;
-              if (text_idx >= text_lst.length) {
-                break;
-              }
-            } else {
-              var cut_length = separators[sep_idx][0] - pos; // 插入前一部分
-              if (text_lst[text_idx].type == 'equal') {
-                new_text_lst.push( {
-                  'type': 'equal',
-                  'selected_text': text_lst[text_idx].selected_text.substr(0, cut_length)
-                });
-                text_lst[text_idx].selected_text = text_lst[text_idx].selected_text.substr(cut_length);
-              } else {
-                var cut_base_length = cut_length;
-                var new_base_text = '';
-                var cut_base_text = '';
-                if (text_lst[text_idx].base_text.length < cut_base_length) {
-                  cut_base_length = text_lst[text_idx].base_text.length;
-                  cut_base_text = text_lst[text_idx].base_text;
-                } else {
-                  new_base_text = text_lst[text_idx].base_text.substr(cut_base_length);
-                  cut_base_text = text_lst[text_idx].base_text.substr(0, cut_base_length);
-                }
-                new_text_lst.push( {
-                  'type': 'diff',
-                  'base_text': cut_base_text,
-                  'selected_text': text_lst[text_idx].selected_text.substr(0, cut_length),
-                  'seg_index': text_lst[text_idx].seg_index
-                });
-                text_lst[text_idx].base_text = new_base_text;
-                text_lst[text_idx].selected_text = text_lst[text_idx].selected_text.substr(cut_length);
-              }
-              pos = pos + cut_length;
-            }
-          }
-          //插入separator
-          new_text_lst.push({
-            'type': separators[sep_idx][1]
-          });
-          ++sep_idx;
-        } else { //已没有separator
-          while (text_idx < text_lst.length) {
-            new_text_lst.push( text_lst[text_idx] );
-            ++text_idx;
-          }
-        }
-      }
-
-      while (sep_idx < separators.length) {
-        new_text_lst.push({
-          'type': separators[sep_idx][1]
-        });
-        ++sep_idx;
-      }
-
-      var page_no = 1;
-      var line_no = 1;
-      var char_no = 1;
-      pos = 0;
-      var last_text_type = 'equal';
-      var last_seg_index = -1;
-      for (var i = 0; i <= new_text_lst.length; ++i) {
-        var type = '';
-        if (i < new_text_lst.length) {
-          type = new_text_lst[i].type;
-        }
-        if (type == 'diff') {
-          var seg_idx = new_text_lst[i].seg_index;
-          if (seg_idx != last_seg_index) {
-            if (last_seg_index != -1) {
-              cmptexts.push('</span>');
-              last_seg_index = seg_idx;
-            }
-            cmptexts.push('<span class="seg-diff" seg-id="' + segs[seg_idx].id + '" id="seg-diff-' + segs[seg_idx].id + '">');
-            last_text_type = 'diff';
-            segs[seg_idx].page_no = page_no;
-            segs[seg_idx].line_no = line_no;
-            segs[seg_idx].char_no = char_no;
-            segs[seg_idx].pos = pos;
-            $('#segpage_' + segs[seg_idx].id).val(page_no);
-            $('#segline_' + segs[seg_idx].id).val(line_no);
-            $('#segchar_' + segs[seg_idx].id).val(char_no);
-            $('#segpos_' + segs[seg_idx].id).val(pos);
-          }
-
-          if (new_text_lst[i].base_text != '') {
-            //cmptexts.push('<span class="deletedtext"><del>' + new_text_lst[i].base_text + '</del></span>');
-          }
-          if (new_text_lst[i].selected_text != '') {
-            cmptexts.push('<span class="addedtext">' + new_text_lst[i].selected_text + '</span>');
-            reeltexts.push(new_text_lst[i].selected_text);
-            char_no += new_text_lst[i].selected_text.length;
-            pos += new_text_lst[i].selected_text.length;
-          }
-          last_seg_index = new_text_lst[i].seg_index;
+  var app = new Vue({
+    el: '#correct',
+    data: {
+      result: '',
+      segid: 0,
+      start_vol_page: 1,
+      image_url_prefix: '',
+      page_no: 1,
+      line_no: 1,
+      char_no: 1,
+      row_in_text: 1,
+      submit_title: '',
+      sharedata: {task_id: {{ task.id }}, status: 0, correctsegs: []  }
+    },
+    created: function() {
+      var vm = this
+      axios.get('/api/correct/' + vm.sharedata.task_id + '/')
+      .then(function(response) {
+        vm.result = response.data.result;
+        vm.sharedata.status = response.data.status;
+        vm.start_vol_page = response.data.start_vol_page;
+        vm.image_url_prefix = response.data.image_url_prefix;
+        vm.segid = response.data.cur_focus;
+        if (vm.sharedata.status == 4) {
+          vm.submit_title = '已完成';
         } else {
-          if (type == 'p') {
-            cmptexts.push('<br /><br />');
-            reeltexts.push('\np\n');
-            ++page_no;
-            line_no = 1;
-            char_no = 1;
-          } else if (type == 'b') {
-            cmptexts.push('<br /><br />');
-            reeltexts.push('\nb\n');
-          } else if (type == '\n') {
-            cmptexts.push('<br />');
-            reeltexts.push('\n');
-            line_no += 1;
-            char_no = 1;
-          } else if (type == 'equal') {
-            if (last_text_type == 'diff') {
-              cmptexts.push('</span>');
-              last_seg_index = -1;
-            }
-
-            cmptexts.push(new_text_lst[i].selected_text);
-            reeltexts.push(new_text_lst[i].selected_text);
-            char_no += new_text_lst[i].selected_text.length;
-            pos += new_text_lst[i].selected_text.length;
-            last_text_type = type;
-          }
+          vm.submit_title = '';
         }
-      }
-
-      $('#reel-text-compare').html(cmptexts.join(''));
-      $('#reel-text').val(reeltexts.join(''));
-
-      $('.seg-diff').click(function() {
-        var seg_id = $(this).attr('seg-id');
-        var index = segid_index_map[seg_id];
-        $('.seg-diff').removeAttr('style');
-        $('#seg-diff-' + seg_id).attr('style', 'color:red;');
-        load_page_image(index);
-        let scrollTop = $('#segrow_' + seg_id).data('scrollTop')
-        if (!scrollTop) {
-          scrollTop = $('#segrow_' + seg_id).position().top
-                    - $('.collate-pane').offset().top
-                    + $('.collate-pane').scrollTop();
-          $('#segrow_' + seg_id).data('scrollTop', scrollTop);
-        }
-        $('.collate-pane').animate({scrollTop: scrollTop }, 500);
-        $('.seg-row').removeClass('highlight-compare');
-        $('#segrow_' + seg_id).addClass('highlight-compare');
-        //$('#segrow_' + seg_id).fadeOut(500).fadeIn(500);
+        vm.loadImage();
       });
-    };
-
-    var segtext_change = function(index, newtext) {
-      var old_length = segs[index].selected_text.length;
-      var new_length = newtext.length;
-      var length_diff = new_length - old_length;
-      if (new_length != old_length) { // 需要将当前seg后的所有seg的位置更新，并更新后面的分隔符的位置
-        for (var i = index + 1; i < segs.length; ++i) {
-          segs[i].pos += length_diff;
+      this.loadCorrectSegs();
+    },
+    methods: {
+      getSegRowClass: function(seg) {
+        if (this.segid == seg.id) {
+          return 'seg-row-sel';
         }
-        var pos = segs[index].pos;
-        for (var i = 0; i < separators.length; ++i) {
-          if (separators[i][0] > pos) {
-            separators[i][0] += length_diff;
-          }
+        return 'seg-row';
+      },
+      getSegText: function(seg) {
+        if (seg.selected_text != '') {
+          return seg.selected_text;
         }
-      }
-      segs[index].selected_text = newtext;
-    };
-
-    $('.segtext').change(function() {
-      var index = parseInt($(this).parent().parent().attr('seg-index'));
-      segtext_change(index, $(this).val());
-      load_reel_text();
-      var seg_id = $(this).parent().attr('seg-id');
-      $('.seg-diff').removeAttr('style');
-      $('#seg-diff-' + seg_id).attr('style', 'color:red;');
-    });
-    $('.ocr-text').dblclick(function() {
-      var textarea = $(this).parent().find('textarea.segtext');
-      var index = parseInt($(this).parent().attr('seg-index'));
-      segtext_change(index, segs[index].ocr_text);
-      textarea.val(segs[index].selected_text);
-      load_reel_text();
-      var seg_id = $(this).parent().attr('seg-id');
-      $('.seg-diff').removeAttr('style');
-      $('#seg-diff-' + seg_id).attr('style', 'color:red;');
-    });
-    $('.base-text').dblclick(function() {
-      var textarea = $(this).parent().find('textarea.segtext');
-      var index = parseInt($(this).parent().attr('seg-index'));
-      segtext_change(index, segs[index].base_text);
-      textarea.val(segs[index].selected_text);
-      load_reel_text();
-      var seg_id = $(this).parent().attr('seg-id');
-      $('.seg-diff').removeAttr('style');
-      $('#seg-diff-' + seg_id).attr('style', 'color:red;');
-    });
-    var setImg = function (img_url, x, y, w, h) {
+        return ' ';
+      },
+      setImg: function(img_url, x, y, w, h) {
+        //console.log('setImg: ', img_url)
         var canvas = document.getElementById("page-canvas");
         var context = canvas.getContext("2d");
         var image = new Image();
         image.onload = function () {
-            canvas.width = canvas.width;
-            canvas.height = image.height;
-            canvas.width = image.width;
+          canvas.width = canvas.width;
+          canvas.height = image.height;
+          canvas.width = image.width;
 
-            x = ~~x; y = ~~y; w = ~~w; h = ~~h;
+          x = ~~x; y = ~~y; w = ~~w; h = ~~h;
 
-            context.scale(0.8, 0.8);
-            context.drawImage(image, 0, 0);
+          context.scale(0.8, 0.8);
+          context.drawImage(image, 0, 0);
 
-            //设置样式
-            context.lineWidth = 1;
-            context.strokeStyle = "#F5270B";
-            context.fillStyle = "#F5270BA0";
-            //绘制
-            context.strokeRect(x, y, w, h);
-            context.fillRect(x, y, w, h);
+          //设置样式
+          context.lineWidth = 1;
+          context.strokeStyle = "#F5270B";
+          context.fillStyle = "#F5270BA0";
+          //绘制
+          context.strokeRect(x, y, w, h);
+          context.fillRect(x, y, w, h);
 
-            let wrapper_h = $('.canvas-pane').innerHeight();
-            let wrapper_w = $('.canvas-pane').innerWidth();
-            let trans_y = y*0.8 > wrapper_h-100 ? y*0.8-wrapper_h/2: 0;
-            let trans_x = x*0.8 > wrapper_w-100 ? x*0.8-wrapper_w/2: 0;
-            $('.canvas-pane').scrollTop(~~trans_y);
-            $('.canvas-pane').scrollLeft(~~trans_x);
+          let wrapper_h = $('.canvas-pane').innerHeight();
+          let wrapper_w = $('.canvas-pane').innerWidth();
+          let trans_y = y*0.8 > wrapper_h-100 ? y*0.8-wrapper_h/2: 0;
+          let trans_x = x*0.8 > wrapper_w-100 ? x*0.8-wrapper_w/2: 0;
+          $('.canvas-pane').scrollTop(~~trans_y);
+          $('.canvas-pane').scrollLeft(~~trans_x);
         };
         image.src = img_url;
-    }
-    var load_page_image = function(index) {
-      var vol_page_no = {{ start_vol_page }} + segs[index].page_no - 1;
-      var page_code = vol_page_no.toString();
-      var url_prefix = '{{ image_url_prefix + task.reel.url_prefix() }}';
-      var url = url_prefix + page_code + '.jpg';
-      var cutline_url = url_prefix + page_code + '.cut';
-      $.getJSON(cutline_url, function(data) {
-        $.each(data['char_data'], function(k, v){
-          var line_no = parseInt(v['line_no']);
-          var char_no = parseInt(v['char_no']);
-          if (line_no == segs[index].line_no && char_no == segs[index].char_no) {
-            setImg(url, v['x'], v['y'], v['w'], v['h']);
-            // $('div.canvas-pane').scrollTop(v['y'] - 470);
+      },
+      loadImage: function() {
+        var vol_page = this.start_vol_page + this.page_no - 1;
+        var url_prefix = 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image' + this.image_url_prefix + vol_page.toString();
+        var img_url = url_prefix + '.jpg';
+        var cut_url = url_prefix + '.cut';
+        var vm = this;
+        axios.get(cut_url).then(function(response) {
+          var char_data = response.data['char_data'];
+          for(var i = 0; i < char_data.length; ++i) {
+            var v = char_data[i];
+            var line_no = v['line_no'];
+            var char_no = v['char_no'];
+            if (line_no == vm.line_no && char_no == vm.char_no) {
+              vm.setImg(img_url, v['x'], v['y'], v['w'], v['h']);
+            }
           }
         });
-      });
-    };
-    $('.seg-row').click(function() {
-      $('.seg-row').removeClass('highlight-compare');
-      $(this).addClass('highlight-compare');
-      var seg_id = $(this).attr('seg-id');
-      $('.seg-diff').removeAttr('style');
-      $('#seg-diff-' + seg_id).attr('style', 'color:red;');
-      var index = parseInt($(this).attr('seg-index'));
-      load_page_image(index);
-      let offset = $(this).attr('scrollTop')
-      if (!offset) {
-        offset = $('div.diff-text-pane').scrollTop() + $('#seg-diff-' + seg_id).position().top - 360;
-        $(this).attr('scrollTop', offset);
-      }
-      $('div.diff-text-pane').animate({
-        scrollTop: offset
-      }, 500);
-    });
-    $('.doubt-ok').click(function(e) {
-      var seg_id = $(this).attr('seg-id');
-      var index = parseInt($('#segrow_' + seg_id).attr('seg-index'));
-      segs[index].doubt_comment = $('#segdoubt_' + seg_id).val();
-      if (segs[index].doubt_comment) {
-        $('#segtext_' + seg_id).addClass('doubt');
-      } else {
-        $('#segtext_' + seg_id).removeClass('doubt');
-      }
-    });
-    $('.doubt-cancel').click(function(e) {
-      var seg_id = $(this).attr('seg-id');
-      var index = parseInt($('#segrow_' + seg_id).attr('seg-index'));
-      segs[index].doubt_comment = '';
-      $('#segdoubt_' + seg_id).val('');
-      $('#segtext_' + seg_id).removeClass('doubt');
-    });
+      },
+      getLineFeedHtml: function(seg) {
+        if (seg.selected_text == '\n') {
+          return '&nbsp;&nbsp;<br />';
+        } else {
+          return '';
+        }
+      },
+      segrowInput: function(seg, index) {
+        this.updateCorrectSeg(seg);
+      },
+      selectText: function(seg, index, no) {
+        if (no == 1) {
+          seg.selected_text = seg.text1;
+        } else {
+          seg.selected_text = seg.text2;
+        }
+        this.updateCorrectSeg(seg);
+      },
+      segrowClickHandler: function(seg) {
+        this.segid = seg.id;
+        var selection = window.getSelection();
+        //console.log(selection)
+        var cursor_offset = selection.focusOffset;
+        this.page_no = seg.page_no;
+        this.line_no = seg.line_no;
+        this.char_no = seg.char_no + cursor_offset;
+        this.loadImage();
+        this.moveSegDiffToView(seg.id);
 
-    load_reel_text();
-    load_page_image(0);
-    $('#reel-basetext').html(base_text.replace(/^p\n/, '').replace(/\np\n/g, '<br />').replace(/\n/g, '<br />'))
+        // this.position = seg.position;
+        // var textarea = document.getElementById('correct-textarea');
+        // var selectionStart = seg.position;
+        // var selectionEnd = seg.position+seg.selected_text.length;
+        // textarea.setSelectionRange( selectionStart, selectionEnd);
+        // console.log(textarea.clientHeight, textarea.height)
+        // var lineHeight = 30.4;
+        // console.log(lineHeight, textarea.scrollTop, this.row_in_text)
+        // textarea.scrollTop = lineHeight * (this.row_in_text - 1);
+      },
+      moveSegDiffToView: function(segid) {
+        try {
+          // move segdiff to view
+          var offset = $('div.diff-text-pane').scrollTop() + $('#segdiff-' + segid).position().top - 360;
+          $('div.diff-text-pane').animate({
+            scrollTop: offset
+          }, 500);
+        } catch(err) {
+          console.log('moveSegDiffToView: ', err)
+        }
+      },
+      moveSegRowToView: function(segid) {
+        try {
+          let scrollTop = $('#segrow-' + segid).data('scrollTop')
+          if (!scrollTop) {
+            scrollTop = $('#segrow-' + segid).position().top
+                      - $('.collate-pane').offset().top
+                      + $('.collate-pane').scrollTop();
+            $('#segrow-' + segid).data('scrollTop', scrollTop);
+          }
+          $('.collate-pane').animate({scrollTop: scrollTop }, 500);
+        } catch(err) {
+          console.log('moveSegRowToView: ', err)
+        }
+      },
+      segClick: function(seg) {
+        // 文本差异的correctseg进入可视区
+        this.segid = seg.id;
+        this.moveSegRowToView(seg.id);
+        var selection = window.getSelection();
+        var cursor_offset = selection.focusOffset;
+        this.page_no = seg.page_no;
+        this.line_no = seg.line_no;
+        this.char_no = seg.char_no + cursor_offset;
+        this.loadImage();
+      },
+      segLinefeedClick: function(seg, index) {
+        this.page_no = seg.page_no;
+        this.line_no = seg.line_no;
+        this.char_no = seg.char_no;
+        this.loadImage();
+      },
+      segInput: function(seg, index, e) {
+        var newtext = e.target.innerText;
+        var selection = window.getSelection();
+        var cursor_offset = selection.focusOffset;
+        // console.log('segInput: ', e, newtext, seg.selected_text, cursor_offset);
+        // TODO: prevent specific chars
+        seg.selected_text = newtext;
+        setTimeout(function(){
+          var textNode = e.target.firstChild;
+          var caret = cursor_offset;
+          var range = document.createRange();
+          range.selectNode(textNode)
+          range.setStart(textNode, caret);
+          range.collapse(true);
+          e.target.focus();
+          selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range); 
+        }, 10);
 
-    $('textarea.segtext').each(function () {
-      this.setAttribute('style', 'height:' + (this.scrollHeight) + 'px;overflow-y:hidden;');
-    }).on('input', function () {
-      this.style.height = 'auto';
-      this.style.height = (this.scrollHeight) + 'px';
-    });
-    $('#reel-text').width($('.reel-text-region-o').innerWidth());
-    $('#reel-text').height($('.diff-text-pane').innerHeight());
+        this.updateCorrectSeg(seg);
+      },
+      segParagraphMarkInput: function(seg, index, e) {
+        var newtext = e.target.innerText;
+        var selection = window.getSelection();
+        var cursor_offset = selection.focusOffset;
+        seg.selected_text = newtext;
+      },
+      segLinefeedInput: function(seg, index, e) {
+        //console.log(e);
+        var newtext = e.target.innerText;
+        if (e.inputType == 'insertParagraph') {
+          seg.selected_text = '\n';
+          e.target.innerHTML = this.getLineFeedHtml(seg);
+        } else if (newtext.length <= 2) { // 删除一次去掉换行
+          seg.selected_text = '';
+        } else {
+          seg.selected_text = '\n';
+        }
+      },
+      loadCorrectSegs: function() {
+        var vm = this
+        axios.get('/api/correct/' + vm.sharedata.task_id + '/correctsegs/')
+        .then(function(response) {
+          vm.sharedata.correctsegs = response.data;
+          for(var i = 0; i < vm.sharedata.correctsegs.length; ++i) {
+            var seg = vm.sharedata.correctsegs[i];
+            if (seg.id == vm.segid) {
+              vm.page_no = seg.page_no;
+              vm.line_no = seg.line_no;
+              vm.char_no = seg.char_no;
+            }
+          }
+
+          vm.loadImage();
+          setTimeout(function() {
+            vm.moveSegRowToView(vm.segid);
+            vm.moveSegDiffToView(vm.segid);
+          }, 1000);
+        });
+      },
+      updateCorrectSeg: function(seg) {
+        console.log('update: ', seg)
+        var vm = this
+        axios.put('/api/correct/' + vm.sharedata.task_id + '/correctsegs/' + seg.id + '/', {
+          selected_text: seg.selected_text,
+          doubt_comment: seg.doubt_comment
+        })
+        .then(function(response) {
+          console.log(response);
+        });
+      },
+      finishTask: function() {
+        var vm = this;
+        axios.post('/api/correct/' + this.sharedata.task_id + '/finish/')
+        .then(function(response) {
+          vm.sharedata.status = response.data.status;
+          alert('提交成功！');
+        })
+        .catch(function (error) {
+          vm.error = '提交出错！';
+        });
+      }
+    }
   });
 </script>
 {% endblock %}

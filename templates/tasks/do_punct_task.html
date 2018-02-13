@@ -10,10 +10,13 @@
 <div id="punct">
   <div class="container">
     <div class="row">
-      <div>
+      <div class="punct-region">
         <span v-for="punctseg in punctseg_lst">
-          <span is="punct-show-seg" :punctseg="punctseg"></span>
+          <span is="punct-show-seg" :punctseg="punctseg" :sharedata="sharedata"></span>
         </span>
+      </div>
+      <div>
+        <input type="checkbox" v-model="sharedata.show_refpunct" id="show_refpunct" /><label for="show_refpunct">显示参考标点</label>
       </div>
     </div>
     <div class="row">
@@ -35,18 +38,18 @@
     el: '#punct',
     data: {
       reeltext: '',
-      punct: [],
+      puncts: [],
       punct_result: [],
       punctseg_lst: [],
       submit_title: '',
-      sharedata: {task_id: {{ task_id }}, status: 4  }
+      sharedata: {task_id: {{ task_id }}, status: 4, show_refpunct: true  }
     },
     created: function() {
       var vm = this;
       axios.get('/api/punct/' + vm.sharedata.task_id + '/')
       .then(function(response) {
         vm.reeltext = response.data.reeltext;
-        vm.punct = response.data.punct;
+        vm.puncts = response.data.puncts;
         vm.sharedata.status = response.data.status;
         vm.punct_result = response.data.punct_result;
         vm.loadSutraText();
@@ -68,7 +71,6 @@
         return ch_lst.join('');
       },
       merge_punct_lst: function() {
-        console.log(this.punct_result);
         var orig_idx = 0;
         var orig_count = this.punct_result.length;
         var new_punct_result = [];
@@ -80,13 +82,10 @@
           }
         }
         this.punct_result = new_punct_result;
-        console.log(this.punct_result);
       },
       loadSutraText: function() {
-        var puncts = [this.punct];
-        var colors = ['green'];
-        this.punctseg_lst = merge_text_punct(this.reeltext, puncts, this.punct_result, colors);
-        this.allowed_edit_punct_index = puncts.length - 1;
+        this.punctseg_lst = merge_text_punct(this.reeltext, this.puncts, this.punct_result);
+        this.allowed_edit_punct_index = this.puncts.length - 1;
       },
       submitPunctTask: function() {
         var vm = this;

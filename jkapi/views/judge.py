@@ -16,9 +16,8 @@ from tdata.models import *
 from tasks.models import *
 from jkapi.serializers import *
 from jkapi.permissions import *
-from tasks.common import judge_merge_text_punct, ReelText, \
-extract_page_line_separators, clean_separators
-from tasks.task_controller import judge_submit_result, publish_judge_result
+from tasks.task_controller import judge_submit_result_async, publish_judge_result_async
+from tasks.common import clean_separators
 
 import json, re
 from operator import attrgetter, itemgetter
@@ -76,11 +75,10 @@ class FinishJudgeTask(APIView):
         if all_selected:
             self.task.status = Task.STATUS_FINISHED
             self.task.save(update_fields=['status'])
-            # TODO: changed to background job
             if self.task.typ == Task.TYPE_JUDGE:
-                judge_submit_result(self.task)
+                judge_submit_result_async(task_id)
             elif self.task.typ == Task.TYPE_JUDGE_VERIFY:
-                publish_judge_result(self.task)
+                publish_judge_result_async(task_id)
             return Response({'task_id': task_id, 'status': self.task.status})
         return Response({'msg': 'not all selected'}, status=status.HTTP_400_BAD_REQUEST)
 

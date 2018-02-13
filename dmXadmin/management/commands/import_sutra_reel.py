@@ -31,10 +31,17 @@ tcode_lst2 = ['GL', 'LC']
 class Command(BaseCommand):
     #FUNC_0  handle
     def handle(self, *args, **options):
-        BASE_DIR = settings.BASE_DIR    
+        BASE_DIR = settings.BASE_DIR
+
+        try:
+            lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
+        except:
+            # create LQSutra
+            lqsutra = LQSutra(sid='LQ003100', name='大方廣佛華嚴經', total_reels=60)
+            lqsutra.save()
         
         #导入龙泉经目 OK            
-        self.ImportLQSutra()
+        #self.ImportLQSutra()
 
         # #1) call 获得或创建管理员  OK
         # admin= self.CreateAdmin()
@@ -230,19 +237,20 @@ class Command(BaseCommand):
                         # lqsutra       对应模板第一列
                         lqsutra_id=str(values[0]).strip() #经编号 
                         lqsutra=None 
-                        myTestprint(lqsutra_id)                        
+                        myTestprint(lqsutra_id)
                         if (len(lqsutra_id) == 0 ): # 空编号
                             errMsg+='存疑C,龙泉编号为空 '                            
                         elif (len(lqsutra_id)<6 ): # 编号无效 
                             errMsg+='存疑C,龙泉编号无效：'+lqsutra_id                            
                         else:           
-                            bRet,lqsutra_id=self.__get_reel_sutraID(str(values[0])) #经编号      
+                            bRet,lqsutra_id=self.__get_reel_sutraID(str(values[0])) #经编号
+                            lqsutra_id = lqsutra_id.strip()
                             myTestprint(lqsutra_id)
                             if (not bRet ):                                
                                 errMsg+='存疑C,龙泉编号不存在：'+str( values[0] ) 
                             else:                                
                                 try :
-                                    s=LQSutra.objects.filter(sid=lqsutra_id.strip())
+                                    s=LQSutra.objects.filter(sid=lqsutra_id)
                                     if (len(s)>0):
                                         lqsutra=s[0]                                        
                                 except:
@@ -306,7 +314,7 @@ class Command(BaseCommand):
 
                         myTestprint(lqsutra_id) ; myTestprint(lqsutra);myTestprint(sid) ; myTestprint(name); 
                         myTestprint(variant_code);myTestprint("total_reels"+str(total_reels))
-                        myTestprint('remark:'+remark)      ; myTestprint('tripitaka:'+tripitaka.code)                                           
+                        myTestprint('remark:'+remark)      ; myTestprint('tripitaka:'+tripitaka.code)
 
                         if sid not in sid_set:
                             sid_set.add(sid)
@@ -364,6 +372,8 @@ class Command(BaseCommand):
                     else:                                           
                         nvolumns= int (values[3])#卷数                    
                     lqsutra = LQSutra(sid=id, variant_code=variant_code,name=sname,author=sauthor, total_reels=nvolumns,remark='' )
+                    if sid != 'LQ003100':
+                        continue
                     lqsutra_lst.append(lqsutra)
                 except:
                     print('error j='+str(i)+'value:'+str(values[3])+'::'+id+sname+str(nvolumns))

@@ -7,66 +7,6 @@ from difflib import SequenceMatcher
 from tasks.utils.reel_process import ReelProcess
 import re
 
-class CompareReel(models.Model):
-    reel = models.ForeignKey(Reel, on_delete=models.CASCADE, related_name='compare_set')
-    base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本')
-    base_text = models.TextField('基础本文本', default='') # 可能会截断最后的一部分
-
-    class Meta:
-        verbose_name = '卷文字比对'
-        verbose_name_plural = '卷文字比对'
-
-    @classmethod
-    def generate_compare_reel(cls, text1, text2):
-        """
-        用于文字校对前的文本比对
-        text1是基础本；text2是要比对的版本。
-        """
-        SEPARATORS_PATTERN = re.compile('[pb\n]')
-        text1 = SEPARATORS_PATTERN.sub('', text1)
-        text2 = SEPARATORS_PATTERN.sub('', text2)
-        base_text_lst = []
-        diff_lst = []
-        base_pos = 0
-        pos = 0
-        opcodes = SequenceMatcher(None, text1, text2, False).get_opcodes()
-        opcode_count = len(opcodes)
-        for tag, i1, i2, j1, j2 in opcodes:
-            if ((i2-i1) - (j2-j1) > 30):
-                base_text = ''
-            else:
-                base_text = text1[i1:i2]
-                base_text_lst.append(text1[i1:i2])
-            if tag == 'equal':
-                base_pos += (i2 - i1)
-                pos += (i2 - i1)
-            elif tag == 'insert':
-                base_text = ''
-                diff_lst.append( (2, base_pos, pos, base_text, text2[j1:j2]) )
-                pos += (j2 - j1)
-            elif tag == 'replace':
-                diff_lst.append( (3, base_pos, pos, base_text, text2[j1:j2]) )
-                base_pos += len(base_text)
-                pos += (j2 - j1)
-            elif tag == 'delete':
-                if base_pos > 0 and i1 > 0:
-                    if base_text != '':
-                        diff_lst.append( (1, base_pos-1, pos-1, text1[i1-1:i1] + base_text, text2[j1-1:j1]) )
-                else:
-                    diff_lst.append( (1, base_pos, pos, base_text, '') )
-                base_pos += len(base_text)
-        return diff_lst, ''.join(base_text_lst)
-
-class CompareSeg(models.Model):
-    compare_reel = models.ForeignKey(CompareReel, on_delete=models.CASCADE)
-    base_pos = models.IntegerField('基础本文本段位置') # base_pos=0表示在第1个字前，base_pos>0表示在第base_pos个字后
-    ocr_text = models.TextField('识别文本', default='')
-    base_text = models.TextField('基础本文本', default='')
-
-    class Meta:
-        verbose_name = '卷文本比对文本段'
-        verbose_name_plural = '卷文本比对文本段'
-
 # # class SutraStatus(models.Model):
 # #     sutra = models.ForeignKey(LQSutra, on_delete=models.CASCADE)
 # #     reel_no = models.SmallIntegerField('卷序号')
@@ -128,10 +68,10 @@ class Task(models.Model):
 
     TASK_NO_CHOICES = (
         (0, '无序号'),
-        (1, '甲'),
-        (2, '乙'),
-        (3, '丙'),
-        (4, '丁'),
+        (1, '一'),
+        (2, '二'),
+        (3, '三'),
+        (4, '四'),
     )
 
     STATUS_NOT_READY = 1
@@ -155,18 +95,20 @@ class Task(models.Model):
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE, related_name='tasks',
     blank=True, null=True)
     lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE, blank=True, null=True)
-    typ = models.SmallIntegerField('任务类型', choices=TYPE_CHOICES)
+    typ = models.SmallIntegerField('任务类型', choices=TYPE_CHOICES, db_index=True)
     base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本', blank=True, null=True)
     task_no = models.SmallIntegerField('组合任务序号', choices=TASK_NO_CHOICES)
-    status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1)
+    status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1, db_index=True)
+    
+    # 用于记录当前工作的条目，下次用户进入任务时直接到此。
+    # 文字校对，表示CorrectSeg的id；校勘判取表示page
+    cur_focus = models.SmallIntegerField('当前工作的条目', default=0)
 
-    # 文字校对相关
-    compare_reel = models.ForeignKey(CompareReel, on_delete=models.SET_NULL, blank=True, null=True)
-    separators = models.TextField('页行分隔符', blank=True, null=True)
     # 校勘判取相关
-    reeldiff = models.ForeignKey('ReelDiff', on_delete=models.SET_NULL, null=True)
+    reeldiff = models.ForeignKey('ReelDiff', on_delete=models.SET_NULL, blank=True, null=True)
     # 标点相关
     reeltext = models.ForeignKey('ReelCorrectText', related_name='punct_tasks', on_delete=models.SET_NULL, blank=True, null=True)
+    lqtext = models.ForeignKey('LQReelText', related_name='lqpunct_tasks', verbose_name='龙泉藏经卷经文', on_delete=models.SET_NULL, blank=True, null=True)
 
     result = SutraTextField('结果', blank=True)
     started_at = models.DateTimeField('开始时间', blank=True, null=True)
@@ -189,15 +131,20 @@ class Task(models.Model):
         search_fields = ('id', 'result', 'created_at')
 
 class CorrectSeg(models.Model):
+    TAG_EQUAL = 1
+    TAG_DIFF = 2
+    TAG_P = 3
+    TAG_LINEFEED = 4
+
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
-    compare_seg = models.ForeignKey(CompareSeg, on_delete=models.CASCADE)
-    selected_text = models.TextField('修正文本', default='', blank=True)
+    tag = models.SmallIntegerField('差异Tag', default=1)
     position = models.IntegerField('在校正本中的位置', default=0)
+    text1 = models.TextField('文本1', default='', blank=True)
+    text2 = models.TextField('文本2', default='', blank=True)
+    selected_text = models.TextField('修正文本', default='', blank=True)
     page_no = models.SmallIntegerField('卷中页序号', default=-1)
     line_no = models.SmallIntegerField('页中行序号', default=-1)
     char_no = models.SmallIntegerField('行中字序号', default=-1)
-    #用于文字校对审定，0表示甲乙结果一致并且选择了此一致的结果，1表示选择甲的结果，2表示选择乙的结果，-1表示新结果
-    diff_flag = models.SmallIntegerField('甲乙差异标记', default=-1)
     #存疑相关
     doubt_comment = models.TextField('存疑意见', default='', blank=True)
 
@@ -272,7 +219,7 @@ class DiffSegResult(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     diffseg = models.ForeignKey(DiffSeg, on_delete=models.CASCADE, related_name='diffsegresults')
     typ = models.SmallIntegerField('结果类型', choices=TYPE_CHOICES, default=1, editable=True)
-    selected_text = models.TextField('判取文本', blank=True, null=True)
+    selected_text = models.TextField('判取文本', blank=True, null=True, default='')
     merged_diffsegresults = models.ManyToManyField("self", blank=True)
     split_info = models.TextField('拆分信息', blank=True, null=True, default='{}')
     selected = models.SmallIntegerField('是否判取', blank=True, default=0) #　0, 1 -- 未判取，已判取
@@ -309,30 +256,25 @@ class Punct(models.Model):
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', blank=True, null=True, auto_now_add=True)
 
-
     @staticmethod
-    def attach_new(task, reel_correct_text):
+    def create_new(reel, reel_correct_text):
         '''
         增加新的标点信息
         '''
-        if Punct.objects.filter(task=task).first():
-            return
-        sutra_cb = Sutra.objects.get(lqsutra=task.reel.sutra.lqsutra, tripitaka=Tripitaka.objects.get(code='CB'))
-        reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=task.reel.reel_no)
+        sutra_cb = Sutra.objects.get(lqsutra=reel.sutra.lqsutra, tripitaka=Tripitaka.objects.get(code='CB'))
+        reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=reel.reel_no)
         # 这里找的CBETA来源的标点
-        punct = Punct.objects.filter(reel=reel_cb).first()
-        _puncts = ReelProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), reel_correct_text.text)
-        task_puncts = json.dumps(_puncts, separators=(',', ':'))
-        return Punct.objects.create(reel=task.reel, reeltext=reel_correct_text, task=task, punctuation=task_puncts)
-
-    def dup_to_verify_task(self, task):
-        if task.typ != Task.TYPE_PUNCT_VERIFY or Punct.objects.filter(task=task).first():
-            return
-        Punct.objects.create(reel=self.reel, reeltext=self.reeltext, task=task, punctuation=self.punctuation)
+        try:
+            punct = Punct.objects.filter(reel=reel_cb).first()
+            _puncts = ReelProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), reel_correct_text.text)
+            task_puncts = json.dumps(_puncts, separators=(',', ':'))
+            return task_puncts
+        except:
+            return '[]'
 
 class LQPunct(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
-    reeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
+    lqreeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
     punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始标点结果，不为null表示标点任务和标点审定任务的结果
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')

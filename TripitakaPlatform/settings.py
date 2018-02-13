@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 from django.utils.translation import ugettext_lazy as _
-
+import datetime
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -62,9 +62,9 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'TripitakaPlatform.jwt_auth_middleware.AuthenticationMiddleware',
+    #'django.middleware.csrf.CsrfViewMiddleware',
     #'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'TripitakaPlatform.jwt_auth_middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
 #    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -177,7 +177,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
     'DEFAULT_AUTHENTICATION_CLASSES': (
     'jwt_auth.authentication.JWTAuthentication',
-    'rest_framework.authentication.SessionAuthentication',
+    #'rest_framework.authentication.SessionAuthentication',
+    'TripitakaPlatform.authentication.CsrfExemptSessionAuthentication',
     )
 }
 
@@ -187,7 +188,10 @@ JWT_AUTH = {
     'JWT_PAYLOAD_HANDLER': 'jwt_auth.serializers.jwt_payload_handler',
     'JWT_AUTH_COOKIE': 'auth',
     'JWT_COOKIE_DOMAIN': 'lqdzj.cn',
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=30),
 }
+
+AUTH_USER_MODEL='jwt_auth.Staff'
 
 CORS_ORIGIN_ALLOW_ALL = True
 

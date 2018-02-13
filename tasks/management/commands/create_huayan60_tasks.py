@@ -18,6 +18,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
         try:
+            auth.models.User.objects.create_superuser('admin', 'admin@example.com', 'longquan')
+        except:
+            pass
+        try:
             admin = Staff.objects.get(username='admin')
         except:
             admin = Staff(email='admin@example.com', username='admin')
@@ -27,8 +31,7 @@ class Command(BaseCommand):
         lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
         reel_lst = [(lqsutra, reel_no) for reel_no in range(1, 61) ]
         BatchTask.objects.all().delete()
-        CompareReel.objects.all().delete()
         batchtask = BatchTask(priority=2, publisher=admin)
         batchtask.save()
-        create_tasks_for_batchtask(batchtask, reel_lst, 2, 1, 2, 1, 2, 1)
+        create_tasks_for_batchtask(batchtask, reel_lst, 2, 1, 2, 1, 2, 1, 2, 1)
         print('batchtask id: ', batchtask.id)

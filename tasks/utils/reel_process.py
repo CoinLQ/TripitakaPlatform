@@ -20,8 +20,8 @@ class ReelProcess(object):
         offset = 0
         sparses = []
         for tag, i1, i2, j1, j2 in opcodes:
-            print('{:7}   base[{}:{}] --> compare[{}:{}] {!r:>8} --> {!r}'.format(
-                tag, i1, i2, j1, j2, base[i1:i2], compare[j1:j2]))
+            #print('{:7}   base[{}:{}] --> compare[{}:{}] {!r:>8} --> {!r}'.format(
+            #    tag, i1, i2, j1, j2, base[i1:i2], compare[j1:j2]))
             offset = offset - ((i2-i1)-(j2-j1))
             sparses.append({"idx": j2, "offset": offset})
         return sparses

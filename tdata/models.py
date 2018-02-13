@@ -56,7 +56,7 @@ class Volume(models.Model):
         return '%s: 第%s册' % (self.tripitaka.name, self.vol_no)
 
 class LQSutra(models.Model):
-    sid = models.CharField(verbose_name='龙泉经目经号编码', max_length=8) #（为"LQ"+ 经序号 + 别本号）
+    sid = models.CharField(verbose_name='龙泉经目经号编码', max_length=8, unique=True) #（为"LQ"+ 经序号 + 别本号）
     code = models.CharField(verbose_name='龙泉经目编码', max_length=5, blank=False)
     variant_code = models.CharField(verbose_name='龙泉经目别本编码', max_length=1, default='0')
     name = models.CharField(verbose_name='龙泉经目名称', max_length=64, blank=False)
@@ -72,7 +72,7 @@ class LQSutra(models.Model):
         return '%s: %s' % (self.sid, self.name)
 
 class Sutra(models.Model):
-    sid = models.CharField(verbose_name='实体藏经|唯一经号编码', editable=True, max_length=8)
+    sid = models.CharField(verbose_name='实体藏经|唯一经号编码', editable=True, max_length=8, unique=True)
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE,verbose_name='藏')
     code = models.CharField(verbose_name='实体经目编码', max_length=5, blank=False)
     variant_code = models.CharField(verbose_name='别本编码', max_length=1, default='0')

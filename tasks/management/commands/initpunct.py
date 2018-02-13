@@ -42,9 +42,6 @@ class Command(BaseCommand):
             with open(filename, 'r') as f:
                 text = f.read()
             punctuation, text = extract_punct(text)
-            reel_ocr_text = ReelOCRText(reel=huayan_cb_1, text = text)
-            reel_ocr_text.save()
-            
             reelcorrecttext = ReelCorrectText(reel=huayan_cb_1, text=text)
             reelcorrecttext.save()
             punctuation_json = json.dumps(punctuation, separators=(',', ':'))
@@ -54,8 +51,9 @@ class Command(BaseCommand):
         # create BatchTask
         batch_task = BatchTask.objects.all()[0]
 
-        huayan_gl = Sutra.objects.get(sid='GL000800')
-        huayan_gl_1 = Reel.objects.get(sutra=huayan_gl, reel_no=1)
+        YB = Tripitaka.objects.get(code='YB')
+        huayan_yb = Sutra.objects.get(sid='YB000860')
+        huayan_yb_1 = Reel.objects.get(sutra=huayan_yb, reel_no=1)
 
         # 标点
         Task.objects.filter(batch_task=batch_task, typ=Task.TYPE_PUNCT).delete()
@@ -63,12 +61,28 @@ class Command(BaseCommand):
         task1 = Task(id=7, batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
         reeltext=reelcorrecttext, result=punctuation_json,
         task_no=1, status=Task.STATUS_READY,
-        publisher=admin)
+        publisher=admin, picker=admin)
         task1.save()
         task2 = Task(id=8, batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
         reeltext=reelcorrecttext, result=punctuation_json,
-        task_no=1, status=Task.STATUS_READY,
-        publisher=admin)
+        task_no=2, status=Task.STATUS_READY,
+        publisher=admin, picker=admin)
         task2.save()
 
+        task1 = Task(id=9, batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_yb_1,
+        task_no=1, status=Task.STATUS_NOT_READY,
+        publisher=admin, picker=admin)
+        task1.save()
+        task2 = Task(id=10, batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_yb_1,
+        task_no=2, status=Task.STATUS_NOT_READY,
+        publisher=admin, picker=admin)
+        task2.save()
+
+        # punct_tasks = list(Task.objects.filter(reel=huayan_yb_1, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY))
+        # if len(punct_tasks) > 0:
+        #     task_puncts = Punct.create_new(huayan_cb_1, reelcorrecttext)
+        #     punct = Punct(reel=huayan_cb_1, reeltext=reelcorrecttext, punctuation=task_puncts)
+        #     punct.save()
+        #     punct_task_ids = [task.id for task in punct_tasks]
+        #     Task.objects.filter(id__in=punct_task_ids).update(reeltext=reelcorrecttext, result=task_puncts, status=Task.STATUS_READY)
 

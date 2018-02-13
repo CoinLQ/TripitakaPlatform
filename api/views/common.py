@@ -46,21 +46,21 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
         model = self.model
         if (model_name in TASK_MODELS):
             if model_name == 'correct':
-                return model.objects.filter(typ=model.TYPE_CORRECT, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_CORRECT, status=Task.STATUS_READY)
             elif model_name == 'verify_correct':
-                return model.objects.filter(typ=model.TYPE_CORRECT_VERIFY, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_CORRECT_VERIFY, status=Task.STATUS_READY)
             elif model_name == 'judge':
-                return model.objects.filter(typ=model.TYPE_JUDGE, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_JUDGE, status=Task.STATUS_READY)
             elif model_name =='verify_judge':
-                return model.objects.filter(typ=model.TYPE_JUDGE_VERIFY, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_JUDGE_VERIFY, status=Task.STATUS_READY)
             elif model_name == 'punct':
-                return model.objects.filter(typ=model.TYPE_PUNCT, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_PUNCT, status=Task.STATUS_READY)
             elif model_name =='verify_punct':
-                return model.objects.filter(typ=model.TYPE_PUNCT_VERIFY, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_PUNCT_VERIFY, status=Task.STATUS_READY)
             elif model_name == 'lqpunct':
-                return model.objects.filter(typ=model.TYPE_LQPUNCT, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_LQPUNCT, status=Task.STATUS_READY)
             elif model_name =='verify_lqpunct':
-                return model.objects.filter(typ=model.TYPE_LQPUNCT_VERIFY, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_LQPUNCT_VERIFY, status=Task.STATUS_READY)
         else:
             return model.objects.all()
 
@@ -70,7 +70,7 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
         serialize_name = self.model.__name__ + 'Serializer'
         if (self.model_name in TASK_MODELS):
             serialize_name = underscore_to_camelcase(self.model_name) + 'TaskSerializer'
-        print(serialize_name)
+        #print(serialize_name)
         module_str = '%s.serializers' % self.app_name
         serializer_module = sys.modules[module_str]
 
@@ -115,17 +115,16 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
             q = self.model.Config.filter_queryset(self.request, q)
         return q
 
-
-    @redis_lock
     def obtain_task(self, request, pk):
-        task = Task.objects.get(pk=pk)
-        if not task.picker:
-            task.picker = request.user
-            task.picked_at = timezone.now()
-            task.save()
-            return Response({"status": 0, "task_id": task.pk})
+        count = Task.objects.filter(pk=pk, status=Task.STATUS_READY, picker=None)\
+        .update(
+            picker=request.user,
+            picked_at=timezone.now(),
+            status=Task.STATUS_PROCESSING)
+        if count == 1:
+            return Response({"status": 0, "task_id": pk})
         else:
-            return Response({"status": -1, "task_id": task.pk, "msg": "任务已被占用无法领取."})
+            return Response({"status": -1, "task_id": pk, "msg": "任务已被占用无法领取."})
 
 
 class CommonHistoryAPIView(CommonListAPIView):
@@ -152,7 +151,7 @@ class CommonHistoryAPIView(CommonListAPIView):
             elif model_name == 'lqpunct':
                 return model.objects.filter(typ=model.TYPE_LQPUNCT, picker=request.user)
             elif model_name =='verify_lqpunct':
-                return model.objects.filter(typ=model.TYPE_LQPUNCT_VERIFY, picker__isnull=True)
+                return model.objects.filter(typ=model.TYPE_LQPUNCT_VERIFY, picker=request.user)
         else:
             return model.objects.all()
 
@@ -162,7 +161,7 @@ class CommonHistoryAPIView(CommonListAPIView):
         serialize_name = self.model.__name__ + 'Serializer'
         if (self.model_name in TASK_MODELS):
             serialize_name = underscore_to_camelcase(self.model_name) + 'TaskSerializer'
-        print(serialize_name)
+        #print(serialize_name)
         module_str = '%s.serializers' % self.app_name
         serializer_module = sys.modules[module_str]
 

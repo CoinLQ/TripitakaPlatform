@@ -95,3 +95,9 @@ class DiffSegResultSimpleSerializer(serializers.ModelSerializer):
                 raise Exception()
         except:
             raise serializers.ValidationError('invalid split_info')
+
+class CorrectSegSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CorrectSeg
+        fields = ('id', 'tag', 'position', 'text1', 'text2', 'selected_text', 'page_no', 'line_no', 'char_no', 'doubt_comment')
+        read_only_fields = ('id', 'tag', 'position', 'text1', 'text2', 'page_no', 'line_no', 'char_no')

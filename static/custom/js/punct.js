@@ -1,4 +1,19 @@
-function merge_text_punct(text, puncts, punct_result, colors) {
+function clean_linefeed(puncts) {
+    for (var i = 0; i < puncts.length; ++i) {
+        var punct_lst = [];
+        for (var j = 0; j < puncts[i].length; ++j) {
+            var pos = puncts[i][j][0];
+            var ch = puncts[i][j][1];
+            if (ch != '\n') {
+                punct_lst.push([pos, ch]);
+            }
+        }
+        puncts[i] = punct_lst;
+    }
+}
+
+function merge_text_punct(text, puncts, punct_result) {
+    clean_linefeed(puncts);
     var TYPE_TEXT = 1;
     var TYPE_SEP = 2;
     var TYPE_BR = 3;
@@ -13,9 +28,9 @@ function merge_text_punct(text, puncts, punct_result, colors) {
         indexs.push(0);
     }
     var text_idx = 0;
-    while (text_idx <= text.length) {
+    while (1) {
       // 找到当前最小的punct位置
-        var min_pos = text.length + 1;
+        var min_pos = text.length;
         var min_punct_index = -1;
         for (var i = 0; i < puncts.length; ++i) {
             var index = indexs[i];
@@ -28,99 +43,57 @@ function merge_text_punct(text, puncts, punct_result, colors) {
             }
         }
 
-        if (min_pos <= text.length) { // 找到了
-            if (text_idx < min_pos) {
-                var text_seg = text.substr(text_idx, min_pos - text_idx);
-                var user_puncts = [];
-                if (result_idx < result_len && punct_result[result_idx][0] <= min_pos) {
-                    var strs = [];
-                    var t_idx = 0;
-                    while (result_idx < result_len) {
-                        if (punct_result[result_idx][0] > min_pos) {
-                            break;
-                        }
-                        if (punct_result[result_idx][0] - text_idx == t_idx) {
-                            strs.push(punct_result[result_idx][1]);
-                            user_puncts.push(punct_result[result_idx]);
-                            ++result_idx;
-                        } else if (punct_result[result_idx][0] - text_idx > t_idx) {
-                            var s = text_seg.substr(t_idx, punct_result[result_idx][0] - text_idx - t_idx);
-                            strs.push(s);
-                            t_idx = punct_result[result_idx][0] - text_idx;
-                        }
-                    }
-                    text_seg = strs.join('');
+        if (text_idx < min_pos) {
+            var text_seg = text.substr(text_idx, min_pos - text_idx);
+            var user_puncts = [];
+            var strs = [];
+            var t_idx = 0;
+            while (result_idx < result_len && 
+                (punct_result[result_idx][0] < min_pos ||
+                    (punct_result[result_idx][0] == min_pos && punct_result[result_idx][1] != '\n'))) {
+                if (punct_result[result_idx][0] - text_idx > t_idx) {
+                    var s = text_seg.substr(t_idx, punct_result[result_idx][0] - text_idx - t_idx);
+                    strs.push(s);
+                    t_idx = punct_result[result_idx][0] - text_idx;
                 }
-                var punctseg = {
-                    type: TYPE_TEXT,
-                    position: text_idx,
-                    text: text_seg, // 经文或合并的标点
-                    color: '', // 显示标点的颜色
-                    user_puncts: user_puncts
-                };
-                punctseg_lst.push(punctseg);
-                text_idx = min_pos;
-            }
 
-            // 插入标点
+                strs.push(punct_result[result_idx][1]);
+                user_puncts.push(punct_result[result_idx]);
+                ++result_idx;
+            }
+            if (t_idx < text_seg.length) {
+                var s = text_seg.substr(t_idx, text_seg.length - t_idx);
+                strs.push(s);
+            }
+            text_seg = strs.join('');
+            var punctseg = {
+                type: TYPE_TEXT,
+                position: text_idx,
+                text: text_seg, // 经文或合并的标点
+                cls: '', // 显示标点的样式
+                user_puncts: user_puncts
+            };
+            punctseg_lst.push(punctseg);
+            text_idx = min_pos;
+        }
+
+        // 插入标点
+        if (min_punct_index != -1) {
             var index = indexs[min_punct_index];
-            var color = colors[min_punct_index];
+            var cls = 'punct' + (min_punct_index + 1).toString();
             var punct_obj = puncts[min_punct_index][index];
             var punct_str = punct_obj[1];
-            if (punct_str == '\n') {
-                var punctseg = {
-                    type: TYPE_BR,
-                    position: text_idx,
-                    text: '', // 经文或合并的标点
-                    color: '', // 显示标点的颜色
-                    user_puncts: []
-                };
-                punctseg_lst.push(punctseg);
-            } else {
-                var punctseg = {
-                    type: TYPE_SEP,
-                    position: text_idx,
-                    text: punct_obj[1], // 经文或合并的标点
-                    color: color, // 显示标点的颜色
-                    user_puncts: []
-                };
-                punctseg_lst.push(punctseg);
-            }
+            var punctseg = {
+                type: TYPE_SEP,
+                position: text_idx,
+                text: punct_obj[1], // 经文或合并的标点
+                cls: cls, // 显示标点
+                user_puncts: []
+            };
+            punctseg_lst.push(punctseg);
             indexs[min_punct_index] += 1;
         } else {
-            if (text_idx < text.length) {
-                var text_seg = text.substr(text_idx);
-                var user_puncts = [];
-                if (result_idx < result_len && punct_result[result_idx][0] <= text.length) {
-                    var strs = [];
-                    var t_idx = 0;
-                    while (result_idx < result_len) {
-                        if (punct_result[result_idx][0] > text.length) {
-                            break;
-                        }
-                        if (punct_result[result_idx][0] - text_idx == t_idx) {
-                            strs.push(punct_result[result_idx][1]);
-                            user_puncts.push(punct_result[result_idx]);
-                            ++result_idx;
-                        } else if (punct_result[result_idx][0] - text_idx > t_idx) {
-                            var s = text_seg.substr(t_idx, punct_result[result_idx][0] - text_idx - t_idx);
-                            strs.push(s);
-                            t_idx = punct_result[result_idx][0] - text_idx;
-                        }
-                    }
-                    text_seg = strs.join('');
-                }
-                var punctseg = {
-                    type: TYPE_TEXT,
-                    editable: true,
-                    position: text_idx,
-                    text: text_seg, // 经文或合并的标点
-                    color: '', // 显示标点的颜色
-                    user_puncts: user_puncts
-                };
-                punctseg_lst.push(punctseg);
-                text_idx = text.length;
-            } else {
+            if (text_idx == text.length) {
                 break;
             }
         }
@@ -129,13 +102,13 @@ function merge_text_punct(text, puncts, punct_result, colors) {
     return punctseg_lst;
 }
 
-var PUNCT_LIST = '，。：';
+var PUNCT_LIST = '：，。；、！？\n';
 Vue.component('punct-show-seg', {
-    props: ['punctseg'],
+    props: ['punctseg', 'sharedata'],
     template: '\
-      <span v-if="punctseg.type == 1" contenteditable="true" @input.stop.prevent="inputHandler">{{ punctseg.text }}</span>\
-      <span v-else-if="punctseg.type == 2" v-bind:style="{ color: punctseg.color}">{{ punctseg.text }}</span>\
-      <span v-else-if="punctseg.type == 3"><br /></span>\
+      <span v-if="punctseg.type == 1" contenteditable="true" @input.stop.prevent="inputHandler" v-html="merged_html"></span>\
+      <span v-else-if="punctseg.type == 2 && sharedata.show_refpunct" v-bind:class="punctseg.cls">{{ punctseg.text }}</span>\
+      <span v-else-if="punctseg.type == 3 && sharedata.show_refpunct"><br /></span>\
     ',
     data: function() {
         return {
@@ -143,9 +116,7 @@ Vue.component('punct-show-seg', {
         }
     },
     created: function() {
-        // if (this.punctseg.type == 1) {
-        //     this.createMergedHtml();
-        // }
+        this.createMergedHtml();
     },
     methods: {
         cleanPunct: function(str) {
@@ -158,36 +129,38 @@ Vue.component('punct-show-seg', {
             return ch_lst.join('');
         },
         createMergedHtml: function() {
-            var punctseg = this.punctseg;
-            if (punctseg.user_puncts.length == 0) {
-                this.merged_html = punctseg.text;
-                return ;
-            }
-            var text = punctseg.text;
-            var text_idx = 0;
-            var html_lst = [];
-            for (var i = 0; i < punctseg.user_puncts.length; ++i) {
-                var punct_pos = punctseg.user_puncts[i][0];
-                var punct_offset = punct_pos - punctseg.position;
-                var punct_ch = punctseg.user_puncts[i][1];
-                if (text_idx < punct_offset) {
-                    html_lst.push(text.substr(text_idx, punct_offset-text_idx));
-                    text_idx = punct_offset;
+            if (this.punctseg.type == 1) {
+                var html_lst = [];
+                for (var i = 0; i < this.punctseg.text.length; ++i) {
+                    var ch = this.punctseg.text[i];
+                    if (ch == '\n') {
+                        html_lst.push('<br />');
+                    } else if (PUNCT_LIST.indexOf(ch) != -1) {
+                        html_lst.push('<span class="userpunct">' + ch + '</span>');
+                    } else {
+                        html_lst.push(ch);
+                    }
                 }
-                html_lst.push('<span style="color:red">' + punct_ch + '</span>');
+                this.merged_html = html_lst.join('');
             }
-            if (text_idx < text.length) {
-                html_lst.push(text.substr(text_idx));
+        },
+        getNodeIndex: function (node) {
+            var n = 0;
+            while (node = node.previousSibling) {
+                n++;
             }
-            this.merged_html = html_lst.join('');
-            console.log('merged: ', this.merged_html);
+            return n;
         },
         inputHandler: function(e) {
             var selection = window.getSelection();
             var cursor_offset = selection.focusOffset;
+            var focusNode = selection.focusNode;
+            var parentNode = focusNode.parentNode;
+            var focusNodeIndex = this.getNodeIndex(focusNode);
+            //console.log('focusNode: ', focusNode, focusNodeIndex, e.target )
 
             var newtext = e.target.innerText;
-            console.log(newtext);
+            
             if (this.cleanPunct(newtext) == this.cleanPunct(this.punctseg.text)) {
                 var new_user_puncts = [];
                 var offset = 0;
@@ -200,25 +173,46 @@ Vue.component('punct-show-seg', {
                     }
                 }
                 this.punctseg.user_puncts = new_user_puncts;
-                console.log(this.punctseg.user_puncts);
-                // // set cursor position
-                // window.el = e.target;
-                // setTimeout(function(){
-                //     console.log('set caret')
-                //     var textNode = e.target.firstChild;
-                //     console.log('textNode: ', textNode);
-                //     var caret = cursor_offset;
-                //     console.log('caret: ', caret);
-                //     var range = document.createRange();
-                //     range.setStart(textNode, caret);
-                //     range.setEnd(textNode, caret);
-                //     e.target.focus();
-                //     selection = window.getSelection();
-                //     selection.removeAllRanges();
-                //     selection.addRange(range); 
-                // }, 2000);
+                this.punctseg.text = newtext;
+                this.createMergedHtml();
+                // set cursor position
+                setTimeout(function(){
+                    if (focusNodeIndex+1 < e.target.childNodes.length) {
+                        var textNode = e.target.childNodes[focusNodeIndex+1];
+                        var range = document.createRange();
+                        range.selectNode(textNode);
+                        range.setStart(textNode, 1);
+                        range.collapse(true);
+                        e.target.focus();
+                        selection = window.getSelection();
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    } else {
+                        //console.log(focusNode, parentNode)
+                        var textNode = focusNode;
+                        var range = document.createRange();
+                        range.selectNode(textNode);
+                        range.setStart(textNode, 1);
+                        range.collapse(true);
+                        e.target.focus();
+                        selection = window.getSelection();
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
+                }, 100);
             } else {
-                e.target.innerText = this.punctseg.text;
+                e.target.innerHTML = this.merged_html;
+                setTimeout(function(){
+                    var focusNode = e.target.childNodes[focusNodeIndex];
+                    var range = document.createRange();
+                    range.selectNode(focusNode);
+                    range.setStart(focusNode, cursor_offset-1);
+                    range.collapse(true);
+                    e.target.focus();
+                    selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range); 
+                }, 20);
             }
         }
     }

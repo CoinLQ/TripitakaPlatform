@@ -12,7 +12,7 @@ from jkapi.views.correct import CorrectTaskDetail, \
 CorrectSegList, CorrectSegUpdate, \
 FinishCorrectTask
 from jkapi.views.judge import DiffSegResultList, DiffSegResultUpdate, \
-JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected
+JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected, DiffSegDetail
 from jkapi.views.punct import PunctTaskDetail
 
 router = routers.DefaultRouter()
@@ -39,5 +39,6 @@ urlpatterns = [
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegresults/$', DiffSegResultList.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegresults/(?P<pk>[0-9]+)/$', DiffSegResultUpdate.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegresults/(?P<diffsegresult_id>[0-9]+)/mergelist/$', MergeList.as_view()),
+    url(r'^judge/(?P<task_id>[0-9]+)/diffsegs/(?P<pk>[0-9]+)/$$', DiffSegDetail.as_view()),
     url(r'^punct/(?P<task_id>[0-9]+)/$', PunctTaskDetail.as_view()),
 ]

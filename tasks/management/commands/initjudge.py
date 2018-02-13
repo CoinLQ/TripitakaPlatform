@@ -126,12 +126,12 @@ class Command(BaseCommand):
         #     except Exception:
         #         traceback.print_exc()
 
-        tasks = list(Task.objects.filter(id__in=[4, 5]).all())
-        for task in tasks:
-            for diffseg in task.reeldiff.diffseg_set.all():
-                diffsegtexts = list(DiffSegText.objects.filter(diffseg=diffseg, tripitaka=YB))
-                if len(diffsegtexts) == 1:
-                    diffsegresult = DiffSegResult.objects.get(task=task, diffseg=diffseg)
-                    diffsegresult.selected_text = diffsegtexts[0].text
-                    diffsegresult.selected = 1
-                    diffsegresult.save()
+        # tasks = list(Task.objects.filter(id__in=[4, 5]).all())
+        # for task in tasks:
+        #     for diffseg in task.reeldiff.diffseg_set.all():
+        #         diffsegtexts = list(DiffSegText.objects.filter(diffseg=diffseg, tripitaka=YB))
+        #         if len(diffsegtexts) == 1:
+        #             diffsegresult = DiffSegResult.objects.get(task=task, diffseg=diffseg)
+        #             diffsegresult.selected_text = diffsegtexts[0].text
+        #             diffsegresult.selected = 1
+        #             diffsegresult.save()

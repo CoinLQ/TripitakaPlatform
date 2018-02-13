@@ -213,11 +213,6 @@ def generate_text_diff(reeltext_lst, reeldiff):
         diffseg.diffseg_no = diffseg_no
         new_diffseg_lst.append(diffseg)
         new_diffsegtexts_lst.append(diffsegtexts)
-        diffseg_pos_lst.append({
-            'diffseg_no': diffseg_no,
-            'base_pos': diffseg.base_pos,
-            'base_length': diffseg.base_length
-        })
         diffseg_no += 1
 
     diffseg_lst = new_diffseg_lst
@@ -226,6 +221,13 @@ def generate_text_diff(reeltext_lst, reeldiff):
 
     # 创建DiffSeg
     DiffSeg.objects.bulk_create(diffseg_lst)
+    for diffseg in diffseg_lst:
+        diffseg_pos_lst.append({
+            'diffseg_id': diffseg.id,
+            'base_pos': diffseg.base_pos,
+            'base_length': diffseg.base_length
+        })
+
 
     # 创建DiffSegText
     tid_to_reeltext = {}

@@ -7,6 +7,8 @@ from tdata.models import *
 from tasks.models import *
 from rect.models import PageRect, Rect
 
+from tasks.utils.cut_column import gene_new_col, crop_col_online
+
 from django.conf import settings
 
 SEPARATORS_PATTERN = re.compile('[pb\n]')
@@ -340,14 +342,20 @@ def compute_accurate_cut(reel):
         page.pagerects.all().delete()
         PageRect(page=page, reel=page.reel, line_count=line_count, column_count=column_count, rect_set=cut_info['char_data']).save()
 
-        # 下载分列信息
-        column_lst = []
-        try:
-            col_file = fetch_col_file(reel, vol_page)
-            column_info = json.loads(col_file)
-            column_lst = column_info['col_data']
-        except:
-            pass
+        # 得到分列信息
+        image_name_prefix = reel.image_prefix() + str(vol_page)
+        img_path = reel.url_prefix() + str(vol_page) + '.jpg'
+        column_lst = gene_new_col(image_name_prefix, char_lst)
+        #try:
+        crop_col_online(img_path, column_lst)
+        #except:
+        #    print('Crop image column failed.')
+        # try:
+        #     col_file = fetch_col_file(reel, vol_page)
+        #     column_info = json.loads(col_file)
+        #     column_lst = column_info['col_data']
+        # except:
+        #     pass
 
         # save Rect
         rect_lst = []

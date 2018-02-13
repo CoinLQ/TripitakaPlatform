@@ -120,9 +120,9 @@ class Reel(models.Model):
     start_vol_page = models.SmallIntegerField('起始册的页序号')
     end_vol = models.SmallIntegerField('终止册')
     end_vol_page = models.SmallIntegerField('终止册的页序号')
-    path1 = models.CharField('存储层次1', max_length=16, default='')
-    path2 = models.CharField('存储层次2', max_length=16, default='')
-    path3 = models.CharField('存储层次3', max_length=16, default='')
+    path1 = models.CharField('存储层次1', max_length=16, default='', blank=True)
+    path2 = models.CharField('存储层次2', max_length=16, default='', blank=True)
+    path3 = models.CharField('存储层次3', max_length=16, default='', blank=True)
     edition_type = models.SmallIntegerField('版本类型', choices=EDITION_TYPE_CHOICES, default=0)
     remark = models.TextField('备注', blank=True, default='')
     image_ready = models.BooleanField(verbose_name='图片状态', default=False)
@@ -179,6 +179,9 @@ class ReelOCRText(models.Model):
     class Meta:
         verbose_name = '实体藏经卷OCR经文'
         verbose_name_plural = '实体藏经卷OCR经文'
+
+    def __str__(self):
+        return '%s' % self.reel
 
 class PageStatus:
     INITIAL = 0

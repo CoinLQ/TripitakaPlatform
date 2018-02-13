@@ -75,7 +75,7 @@ def crop_col_online(img_path, col_data):
         image.save(buffer, format="jpeg")
         b = BytesIO(buffer.getvalue())
         key = "{}{}.jpg".format(img_prefix, col['col_id'])
-        #s3c.upload_fileobj(b, my_bucket, key)
+        s3c.upload_fileobj(b, my_bucket, key)
         #savefile = '/home/xian/Downloads/after_correct/%s' % key
         #image.save(savefile, format="jpeg")
         #print('upload: ', key)

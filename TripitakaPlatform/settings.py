@@ -241,7 +241,7 @@ USE_TZ = True
 # 当运行 python manage.py collectstatic 的时候
 # STATIC_ROOT 文件夹 是用来将所有 STATICFILES_DIRS 中所有文件夹中的文件，以及各 app 中 static 中的文件都复制过来
 # 把这些文件放到一起是为了用 apache/nginx 等部署的时候更方便
-#STATIC_ROOT = '/www/cutrect/static'
+STATIC_ROOT = '/www/tripitaka_platform/static'
 
 # Additional locations of static files
 # STATICFILES_DIRS = (

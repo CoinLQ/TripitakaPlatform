@@ -70,7 +70,7 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
         serialize_name = self.model.__name__ + 'Serializer'
         if (self.model_name in TASK_MODELS):
             serialize_name = underscore_to_camelcase(self.model_name) + 'TaskSerializer'
-        print(serialize_name)
+        #print(serialize_name)
         module_str = '%s.serializers' % self.app_name
         serializer_module = sys.modules[module_str]
 

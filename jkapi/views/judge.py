@@ -75,7 +75,6 @@ class FinishJudgeTask(APIView):
         if all_selected:
             self.task.status = Task.STATUS_FINISHED
             self.task.save(update_fields=['status'])
-            # TODO: changed to background job
             if self.task.typ == Task.TYPE_JUDGE:
                 judge_submit_result_async(task_id)
             elif self.task.typ == Task.TYPE_JUDGE_VERIFY:

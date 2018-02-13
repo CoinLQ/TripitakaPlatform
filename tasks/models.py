@@ -219,7 +219,7 @@ class DiffSegResult(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     diffseg = models.ForeignKey(DiffSeg, on_delete=models.CASCADE, related_name='diffsegresults')
     typ = models.SmallIntegerField('结果类型', choices=TYPE_CHOICES, default=1, editable=True)
-    selected_text = models.TextField('判取文本', blank=True, null=True)
+    selected_text = models.TextField('判取文本', blank=True, null=True, default='')
     merged_diffsegresults = models.ManyToManyField("self", blank=True)
     split_info = models.TextField('拆分信息', blank=True, null=True, default='{}')
     selected = models.SmallIntegerField('是否判取', blank=True, default=0) #　0, 1 -- 未判取，已判取

@@ -101,17 +101,17 @@ class Command(BaseCommand):
         # Correct Task
         # 文字校对
         task1 = Task(id=1, batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_gl_1, task_no=1, status=Task.STATUS_READY,
-        publisher=admin, picker=admin)
+        publisher=admin,)
         task1.reel = huayan_yb_1
         task1.save()
 
         task2 = Task(id=2, batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_gl_1, task_no=2, status=Task.STATUS_READY,
-        publisher=admin, picker=admin)
+        publisher=admin)
         task2.reel = huayan_yb_1
         task2.save()
 
         task3 = Task(id=3, batch_task=batch_task, typ=Task.TYPE_CORRECT_VERIFY, base_reel=huayan_gl_1, task_no=0, status=Task.STATUS_NOT_READY,
-        publisher=admin, picker=admin)
+        publisher=admin)
         task3.reel = huayan_yb_1
         task3.save()
         

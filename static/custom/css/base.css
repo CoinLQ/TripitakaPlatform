@@ -9,7 +9,7 @@
 .diff-text-pane {
     padding: 0 15px;
     /* height: 95%; */
-    height: 70%;
+    height: 75%;
     overflow: scroll;
     box-shadow: 0px 0px 1px 2px #363E4E;
 }
@@ -33,7 +33,7 @@
     box-shadow: 0px 0px 1px 2px #363E4E;
     margin-top: 15px;
     overflow: scroll;
-    height: 28%;
+    height: 23%;
 }
 .submit-pane {
     margin-top: 5px;

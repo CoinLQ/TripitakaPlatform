@@ -4,6 +4,7 @@ from tdata.models import *
 from tasks.models import *
 from tasks.common import *
 from tasks.task_controller import *
+from .init import save_reel, get_reel
 
 import TripitakaPlatform.settings
 
@@ -13,6 +14,24 @@ import traceback
 
 import re, json
 
+def save_reel_with_correct_text(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
+    path1='', path2='', path3=''):
+    reel, reel_ocr_text = save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page, \
+    path1, path2, path3)
+    try:
+        reel_correct_text = ReelCorrectText.get(reel=reel)
+    except:
+        filename = os.path.join(settings.BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % sid)
+        with open(filename, 'r') as f:
+            text = f.read()
+            ReelCorrectText(reel=reel, text=text).save()
+
+    # 得到精确的切分数据
+    try:
+        compute_accurate_cut(reel)
+    except Exception:
+        traceback.print_exc()
+
 class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
@@ -20,51 +39,14 @@ class Command(BaseCommand):
 
         # get LQSutra
         lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
-
-        # create Sutra
-        QL = Tripitaka.objects.get(code='QL')
-        try:
-            huayan_ql = Sutra.objects.get(sid='QL000870')
-        except:
-            huayan_ql = Sutra(sid='QL000870', tripitaka=QL, code='00087', variant_code='0',
-            name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)
-            huayan_ql.save()
-
-        # 乾隆藏第1卷的文本
-        try:
-            huayan_ql_1 = Reel.objects.get(sutra=huayan_ql, reel_no=1)
-        except:
-            huayan_ql_1 = Reel(sutra=huayan_ql, reel_no=1, start_vol=24,
-            start_vol_page=1, end_vol=24, end_vol_page=17, edition_type=Reel.EDITION_TYPE_CHECKED,
-            path1='24')
-            huayan_ql_1.save()
-        text = get_reel_text(huayan_ql_1)
-        reel_ocr_text = ReelOCRText(reel=huayan_ql_1, text = text)
-        reel_ocr_text.save()
-        filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_ql.sid)
-        with open(filename, 'r') as f:
-            text = f.read()
-            ReelCorrectText(reel=huayan_ql_1, text=text).save()
-
-        # 得到精确的切分数据
-        try:
-            compute_accurate_cut(huayan_ql_1)
-        except Exception:
-            traceback.print_exc()
-
         # CBETA第1卷
-        CB = Tripitaka.objects.get(code='CB')
-        try:
-            huayan_cb = Sutra.objects.get(sid='CB002780')
-        except:
-            huayan_cb = Sutra(sid='CB002780', tripitaka=CB, code='00278', variant_code='0',
-            name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)
-            huayan_cb.save()
-        try:
-            huayan_cb_1 = Reel.objects.get(sutra=huayan_cb, reel_no=1)
-        except:
+        huayan_cb_1 = get_reel('CB002780', 1)
+        if not huayan_cb_1:
             print('please run ./manage.py import_cbeta_huayan60')
             return
+
+        save_reel_with_correct_text(lqsutra, 'QL000870', 1, 24, 1, 17, '24')
+        save_reel_with_correct_text(lqsutra, 'ZH000860', 1, 12, 1, 12, '12')
 
         # get LQReel
         try:
@@ -87,9 +69,6 @@ class Command(BaseCommand):
         JUDGE_VERIFY_TIMES = 1
         reel_no = 1
         batch_task = BatchTask.objects.all()[0]
-
-        huayan_gl = Sutra.objects.get(sid='GL000800')
-        huayan_gl_1 = Reel.objects.get(sutra=huayan_gl, reel_no=1)
 
         # 校勘判取
         Task.objects.filter(batch_task=batch_task, typ=Task.TYPE_JUDGE).delete()
@@ -119,6 +98,11 @@ class Command(BaseCommand):
             Task.objects.filter(id=correct_task.id).update(result=correct_text)
             ReelCorrectText.objects.filter(task=correct_task).delete()
             publish_correct_result(correct_task)
+
+            task1.status = Task.STATUS_PROCESSING
+            task1.picker = admin
+            task1.picked_at = timezone.now()
+            task1.save(update_fields=['status', 'picker', 'picked_at'])
 
         #     # 得到精确的切分数据
         #     try:

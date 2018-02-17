@@ -291,7 +291,7 @@ def publish_correct_result(task):
         except Exception:
             traceback.print_exc()
 
-        task_puncts = Punct.create_new(task.reel, reel_correct_text)
+        task_puncts = Punct.create_new(reel_correct_text)
         punct = Punct(reel=task.reel, reeltext=reel_correct_text, punctuation=task_puncts)
         punct.save()
 

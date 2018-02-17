@@ -1,3 +1,5 @@
+from django.conf import settings
+
 import json
 from pathlib import Path
 from itertools import groupby
@@ -6,7 +8,6 @@ from PIL import Image
 from io import BytesIO
 import urllib.request
 import boto3
-
 
 def gene_col_data(char_lst):
     '''
@@ -58,6 +59,7 @@ def crop_col_online(img_path, col_data):
     :param col_data:
     :return:
     '''
+    upload_column_image = settings.UPLOAD_COLUMN_IMAGE
     img_path = img_path.lstrip('/')
     pos = img_path.rfind('/')
     img_prefix = img_path[:pos+1]
@@ -65,20 +67,16 @@ def crop_col_online(img_path, col_data):
     my_bucket = 'lqdzj-image'
     img_url = "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/" + img_path
     img = Image.open(BytesIO(urllib.request.urlopen(img_url).read()))
-    col_img_dict = {
-        "whole": img_url,
-        "crops": []
-    }
     for col in col_data:
         image = img.crop((col['x'], col['y'], col['x1'], col['y1']))
         buffer = BytesIO()
         image.save(buffer, format="jpeg")
         b = BytesIO(buffer.getvalue())
         key = "{}{}.jpg".format(img_prefix, col['col_id'])
-        s3c.upload_fileobj(b, my_bucket, key)
+        if upload_column_image:
+            s3c.upload_fileobj(b, my_bucket, key)
         #savefile = '/home/xian/Downloads/after_correct/%s' % key
         #image.save(savefile, format="jpeg")
         #print('upload: ', key)
-        col_img_dict["crops"].append("https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/%s" % key)
-    return col_img_dict
+        #"https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/%s" % key
 

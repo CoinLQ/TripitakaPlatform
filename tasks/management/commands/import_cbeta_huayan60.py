@@ -69,7 +69,12 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
         # get LQSutra
-        lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
+        try:
+            lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
+        except:
+            # create LQSutra
+            lqsutra = LQSutra(sid='LQ003100', name='大方廣佛華嚴經', total_reels=60)
+            lqsutra.save()
 
         # CBETA第1卷
         CB = Tripitaka.objects.get(code='CB')

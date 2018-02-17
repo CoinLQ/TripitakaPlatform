@@ -14,6 +14,7 @@ rm -f rect/migrations/000*
 cp rect/sql/*.py rect/migrations/.
 ./manage.py migrate
 ./manage.py import_tripitaka_list
+./manage.py import_cbeta_huayan60
 ./manage.py init
 ./manage.py runserver 0.0.0.0:8000
 

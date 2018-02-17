@@ -133,3 +133,29 @@ class OCRCompare(object):
                 page_no=page_no, line_no=line_no, char_no=char_no)
                 correctsegs.append(correctseg)
         return correctsegs
+
+    @classmethod
+    def set_position(cls, from_correctsegs, correctsegs):
+        from_seg_count = len(from_correctsegs)
+        seg_count = len(correctsegs)
+        i = 0
+        j = 0
+        if j < from_seg_count:
+            start_pos = from_correctsegs[j].position
+            end_pos = start_pos + len(from_correctsegs[j].selected_text) - 1
+            while i < seg_count:
+                pos = correctsegs[i].position
+                if pos < start_pos or j >= from_seg_count:
+                    break
+                if pos >= start_pos and pos <= end_pos:
+                    offset = pos - start_pos
+                    correctsegs[i].page_no = from_correctsegs[j].page_no
+                    correctsegs[i].line_no = from_correctsegs[j].line_no
+                    correctsegs[i].char_no = from_correctsegs[j].char_no + offset
+                    i += 1
+                j += 1
+                if j < from_seg_count:
+                    start_pos = from_correctsegs[j].position
+                    end_pos = start_pos + len(from_correctsegs[j].selected_text) - 1
+                else:
+                    break

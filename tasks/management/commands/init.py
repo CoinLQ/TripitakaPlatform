@@ -14,6 +14,43 @@ import traceback
 
 import re, json
 
+def save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
+    path1='', path2='', path3=''):
+    tcode = sid[:2]
+    tripitaka = Tripitaka.objects.get(code=tcode)
+    try:
+        sutra = Sutra.objects.get(sid=sid)
+    except:
+        sutra = Sutra(sid=sid, tripitaka=tripitaka, code=sid[2:7], variant_code=sid[7],
+        name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)
+        sutra.save()
+
+    try:
+        reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
+    except:
+        reel = Reel(sutra=sutra, reel_no=reel_no, start_vol=start_vol,
+        start_vol_page=start_vol_page, end_vol=start_vol, end_vol_page=end_vol_page, edition_type=Reel.EDITION_TYPE_CHECKED,
+        path1=path1, path2=path2, path3=path3)
+        reel.save()
+    try:
+        reel_ocr_text = ReelOCRText.get(reel=reel)
+    except:
+        text = get_reel_text(reel)
+        reel_ocr_text = ReelOCRText(reel=reel, text = text)
+        reel_ocr_text.save()
+    return reel, reel_ocr_text
+
+def get_reel(sid, reel_no):
+    tcode = sid[:2]
+    tripitaka = Tripitaka.objects.get(code=tcode)
+    try:
+        sutra = Sutra.objects.get(sid=sid)
+        reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
+        return reel
+    except:
+        print('no reel')
+        return
+
 class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
@@ -38,54 +75,15 @@ class Command(BaseCommand):
 
         # create Sutra
         # Sutra.objects.all().delete()
-        YB = Tripitaka.objects.get(code='YB')
-        try:
-            huayan_yb = Sutra.objects.get(sid='YB000860')
-        except:
-            huayan_yb = Sutra(sid='YB000860', tripitaka=YB, code='00086', variant_code='0',
-            name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)
-            huayan_yb.save()
 
-        # 永乐北藏第1卷的文本
-        try:
-            huayan_yb_1 = Reel.objects.get(sutra=huayan_yb, reel_no=1)
-        except:
-            huayan_yb_1 = Reel(sutra=huayan_yb, reel_no=1, start_vol=27,
-            start_vol_page=1, end_vol=27, end_vol_page=23, edition_type=Reel.EDITION_TYPE_CHECKED,
-            path1='27')
-            huayan_yb_1.save()
+        # CBETA第1卷
+        huayan_cb_1 = get_reel('CB002780', 1)
+        if not huayan_cb_1:
+            print('please run ./manage.py import_cbeta_huayan60')
+            return
+        huayan_cb_1_correct_text = ReelCorrectText.objects.get(reel=huayan_cb_1)
 
-        try:
-            reel_ocr_text_yb_1 = ReelOCRText.objects.get(reel=huayan_yb_1)
-        except:
-            text = get_reel_text(huayan_yb_1)
-            reel_ocr_text_yb_1 = ReelOCRText(reel=huayan_yb_1, text = text)
-            reel_ocr_text_yb_1.save()
-
-        # 高丽第1卷
-        GL = Tripitaka.objects.get(code='GL')
-        try:
-            huayan_gl = Sutra.objects.get(sid='GL000800')
-        except:
-            huayan_gl = Sutra(sid='GL000800', tripitaka=GL, code='00080', variant_code='0',
-            name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)
-            huayan_gl.save()
-        try:
-            huayan_gl_1 = Reel.objects.get(sutra=huayan_gl, reel_no=1)
-        except:
-            huayan_gl_1 = Reel(sutra=huayan_gl, reel_no=1, start_vol=14,
-            start_vol_page=31, end_vol=14, end_vol_page=37, edition_type=Reel.EDITION_TYPE_CHECKED,
-            path1='80', path2='1')
-            huayan_gl_1.save()
-
-        try:
-            reelcorrecttext_gl = ReelCorrectText.objects.get(reel=huayan_gl_1)
-        except:
-            filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001.txt' % huayan_gl.sid)
-            with open(filename, 'r') as f:
-                text = f.read()
-                reelcorrecttext_gl = ReelCorrectText(reel=huayan_gl_1, text=text)
-                reelcorrecttext_gl.save()
+        huayan_yb_1, reel_ocr_text_yb_1 = save_reel(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
 
         # create BatchTask
         BatchTask.objects.all().delete()
@@ -100,22 +98,22 @@ class Command(BaseCommand):
         # create Tasks
         # Correct Task
         # 文字校对
-        task1 = Task(id=1, batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_gl_1, task_no=1, status=Task.STATUS_READY,
-        publisher=admin,)
+        task1 = Task(id=1, batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_cb_1, task_no=1, status=Task.STATUS_PROCESSING,
+        publisher=admin, picker=admin, picked_at=timezone.now())
         task1.reel = huayan_yb_1
         task1.save()
 
-        task2 = Task(id=2, batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_gl_1, task_no=2, status=Task.STATUS_READY,
+        task2 = Task(id=2, batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_cb_1, task_no=2, status=Task.STATUS_READY,
         publisher=admin)
         task2.reel = huayan_yb_1
         task2.save()
 
-        task3 = Task(id=3, batch_task=batch_task, typ=Task.TYPE_CORRECT_VERIFY, base_reel=huayan_gl_1, task_no=0, status=Task.STATUS_NOT_READY,
+        task3 = Task(id=3, batch_task=batch_task, typ=Task.TYPE_CORRECT_VERIFY, base_reel=huayan_cb_1, task_no=0, status=Task.STATUS_NOT_READY,
         publisher=admin)
         task3.reel = huayan_yb_1
         task3.save()
         
-        correctsegs = OCRCompare.generate_compare_reel(reelcorrecttext_gl.text, reel_ocr_text_yb_1.text)
+        correctsegs = OCRCompare.generate_compare_reel(huayan_cb_1_correct_text.text, reel_ocr_text_yb_1.text)
         tasks = [task1, task2]
         for i in range(2):
             for correctseg in correctsegs:
@@ -127,7 +125,7 @@ class Command(BaseCommand):
         try:
             reelcorrecttext = ReelCorrectText.objects.get(reel=huayan_yb_1)
         except:
-            filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % huayan_yb.sid)
+            filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % 'YB000860')
             with open(filename, 'r') as f:
                 text = f.read()
                 reelcorrecttext = ReelCorrectText(reel=huayan_yb_1, text=text)

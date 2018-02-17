@@ -291,7 +291,8 @@ def publish_correct_result(task):
         except Exception:
             traceback.print_exc()
 
-        task_puncts = Punct.create_new(task.reel, reel_correct_text)
+        text = SEPARATORS_PATTERN.sub('', reel_correct_text.text)
+        task_puncts = Punct.create_new(task.reel, text)
         punct = Punct(reel=task.reel, reeltext=reel_correct_text, punctuation=task_puncts)
         punct.save()
 
@@ -355,6 +356,8 @@ def correct_submit(task):
 
             # 比较一组的两个文字校对任务的结果
             correctsegs = OCRCompare.generate_compare_reel(correct_tasks[0].result, correct_tasks[1].result)
+            from_correctsegs = list(CorrectSeg.objects.filter(task=correct_tasks[1]).order_by('id'))
+            OCRCompare.set_position(from_correctsegs, correctsegs)
             for correctseg in correctsegs:
                 correctseg.task = correct_verify_task
                 correctseg.id = None

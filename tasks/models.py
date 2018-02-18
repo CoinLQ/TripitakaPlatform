@@ -5,7 +5,7 @@ from jwt_auth.models import Staff
 from tdata.models import *
 from difflib import SequenceMatcher
 from tasks.utils.reel_process import ReelProcess
-import re
+import re, json
 
 # # class SutraStatus(models.Model):
 # #     sutra = models.ForeignKey(LQSutra, on_delete=models.CASCADE)
@@ -205,6 +205,46 @@ class DiffSegText(models.Model):
     position = models.IntegerField('在卷文本中的位置（前有几个字）', default=0)
     start_char_pos = models.CharField('起始经字位置', max_length=32, default='')
     end_char_pos = models.CharField('结束经字位置', max_length=32, default='')
+
+    @property
+    def column_url(self):
+        pid = self.start_char_pos[0:17]
+        line_no = self.start_char_pos[18:20]
+        line_no = int(line_no)
+        try:
+            page = Page.objects.get(pid=pid)
+            url = '%s%sc%d0%02d.jpg' % (settings.IMAGE_URL_PREFIX, page.reel.url_prefix(), page.page_no, line_no)
+            return url
+        except:
+            pass
+
+    @property
+    def rect(self):
+        pid = self.start_char_pos[0:17]
+        line_no = self.start_char_pos[18:20]
+        char_no = self.start_char_pos[21:23]
+        line_no = int(line_no)
+        char_no = int(char_no)
+        try:
+            page = Page.objects.get(pid=pid)
+            cut_info = json.loads(page.cut_info)
+            for ch in cut_info['char_data']:
+                if (ch['line_no'] == line_no and ch['char_no'] == char_no):
+                    rectx = ch['x']
+                    recty = ch['y']
+                    w = ch['w']
+                    h = ch['h']
+                    break
+
+            col_id = '%sc%d0%02d' % (page.reel.image_prefix(), page.page_no, line_no)
+            column = Column.objects.get(id=col_id)
+            x = rectx - column.x
+            y = recty - column.y
+            x1 = x + w
+            y1 = y + h
+            return (x, y, x1, y1)
+        except:
+            pass
 
 class DiffSegResult(models.Model):
     '''

@@ -953,6 +953,57 @@ Vue.component('show-split-dialog', {
     }
 })
 
+Vue.component('column-image', {
+    props: ['imageinfo'],
+    template: '\
+    <canvas class="columnimage"></canvas>\
+    ',
+    mounted: function() {
+        console.log('mounted')
+        this.updateImage();
+    },
+    watch: {
+        imageinfo: function() {
+            this.imageinfo;
+            this.updateImage();
+        }
+    },
+    methods: {
+        updateImage: function() {
+            var canvas = this.$el;
+            var vm = this;
+            var context = canvas.getContext("2d");
+            var image = new Image();
+            image.onload = function () {
+                var width = 40;
+                var height = width / image.width * image.height;
+                console.log(image.width, image.height, width, height)
+                canvas.width = width;
+                canvas.height = height;
+                context.clearRect(0, 0, width, height);
+                context.drawImage(image, 0, 0, width, height);
+                var xratio = width / image.width;
+                var yratio = height / image.height;
+                x = parseInt(vm.imageinfo.rect[0] * xratio);
+                y = parseInt(vm.imageinfo.rect[1] * yratio);
+                x1 = parseInt(vm.imageinfo.rect[2] * xratio);
+                y1 = parseInt(vm.imageinfo.rect[3] * yratio);
+                context.moveTo(x, y);
+                context.lineTo(x1, y);
+                context.lineTo(x1, y1);
+                context.lineTo(x, y1);
+                context.lineTo(x, y);
+                //设置样式
+                context.lineWidth = 1;
+                context.strokeStyle = "#F5270B";
+                //绘制
+                context.stroke();
+            };
+            image.src = vm.imageinfo.url;
+        }
+    }
+})
+
 Vue.component('judge-image-dialog', {
     props: ['sharedata'],
     template: '\
@@ -963,7 +1014,7 @@ Vue.component('judge-image-dialog', {
             <td v-for="(image, index) in images">{{ image.tname }}</td>\
             </tr>\
             <tr class="diffseg-image">\
-            <td v-for="(image, index) in images"><img :src="image.url" /></td>\
+            <td v-for="(image, index) in images"><column-image :imageinfo="image"></column-image></td>\
             </tr>\
             </tbody>\
         </table>\
@@ -984,20 +1035,16 @@ Vue.component('judge-image-dialog', {
             for (var i = 0; i < length; ++i) {
                 var tid = diffsegtexts[i].tripitaka.id;
                 var tname = diffsegtexts[i].tripitaka.shortname;
-                var start_char_pos = diffsegtexts[i].start_char_pos;
-                var start_vol_page = tripitaka_info[tid].start_vol_page;
-                var page_no = start_char_pos.substr(13, 2);
-                var vol_page = parseInt(page_no) - 1 + start_vol_page;
-                var line_no = start_char_pos.substr(18, 2);
-                var url = image_url_prefix + tripitaka_info[tid].url_prefix + 'c' + vol_page + '0' + line_no + '.jpg';
-                //console.log('char_pos: ', start_char_pos, page_no, vol_page, line_no, url);
-                if (tname != '丽再' && tname != 'CBETA') {
-                    this.images.push({
-                        tid: tid,
-                        tname: tname,
-                        url: url
-                    });
+                if (tname == '丽再' || tname == 'CBETA') {
+                    continue;
                 }
+                //console.log('char_pos: ', start_char_pos, page_no, vol_page, line_no, url);
+                this.images.push({
+                    tid: tid,
+                    tname: tname,
+                    url: diffsegtexts[i].column_url,
+                    rect: diffsegtexts[i].rect
+                });
             }
         },
         handleOpen: function () {

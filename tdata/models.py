@@ -301,3 +301,11 @@ class Page(models.Model):
         self.status = PageStatus.RECT_NOTREADY
         self.save(update_fields=['status'])
         print(self.pid + ": pagerect saved")
+
+class Column(models.Model):
+    id = models.CharField('列图ID', max_length=32, primary_key=True)
+    page = models.ForeignKey(Page, verbose_name='实体藏经页', on_delete=models.CASCADE)
+    x = models.SmallIntegerField('X坐标', default=0)
+    y = models.SmallIntegerField('Y坐标', default=0)
+    x1 = models.SmallIntegerField('X1坐标', default=0)
+    y1 = models.SmallIntegerField('Y1坐标', default=0)

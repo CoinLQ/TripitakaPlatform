@@ -280,6 +280,7 @@ def compute_accurate_cut(reel):
     reel_correct_texts = list(ReelCorrectText.objects.filter(reel=reel).order_by('-id')[0:1])
     if not reel_correct_texts:
         return None
+    reel.page_set.all().delete()
     reel_correct_text = reel_correct_texts[0]
     correct_pagetexts = reel_correct_text.text[2:].split('\np\n')
     #print('page_count: ', len(pagetexts), len(correct_pagetexts))
@@ -309,7 +310,7 @@ def compute_accurate_cut(reel):
                     'char_data': char_lst,
                 }
                 cut_info_json = json.dumps(cut_info, indent=None)
-                page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=page_no,
+                page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
                 text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
                 cut_add_count=cut_add_count, cut_wrong_count=cut_wrong_count, cut_confirm_count=cut_confirm_count,
                 cut_verify_count=cut_verify_count,
@@ -320,7 +321,7 @@ def compute_accurate_cut(reel):
                 char_count_lst = []
                 cut_info = json.loads(cut_file)
                 char_lst = cut_info['char_data']
-                page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=page_no,
+                page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
                 text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
                 page_code = page_code)
         else:
@@ -333,7 +334,7 @@ def compute_accurate_cut(reel):
             cut_info_json = json.dumps(cut_info, indent=None)
             line_count = 0
             column_count = 0
-            page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=page_no,
+            page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
             text='', cut_info=cut_info_json, cut_updated_at=timezone.now(),
             page_code = page_code)
         page.char_count_lst = json.dumps(char_count_lst, separators=(',', ':'))
@@ -356,6 +357,12 @@ def compute_accurate_cut(reel):
         #     column_lst = column_info['col_data']
         # except:
         #     pass
+
+        columns = []
+        for col in column_lst:
+            column = Column(id = col['col_id'], page=page, x=col['x'], y=col['y'], x1=col['x1'], y1=col['y1'])
+            columns.append(column)
+        Column.objects.bulk_create(columns)
 
         # save Rect
         rect_lst = []

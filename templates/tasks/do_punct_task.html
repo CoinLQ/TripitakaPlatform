@@ -48,11 +48,9 @@
       var vm = this;
       axios.get('/api/punct/' + vm.sharedata.task_id + '/')
       .then(function(response) {
-        vm.reeltext = response.data.reeltext;
-        vm.puncts = response.data.puncts;
         vm.sharedata.status = response.data.status;
         vm.punct_result = response.data.punct_result;
-        vm.loadSutraText();
+        vm.punctseg_lst = response.data.punctseg_lst;
         if (vm.sharedata.status == 4) {
           vm.submit_title = '已完成';
         } else {
@@ -82,10 +80,6 @@
           }
         }
         this.punct_result = new_punct_result;
-      },
-      loadSutraText: function() {
-        this.punctseg_lst = merge_text_punct(this.reeltext, this.puncts, this.punct_result);
-        this.allowed_edit_punct_index = this.puncts.length - 1;
       },
       submitPunctTask: function() {
         var vm = this;

@@ -13,7 +13,7 @@ function clean_linefeed(puncts) {
 }
 
 function merge_text_punct(text, puncts, punct_result) {
-    clean_linefeed(puncts);
+    //clean_linefeed(puncts);
     var TYPE_TEXT = 1;
     var TYPE_SEP = 2;
     var TYPE_BR = 3;
@@ -22,14 +22,13 @@ function merge_text_punct(text, puncts, punct_result) {
     var result_len = punct_result.length;
 
     var punctseg_lst = [];
-    var char_lst = this.char_lst;
     var indexs = [];
     for (var i = 0; i < puncts.length; ++i) {
         indexs.push(0);
     }
     var text_idx = 0;
     while (1) {
-      // 找到当前最小的punct位置
+        // 找到当前最小的punct位置
         var min_pos = text.length;
         var min_punct_index = -1;
         for (var i = 0; i < puncts.length; ++i) {

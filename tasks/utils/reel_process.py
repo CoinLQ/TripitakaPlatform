@@ -19,16 +19,29 @@ class ReelProcess(object):
         opcodes = SequenceMatcher(None, base, compare, False).get_opcodes()
         offset = 0
         sparses = []
+        filter_ranges = []
         for tag, i1, i2, j1, j2 in opcodes:
             #print('{:7}   base[{}:{}] --> compare[{}:{}] {!r:>8} --> {!r}'.format(
             #    tag, i1, i2, j1, j2, base[i1:i2], compare[j1:j2]))
             offset = offset - ((i2-i1)-(j2-j1))
             sparses.append({"idx": j2, "offset": offset})
-        return sparses
+            if tag == 'delete':
+                filter_ranges.append( (i1, i2) )
+        return sparses, filter_ranges
 
     def new_puncts(self, base_reel_text, base_puncts, new_reel_text):
-        sparses = self.gen_sparses(base_reel_text, new_reel_text)
-        new_puncts = list(map(lambda x: [x[0]+self.nearest_rejust(sparses,x[0]), x[1]], base_puncts))
+        sparses, filter_ranges = self.gen_sparses(base_reel_text, new_reel_text)
+        new_base_puncts = []
+        for punct in base_puncts:
+            pos = punct[0]
+            add = True
+            for filter_range in filter_ranges:
+                if pos > filter_range[0] and pos < filter_range[1]:
+                    add = False
+                    break
+            if add:
+                new_base_puncts.append(punct)
+        new_puncts = list(map(lambda x: [x[0]+self.nearest_rejust(sparses,x[0]), x[1]], new_base_puncts))
         return new_puncts
 
     def reel_align_punct(self, base_reel_text, base_puncts, new_reel_text):

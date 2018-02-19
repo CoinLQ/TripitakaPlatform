@@ -959,12 +959,10 @@ Vue.component('column-image', {
     <canvas class="columnimage"></canvas>\
     ',
     mounted: function() {
-        console.log('mounted')
         this.updateImage();
     },
     watch: {
         imageinfo: function() {
-            this.imageinfo;
             this.updateImage();
         }
     },

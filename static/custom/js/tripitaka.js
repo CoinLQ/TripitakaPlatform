@@ -1036,7 +1036,6 @@ Vue.component('judge-image-dialog', {
                 if (tname == '丽再' || tname == 'CBETA') {
                     continue;
                 }
-                //console.log('char_pos: ', start_char_pos, page_no, vol_page, line_no, url);
                 this.images.push({
                     tid: tid,
                     tname: tname,

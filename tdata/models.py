@@ -309,3 +309,11 @@ class Column(models.Model):
     y = models.SmallIntegerField('Y坐标', default=0)
     x1 = models.SmallIntegerField('X1坐标', default=0)
     y1 = models.SmallIntegerField('Y1坐标', default=0)
+
+class Configuration(models.Model):
+    id = models.PositiveSmallIntegerField(primary_key=True, editable=False)
+    variant = models.TextField('异体字列表', default='')
+
+    class Meta:
+        verbose_name = '配置'
+        verbose_name_plural = '配置'

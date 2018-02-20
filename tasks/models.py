@@ -130,6 +130,15 @@ class Task(models.Model):
         list_form_fields = list_display_fields
         search_fields = ('id', 'result', 'created_at')
 
+    def __str__(self):
+        type_map = dict(Task.TYPE_CHOICES)
+        if self.typ in [Task.TYPE_CORRECT, Task.TYPE_CORRECT_VERIFY, Task.TYPE_PUNCT, \
+            Task.TYPE_PUNCT_VERIFY, Task.TYPE_MARK, Task.TYPE_MARK_VERIFY]:
+            s = '%s - %s' % (self.reel, type_map.get(self.typ))
+        else:
+            s = '%s - %s' % (self.lqreel, type_map.get(self.typ))
+        return s
+
 class CorrectSeg(models.Model):
     TAG_EQUAL = 1
     TAG_DIFF = 2
@@ -160,7 +169,7 @@ class ReelCorrectText(models.Model):
         verbose_name_plural = '文字校对得到的卷经文'
 
     def __str__(self):
-        return '%s' % self.reel
+        return '%s (%s)' % (self.reel, self.created_at.strftime('%F %T'))
 
 class LQReelText(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
@@ -172,6 +181,9 @@ class LQReelText(models.Model):
     class Meta:
         verbose_name = '校勘判取审定得到的卷经文'
         verbose_name_plural = '校勘判取审定得到的卷经文'
+
+    def __str__(self):
+        return '%s (%s)' % (self.lqreel, self.created_at.strftime('%F %T'))
 
 # 校勘判取相关
 class ReelDiff(models.Model):
@@ -296,6 +308,10 @@ class Punct(models.Model):
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', blank=True, null=True, auto_now_add=True)
 
+    class Meta:
+        verbose_name = '基础标点结果'
+        verbose_name_plural = '基础标点结果'
+
     @staticmethod
     def create_new(reel, newtext):
         '''
@@ -312,6 +328,9 @@ class Punct(models.Model):
         except:
             return '[]'
 
+    def __str__(self):
+        return '%s' % self.reeltext
+
 class LQPunct(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
     lqreeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
@@ -319,6 +338,13 @@ class LQPunct(models.Model):
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始标点结果，不为null表示标点任务和标点审定任务的结果
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', blank=True, null=True)
+
+    class Meta:
+        verbose_name = '定本标点结果'
+        verbose_name_plural = '定本标点结果'
+
+    def __str__(self):
+        return '%s' % self.lqreeltext
 
 # 格式标注相关
 class MarkUnitBase(models.Model):

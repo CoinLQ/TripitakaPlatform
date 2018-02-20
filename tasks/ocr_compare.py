@@ -1,12 +1,31 @@
+from django.conf import settings
 from difflib import SequenceMatcher
 import re
 
+from tdata.models import Configuration
 from tasks.models import CorrectSeg
 
 class OCRCompare(object):
     '''
     用于文字校对前的文本比对，OCR文本除文本外，只含有p或\n
     '''
+
+    variant_map = None
+
+    @classmethod
+    def load_variant_map(cls):
+        if cls.variant_map:
+            return
+        config = Configuration.objects.first()
+        variant_map = {}
+        i = 1
+        for line in config.variant.split('\n'):
+            line = line.strip()
+            for ch in line:
+                variant_map[ch] = i
+            i += 1
+        cls.variant_map = variant_map
+
     @classmethod
     def insert(cls, result_lst, t):
         if t:
@@ -74,11 +93,27 @@ class OCRCompare(object):
         return CorrectSeg.TAG_DIFF
 
     @classmethod
+    def check_variant_equal(cls, text1, text2):
+        if len(text1) != len(text2):
+            return False
+        for i in range(len(text1)):
+            ch1 = text1[i]
+            ch2 = text2[i]
+            if ch1 == ch2:
+                continue
+            ch_no1 = cls.variant_map.get(ch1, -1)
+            ch_no2 = cls.variant_map.get(ch2, -2)
+            if ch_no1 != ch_no2:
+                return False
+        return True
+
+    @classmethod
     def generate_compare_reel(cls, text1, text2):
         """
         用于文字校对前的文本比对
         text1是基础本；text2是要比对的版本。
         """
+        cls.load_variant_map()
         SEPARATORS_PATTERN = re.compile('[pb\n]')
         text1 = SEPARATORS_PATTERN.sub('', text1)
         correctsegs = []
@@ -119,6 +154,9 @@ class OCRCompare(object):
                         text1=base_text, text2=result, selected_text=result, \
                         page_no=page_no, line_no=line_no, char_no=char_no)
                         replace_not_inserted = False
+                        if OCRCompare.check_variant_equal(base_text, result):
+                            correctseg.tag = CorrectSeg.TAG_EQUAL
+                            correctseg.selected_text = result
                     else:
                         tag = cls.get_tag(result)
                         correctseg = CorrectSeg(tag=tag, position=pos, \

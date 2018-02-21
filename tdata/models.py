@@ -60,7 +60,7 @@ class LQSutra(models.Model):
     code = models.CharField(verbose_name='龙泉经目编码', max_length=5, blank=False)
     variant_code = models.CharField(verbose_name='龙泉经目别本编码', max_length=1, default='0')
     name = models.CharField(verbose_name='龙泉经目名称', max_length=64, blank=False)
-    author = models.CharField(verbose_name='著译者', max_length=255, blank=True)    
+    author = models.CharField(verbose_name='著译者', max_length=255, blank=True)
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
     remark = models.TextField('备注', blank=True, default='')
 
@@ -218,7 +218,7 @@ class Page(models.Model):
     bar_no = models.CharField('栏序号', max_length=1, default='0') # TODO: confirm
     status = models.PositiveSmallIntegerField(db_index=True, verbose_name=u'操作类型',
                                               choices=PageStatus.CHOICES, default=PageStatus.INITIAL)
-    bar_info = JSONField(verbose_name='栏信息', default=dict)
+    bar_info = JSONField(verbose_name='栏列图信息', default=dict)
     text = SutraTextField('经文', blank=True) # 文字校对后的经文
     cut_info = models.TextField('切分信息')
     cut_updated_at = models.DateTimeField('更新时间', null=True)

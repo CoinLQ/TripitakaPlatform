@@ -363,29 +363,12 @@ def compute_accurate_cut(reel):
         #     pass
 
         # cut related
+        page.bar_info = column_lst
+        page.save()
         page.pagerects.all().delete()
-        PageRect(page=page, reel=page.reel, line_count=line_count, column_count=column_count, rect_set=cut_info['char_data']).save()
-        # save Rect
-        rect_lst = []
-        for char_info in char_lst:
-            line_no=char_info['line_no']
-            char_no=char_info['char_no']
-            x = char_info.get('x', 0)
-            y = char_info.get('y', 0)
-            w = char_info.get('w', 0)
-            h = char_info.get('h', 0)
-            rect = Rect(x=x, y=y, w=w, h=h,
-            ch=char_info['ch'], cc=char_info.get('cc', 1), wcc=char_info.get('wcc', 1),
-            line_no=line_no, char_no=char_no, page_pid=pid, reel_id=reel.id)
-            Rect.normalize(rect)
-            rect.cid = rect.rect_sn
-            for column in column_lst:
-                if column['x'] <= rect.x and rect.x <= column['x1'] and \
-                    column['y'] <= rect.y and rect.y <= column['y1']:
-                    rect.column_set = column
-                    break
-            rect_lst.append(rect)
-        Rect.objects.bulk_create(rect_lst)
+        pagerect = PageRect(page=page, reel=page.reel, line_count=line_count, column_count=column_count, rect_set=cut_info['char_data'])
+        pagerect.save()
+        pagerect.rebuild_rect()
         reel.cut_ready = True
         reel.save(update_fields=['cut_ready'])
 

@@ -16,6 +16,7 @@ from dotmap import DotMap
 from PIL import Image, ImageFont, ImageDraw
 from celery import shared_task
 from TripitakaPlatform import email_if_fails
+from tasks.utils.cut_column import gene_new_col
 import os, sys
 
 from tdata.lib.fields import JSONField
@@ -233,6 +234,8 @@ class PageRect(models.Model):
         ret = True
         columns = ArrangeRect.resort_rects_from_qs(rects, tp)
         page = pagerect.page
+        image_name_prefix = page.reel.image_prefix() + str(page.page_no)
+        flat_list = [item for sublist in columns for item in sublist]
         rect_list = list()
         for lin_n, line in enumerate(columns, start=1):
             for col_n, _r in enumerate(line, start=1):
@@ -243,7 +246,10 @@ class PageRect(models.Model):
                 _rect['reel_id'] = pagerect.reel_id
                 try :
                     # 这里以左上角坐标，落在哪个列数据为准
-                    column_dict = (item for item in page.cut_info if item["x"] <= _rect['x'] and _rect['x'] <= item["x1"] and
+                    if not page.bar_info:
+                        page.bar_info = gene_new_col(image_name_prefix, flat_list)
+                        page.save()
+                    column_dict = (item for item in page.bar_info if item["x"] <= _rect['x'] and _rect['x'] <= item["x1"] and
                                                 item["y"] <= _rect['y'] and _rect['y'] <= item["y1"] ).__next__()
                     _rect['column_set'] = column_dict
                 except:
@@ -334,7 +340,7 @@ class Rect(models.Model):
     def column_uri_path(col_s3_id):
         col_id = str(col_s3_id)
         col_path = col_id.replace('_', '/')
-        return 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-col/%s/%s.jpg' % (os.path.dirname(col_path), col_id)
+        return 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/%s/%s.jpg' % (os.path.dirname(col_path), col_id)
 
     @staticmethod
     def canonicalise_uuid(uuid):
@@ -401,17 +407,17 @@ class Rect(models.Model):
 
     @staticmethod
     def _normalize(r):
+        if (not r.w):
+            r.w = 1
+        if (not r.h):
+            r.h = 1
+
         if (r.w < 0):
             r.x = r.x + r.w
             r.w = abs(r.w)
         if (r.h < 0):
             r.y = r.y + r.h
             r.h = abs(r.h)
-
-        if (r.w == 0):
-            r.w = 1
-        if (r.h == 0):
-            r.h = 1
         return r
 
     @staticmethod

@@ -340,8 +340,6 @@ def compute_accurate_cut(reel):
         page.char_count_lst = json.dumps(char_count_lst, separators=(',', ':'))
         page.status = PageStatus.RECT_NOTREADY
         page.save()
-        page.pagerects.all().delete()
-        PageRect(page=page, reel=page.reel, line_count=line_count, column_count=column_count, rect_set=cut_info['char_data']).save()
 
         # 得到分列信息
         image_name_prefix = reel.image_prefix() + str(vol_page)
@@ -351,6 +349,12 @@ def compute_accurate_cut(reel):
         crop_col_online(img_path, column_lst)
         #except:
         #    print('Crop image column failed.')
+        columns = []
+        for col in column_lst:
+            column = Column(id = col['col_id'], page=page, x=col['x'], y=col['y'], x1=col['x1'], y1=col['y1'])
+            columns.append(column)
+        Column.objects.bulk_create(columns)
+
         # try:
         #     col_file = fetch_col_file(reel, vol_page)
         #     column_info = json.loads(col_file)
@@ -358,12 +362,9 @@ def compute_accurate_cut(reel):
         # except:
         #     pass
 
-        columns = []
-        for col in column_lst:
-            column = Column(id = col['col_id'], page=page, x=col['x'], y=col['y'], x1=col['x1'], y1=col['y1'])
-            columns.append(column)
-        Column.objects.bulk_create(columns)
-
+        # cut related
+        page.pagerects.all().delete()
+        PageRect(page=page, reel=page.reel, line_count=line_count, column_count=column_count, rect_set=cut_info['char_data']).save()
         # save Rect
         rect_lst = []
         for char_info in char_lst:
@@ -387,7 +388,6 @@ def compute_accurate_cut(reel):
         Rect.objects.bulk_create(rect_lst)
         reel.cut_ready = True
         reel.save(update_fields=['cut_ready'])
-
 
 SUTRA_CLEAN_PATTERN = re.compile('[「」　 \r]')
 def clean_sutra_text(text):

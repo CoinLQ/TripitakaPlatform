@@ -27,10 +27,14 @@ def gene_col_data(char_lst):
             if 'h' in c:
                 ys.append(c['y'] + c['h'])
     min_y = min(ys)
-    if min_y > 10:
-        min_y -= 10
-    max_y = max(ys) + 10
-    return min(xs), min_y, max(xs), max_y
+    if min_y > 30:
+        min_y -= 30
+    max_y = max(ys) + 30
+    min_x = min(xs)
+    if min_x > 10:
+        min_x -= 10
+    max_x = max(xs) + 10
+    return min_x, min_y, max_x, max_y
 
 def gene_new_col(image_name_prefix, char_lst):
     '''

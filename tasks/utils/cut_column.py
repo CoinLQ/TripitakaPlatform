@@ -31,9 +31,9 @@ def gene_col_data(char_lst):
         min_y -= 30
     max_y = max(ys) + 30
     min_x = min(xs)
-    if min_x > 10:
-        min_x -= 10
-    max_x = max(xs) + 10
+    if min_x > 5:
+        min_x -= 5
+    max_x = max(xs) + 5
     return min_x, min_y, max_x, max_y
 
 def gene_new_col(image_name_prefix, char_lst):

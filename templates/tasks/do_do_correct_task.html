@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 {% extends "base.html" %}
 {% block title %}文字校对{% endblock %}
 {% block content %}
@@ -9,8 +10,10 @@
       </div>
     </div>
     <div class="col-md-5 right-pane">
-      <div class="collate-pane">
-        <table class="table table-bordered">
+      <div class="collate-pane" style="display: none">
+
+
+        <table class="table table-bordered" >
           <thead style="background-color: darkorange;">
             <tr>
               {% if task.typ == 1 %}
@@ -36,13 +39,35 @@
         </table>
       </div>
 
-      <div class="diff-text-pane">
-        <div class="reel-text-region-o">
+      <div class="diff-text-pane" >
+
+        <div class="reel-text-region-o" @click="hideAllPopup" @keydown.tab="nextPopup">
           <div id="reel-text-compare" class="reel-text-compare">
-            <span v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id"><span v-if="seg.tag == 1" v-html="seg.selected_text" :class="{ equaltextmodified: (seg.selected_text != seg.text2) }" @click="segClick(seg)" contenteditable="true" @input="segInput(seg, index, $event)"></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" class="difftext" :class="{ difftextsel: (segid == seg.id) }" @click="segClick(seg)" contenteditable="true" @input="segInput(seg, index, $event)"></span><span v-if="seg.tag == 3" v-html="seg.selected_text" contenteditable="true" @input="segParagraphMarkInput(seg, index, $event)"></span><span v-if="seg.tag == 4" contenteditable="true" @click="segLinefeedClick(seg, index)" @input="segLinefeedInput(seg, index, $event)" v-html="getLineFeedHtml(seg)"></span></span>
+            <div class="spn" v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id">
+                <div class="operation">
+                    <el-popover  :ref="'popover' + seg.id" width="300" :offset=300 placement="right" trigger="click">
+                            <ul class="segli">
+                                    {% raw %}
+                                    <li @click="selectText(seg, index, 1)"><span>比对本</span> {{seg.text1}}</li>
+                                    <li @click="selectText(seg, index, 2)"><span>OCR</span> {{seg.text2}}</li>
+                                    <li><input type="text" placehold="结果文" rows="1" v-model="seg.selected_text" @input="confirmInput()"></input></li>
+                                    {% endraw %}
+                            </ul>
+                    </el-popover>
+                </div>
+              <span v-if="seg.tag == 1" @keydown="blockthem" v-html="getSegText(seg)" :class="{ changed: (!seg.selected_text) }" @click="segClick(seg, index, $event)" contenteditable="true" @input="segInput(seg, index, $event)"/>
+              </span>
+              <span v-if="seg.tag == 2" @keydown="blockthem" v-html="getSegText(seg)" class="difftext" :class="{ changed: (seg.selected_text!=null) }" @click="segClick(seg, index, $event)" contenteditable="true" @input="segInput(seg, index, $event)" >
+
+              </span>
+
+              <span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="true" @input="segParagraphMarkInput(seg, index, $event)"></span>
+              <span v-if="seg.tag == 4" contenteditable="true" @click="segLinefeedClick(seg, index)" @input="segLinefeedInput(seg, index, $event)" v-html="getLineFeedHtml(seg)"></span>
+            </div>
           </div>
         </div>
       </div>
+
       <div class="submit-pane">
         <div class="correct-submit-o">
           <button type="submit" class="btn btn-primary" id="finished-task" :disabled="sharedata.status == 4" @click="finishTask()">完成</button>
@@ -58,6 +83,9 @@
     el: '#correct',
     data: {
       result: '',
+      compare_text: '',
+      ocr_text: '',
+      selected_text:'',
       segid: 1,
       start_vol_page: 1,
       image_url_prefix: '',
@@ -76,7 +104,7 @@
         vm.sharedata.status = response.data.status;
         vm.start_vol_page = response.data.start_vol_page;
         vm.image_url_prefix = response.data.image_url_prefix;
-        vm.segid = response.data.cur_focus;
+        //vm.segid = response.data.cur_focus;
         if (vm.sharedata.status == 4) {
           vm.submit_title = '已完成';
         } else {
@@ -87,6 +115,9 @@
       this.loadCorrectSegs();
     },
     methods: {
+      confirmInput: function() {
+
+      },
       getSegRowClass: function(seg) {
         if (this.segid == seg.id) {
           return 'seg-row-sel';
@@ -94,10 +125,18 @@
         return 'seg-row';
       },
       getSegText: function(seg) {
-        if (seg.selected_text != '') {
-          return seg.selected_text;
+        if (seg.tag == 4) {
+            debugger;
         }
-        return ' ';
+        if (seg.selected_text == null) {
+            return '⇨'
+        } else if(!seg.selected_text) {
+            return '🔙'
+        }
+        else {
+            return seg.selected_text.replace(/\n/g, '<br/>');
+        }
+        //return ' ';
       },
       setImg: function(img_url, x, y, w, h) {
         //console.log('setImg: ', img_url)
@@ -151,7 +190,7 @@
       },
       getLineFeedHtml: function(seg) {
         if (seg.selected_text == '\n') {
-          return '&nbsp;&nbsp;<br />';
+          return '↵<br />';
         } else {
           return '';
         }
@@ -167,16 +206,25 @@
         }
         this.updateCorrectSeg(seg);
       },
+      blockthem: function(evt) {
+        if (evt.keyCode >= 32 && evt.keyCode <= 96) {
+          evt.preventDefault()
+          return
+        }
+      },
+      nextPopup(){
+        // sharedata.correctsegs
+      },
       segrowClickHandler: function(seg) {
-        this.segid = seg.id;
-        var selection = window.getSelection();
-        //console.log(selection)
-        var cursor_offset = selection.focusOffset;
-        this.page_no = seg.page_no;
-        this.line_no = seg.line_no;
-        this.char_no = seg.char_no + cursor_offset;
-        this.loadImage();
-        this.moveSegDiffToView(seg.id);
+        // this.segid = seg.id;
+        // var selection = window.getSelection();
+        // //console.log(selection)
+        // var cursor_offset = selection.focusOffset;
+        // this.page_no = seg.page_no;
+        // this.line_no = seg.line_no;
+        // this.char_no = seg.char_no + cursor_offset;
+        // this.loadImage();
+        // this.moveSegDiffToView(seg.id);
 
         // this.position = seg.position;
         // var textarea = document.getElementById('correct-textarea');
@@ -189,6 +237,7 @@
         // textarea.scrollTop = lineHeight * (this.row_in_text - 1);
       },
       moveSegDiffToView: function(segid) {
+        return
         try {
           // move segdiff to view
           var offset = $('div.diff-text-pane').scrollTop() + $('#segdiff-' + segid).position().top - 360;
@@ -199,30 +248,66 @@
           console.log('moveSegDiffToView: ', err)
         }
       },
+      hideAllPopup(e) {
+        let ref_id = 'popover' + this.segid;
+        console.log(ref_id)
+        if (this.segid != 0) {
+            this.$refs[ref_id][0].doClose();
+        }
+      },
+      handleClose(done) {
+        this.$confirm('确认关闭？')
+          .then(_ => {
+            done();
+          })
+          .catch(_ => {});
+      },
+      compareSeg: function(segid) {
+        this.dialogVisible = true;
+      },
       moveSegRowToView: function(segid) {
+        window.pp = this;
+
         try {
           let scrollTop = $('#segrow-' + segid).data('scrollTop')
           if (!scrollTop) {
-            scrollTop = $('#segrow-' + segid).position().top
-                      - $('.collate-pane').offset().top
-                      + $('.collate-pane').scrollTop();
-            $('#segrow-' + segid).data('scrollTop', scrollTop);
+            // scrollTop = $('#segrow-' + segid).position().top
+            //           - $('.collate-pane').offset().top
+            //           + $('.collate-pane').scrollTop();
+
+            // this.popTop = scrollTop;
+            // this.$refs.popover.doToggle()
+            // $('#segrow-' + segid).data('scrollTop', scrollTop);
           }
-          $('.collate-pane').animate({scrollTop: scrollTop }, 500);
+        //   $('.collate-pane').animate({scrollTop: scrollTop }, 500);
         } catch(err) {
           console.log('moveSegRowToView: ', err)
         }
       },
-      segClick: function(seg) {
-        // 文本差异的correctseg进入可视区
-        this.segid = seg.id;
-        this.moveSegRowToView(seg.id);
-        var selection = window.getSelection();
-        var cursor_offset = selection.focusOffset;
-        this.page_no = seg.page_no;
-        this.line_no = seg.line_no;
-        this.char_no = seg.char_no + cursor_offset;
-        this.loadImage();
+      segClick: function(seg, index, e) {
+          e.stopPropagation();
+          // 文本差异的correctseg进入可视区
+          let ref_id = 'popover' + this.segid;
+          console.log(ref_id)
+          if (this.segid != 0) {
+              this.$refs[ref_id][0].doClose();
+          }
+          if (this.segid == seg.id) {
+              return
+          }
+          this.segid = seg.id;
+          this.compare_text = seg.text1;
+          this.ocr_text = seg.text2;
+          this.selected_text = this.ocr_text;
+          ref_id = 'popover' + seg.id;
+          this.$refs[ref_id][0].doToggle();
+          this.moveSegRowToView(seg.id);
+          var selection = window.getSelection();
+          var cursor_offset = selection.focusOffset;
+          this.page_no = seg.page_no;
+          this.line_no = seg.line_no;
+          this.char_no = seg.char_no + cursor_offset;
+          this.loadImage();
       },
       segLinefeedClick: function(seg, index) {
         this.page_no = seg.page_no;
@@ -232,23 +317,31 @@
       },
       segInput: function(seg, index, e) {
         var newtext = e.target.innerText;
+        //seg.selected_text = e.target.innerText;
         var selection = window.getSelection();
-        var cursor_offset = selection.focusOffset;
+        var range = document.createRange();
+        //range.selectNode(this);
+        window.getSelection().addRange(range);
+        console.log('segInput: ', index, e ,seg);
+        // range.collapse(true);
+        // var cursor_offset = selection.anchorOffset;
         // console.log('segInput: ', e, newtext, seg.selected_text, cursor_offset);
         // TODO: prevent specific chars
-        seg.selected_text = newtext;
-        setTimeout(function(){
-          var textNode = e.target.firstChild;
-          var caret = cursor_offset;
-          var range = document.createRange();
-          range.selectNode(textNode)
-          range.setStart(textNode, caret);
-          range.collapse(true);
-          e.target.focus();
-          selection = window.getSelection();
-          selection.removeAllRanges();
-          selection.addRange(range);
-        }, 10);
+        // seg.selected_text = newtext;
+        // var textNode = e.target.firstChild;
+        // selection.setStart(textNode, cursor_offset);
+        // setTimeout(function(){
+        //   var textNode = e.target.firstChild;
+        //   var caret = cursor_offset;
+        //   var range = document.createRange();
+        //   range.selectNode(textNode)
+        //   range.setStart(textNode, caret);
+        //   range.collapse(true);
+        //   e.target.focus();
+        //   selection = window.getSelection();
+        //   selection.removeAllRanges();
+        //   selection.addRange(range);
+        // }, 10);
 
         this.updateCorrectSeg(seg);
       },

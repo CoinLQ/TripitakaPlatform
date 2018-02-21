@@ -140,8 +140,10 @@ class OCRCompare(object):
                 for result in result_lst:
                     tag = cls.get_tag(result)
                     correctseg = CorrectSeg(tag=tag, position=pos, \
-                    text1='', text2=result, selected_text=result, \
+                    text1='', text2=result, selected_text=None, \
                     page_no=page_no, line_no=line_no, char_no=char_no)
+                    if result in 'pb\n':
+                        correctseg.selected_text = result
                     correctsegs.append(correctseg)
                     pos += len(result)
                     page_no, line_no, char_no = cls.count_page_line(result, page_no, line_no, char_no)
@@ -149,9 +151,9 @@ class OCRCompare(object):
                 result_lst = cls.split_text(text2[j1:j2])
                 replace_not_inserted = True # 有一次replace
                 for result in result_lst:
-                    if result not in 'p\n' and replace_not_inserted:
+                    if result not in 'pb\n' and replace_not_inserted:
                         correctseg = CorrectSeg(tag=CorrectSeg.TAG_DIFF, position=pos, \
-                        text1=base_text, text2=result, selected_text=result, \
+                        text1=base_text, text2=result, selected_text=None, \
                         page_no=page_no, line_no=line_no, char_no=char_no)
                         replace_not_inserted = False
                         if OCRCompare.check_variant_equal(base_text, result):
@@ -160,14 +162,16 @@ class OCRCompare(object):
                     else:
                         tag = cls.get_tag(result)
                         correctseg = CorrectSeg(tag=tag, position=pos, \
-                        text1='', text2=result, selected_text=result, \
+                        text1='', text2=result, selected_text=None, \
                         page_no=page_no, line_no=line_no, char_no=char_no)
+                        if result in 'pb\n':
+                            correctseg.selected_text = result
                     correctsegs.append(correctseg)
                     pos += len(result)
                     page_no, line_no, char_no = cls.count_page_line(result, page_no, line_no, char_no)
             elif tag == 'delete':
                 correctseg = CorrectSeg(tag=CorrectSeg.TAG_DIFF, position=pos, \
-                text1=base_text, text2='', selected_text='', \
+                text1=base_text, text2='', selected_text=None, \
                 page_no=page_no, line_no=line_no, char_no=char_no)
                 correctsegs.append(correctseg)
         return correctsegs

@@ -85,7 +85,7 @@
     color: red;
     background-color: #fdd;
 }
-.equaltextmodified {
+.equaltextmodified, .changed {
     background-color: #cfc;
 }
 .seg-row-sel {
@@ -158,4 +158,34 @@ ul.diffseg-region {
 .userpunct {
     color:red;
     font-size:18px;
+}
+
+
+ul {list-style-type:circle;}
+
+.operation {
+    display: inline;
+    position: relative;
+
+}
+.operation li {
+    font-size: 20px;
+    color: red;
+}
+
+.operation li span {
+    font-size: 20px;
+    color: black;
+    display: inline-block;
+    width: 65px;
+}
+
+.operation input {
+    display: inline
+}
+
+.spn {
+    display: inline;
+    margin: 0 -3px;
+    padding: 0;
 }

@@ -10,3 +10,4 @@ static/fonts
 .pyc
 *.log
 logs
+rect/test_data

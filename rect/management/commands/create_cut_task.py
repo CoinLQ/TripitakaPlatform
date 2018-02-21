@@ -5,7 +5,7 @@ from tdata.models import *
 from tasks.models import *
 from rect.models import *
 from tasks.common import *
-
+from rect.lib.gen_task import GenTask
 import TripitakaPlatform.settings
 
 import os, sys
@@ -26,9 +26,12 @@ class Command(BaseCommand):
         schedule_no="schedule1", cc_threshold=1)
         schedule.save()
         schedule.refresh_from_db()
-        schedule.reels.add(huayan_yb_1)
+        for reel in Reel.objects.all():
+            schedule.reels.add(reel)
         Schedule_Task_Statistical(schedule=schedule).save()
-        time.sleep(2)
+        time.sleep(3)
         CharClassifyPlan.create_charplan(schedule.pk.hex)
         Reel_Task_Statistical.gen_pptask_by_plan()
         Reel_Task_Statistical.gen_cctask_by_plan()
+        CharClassifyPlan.objects.filter(wcc_threshold__lte=0).update(wcc_threshold=0.7)
+        GenTask.gen_classifytask_by_plan()

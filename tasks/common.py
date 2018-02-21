@@ -131,6 +131,10 @@ def get_accurate_cut(text1, text2, cut_json, pid):
     cut = json.loads(cut_json)
     old_char_lst = cut['char_data']
     for char_data in old_char_lst:
+        if char_data['x'] < 0:
+            char_data['x'] = 0
+        if char_data['y'] < 0:
+            char_data['y'] = 0
         char_data['line_no'] = int(char_data['line_no'])
         char_data['char_no'] = int(char_data['char_no'])
 

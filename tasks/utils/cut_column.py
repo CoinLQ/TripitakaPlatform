@@ -29,10 +29,14 @@ def gene_col_data(char_lst):
     min_y = min(ys)
     if min_y > 30:
         min_y -= 30
+    if min_y < 0:
+        min_y = 0
     max_y = max(ys) + 30
     min_x = min(xs)
     if min_x > 5:
         min_x -= 5
+    if min_x < 0:
+        min_x = 0
     max_x = max(xs) + 5
     return min_x, min_y, max_x, max_y
 

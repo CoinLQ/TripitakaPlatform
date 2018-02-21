@@ -47,6 +47,7 @@ class Command(BaseCommand):
 
         save_reel_with_correct_text(lqsutra, 'QL000870', 1, 24, 1, 17, '24')
         save_reel_with_correct_text(lqsutra, 'ZH000860', 1, 12, 1, 12, '12')
+        save_reel_with_correct_text(lqsutra, 'GL000790', 1, 0, 1, 21, '79', '1')
 
         # get LQReel
         try:

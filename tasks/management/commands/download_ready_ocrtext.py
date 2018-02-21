@@ -18,7 +18,7 @@ class Command(BaseCommand):
         BASE_DIR = settings.BASE_DIR
         lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
         tcode_lst = ['PL', 'SX', 'YB', 'QL', 'ZH', 'QS', 'ZC', 'GL', 'LC']
-        tcode_lst = ['YB', 'QL', 'ZH', 'QS', 'GL', 'SX', 'ZC']
+        tcode_lst = ['YB', 'QL', 'ZH', 'QS', 'GL', 'SX', 'ZC', 'PL']
         for tcode in tcode_lst:
             tripitaka = Tripitaka.objects.get(code=tcode)
             print(tripitaka)

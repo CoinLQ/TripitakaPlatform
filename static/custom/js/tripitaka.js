@@ -1046,7 +1046,7 @@ Vue.component('judge-image-dialog', {
         },
         handleOpen: function () {
             var vm = this;
-            axios.get('/api/judge/' + vm.sharedata.task_id + '/diffsegs/' + vm.sharedata.image_diffseg_id)
+            axios.get('/api/judge/' + vm.sharedata.task_id + '/diffsegs/' + vm.sharedata.image_diffseg_id + '/')
             .then(function(response) {
                 var diffseg = response.data;
                 vm.generateItems(diffseg);

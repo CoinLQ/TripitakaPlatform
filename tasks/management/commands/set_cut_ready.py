@@ -17,6 +17,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
         #tcode_lst = ['PL', 'SX', 'YB', 'QL', 'ZH', 'QS', 'ZC', 'GL', 'LC', 'CB']
-        tcode_lst = ['YB', 'QL', 'ZH', 'QS', 'GL', 'SX', 'ZC']
+        tcode_lst = ['YB', 'QL', 'ZH', 'QS', 'GL', 'SX', 'ZC', 'PL']
         Tripitaka.objects.all().update(cut_ready=False)
         Tripitaka.objects.filter(code__in=tcode_lst).update(cut_ready=True)

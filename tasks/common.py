@@ -16,21 +16,9 @@ SEPARATORS_PATTERN = re.compile('[pb\n]')
 def compact_json_dumps(obj):
     return json.dumps(obj, separators=(',', ':'))
 
-def get_accurate_cut(text1, text2, cut_json, pid):
-    """
-    用于文字校对后的文本比对，text1是文字校对审定后得到的精确本，text2是OCR原始结果，都包含换行和换页标记。
-    """
-    text1 = text1.replace('b\n', '')
-    text2 = text2.replace('b\n', '')
-    cut = json.loads(cut_json)
-    old_char_lst = cut['char_data']
-    old_char_lst_length = len(old_char_lst)
-    for char_data in old_char_lst:
-        char_data['line_no'] = int(char_data['line_no'])
-        char_data['char_no'] = int(char_data['char_no'])
-
+def generate_accurate_chars(text1, text2, old_char_lst):
     char_lst = []
-
+    old_char_lst_length = len(old_char_lst)
     line_no = 1
     char_no = 1
     char_index = 0 # 下一个从old_char_lst要取出的字
@@ -132,30 +120,94 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                     }
                     char_lst.append(char_data)
                     char_no += 1
+    return char_lst
 
-    # 给增加的字加上切分坐标
-    line_count = 0
+def get_accurate_cut(text1, text2, cut_json, pid):
+    """
+    用于文字校对后的文本比对，text1是文字校对审定后得到的精确本，text2是OCR原始结果，都包含换行和换页标记。
+    """
+    clean_text1 = text1.replace('b\n', '')
+    clean_text2 = text2.replace('b\n', '')
+    cut = json.loads(cut_json)
+    old_char_lst = cut['char_data']
+    for char_data in old_char_lst:
+        char_data['line_no'] = int(char_data['line_no'])
+        char_data['char_no'] = int(char_data['char_no'])
+
+    char_lst = generate_accurate_chars(clean_text1, clean_text2, old_char_lst)
+
     column_count = 0
+    line_count = char_lst[-1]['line_no']
+    char_count_lst = [0] * line_count
     char_map = {}
-    line_char_count = {}
     for char_data in char_lst:
         line_no = char_data['line_no']
         char_no = char_data['char_no']
-        line_char_str = '%02dn%02d' % (line_no, char_no)
-        cid = '%s%s' % (pid, line_char_str)
-        #char_data['char_id'] = cid
+        char_count_lst[line_no - 1] += 1
         if 'char_id' in char_data:
             del char_data['char_id']
-        char_map[line_char_str] = char_data
-        if line_no in line_char_count:
-            line_char_count[line_no] += 1
-        else:
-            line_char_count[line_no] = 1
         if line_no > line_count:
             line_count = line_no
         if char_no > column_count:
             column_count = char_no
+        line_char_str = '%02dn%02d' % (line_no, char_no)
+        char_map[line_char_str] = char_data
 
+    # 栏中包含的行号
+    line_char_count = {}
+    lines = text1.split('\n')
+    line_no = 1
+    bars = []
+    bar = []
+    for line in lines:
+        if line == 'b':
+            bars.append(bar)
+            bar = []
+        else:
+            line_char_count[line_no] = len(line)
+            bar.append(line_no)
+            line_no += 1
+    bars.append(bar)
+
+    line_to_bar_index = {}
+    for bar_index in range(len(bars)):
+        for line_no in bars[bar_index]:
+            line_to_bar_index[line_no] = bar_index
+
+    # 生成每栏的平均Y坐标
+    bar_cord_lst = []
+    for bar in bars:
+        char_cnt_lst = []
+        for line_no in bar:
+            char_cnt_lst.append(line_char_count[line_no])
+        max_cnt = max(char_cnt_lst)
+        max_cnt_line_lst = []
+        for line_no in bar:
+            if line_char_count[line_no] == max_cnt:
+                max_cnt_line_lst.append(line_no)
+        cord_lst = []
+        for i in range(max_cnt):
+            total_y = 0
+            total_h = 0
+            cnt = 0
+            for line_no in max_cnt_line_lst:
+                s = '%02dn%02d' % (line_no, i + 1)
+                try:
+                    total_y += char_map[s]['y']
+                    total_h += char_map[s]['h']
+                    cnt += 1
+                except:
+                    pass
+            if cnt != 0:
+                avg_y = total_y / cnt
+                avg_h = total_h / cnt
+            else:
+                avg_y = (i+1) * 25
+                avg_h = 25
+            cord_lst.append( (avg_y, avg_h) )
+        bar_cord_lst.append(cord_lst)
+
+    # 给增加的字加上切分坐标
     add_count = 0
     wrong_count = 0
     confirm_count = 0
@@ -165,6 +217,8 @@ def get_accurate_cut(text1, text2, cut_json, pid):
         elif 'need_confirm' in char_data:
             confirm_count += 1
         elif 'added' in char_data:
+            char_data['w'] = 30
+            char_data['h'] = 25
             try:
                 line_no = char_data['line_no']
                 char_no = char_data['char_no']
@@ -172,17 +226,18 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                 next_line_no = line_no + 1
                 cur_line_char_count = line_char_count[line_no]
                 s = None
-                if line_char_count.get(prev_line_no, 0) == cur_line_char_count:
+                prev_char_count = line_char_count.get(prev_line_no, 0)
+                next_char_count = line_char_count.get(next_line_no, 0)
+                if prev_char_count == cur_line_char_count:
                     s = '%02dn%02d' % (prev_line_no, char_no)
-                elif line_char_count.get(next_line_no, 0) == cur_line_char_count:
+                elif next_char_count == cur_line_char_count:
                     s = '%02dn%02d' % (next_line_no, char_no)
-                if not s:
-                    if prev_line_no > 0:
-                        s = '%02dn%02d' % (prev_line_no, char_no)
-                    else:
-                        s = '%02dn%02d' % (next_line_no, char_no)
-                char_data['y'] = char_map[s]['y']
-                char_data['h'] = char_map[s]['h']
+                if s and (s in char_map) and ('y' in char_map[s]):
+                    char_data['y'] = char_map[s]['y']
+                    char_data['h'] = char_map[s]['h']
+                else:
+                    bar_index = line_to_bar_index[line_no]
+                    char_data['y'], char_data['h'] = bar_cord_lst[bar_index][char_no-1]
 
                 if char_no == 1:
                     s = '%02dn%02d' % (line_no, char_no + 1)
@@ -213,17 +268,16 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                     else:
                         print('no adjacent line:', char_data)
             except:
-                print('get_accurate_cut except: ', json.dumps(char_data))
+               print('get_accurate_cut except: ', json.dumps(char_data))    
+    return char_lst, line_count, column_count, char_count_lst, add_count, wrong_count, confirm_count
 
+def get_char_region_cord(char_lst):
     # 得到字框顶点中最小和最大的x, y
     min_x = 10000
     min_y = 10000
     max_x = 0
     max_y = 0
-    char_count_lst = [0] * line_count
     for char_data in char_lst:
-        line_no = char_data['line_no']
-        char_count_lst[line_no - 1] += 1
         x = char_data.get('x', None)
         y = char_data.get('y', None)
         w = char_data.get('w', 0)
@@ -237,7 +291,7 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                 min_y = y
             if (y + h) > max_y:
                 max_y = y + h
-    return char_lst, line_count, column_count, char_count_lst, add_count, wrong_count, confirm_count, min_x, min_y, max_x, max_y
+    return min_x, min_y, max_x, max_y
 
 def fetch_cut_file(reel, vol_page):
     if reel.reel_no <= 0 or vol_page == 0:
@@ -298,8 +352,9 @@ def compute_accurate_cut(reel):
             try:
                 #print('vol_page: ', vol_page)
                 #print('%s\n----------\n%s\n----------' % (correct_pagetexts[i], pagetexts[i]))
-                char_lst, line_count, column_count, char_count_lst, cut_add_count, cut_wrong_count, cut_confirm_count, min_x, min_y, max_x, max_y = \
+                char_lst, line_count, column_count, char_count_lst, cut_add_count, cut_wrong_count, cut_confirm_count = \
                 get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
+                min_x, min_y, max_x, max_y = get_char_region_cord(char_lst)
                 cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
                 cut_info = {
                     'page_code': page_code,

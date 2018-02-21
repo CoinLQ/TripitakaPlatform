@@ -17,7 +17,7 @@ mkdir logs
 ./manage.py create_configuration
 ./manage.py import_tripitaka_list
 ./manage.py set_cut_ready
-./manage.py import_sutra_reel
+#./manage.py import_sutra_reel
 ./manage.py import_reel
 ./manage.py create_lqreel
 ./manage.py import_cbeta_huayan60

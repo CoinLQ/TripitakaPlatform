@@ -13,6 +13,7 @@ rm -f rect/migrations/000*
 ./manage.py makemigrations rect
 cp rect/sql/*.py rect/migrations/.
 ./manage.py migrate
+./manage.py create_configuration
 ./manage.py import_tripitaka_list
 ./manage.py import_cbeta_huayan60
 ./manage.py init

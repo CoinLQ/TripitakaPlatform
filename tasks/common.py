@@ -385,6 +385,8 @@ def compute_accurate_cut(reel):
                     break
             rect_lst.append(rect)
         Rect.objects.bulk_create(rect_lst)
+        reel.cut_ready = True
+        reel.save(update_fields=['cut_ready'])
 
 
 SUTRA_CLEAN_PATTERN = re.compile('[「」　 \r]')

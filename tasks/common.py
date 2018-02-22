@@ -365,7 +365,7 @@ def fetch_col_file(reel, vol_page):
         data = f.read()
         return data
 
-def compute_accurate_cut(reel):
+def compute_accurate_cut(reel, process_cut=True):
     sid = reel.sutra.sid
     try:
         reel_ocr_text = ReelOCRText.objects.get(reel_id = reel.id)
@@ -435,12 +435,14 @@ def compute_accurate_cut(reel):
             page_code = page_code)
         page.char_count_lst = json.dumps(char_count_lst, separators=(',', ':'))
         page.status = PageStatus.RECT_NOTREADY
-        page.save()
 
         # 得到分列信息
         image_name_prefix = reel.image_prefix() + str(vol_page)
         img_path = reel.url_prefix() + str(vol_page) + '.jpg'
         column_lst = gene_new_col(image_name_prefix, char_lst)
+        page.bar_info = column_lst
+        page.save()
+
         #try:
         crop_col_online(img_path, column_lst)
         #except:
@@ -451,25 +453,17 @@ def compute_accurate_cut(reel):
             columns.append(column)
         Column.objects.bulk_create(columns)
 
-        # try:
-        #     col_file = fetch_col_file(reel, vol_page)
-        #     column_info = json.loads(col_file)
-        #     column_lst = column_info['col_data']
-        # except:
-        #     pass
-
         # cut related
-        page.bar_info = column_lst
-        page.save()
-        page.pagerects.all().delete()
-        pagerect = PageRect(page=page, reel=page.reel, line_count=line_count, column_count=column_count, rect_set=cut_info['char_data'])
-        pagerect.save()
-        try:
-            pagerect.rebuild_rect()
-        except:
-            traceback.print_exc()
-        reel.cut_ready = True
-        reel.save(update_fields=['cut_ready'])
+        if process_cut:
+            page.pagerects.all().delete()
+            pagerect = PageRect(page=page, reel=page.reel, line_count=line_count, column_count=column_count, rect_set=cut_info['char_data'])
+            pagerect.save()
+            try:
+                pagerect.rebuild_rect()
+            except:
+                traceback.print_exc()
+            reel.cut_ready = True
+            reel.save(update_fields=['cut_ready'])
 
 SUTRA_CLEAN_PATTERN = re.compile('[「」　 \r]')
 def clean_sutra_text(text):
@@ -513,32 +507,18 @@ def judge_merge_text_punct(text, punct_lst):
 def extract_page_line_separators(text):
     if text == '':
         return []
-    pages = text.split('\np\n')
-    if pages[0].startswith('p\n'): # 去掉最前面的p
-        pages[0] = pages[0][2:]
+    text = text.replace('b\n', '')
     separators = []
     pos = 0
-    page_index = 0
-    page_count = len(pages)
-    while page_index < page_count:
-        lines = pages[page_index].split('\n')
-        line_cnt = len(lines)
-        i = 0
-        while i < line_cnt:
-            pos += len(lines[i])
-            if i == (line_cnt - 1): # 一页中最后一行
-                if page_index != (page_count - 1): # 非最后一页
-                    separators.append( (pos, 'p') )
-            elif lines[i] == 'b':
-                separators.append( (pos, 'b') )
-            else:
-                separators.append( (pos, '\n') )
-            i += 1
-        page_index += 1
+    for c in text:
+        if c in 'p\n':
+            separators.append( (pos, c) )
+        else:
+            pos += 1
     return separators
 
 class ReelText(object):
-    def __init__(self, reel, text, tripitaka_id, sid, vol_no, start_vol_page, separators_json=None):
+    def __init__(self, reel, text, tripitaka_id, sid, vol_no, start_vol_page):
         self.reel = reel
         self.text = SEPARATORS_PATTERN.sub('', text)
         self.tripitaka_id = tripitaka_id
@@ -546,10 +526,7 @@ class ReelText(object):
         self.sid = sid
         self.vol_no = vol_no
         self.start_vol_page = start_vol_page
-        if separators_json:
-            self.separators = json.loads(separators_json)
-        else:
-            self.separators = extract_page_line_separators(text)
+        self.separators = extract_page_line_separators(text)
 
     def get_char_position(self, start_index, end_index):
         count_p = 0
@@ -570,14 +547,15 @@ class ReelText(object):
                 pos = len(self.text)
             if pos > start_index and start_char_no == -1:
                 # 第一次pos > start_index时
-                start_page_no = count_p + 1
-                start_line_no = count_n + 1
+                start_page_no = count_p
+                start_line_no = count_n
                 start_char_no = start_index - last_pos + 1
             if pos > end_index and end_char_no == -1:
                 # 第一次pos > end_index时
-                end_page_no = count_p + 1
-                end_line_no = count_n + 1
+                end_page_no = count_p
+                end_line_no = count_n
                 end_char_no = end_index - last_pos + 1
+                break
 
             if i == separator_count:
                 break

@@ -112,7 +112,7 @@ class Command(BaseCommand):
         publisher=admin)
         task3.reel = huayan_yb_1
         task3.save()
-        
+
         correctsegs = OCRCompare.generate_compare_reel(huayan_cb_1_correct_text.text, reel_ocr_text_yb_1.text)
         tasks = [task1, task2]
         for i in range(2):
@@ -126,16 +126,16 @@ class Command(BaseCommand):
             reelcorrecttext = ReelCorrectText.objects.get(reel=huayan_yb_1)
         except:
             filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % 'YB000860')
-            with open(filename, 'r') as f:
+            with open(filename, 'r', encoding='utf-8') as f:
                 text = f.read()
                 reelcorrecttext = ReelCorrectText(reel=huayan_yb_1, text=text)
                 reelcorrecttext.save()
 
         # 得到精确的切分数据
-        try:
-            compute_accurate_cut(huayan_yb_1)
-        except Exception:
-            traceback.print_exc()
+        # try:
+        #     compute_accurate_cut(huayan_yb_1)
+        # except Exception:
+        #     traceback.print_exc()
 
 
 

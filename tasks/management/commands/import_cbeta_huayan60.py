@@ -91,13 +91,13 @@ class Command(BaseCommand):
         for reel_no in range(1, 61):
             filename = os.path.join(BASE_DIR, 'data/cbeta_huayan/reel_info/CBETA_60_%s.txt' % reel_no)
             text = ''
-            with open(filename, 'r') as f:
+            with open(filename, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
                 read_reel_info(huayan_cb, reel_no, lines)
 
         for reel_no in range(1, 61):
             filename = os.path.join(BASE_DIR, 'data/cbeta_huayan/text/CB_278_%s.txt' % reel_no)
             text = ''
-            with open(filename, 'r') as f:
+            with open(filename, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
                 process_cbeta_text(huayan_cb, reel_no, lines)

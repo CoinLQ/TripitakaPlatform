@@ -9,7 +9,7 @@ import traceback
 class Command(BaseCommand):
     def handle(self, *args, **options):
         filename = '%s/data/variant.txt' % settings.BASE_DIR
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             variant = f.read()
 
         config = Configuration.objects.first()

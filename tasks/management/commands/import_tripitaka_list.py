@@ -7,7 +7,7 @@ import traceback
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        with open('data/tripitaka_list.txt', 'r') as f:
+        with open('data/tripitaka_list.txt', 'r', encoding='utf-8') as f:
             for line in f.readlines():
                 code, name, shortname = line.rstrip().split()
                 tripitaka = Tripitaka(code=code, name=name, shortname=shortname)

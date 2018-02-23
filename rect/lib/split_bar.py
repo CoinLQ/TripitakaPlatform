@@ -93,7 +93,7 @@ class SplitBar(object):
                     item = {"idx_col": idx_col, "idx": idx, "y2": next_y, "y1": y_bottom , "dist": dist}
                     cols.append(item)
             space_y.append(cols)
-        if tp == "YB":
+        if tp == "YB3":
             if max(map(lambda X:X['dist'] , space_y[len(columns)-1])) > 300 and \
                 max(map(lambda X:X['y'] , columns[len(columns)-1])) > 1200:
                 columns = columns[0:len(columns)-1]

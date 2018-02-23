@@ -16,7 +16,7 @@ SEPARATORS_PATTERN = re.compile('[pb\n]')
 def compact_json_dumps(obj):
     return json.dumps(obj, separators=(',', ':'))
 
-def generate_accurate_chars(text1, text2, old_char_lst):
+def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
     char_lst = []
     old_char_lst_length = len(old_char_lst)
     line_no = 1
@@ -25,7 +25,8 @@ def generate_accurate_chars(text1, text2, old_char_lst):
     char_lst_length = 0
     opcodes = SequenceMatcher(None, text1, text2, False).get_opcodes()
     for tag, i1, i2, j1, j2 in opcodes:
-        #print(tag, text1[i1:i2], text2[j1:j2])
+        if debug:
+            print(tag, text1[i1:i2], text2[j1:j2])
         if tag == 'equal':
             i = i1
             while i < i2:
@@ -34,9 +35,11 @@ def generate_accurate_chars(text1, text2, old_char_lst):
                     char_no = 1
                 else:
                     char_data = old_char_lst[char_index]
-                    #print('move: ', char_data['ch'], char_data['line_no'], char_data['char_no'], line_no, char_no)
-                    if text1[i] != char_data['ch']:
-                        raise Exception()
+                    if debug:
+                        print('move: ', char_data['ch'], char_data['line_no'], char_data['char_no'], line_no, char_no)
+                    else:
+                        if text1[i] != char_data['ch']:
+                            raise ValueError('not equal: %s %s' % (text1[i], char_data['ch']))
                     char_data['line_no'] = line_no
                     char_data['char_no'] = char_no
                     char_lst.append(char_data)
@@ -89,7 +92,6 @@ def generate_accurate_chars(text1, text2, old_char_lst):
                     if (i-i1)+j1 < j2:
                         #print('char_index: ', char_index)
                         char_data = old_char_lst[char_index]
-                        char_index += 1
                         char_data['line_no'] = line_no
                         char_data['char_no'] = char_no
                         char_data['ch'] = ch
@@ -104,6 +106,9 @@ def generate_accurate_chars(text1, text2, old_char_lst):
                     char_lst.append(char_data)
                     char_no += 1
                 i += 1
+            for ch in text2[j1:j2]:
+                if ch != '\n':
+                    char_index += 1
         elif tag == 'delete': # OCR本缺少的字，需要增加
             add_count = i2 -i1
             for i in range(add_count):
@@ -145,6 +150,9 @@ def get_bar_cord_lst(bars, line_char_count, char_map):
         char_cnt_lst = []
         for line_no in bar:
             char_cnt_lst.append(line_char_count[line_no])
+        if len(char_cnt_lst) == 0:
+            bar_cord_lst.append([])
+            continue
         max_cnt = max(char_cnt_lst)
         max_cnt_line_lst = []
         for line_no in bar:
@@ -216,7 +224,11 @@ def get_accurate_cut(text1, text2, cut_json, pid):
     """
     clean_text1 = text1.replace('b\n', '')
     clean_text2 = text2.replace('b\n', '')
-    cut = json.loads(cut_json)
+    try:
+        cut = json.loads(cut_json)
+    except Exception as err:
+        print('cut_json: ', cut_json)
+        raise err
     old_char_lst = cut['char_data']
     for char_data in old_char_lst:
         if char_data['x'] < 0:
@@ -226,7 +238,8 @@ def get_accurate_cut(text1, text2, cut_json, pid):
         char_data['line_no'] = int(char_data['line_no'])
         char_data['char_no'] = int(char_data['char_no'])
 
-    char_lst = generate_accurate_chars(clean_text1, clean_text2, old_char_lst)
+    debug = False
+    char_lst = generate_accurate_chars(clean_text1, clean_text2, old_char_lst, debug)
 
     column_count = 0
     line_count = char_lst[-1]['line_no']
@@ -412,10 +425,16 @@ def compute_accurate_cut(reel, process_cut=True):
                 cut_verify_count=cut_verify_count,
                 page_code = page_code)
             except:
-                print('get_accurate_cut failed')
+                print('get_accurate_cut failed: %s\n' % pid, traceback.print_exc())
                 cut_info_json = cut_file
                 char_count_lst = []
-                cut_info = json.loads(cut_file)
+                if cut_file:
+                    cut_info = json.loads(cut_file)
+                else:
+                    cut_info = {
+                        'page_code': page_code,
+                        'char_data': [],
+                    }
                 char_lst = cut_info['char_data']
                 page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
                 text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
@@ -443,10 +462,10 @@ def compute_accurate_cut(reel, process_cut=True):
         page.bar_info = column_lst
         page.save()
 
-        #try:
-        crop_col_online(img_path, column_lst)
-        #except:
-        #    print('Crop image column failed.')
+        try:
+            crop_col_online(img_path, column_lst)
+        except:
+           print('Crop image column failed: ', traceback.print_exc())
         columns = []
         for col in column_lst:
             column = Column(id = col['col_id'], page=page, x=col['x'], y=col['y'], x1=col['x1'], y1=col['y1'])

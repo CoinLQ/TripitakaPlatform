@@ -83,8 +83,4 @@ def crop_col_online(img_path, col_data):
         key = "{}{}.jpg".format(img_prefix, col['col_id'])
         if upload_column_image:
             s3c.upload_fileobj(b, my_bucket, key)
-        #savefile = '/home/xian/Downloads/after_correct/%s' % key
-        #image.save(savefile, format="jpeg")
-        #print('upload: ', key)
-        #"https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/%s" % key
 

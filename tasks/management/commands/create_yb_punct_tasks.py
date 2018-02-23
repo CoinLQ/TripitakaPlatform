@@ -17,7 +17,7 @@ import re, json
 class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
-        yb_reel001_content = clean_separators(open(settings.BASE_DIR+"/data/sutra_text/YB000860_001_fixed.txt").read())
+        yb_reel001_content = clean_separators(open(settings.BASE_DIR+"/data/sutra_text/YB000860_001_fixed.txt", "r", encoding='utf-8').read())
         sutra = Sutra.objects.filter(sid='YB000860').first()
         reel, created =Reel.objects.get_or_create(sutra=sutra, reel_no=1)
         reeltext, created = ReelCorrectText.objects.get_or_create(reel=reel, text=yb_reel001_content)

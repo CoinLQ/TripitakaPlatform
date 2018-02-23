@@ -218,3 +218,8 @@ opacity: 0;
     width: 110%;
     padding: 10px;
 }
+
+.content-container {
+    margin-left: 0px;
+    margin-right: 0px;
+}

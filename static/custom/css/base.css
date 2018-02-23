@@ -8,8 +8,7 @@
 }
 .diff-text-pane {
     padding: 0 15px;
-    /* height: 95%; */
-    height: 70%;
+    height: 95%;
     overflow: scroll;
     box-shadow: 0px 0px 1px 2px #363E4E;
 }
@@ -172,13 +171,16 @@ ul {list-style-type:circle;}
     font-size: 20px;
     color: red;
 }
+.operation li:hover {
+    cursor: pointer;
+}
 
 .operation li span {
-    font-size: 20px;
-    color: black;
-    display: inline-block;
-    width: 65px;
+    width: 60px;
+    margin: 5px;
 }
+
+
 
 .operation input {
     display: inline
@@ -188,4 +190,31 @@ ul {list-style-type:circle;}
     display: inline;
     margin: 0 -3px;
     padding: 0;
+}
+
+.elpopup {
+    margin-top: 30px;
+}
+
+.slide-fade-enter-active {
+    transition: all .5s ease;
+}
+.slide-fade-leave-active {
+transition: all .8s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+}
+.slide-fade-enter, .slide-fade-leave-to
+/* .slide-fade-leave-active for below version 2.1.8 */ {
+transform: translateX(10px);
+opacity: 0;
+}
+
+.cmd-block {
+    border: 1px solid #ebebeb;
+    border-radius: 3px;
+    background-color: whitesmoke;
+    position: fixed;
+    top: 4px;
+    margin-left: -1px;
+    width: 110%;
+    padding: 10px;
 }

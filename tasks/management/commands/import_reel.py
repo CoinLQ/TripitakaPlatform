@@ -26,7 +26,7 @@ class Command(BaseCommand):
             lqsutra.save()
         reel_lst = []
         filename = os.path.join(BASE_DIR, 'data/%s' % 'huayan_60_reel_info.txt')
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             for line in lines:
                 line = line.rstrip()

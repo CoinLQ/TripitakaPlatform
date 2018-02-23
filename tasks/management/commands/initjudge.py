@@ -22,7 +22,7 @@ def save_reel_with_correct_text(lqsutra, sid, reel_no, start_vol, start_vol_page
         reel_correct_text = ReelCorrectText.get(reel=reel)
     except:
         filename = os.path.join(settings.BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % sid)
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             text = f.read()
             ReelCorrectText(reel=reel, text=text).save()
 
@@ -93,7 +93,7 @@ class Command(BaseCommand):
 
         correct_task = Task.objects.get(pk=3)
         filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % 'YB000860')
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             correct_text = f.read()
             correct_task.result = correct_text
             Task.objects.filter(id=correct_task.id).update(result=correct_text)

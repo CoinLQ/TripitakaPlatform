@@ -58,7 +58,7 @@
     el: '#correct',
     data: {
       result: '',
-      segid: 0,
+      segid: 1,
       start_vol_page: 1,
       image_url_prefix: '',
       page_no: 1,
@@ -247,7 +247,7 @@
           e.target.focus();
           selection = window.getSelection();
           selection.removeAllRanges();
-          selection.addRange(range); 
+          selection.addRange(range);
         }, 10);
 
         this.updateCorrectSeg(seg);

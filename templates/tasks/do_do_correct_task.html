@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+{% block title %}文字校对{% endblock %}
+{% block content %}
+<div id="correct">
+  <div class="row content-container">
+    <div class="col-md-7 left-pane">
+      <div class="canvas-pane">
+        <canvas id="page-canvas"></canvas>
+      </div>
+    </div>
+    <div class="col-md-5 right-pane">
+        <transition name="slide-fade" appear>
+            <div v-if="scrolled" class='cmd-block'>
+                <el-tag v-show="premitSubmit" type="info">校对中</el-tag>
+                <el-button :disabled="premitSubmit" @click="finishTask()" type="primary" plain>完成</el-button>
+
+            </div>
+        </transition>
+
+
+      <div class="diff-text-pane" @scroll="handleScroll" >
+
+        <div class="reel-text-region-o"  @keydown.tab="nextPopup($event)" >
+          {% raw %}
+          <div id="reel-text-compare" class="reel-text-compare">
+            <div class="spn" v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id">
+                <div class="operation">
+                    <el-popover :ref="'popover' + seg.id" width="300" offset="300" placement="bottom" trigger="manual" popper-class="elpopup">
+                            <ul class="segli">
+                                    <li @click="selectText(seg, index, 1, $event)"><el-tag>比对本</el-tag> {{seg.text1}}</li>
+                                    <li @click="selectText(seg, index, 2, $event)"><el-tag type="danger">OCR</el-tag> {{seg.text2}}</li>
+                                    <li  style="color: #409EFF" @click="selectText(seg, index, 0, $event)"><textarea  type="text" placehold="结果文" autofocus rows="2" v-model="seg.selected_text" @input="segInput(seg, index, $event)"></textarea></li>
+                                    <el-switch v-model="seg.doubt_comment" active-text="存疑状态" inactive-text="暂无疑问"  active-value="存疑"  inactive-value="" @change="updateCorrectSeg(seg)"></el-switch>
+                            </ul>
+                    </el-popover>
+                </div>
+              <span v-if="seg.tag == 1" v-html="getSegText(seg)"  @keydown="blockthem" :class="{ changed: (!seg.selected_text) }" @click="segClick(seg, $event)" contenteditable="true" @blur="segOuterInput(seg, index, $event)" />
+              </span>
+              <span v-if="seg.tag == 2" v-html="getSegText(seg)"  @keydown="blockthem"  class="difftext" :class="{ changed: (seg.selected_text!=null) }" @click="segClick(seg, $event)" contenteditable="true">
+              </span>
+
+              <span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="true" @input="segParagraphMarkInput(seg, index, $event)"></span>
+              <span v-if="seg.tag == 4" contenteditable="true" @click="segLinefeedClick(seg, index)" @input="segLinefeedInput(seg, index, $event)" v-html="getLineFeedHtml(seg)"></span>
+            </div>
+          </div>
+          {% endraw %}
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+{% block foot_script %}
+<script>
+  var app = new Vue({
+    el: '#correct',
+    data: {
+      result: '',
+      compare_text: '',
+      ocr_text: '',
+      selected_text:'',
+      scrolled: false,
+      segid: 1,
+      start_vol_page: 1,
+      image_url_prefix: '',
+      page_no: 1,
+      line_no: 1,
+      char_no: 1,
+      row_in_text: 1,
+      submit_title: '',
+      sharedata: {task_id: {{ task.id }}, status: 0, correctsegs: []  }
+    },
+    computed: {
+      premitSubmit: function (){
+        let empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
+        return (empty_segs.length != 0) || (this.sharedata.status == 4)
+      }
+    },
+    created: function() {
+      var vm = this
+      axios.get('/api/correct/' + vm.sharedata.task_id + '/')
+      .then(function(response) {
+        vm.result = response.data.result;
+        vm.sharedata.status = response.data.status;
+        vm.start_vol_page = response.data.start_vol_page;
+        vm.image_url_prefix = response.data.image_url_prefix;
+        vm.segid = response.data.cur_focus;
+        if (vm.sharedata.status == 4) {
+          vm.submit_title = '已完成';
+        } else {
+          vm.submit_title = '';
+        }
+        vm.loadImage();
+      });
+      this.loadCorrectSegs();
+    },
+    methods: {
+      handleScroll: function(){
+        window.pp =this;
+        this.scrolled = this.$el.querySelector('div.diff-text-pane').scrollTop >50
+      },
+      nextPopup: function(evt) {
+        evt.preventDefault()
+        let empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
+        if (evt.shiftKey){
+          seg = _.find(empty_segs, function(o) { return o.id < this.segid; }.bind(this));
+        } else {
+          seg = _.find(empty_segs, function(o) { return o.id > this.segid; }.bind(this));
+          if (!seg) {
+            seg = _.find(empty_segs, function(o) { return o.id < this.segid; }.bind(this));
+          }
+        }
+        if (!seg) { return }
+        this.moveSegDiffToView(seg.id);
+        this.segClick(seg, evt)
+      },
+      getSegText: function(seg) {
+        if (seg.selected_text == null) {
+          if (!seg.text2) {
+            return '?'
+          }else {
+            return seg.text2
+          }
+        } else if(!seg.selected_text) {
+            return '🔙'
+        }
+        else {
+            return seg.selected_text.replace(/\n/g, '<br>');
+        }
+      },
+      setImg: function(img_url, x, y, w, h) {
+        var canvas = document.getElementById("page-canvas");
+        var context = canvas.getContext("2d");
+        var image = new Image();
+        image.onload = function () {
+          canvas.width = canvas.width;
+          canvas.height = image.height;
+          canvas.width = image.width;
+
+          x = ~~x; y = ~~y; w = ~~w; h = ~~h;
+
+          context.scale(0.8, 0.8);
+          context.drawImage(image, 0, 0);
+
+          //设置样式
+          context.lineWidth = 1;
+          context.strokeStyle = "#F5270B";
+          context.fillStyle = "#F5270BA0";
+          //绘制
+          context.strokeRect(x, y, w, h);
+          context.fillRect(x, y, w, h);
+
+          let wrapper_h = this.$el.querySelector('.canvas-pane').clientHeight;
+          let wrapper_w = this.$el.querySelector('.canvas-pane').clientWidth;
+          let trans_y = y*0.8 > (wrapper_h-100)/2 ? y*0.8-wrapper_h/2: 0;
+          let trans_x = x*0.8 > wrapper_w-100 ? x*0.8-wrapper_w/2: 0;
+          this.$el.querySelector('.canvas-pane').scrollTop = ~~trans_y;
+          this.$el.querySelector('.canvas-pane').scrollLeft = ~~trans_x;
+        }.bind(this);
+        image.src = img_url;
+      },
+      loadImage: function() {
+        var vol_page = this.start_vol_page + this.page_no - 1;
+        var url_prefix = 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image' + this.image_url_prefix + vol_page.toString();
+        var img_url = url_prefix + '.jpg';
+        var cut_url = url_prefix + '.cut';
+        var vm = this;
+        axios.get(cut_url).then(function(response) {
+          var char_data = response.data['char_data'];
+          for(var i = 0; i < char_data.length; ++i) {
+            var v = char_data[i];
+            var line_no = v['line_no'];
+            var char_no = v['char_no'];
+            if (line_no == vm.line_no && char_no == vm.char_no) {
+              vm.setImg(img_url, v['x'], v['y'], v['w'], v['h']);
+            }
+          }
+        });
+      },
+      getLineFeedHtml: function(seg) {
+        if (seg.selected_text == '\n') {
+          return '↵<br />';
+        } else {
+          return '';
+        }
+      },
+      selectText: function(seg, index, no, evt) {
+        evt.preventDefault();
+        if (no == 1) {
+          seg.selected_text = seg.text1;
+          this.updateCorrectSeg(seg);
+        } else if (no == 2) {
+          seg.selected_text = seg.text2;
+          this.updateCorrectSeg(seg);
+        } else if (no == 0)
+        {
+          evt.preventDefault()
+        }
+        return false;
+      },
+      blockthem: function(evt) {
+        if (evt.keyCode == 37 || evt.keyCode == 39)
+          return
+        if (evt.keyCode >= 32 && evt.keyCode <= 222 || evt.keyCode== 229) {
+          evt.preventDefault()
+          return
+        }
+      },
+      moveSegDiffToView: function(segid) {
+        try {
+          if (!this.$el.querySelector('#segdiff-'+ segid + ' span.difftext')) {
+            return
+          }
+          this.$el.querySelector('#segdiff-'+ segid + ' span.difftext').focus()
+          console.log(this.$el.querySelector('#segdiff-' + segid).getBoundingClientRect().top, $('#segdiff-' + segid).position().top)
+          var offset = this.$el.querySelector('div.diff-text-pane').scrollTop + this.$el.querySelector('#segdiff-' + segid).getBoundingClientRect().top - 360;
+          console.log(offset);
+          this.$el.querySelector('div.diff-text-pane').scrollTop = offset;
+        } catch(err) {
+          console.log('moveSegDiffToView: ', err)
+        }
+      },
+      hideAllPopup(e) {
+        let ref_id = 'popover' + this.segid;
+        if (this.segid != 0) {
+            this.$refs[ref_id][0].doClose();
+        }
+      },
+      handleClose(done) {
+        this.$confirm('确认关闭？')
+          .then(_ => {
+            done();
+          })
+          .catch(_ => {});
+      },
+      segClick: function(seg, e) {
+          e.stopPropagation();
+          // 文本差异的correctseg进入可视区
+          let ref_id = 'popover' + this.segid;
+          if ((this.segid == seg.id) || (this.segid==0)) {
+              return
+          }
+          if (this.segid != 0) {
+            this.$refs[ref_id][0].doClose();
+          }
+
+          this.segid = seg.id;
+          this.compare_text = seg.text1;
+          this.ocr_text = seg.text2;
+          this.selected_text = this.ocr_text;
+          ref_id = 'popover' + seg.id;
+          this.$refs[ref_id][0].doShow();
+          var selection = window.getSelection();
+          var cursor_offset = selection.focusOffset;
+          this.page_no = seg.page_no;
+          this.line_no = seg.line_no;
+          this.char_no = seg.char_no + cursor_offset;
+          this.loadImage();
+      },
+      segLinefeedClick: function(seg, index) {
+        this.page_no = seg.page_no;
+        this.line_no = seg.line_no;
+        this.char_no = seg.char_no;
+        this.loadImage();
+        this.hideAllPopup(index);
+      },
+      segInput: function(seg, index, e) {
+        this.updateCorrectSeg(seg);
+      },
+      segOuterInput: function(seg, index, e) {
+        var newtext = e.target.innerText;
+        this.updateCorrectSeg(seg, newtext);
+      },
+      segParagraphMarkInput: function(seg, index, e) {
+        var newtext = e.target.innerText;
+        var selection = window.getSelection();
+        var cursor_offset = selection.focusOffset;
+        seg.selected_text = newtext;
+      },
+      segLinefeedInput: function(seg, index, e) {
+        var newtext = e.target.innerText;
+        if (e.inputType == 'insertParagraph') {
+          seg.selected_text = '\n';
+          e.target.innerHTML = this.getLineFeedHtml(seg);
+        } else if (newtext.length <= 2) { // 删除一次去掉换行
+          seg.selected_text = '';
+        } else {
+          seg.selected_text = '\n';
+        }
+      },
+      loadCorrectSegs: function() {
+        var vm = this
+        axios.get('/api/correct/' + vm.sharedata.task_id + '/correctsegs/')
+        .then(function(response) {
+          vm.sharedata.correctsegs = response.data;
+          for(var i = 0; i < vm.sharedata.correctsegs.length; ++i) {
+            var seg = vm.sharedata.correctsegs[i];
+            if (seg.id == vm.segid) {
+              vm.page_no = seg.page_no;
+              vm.line_no = seg.line_no;
+              vm.char_no = seg.char_no;
+            }
+          }
+
+          vm.loadImage();
+          setTimeout(function() {
+            vm.moveSegDiffToView(vm.segid);
+          }, 1000);
+        });
+      },
+      updateCorrectSeg: function(seg, update_text = null) {
+        console.log('update: ', seg)
+        var vm = this
+        axios.put('/api/correct/' + vm.sharedata.task_id + '/correctsegs/' + seg.id + '/', {
+          selected_text: update_text || seg.selected_text,
+          doubt_comment: seg.doubt_comment
+        })
+        .then(function(response) {
+          if (update_text) {
+            seg.selected_text = update_text
+          }
+          console.log(response);
+        });
+      },
+      finishTask: function() {
+        var vm = this;
+        axios.post('/api/correct/' + this.sharedata.task_id + '/finish/')
+        .then(function(response) {
+          vm.sharedata.status = response.data.status;
+          alert('提交成功！');
+        })
+        .catch(function (error) {
+          vm.error = '提交出错！';
+        });
+      }
+    }
+  });
+</script>
+{% endblock %}

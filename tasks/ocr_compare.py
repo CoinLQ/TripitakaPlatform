@@ -166,6 +166,11 @@ class OCRCompare(object):
                         page_no=page_no, line_no=line_no, char_no=char_no)
                         if result in 'pb\n':
                             correctseg.selected_text = result
+                    if replace_not_inserted: # result_lst只包含pb\n时
+                        correctseg = CorrectSeg(tag=CorrectSeg.TAG_DIFF, position=pos, \
+                        text1=base_text, text2='', selected_text='', \
+                        page_no=page_no, line_no=line_no, char_no=char_no)
+                        replace_not_inserted = False
                     correctsegs.append(correctseg)
                     pos += len(result)
                     page_no, line_no, char_no = cls.count_page_line(result, page_no, line_no, char_no)

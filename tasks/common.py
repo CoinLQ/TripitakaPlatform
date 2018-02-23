@@ -122,6 +122,94 @@ def generate_accurate_chars(text1, text2, old_char_lst):
                     char_no += 1
     return char_lst
 
+def count_line_char_count(text):
+    line_char_count = {}
+    lines = text.split('\n')
+    line_no = 1
+    bars = []
+    bar = []
+    for line in lines:
+        if line == 'b':
+            bars.append(bar)
+            bar = []
+        else:
+            line_char_count[line_no] = len(line)
+            bar.append(line_no)
+            line_no += 1
+    bars.append(bar)
+    return line_char_count, bars
+
+def get_bar_cord_lst(bars, line_char_count, char_map):
+    bar_cord_lst = []
+    for bar in bars:
+        char_cnt_lst = []
+        for line_no in bar:
+            char_cnt_lst.append(line_char_count[line_no])
+        max_cnt = max(char_cnt_lst)
+        max_cnt_line_lst = []
+        for line_no in bar:
+            if line_char_count[line_no] == max_cnt:
+                max_cnt_line_lst.append(line_no)
+        cord_lst = []
+        for i in range(max_cnt):
+            total_y = 0
+            total_h = 0
+            cnt = 0
+            for line_no in max_cnt_line_lst:
+                s = '%02dn%02d' % (line_no, i + 1)
+                try:
+                    total_y += char_map[s]['y']
+                    total_h += char_map[s]['h']
+                    cnt += 1
+                except:
+                    pass
+            if cnt != 0:
+                avg_y = total_y / cnt
+                avg_h = total_h / cnt
+            else:
+                avg_y = (i+1) * 25
+                avg_h = 25
+            cord_lst.append( (avg_y, avg_h) )
+        bar_cord_lst.append(cord_lst)
+    return bar_cord_lst
+
+def get_line_cord_lst(char_lst):
+    line_cord_lst = [] # 每行的平均x,w
+    total_x = 0
+    total_w = 0
+    cnt = 0
+    avg_x = 0
+    avg_w = 0
+    last_line_no = 0
+    for char_data in char_lst:
+        line_no = char_data['line_no']
+        if line_no == last_line_no:
+            if 'x' in char_data:
+                total_x += char_data['x']
+                total_w += char_data['w']
+                cnt += 1
+        elif line_no != 1:
+            if cnt != 0:
+                avg_x = total_x / cnt
+                avg_w = total_w / cnt
+            else:
+                avg_x -= 35
+                avg_w = 30
+            total_x = 0
+            total_w = 0
+            cnt = 0
+            line_cord_lst.append( (avg_x, avg_w) )
+        last_line_no = line_no
+    # 最后一行
+    if cnt != 0:
+        avg_x = total_x / cnt
+        avg_w = total_w / cnt
+    else:
+        avg_x -= 35
+        avg_w = 30
+    line_cord_lst.append( (avg_x, avg_w) )
+    return line_cord_lst
+
 def get_accurate_cut(text1, text2, cut_json, pid):
     """
     用于文字校对后的文本比对，text1是文字校对审定后得到的精确本，text2是OCR原始结果，都包含换行和换页标记。
@@ -157,59 +245,19 @@ def get_accurate_cut(text1, text2, cut_json, pid):
         line_char_str = '%02dn%02d' % (line_no, char_no)
         char_map[line_char_str] = char_data
 
+    # 每行的平均x, w
+    line_cord_lst = get_line_cord_lst(char_lst)
+
     # 栏中包含的行号
-    line_char_count = {}
-    lines = text1.split('\n')
-    line_no = 1
-    bars = []
-    bar = []
-    for line in lines:
-        if line == 'b':
-            bars.append(bar)
-            bar = []
-        else:
-            line_char_count[line_no] = len(line)
-            bar.append(line_no)
-            line_no += 1
-    bars.append(bar)
+    line_char_count, bars = count_line_char_count(text1)
 
     line_to_bar_index = {}
     for bar_index in range(len(bars)):
         for line_no in bars[bar_index]:
             line_to_bar_index[line_no] = bar_index
 
-    # 生成每栏的平均Y坐标
-    bar_cord_lst = []
-    for bar in bars:
-        char_cnt_lst = []
-        for line_no in bar:
-            char_cnt_lst.append(line_char_count[line_no])
-        max_cnt = max(char_cnt_lst)
-        max_cnt_line_lst = []
-        for line_no in bar:
-            if line_char_count[line_no] == max_cnt:
-                max_cnt_line_lst.append(line_no)
-        cord_lst = []
-        for i in range(max_cnt):
-            total_y = 0
-            total_h = 0
-            cnt = 0
-            for line_no in max_cnt_line_lst:
-                s = '%02dn%02d' % (line_no, i + 1)
-                try:
-                    total_y += char_map[s]['y']
-                    total_h += char_map[s]['h']
-                    cnt += 1
-                except:
-                    pass
-            if cnt != 0:
-                avg_y = total_y / cnt
-                avg_h = total_h / cnt
-            else:
-                avg_y = (i+1) * 25
-                avg_h = 25
-            cord_lst.append( (avg_y, avg_h) )
-        bar_cord_lst.append(cord_lst)
+    # 生成每栏的平均y, h
+    bar_cord_lst = get_bar_cord_lst(bars, line_char_count, char_map)
 
     # 给增加的字加上切分坐标
     add_count = 0
@@ -221,56 +269,45 @@ def get_accurate_cut(text1, text2, cut_json, pid):
         elif 'need_confirm' in char_data:
             confirm_count += 1
         elif 'added' in char_data:
+            # 设定一个缺省值
             char_data['w'] = 30
             char_data['h'] = 25
+            char_data['x'] = 30
+            char_data['y'] = 30
             try:
                 line_no = char_data['line_no']
                 char_no = char_data['char_no']
                 prev_line_no = line_no - 1
                 next_line_no = line_no + 1
                 cur_line_char_count = line_char_count[line_no]
+                bar_index = line_to_bar_index[line_no]
                 s = None
                 prev_char_count = line_char_count.get(prev_line_no, 0)
                 next_char_count = line_char_count.get(next_line_no, 0)
-                if prev_char_count == cur_line_char_count:
+                if prev_line_no in bars[bar_index] and prev_char_count == cur_line_char_count:
                     s = '%02dn%02d' % (prev_line_no, char_no)
-                elif next_char_count == cur_line_char_count:
+                elif next_line_no in bars[bar_index] and next_char_count == cur_line_char_count:
                     s = '%02dn%02d' % (next_line_no, char_no)
                 if s and (s in char_map) and ('y' in char_map[s]):
                     char_data['y'] = char_map[s]['y']
                     char_data['h'] = char_map[s]['h']
                 else:
                     bar_index = line_to_bar_index[line_no]
-                    char_data['y'], char_data['h'] = bar_cord_lst[bar_index][char_no-1]
+                    if char_no == 1:
+                        char_idx = 0
+                    else: # 找到上一字对应的index
+                        last_char_s = '%02dn%02d' % (line_no, char_no-1)
+                        last_y = char_map[last_char_s]['y']
+                        for i in range(len(bar_cord_lst[bar_index])):
+                            y, h = bar_cord_lst[bar_index][i]
+                            if y - h/2 < last_y and last_y <= y + h/2:
+                                char_idx = i + 1
+                                break
+                    char_data['y'], char_data['h'] = bar_cord_lst[bar_index][char_idx]
 
-                if char_no == 1:
-                    s = '%02dn%02d' % (line_no, char_no + 1)
-                else:
-                    s = '%02dn%02d' % (line_no, char_no - 1)
-                if s in char_map and 'x' in char_map[s]:
-                    char_data['x'] = char_map[s]['x']
-                    char_data['w'] = char_map[s]['w']
-                else:
-                    s1 = '%02dn%02d' % (line_no - 1, char_no)
-                    s2 = '%02dn%02d' % (line_no + 1, char_no)
-                    if (s1 in char_map) and (s2 in char_map):
-                        if char_map[s1]['x'] - char_map[s2]['x'] < 200:
-                            char_data['x'] = (char_map[s1]['x'] + char_map[s2]['x'])/2
-                            char_data['w'] = (char_map[s1]['w'] + char_map[s2]['w'])/2
-                        elif line_no <= (line_count/2):
-                            char_data['x'] = char_map[s1]['x']
-                            char_data['w'] = char_map[s1]['w']
-                        else:
-                            char_data['x'] = char_map[s2]['x']
-                            char_data['w'] = char_map[s2]['w']
-                    elif (s1 in char_map):
-                        char_data['x'] = char_map[s1]['x']
-                        char_data['w'] = char_map[s1]['w']
-                    elif (s2 in char_map):
-                        char_data['x'] = char_map[s2]['x']
-                        char_data['w'] = char_map[s2]['w']
-                    else:
-                        print('no adjacent line:', char_data)
+                x, w = line_cord_lst[line_no-1]
+                char_data['x'] = x
+                char_data['w'] = w
             except:
                print('get_accurate_cut except: ', json.dumps(char_data))    
     return char_lst, line_count, column_count, char_count_lst, add_count, wrong_count, confirm_count
@@ -328,7 +365,7 @@ def fetch_col_file(reel, vol_page):
         data = f.read()
         return data
 
-def compute_accurate_cut(reel):
+def compute_accurate_cut(reel, process_cut=True):
     sid = reel.sutra.sid
     try:
         reel_ocr_text = ReelOCRText.objects.get(reel_id = reel.id)
@@ -398,12 +435,14 @@ def compute_accurate_cut(reel):
             page_code = page_code)
         page.char_count_lst = json.dumps(char_count_lst, separators=(',', ':'))
         page.status = PageStatus.RECT_NOTREADY
-        page.save()
 
         # 得到分列信息
         image_name_prefix = reel.image_prefix() + str(vol_page)
         img_path = reel.url_prefix() + str(vol_page) + '.jpg'
         column_lst = gene_new_col(image_name_prefix, char_lst)
+        page.bar_info = column_lst
+        page.save()
+
         #try:
         crop_col_online(img_path, column_lst)
         #except:
@@ -414,22 +453,17 @@ def compute_accurate_cut(reel):
             columns.append(column)
         Column.objects.bulk_create(columns)
 
-        # try:
-        #     col_file = fetch_col_file(reel, vol_page)
-        #     column_info = json.loads(col_file)
-        #     column_lst = column_info['col_data']
-        # except:
-        #     pass
-
         # cut related
-        page.bar_info = column_lst
-        page.save()
-        page.pagerects.all().delete()
-        pagerect = PageRect(page=page, reel=page.reel, line_count=line_count, column_count=column_count, rect_set=cut_info['char_data'])
-        pagerect.save()
-        pagerect.rebuild_rect()
-        reel.cut_ready = True
-        reel.save(update_fields=['cut_ready'])
+        if process_cut:
+            page.pagerects.all().delete()
+            pagerect = PageRect(page=page, reel=page.reel, line_count=line_count, column_count=column_count, rect_set=cut_info['char_data'])
+            pagerect.save()
+            try:
+                pagerect.rebuild_rect()
+            except:
+                traceback.print_exc()
+            reel.cut_ready = True
+            reel.save(update_fields=['cut_ready'])
 
 SUTRA_CLEAN_PATTERN = re.compile('[「」　 \r]')
 def clean_sutra_text(text):
@@ -473,32 +507,18 @@ def judge_merge_text_punct(text, punct_lst):
 def extract_page_line_separators(text):
     if text == '':
         return []
-    pages = text.split('\np\n')
-    if pages[0].startswith('p\n'): # 去掉最前面的p
-        pages[0] = pages[0][2:]
+    text = text.replace('b\n', '')
     separators = []
     pos = 0
-    page_index = 0
-    page_count = len(pages)
-    while page_index < page_count:
-        lines = pages[page_index].split('\n')
-        line_cnt = len(lines)
-        i = 0
-        while i < line_cnt:
-            pos += len(lines[i])
-            if i == (line_cnt - 1): # 一页中最后一行
-                if page_index != (page_count - 1): # 非最后一页
-                    separators.append( (pos, 'p') )
-            elif lines[i] == 'b':
-                separators.append( (pos, 'b') )
-            else:
-                separators.append( (pos, '\n') )
-            i += 1
-        page_index += 1
+    for c in text:
+        if c in 'p\n':
+            separators.append( (pos, c) )
+        else:
+            pos += 1
     return separators
 
 class ReelText(object):
-    def __init__(self, reel, text, tripitaka_id, sid, vol_no, start_vol_page, separators_json=None):
+    def __init__(self, reel, text, tripitaka_id, sid, vol_no, start_vol_page):
         self.reel = reel
         self.text = SEPARATORS_PATTERN.sub('', text)
         self.tripitaka_id = tripitaka_id
@@ -506,10 +526,7 @@ class ReelText(object):
         self.sid = sid
         self.vol_no = vol_no
         self.start_vol_page = start_vol_page
-        if separators_json:
-            self.separators = json.loads(separators_json)
-        else:
-            self.separators = extract_page_line_separators(text)
+        self.separators = extract_page_line_separators(text)
 
     def get_char_position(self, start_index, end_index):
         count_p = 0
@@ -530,14 +547,15 @@ class ReelText(object):
                 pos = len(self.text)
             if pos > start_index and start_char_no == -1:
                 # 第一次pos > start_index时
-                start_page_no = count_p + 1
-                start_line_no = count_n + 1
+                start_page_no = count_p
+                start_line_no = count_n
                 start_char_no = start_index - last_pos + 1
             if pos > end_index and end_char_no == -1:
                 # 第一次pos > end_index时
-                end_page_no = count_p + 1
-                end_line_no = count_n + 1
+                end_page_no = count_p
+                end_line_no = count_n
                 end_char_no = end_index - last_pos + 1
+                break
 
             if i == separator_count:
                 break

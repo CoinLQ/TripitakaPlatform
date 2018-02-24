@@ -52,7 +52,10 @@ class Command(BaseCommand):
                     sutra = Sutra(sid=sid, tripitaka=tripitaka, code=sid[2:7], \
                     variant_code=sid[7], name=name, lqsutra=lqsutra, total_reels=60)
                     sutra.save()
-                reel = Reel(sutra=sutra, reel_no=reel_no, start_vol=start_vol, start_vol_page=start_vol_page,
-                end_vol=end_vol, end_vol_page=end_vol_page)
-                reel_lst.append(reel)
+                try:
+                    reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
+                except:
+                    reel = Reel(sutra=sutra, reel_no=reel_no, start_vol=start_vol, start_vol_page=start_vol_page,
+                    end_vol=end_vol, end_vol_page=end_vol_page)
+                    reel_lst.append(reel)
             Reel.objects.bulk_create(reel_lst)

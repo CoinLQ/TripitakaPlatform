@@ -13,7 +13,7 @@ import traceback
 
 import re, json
 
-def create_punct_task(sid, reel_no, batch_task, id):
+def create_punct_task(sid, reel_no, batch_task):
     tcode = sid[:2]
     tripitaka = Tripitaka.objects.get(code=tcode)
     sutra = Sutra.objects.get(sid=sid)
@@ -29,7 +29,7 @@ def create_punct_task(sid, reel_no, batch_task, id):
         punct.save()
 
     for task_no in [1, 2]:
-        task = Task(id=id+task_no-1, batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=reel,
+        task = Task(batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=reel,
         reeltext=reel_correct_text, result=task_puncts,
         task_no=task_no, status=Task.STATUS_PROCESSING,
         publisher=batch_task.publisher, picker=batch_task.publisher)
@@ -57,17 +57,17 @@ class Command(BaseCommand):
         # 标点
         Task.objects.filter(batch_task=batch_task, typ=Task.TYPE_PUNCT).delete()
 
-        task1 = Task(id=7, batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
+        task1 = Task(batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
         reeltext=reelcorrecttext, result=punctuation_json,
         task_no=1, status=Task.STATUS_READY,
         publisher=admin, picker=admin)
         task1.save()
-        task2 = Task(id=8, batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
+        task2 = Task(batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
         reeltext=reelcorrecttext, result=punctuation_json,
         task_no=2, status=Task.STATUS_READY,
         publisher=admin, picker=admin)
         task2.save()
 
-        create_punct_task('YB000860', 1, batch_task, 9)
-        create_punct_task('ZH000860', 1, batch_task, 11)
-        create_punct_task('QL000870', 1, batch_task, 13)
+        create_punct_task('YB000860', 1, batch_task)
+        create_punct_task('ZH000860', 1, batch_task)
+        create_punct_task('QL000870', 1, batch_task)

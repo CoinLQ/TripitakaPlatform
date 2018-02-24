@@ -15,9 +15,15 @@ def gene_col_data(char_lst):
     :param char_lst:
     :return:
     '''
+    # 找出w的中位值
+    w_lst = [c.get('w', 0) for c in char_lst]
+    mid_index = int(len(w_lst) / 2)
+    w_mid = w_lst[mid_index]
     xs = []
     ys = []
     for c in char_lst:
+        if c.get('w', 0) >= 2 * w_mid: # 如果字框宽度大于2倍w中位值，忽略
+            continue
         if 'x' in c:
             xs.append(c['x'])
             if 'w' in c:

@@ -1033,7 +1033,7 @@ Vue.component('judge-image-dialog', {
             for (var i = 0; i < length; ++i) {
                 var tid = diffsegtexts[i].tripitaka.id;
                 var tname = diffsegtexts[i].tripitaka.shortname;
-                if (tname == '丽再' || tname == 'CBETA') {
+                if (tname == 'CBETA') {
                     continue;
                 }
                 this.images.push({

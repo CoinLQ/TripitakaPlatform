@@ -203,6 +203,8 @@ def get_line_cord_lst(char_lst):
             else:
                 avg_x -= 35
                 avg_w = 30
+                if avg_x < 0:
+                    avg_x = 0
             total_x = 0
             total_w = 0
             cnt = 0
@@ -215,6 +217,8 @@ def get_line_cord_lst(char_lst):
     else:
         avg_x -= 35
         avg_w = 30
+        if avg_x < 0:
+            avg_x = 0
     line_cord_lst.append( (avg_x, avg_w) )
     return line_cord_lst
 
@@ -402,7 +406,7 @@ def compute_accurate_cut(reel, process_cut=True):
         cut_file = fetch_cut_file(reel, vol_page)
         # 如果有分栏，最后一位是栏号，需用a/b；无分栏，为空
         page_code = '%s_%s_%s%s' % (sid[0:2], reel.path_str(), vol_page, '') # YB_1_1
-        if i < correct_page_count:
+        if i < correct_page_count and cut_file:
             try:
                 #print('vol_page: ', vol_page)
                 #print('%s\n----------\n%s\n----------' % (correct_pagetexts[i], pagetexts[i]))
@@ -428,13 +432,17 @@ def compute_accurate_cut(reel, process_cut=True):
                 print('get_accurate_cut failed: %s\n' % pid, traceback.print_exc())
                 cut_info_json = cut_file
                 char_count_lst = []
+                line_count = 0
+                column_count = 0
                 if cut_file:
                     cut_info = json.loads(cut_file)
+                    cut_info_json = cut_file
                 else:
                     cut_info = {
                         'page_code': page_code,
                         'char_data': [],
                     }
+                    cut_info_json = json.dumps(cut_info, indent=None)
                 char_lst = cut_info['char_data']
                 page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
                 text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),

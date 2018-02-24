@@ -102,7 +102,7 @@ class Task(models.Model):
 
     # 用于记录当前工作的条目，下次用户进入任务时直接到此。
     # 文字校对，表示CorrectSeg的id；校勘判取表示page
-    cur_focus = models.SmallIntegerField('当前工作的条目', default=0)
+    cur_focus = models.IntegerField('当前工作的条目', default=0)
 
     # 校勘判取相关
     reeldiff = models.ForeignKey('ReelDiff', on_delete=models.SET_NULL, blank=True, null=True)

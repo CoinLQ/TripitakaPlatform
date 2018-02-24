@@ -132,10 +132,10 @@ class Command(BaseCommand):
                 reelcorrecttext.save()
 
         # 得到精确的切分数据
-        # try:
-        #     compute_accurate_cut(huayan_yb_1)
-        # except Exception:
-        #     traceback.print_exc()
+        try:
+            compute_accurate_cut(huayan_yb_1)
+        except Exception:
+            traceback.print_exc()
 
 
 

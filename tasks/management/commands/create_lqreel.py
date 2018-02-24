@@ -28,8 +28,11 @@ class Command(BaseCommand):
         # 華嚴經60卷
         lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
         for reel_no in range(1, 61):
-            lqreel = LQReel(lqsutra=lqsutra, reel_no=reel_no)
-            lqreel_lst.append(lqreel)
+            try:
+                lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
+            except:
+                lqreel = LQReel(lqsutra=lqsutra, reel_no=reel_no)
+                lqreel_lst.append(lqreel)
 
         # for reel in reels:
         #     if not reel.sutra.lqsutra:

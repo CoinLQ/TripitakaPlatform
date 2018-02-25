@@ -23,24 +23,29 @@
         <div class="reel-text-region-o"  @keydown.tab="nextPopup($event)" >
           {% raw %}
           <div id="reel-text-compare" class="reel-text-compare">
+            <div class="operation">
+                <el-popover ref='popover' width="300" style="position: absolute; top: -500;" placement="bottom" trigger="manual" popper-class="elpopup">
+                        <el-row :gutter="20">
+                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag>比对本</el-tag></div></el-col>
+                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text1, $event)" class='selection' v-html="spanContent(current_seg.text1)"></span></div></el-col>
+                        </el-row>
+                        <el-row :gutter="20">
+                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag class='ll'>OCR</el-tag></div></el-col>
+                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text2, $event)" class='selection' v-html="spanContent(current_seg.text2)"></span></div></el-col>
+                        </el-row>
+                        <el-row :gutter="20">
+                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="danger">选择结果</el-tag></div></el-col>
+                          <el-col :span="17"><div class="grid-content bg-purple"><span id="pop-input" type="text" placehold="结果文" v-html="getSegText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)"></span></div></el-col>
+                        </el-row>
+                </el-popover>
+            </div>
             <div class="spn" v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id">
-                <div class="operation">
-                    <el-popover :ref="'popover' + seg.id" width="300" offset="300" placement="bottom" trigger="manual" popper-class="elpopup">
-                            <ul class="segli">
-                                    <li @click="selectText(seg, index, 1, $event)"><el-tag>比对本</el-tag> {{seg.text1}}</li>
-                                    <li @click="selectText(seg, index, 2, $event)"><el-tag type="danger">OCR</el-tag> {{seg.text2}}</li>
-                                    <li  style="color: #409EFF" @click="selectText(seg, index, 0, $event)"><textarea  type="text" placehold="结果文" autofocus rows="2" v-model="seg.selected_text" @input="segInput(seg, index, $event)"></textarea></li>
-                                    <el-switch v-model="seg.doubt_comment" active-text="存疑状态" inactive-text="暂无疑问"  active-value="存疑"  inactive-value="" @change="updateCorrectSeg(seg)"></el-switch>
-                            </ul>
-                    </el-popover>
-                </div>
-              <span v-if="seg.tag == 1" v-html="getSegText(seg)"  @keydown="blockthem" :class="{ changed: (!seg.selected_text) }" @click="segClick(seg, $event)" contenteditable="true" @blur="segOuterInput(seg, index, $event)" />
-              </span>
-              <span v-if="seg.tag == 2" v-html="getSegText(seg)"  @keydown="blockthem"  class="difftext" :class="{ changed: (seg.selected_text!=null) }" @click="segClick(seg, $event)" contenteditable="true">
-              </span>
+              <span v-if="seg.tag == 1" v-html="getSegText(seg)" @mouseup="textSelection(seg)" @keydown="blockthem" :class="{ changed: (seg.text2 != seg.selected_text) }" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)" /></span>
 
-              <span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="true" @input="segParagraphMarkInput(seg, index, $event)"></span>
-              <span v-if="seg.tag == 4" contenteditable="true" @click="segLinefeedClick(seg, index)" @input="segLinefeedInput(seg, index, $event)" v-html="getLineFeedHtml(seg)"></span>
+              <span v-if="seg.tag == 2" v-html="getSegText(seg)" @mouseup="textSelection(seg)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null)}" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)"></span>
+
+              <span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span>
+              <span v-if="seg.tag == 4" contenteditable="true" @click="segLinefeedClick(seg, index)" @input="segLinefeedInput(seg, index, $event)" v-html="getSegText(seg)"></span>
             </div>
           </div>
           {% endraw %}
@@ -57,6 +62,7 @@
     data: {
       result: '',
       compare_text: '',
+      current_seg: {},
       ocr_text: '',
       selected_text:'',
       scrolled: false,
@@ -66,8 +72,8 @@
       page_no: 1,
       line_no: 1,
       char_no: 1,
+      current_char_no: 1,
       row_in_text: 1,
-      submit_title: '',
       sharedata: {task_id: {{ task.id }}, status: 0, correctsegs: []  }
     },
     computed: {
@@ -85,16 +91,65 @@
         vm.start_vol_page = response.data.start_vol_page;
         vm.image_url_prefix = response.data.image_url_prefix;
         vm.segid = response.data.cur_focus;
-        if (vm.sharedata.status == 4) {
-          vm.submit_title = '已完成';
-        } else {
-          vm.submit_title = '';
-        }
         vm.loadImage();
       });
       this.loadCorrectSegs();
     },
     methods: {
+      spanContent: function(content) {
+        if (!content) {
+          return '<span></span>'
+        } else {
+          return content;
+        }
+      },
+      choiceText: function(seg, text, evt = null) {
+        if (evt) { evt.preventDefault(); }
+        seg.selected_text = text;
+        this.updateCorrectSeg(seg);
+      },
+      loadPopup: function (seg){
+        // 文本差异的correctseg进入可视区
+        window.pp = this;
+        if (seg.tag == "1") {
+          this.$refs['popover'].doClose();
+          return
+        }
+        this.current_seg = seg;
+        let pos = this.$el.querySelector('div.diff-text-pane').scrollTop + this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().bottom;
+        this.$refs['popover'].$el.style.position = 'relative'
+        this.$refs['popover'].$el.style.top = pos + 'px';
+        if (seg.id == this.current_seg.id) {
+          this.$refs['popover'].doToggle();
+        } else {
+          this.$refs['popover'].doShow();
+        }
+      },
+      textSelection: function(seg = null){
+        var selection = window.getSelection(),
+        range = selection.getRangeAt(0);
+        // console.log(range.startOffset);
+        // console.log(range.startContainer);
+        // console.log(range.cloneContents().textContent);
+        if (seg) {
+          this.page_no = seg.page_no;
+          this.line_no = seg.line_no;
+          this.char_no = seg.char_no;
+        }
+        // console.log(this.page_no,this.line_no, this.char_no);
+        if (range.startOffset <= 1){
+            this.current_char_no = this.char_no;
+        } else {
+            this.current_char_no = this.char_no + range.startOffset -1;
+        }
+        
+        this.loadImage();
+        if (seg) {
+          this.loadPopup(seg);
+        }
+        
+        //range.moveStart('character', 1);
+      },
       handleScroll: function(){
         window.pp =this;
         this.scrolled = this.$el.querySelector('div.diff-text-pane').scrollTop >50
@@ -112,7 +167,8 @@
         }
         if (!seg) { return }
         this.moveSegDiffToView(seg.id);
-        this.segClick(seg, evt)
+        this.textSelection(seg);
+        this.segClick(seg, evt);
       },
       getSegText: function(seg) {
         if (seg.selected_text == null) {
@@ -122,10 +178,14 @@
             return seg.text2
           }
         } else if(!seg.selected_text) {
-            return '🔙'
+            return '&nbsp;'
         }
         else {
-            return seg.selected_text.replace(/\n/g, '<br>');
+            // if (seg.selected_text.length >=3 &&seg.selected_text[seg.selected_text.length-2] != '↵' && seg.selected_text[seg.selected_text.length-1] == '\n')
+            // {
+            //   seg.selected_text = seg.selected_text.replace(/\n$/g, '');
+            // }
+            return seg.selected_text.replace(/↵/g, '').replace(/\n\n$/g, '\n').replace(/\n/g, '↵<br>');
         }
       },
       setImg: function(img_url, x, y, w, h) {
@@ -144,8 +204,9 @@
 
           //设置样式
           context.lineWidth = 1;
+          context.globalAlpha = 0.5;
           context.strokeStyle = "#F5270B";
-          context.fillStyle = "#F5270BA0";
+          context.fillStyle = "#F5270B";
           //绘制
           context.strokeRect(x, y, w, h);
           context.fillRect(x, y, w, h);
@@ -171,7 +232,7 @@
             var v = char_data[i];
             var line_no = v['line_no'];
             var char_no = v['char_no'];
-            if (line_no == vm.line_no && char_no == vm.char_no) {
+            if (line_no == vm.line_no && char_no == vm.current_char_no) {
               vm.setImg(img_url, v['x'], v['y'], v['w'], v['h']);
             }
           }
@@ -179,7 +240,7 @@
       },
       getLineFeedHtml: function(seg) {
         if (seg.selected_text == '\n') {
-          return '↵<br />';
+          return '↵<br>';
         } else {
           return '';
         }
@@ -200,7 +261,14 @@
       },
       blockthem: function(evt) {
         if (evt.keyCode == 37 || evt.keyCode == 39)
+        {
+          this.$nextTick(function () {
+            // DOM is now updated
+            // `this` is bound to the current instance
+            this.textSelection()
+          }.bind(this))
           return
+        }
         if (evt.keyCode >= 32 && evt.keyCode <= 222 || evt.keyCode== 229) {
           evt.preventDefault()
           return
@@ -212,18 +280,16 @@
             return
           }
           this.$el.querySelector('#segdiff-'+ segid + ' span.difftext').focus()
-          console.log(this.$el.querySelector('#segdiff-' + segid).getBoundingClientRect().top, $('#segdiff-' + segid).position().top)
           var offset = this.$el.querySelector('div.diff-text-pane').scrollTop + this.$el.querySelector('#segdiff-' + segid).getBoundingClientRect().top - 360;
-          console.log(offset);
           this.$el.querySelector('div.diff-text-pane').scrollTop = offset;
         } catch(err) {
           console.log('moveSegDiffToView: ', err)
         }
       },
       hideAllPopup(e) {
-        let ref_id = 'popover' + this.segid;
+        let ref_id = 'popover';
         if (this.segid != 0) {
-            this.$refs[ref_id][0].doClose();
+            this.$refs[ref_id].doClose();
         }
       },
       handleClose(done) {
@@ -235,46 +301,103 @@
       },
       segClick: function(seg, e) {
           e.stopPropagation();
-          // 文本差异的correctseg进入可视区
-          let ref_id = 'popover' + this.segid;
-          if ((this.segid == seg.id) || (this.segid==0)) {
-              return
-          }
-          if (this.segid != 0) {
-            this.$refs[ref_id][0].doClose();
-          }
 
           this.segid = seg.id;
           this.compare_text = seg.text1;
           this.ocr_text = seg.text2;
-          this.selected_text = this.ocr_text;
-          ref_id = 'popover' + seg.id;
-          this.$refs[ref_id][0].doShow();
-          var selection = window.getSelection();
-          var cursor_offset = selection.focusOffset;
+          this.selected_text = seg.selected_text;
+          
+          
           this.page_no = seg.page_no;
           this.line_no = seg.line_no;
-          this.char_no = seg.char_no + cursor_offset;
-          this.loadImage();
+          this.char_no = seg.char_no;
+          
+      },
+      userSelection: function() {
+        var userSelection, rangeObject;
+        if (window.getSelection) { 
+            //现代浏览器
+            userSelection = window.getSelection();
+        } else if (document.selection) { 
+            //IE浏览器 考虑到Opera，应该放在后面
+            userSelection = document.selection.createRange();
+        }
+
+        return userSelection;
       },
       segLinefeedClick: function(seg, index) {
         this.page_no = seg.page_no;
         this.line_no = seg.line_no;
         this.char_no = seg.char_no;
-        this.loadImage();
         this.hideAllPopup(index);
       },
-      segInput: function(seg, index, e) {
-        this.updateCorrectSeg(seg);
+      inputNode: function(seg ,e) {
+        if (e.target.id) {
+          return this.$el.querySelector('#' + e.target.id)
+        } else {
+          return this.$el.querySelector('#segdiff-' + seg.id + ' span')
+        }
       },
-      segOuterInput: function(seg, index, e) {
-        var newtext = e.target.innerText;
-        this.updateCorrectSeg(seg, newtext);
+      segInput: function(seg, e) {
+
+        let userSelection = this.userSelection();
+        let startNode = userSelection.anchorNode,
+            startOffset = userSelection.anchorOffset,
+            focusNode = userSelection.focusNode,
+            focusOffset = userSelection.focusOffset;
+        let new_string = e.target.innerText;
+        if (new_string.length >= 2 &&new_string[e.target.innerText.length -1] == '\n' && new_string[new_string.length-2] != '↵') {
+          if ( e.inputType == 'deleteContentBackward') {
+            new_string = new_string.replace(/\n$/g, '')
+            e.target.innerText = new_string
+          }
+          
+        }
+        seg.selected_text = e.target.innerText;
+        //console.log(startNode, startOffset, focusNode, focusOffset )
+        this.updateCorrectSeg(seg);
+        this.$nextTick(function() {
+
+          let userSelection = this.userSelection();
+          let node = this.inputNode(seg, e);
+          let textNode = _.find(node.childNodes, function(o) { return o.data == focusNode.data; }.bind(this) )
+          let includedTextNode = undefined;
+          if (focusNode.data !=undefined) {
+            includedTextNode = _.find(node.childNodes, function(o) { return o.data && o.data.indexOf(focusNode.data.replace(/↵$/g, '')) > -1; }.bind(this) )
+          }
+          var range = document.createRange();
+          // 处理最后一个回车，没有分段Range
+          if (focusNode.data==undefined) {
+            let childNodes = _.filter(node.childNodes,  function(o) { return o.nodeName == "#text"; });
+            if (childNodes.length==0) {
+              return
+            } 
+            textNode = childNodes[childNodes.length-1]
+            range.selectNode(textNode)
+            range.setStart(textNode, textNode.data.length);
+            range.setEnd(textNode, textNode.data.length);
+          }
+          else {
+            if (textNode) {
+              range.selectNode(textNode)
+              range.setStart(textNode, startOffset);
+              range.setEnd(textNode, focusOffset);
+            } else {
+              range.selectNode(includedTextNode)
+              range.setStart(includedTextNode, startOffset-1);
+              range.setEnd(includedTextNode, focusOffset-1);
+            }
+            
+          }
+          
+          e.target.focus();
+          selection = this.userSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }.bind(this))
       },
       segParagraphMarkInput: function(seg, index, e) {
         var newtext = e.target.innerText;
-        var selection = window.getSelection();
-        var cursor_offset = selection.focusOffset;
         seg.selected_text = newtext;
       },
       segLinefeedInput: function(seg, index, e) {
@@ -299,6 +422,7 @@
               vm.page_no = seg.page_no;
               vm.line_no = seg.line_no;
               vm.char_no = seg.char_no;
+              vm.current_char_no = vm.char_no;
             }
           }
 
@@ -309,16 +433,12 @@
         });
       },
       updateCorrectSeg: function(seg, update_text = null) {
-        console.log('update: ', seg)
-        var vm = this
-        axios.put('/api/correct/' + vm.sharedata.task_id + '/correctsegs/' + seg.id + '/', {
+        update_text = seg.selected_text.replace(/↵/g, '').replace(/&nbsp;/g, '')
+        axios.put('/api/correct/' + this.sharedata.task_id + '/correctsegs/' + seg.id + '/', {
           selected_text: update_text || seg.selected_text,
-          doubt_comment: seg.doubt_comment
+          doubtable: seg.doubtable
         })
         .then(function(response) {
-          if (update_text) {
-            seg.selected_text = update_text
-          }
           console.log(response);
         });
       },

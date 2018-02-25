@@ -106,6 +106,9 @@
     overflow: scroll;
     border: 1px #ccc solid;
 }
+.judge-page-text {
+    font-size: 20px;
+}
 ul.diffseg-region {
     list-style-type: none;
     padding: 10px 0px;

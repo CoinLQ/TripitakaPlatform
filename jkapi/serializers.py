@@ -15,8 +15,8 @@ class DiffSegTextSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiffSegText
-        fields = ('tripitaka', 'text', 'start_char_pos', 'rect', 'column_url')
-        read_only_fields = ('tripitaka', 'text', 'start_char_pos', 'rect', 'column_url')
+        fields = ('tripitaka', 'text', 'start_char_pos', 'end_char_pos', 'rect', 'column_url', 'page_url')
+        read_only_fields = ('tripitaka', 'text', 'start_char_pos', 'end_char_pos', 'rect', 'column_url', 'page_url')
 
 class DiffSegSerializer(serializers.ModelSerializer):
     diffsegtexts = DiffSegTextSerializer(many=True)

@@ -222,12 +222,20 @@ Vue.component('diffseg-box', {
         <div><span>{{ base_text }}</span>\
         </div>\
         <span v-for="(diffsegtexts, text, index) in diffsegresult.text_to_diffsegtexts">\
-            <span v-html="diffsegtextsJoin(diffsegtexts)"></span>\
+            <span v-for="(diffsegtext, idx) in diffsegtexts">\
+                <span v-if="idx != 0">/</span><a href="#" @click="openPageDialog(diffsegtext)">{{ diffsegtext.tripitaka.shortname }}</a>\
+            </span>\
             <span v-if="text">：{{ text }}</span>\
             <span v-else>为空</span>\
             <span v-if="index < (diffsegresult.text_count - 1)">；</span>\
             <span v-else>。</span>\
         </span>\
+        <div v-if="sharedata.is_verify" v-for="(judge_result, index) in diffsegresult.judge_results">\
+            <div>\
+                <span>判取{{ index + 1 }}：{{ getResult(judge_result) }}</span>\
+                <a href="#" v-if="judge_result.typ == 2" @click.stop.prevent="showSplit(judge_result)">显示拆分方案</a>\
+            </div>\
+        </div>\
         <div>\
             <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>\
             <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">存疑</a>\
@@ -261,130 +269,15 @@ Vue.component('diffseg-box', {
             this.$emit('segfocus');
             console.log('emit segfocus')
         },
-        doJudge: function(segindex) {
-            if (this.diffsegresult.typ == 2) {
-                return ;
-            }
-            this.sharedata.segindex = segindex;
-            this.sharedata.judgeDialogVisible = true;
-        },
-        doMerge: function(segindex) {
-            this.sharedata.segindex = segindex;
-            this.sharedata.mergeDialogVisible = true;
-        },
-        doSplit: function(segindex) {
-            this.sharedata.segindex = segindex;
-            this.sharedata.splitDialogVisible = true;
-        },
-        diffsegtextsJoin: function(diffsegtexts) {
-            var i = 0;
-            var lst = [];
-            while (i < diffsegtexts.length) {
-                var s = '';
-                var char_pos = diffsegtexts[i].start_char_pos;
-                if (char_pos != null && char_pos != '') {
-                    var pid = char_pos.substr(0, 17);
-                    s = '<a href="/sutra_pages/' + pid + '/view?char_pos='
-                    + char_pos + '" target="_blank">'
-                    + diffsegtexts[i].tripitaka.shortname + '</a>';
-                } else {
-                    s = diffsegtexts[i].tripitaka.shortname;
+        openPageDialog: function(diffsegtext) {
+            if (diffsegtext.page_url != null) {
+                this.sharedata.pageDialogInfo = {
+                    page_url: diffsegtext.page_url,
+                    start_char_pos: diffsegtext.start_char_pos,
+                    end_char_pos: diffsegtext.end_char_pos
                 }
-                lst.push(s);
-                ++i;
+                this.sharedata.judgePageDialogVisible = true;
             }
-            return lst.join('/');
-        },
-        getResult: function(diffsegresult) {
-            var s = '';
-            var merged_length = diffsegresult.merged_diffsegresults.length;
-            if (diffsegresult.typ == 1) {
-                var little_count = 0;
-                var great_count = 0;
-                for (var i = 0; i < merged_length; ++i) {
-                    var id = diffsegresult.merged_diffsegresults[i];
-                    if (id < diffsegresult.id) {
-                        little_count++;
-                    } else if (id > diffsegresult.id) {
-                        great_count++;
-                    }
-                }
-                if (little_count != 0 || great_count != 0) {
-                    var texts = [];
-                    if (little_count != 0) {
-                        texts.push('前' + little_count + '条');
-                    }
-                    if (great_count != 0) {
-                        texts.push('后' + great_count + '条');
-                    }
-                    s = '已与' + texts.join('、') + '合并；';
-                }
-            } else if (diffsegresult.typ == 2) {
-                s = '已作拆分；'
-            }
-            if (diffsegresult.selected == 0) {
-                s += '未判取';
-            } else if (diffsegresult.doubt == 0) {
-                s += '判取文本：' + diffsegresult.selected_text;
-            } else if (diffsegresult.doubt == 1) {
-                s += '判取文本：' + diffsegresult.selected_text + '。存疑，' + diffsegresult.doubt_comment + '。';
-            }
-            return s;
-        }
-    }
-})
-
-Vue.component('diffseg-box-verify', {
-    props: ['diffsegresult', 'segindex', 'sharedata'],
-    template: '\
-    <div class="diffseg-box" @click.stop.prevent="click">\
-        <div><span>{{ base_text }}</span>\
-        </div>\
-        <span v-for="(diffsegtexts, text, index) in diffsegresult.text_to_diffsegtexts">\
-            <span v-html="diffsegtextsJoin(diffsegtexts)"></span>\
-            <span v-if="text">：{{ text }}</span>\
-            <span v-else>为空</span>\
-            <span v-if="index < (diffsegresult.text_count - 1)">；</span>\
-            <span v-else>。</span>\
-        </span>\
-        <div v-for="(judge_result, index) in diffsegresult.judge_results">\
-        <div>\
-            <span>判取{{ index + 1 }}：{{ getResult(judge_result) }}</span>\
-            <a href="#" v-if="judge_result.typ == 2" @click.stop.prevent="showSplit(judge_result)">显示拆分方案</a>\
-        </div>\
-        </div>\
-        <div>\
-            <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>\
-            <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">存疑</a>\
-            <a href="#" class="diffseg-btn" @click.stop.prevent="doMerge(segindex)">合并</a>\
-            <a href="#" class="diffseg-btn" v-if="diffsegresult.merged_diffsegresults.length == 0" @click.stop.prevent="doSplit(segindex)">拆分</a>\
-        </div>\
-        <div>处理结果：{{ getResult(diffsegresult) }}\
-        </div>\
-    </div>',
-    computed: {
-        base_text: function() {
-            var base_tripitaka_id = this.sharedata.base_tripitaka_id;
-            var length = this.diffsegresult.diffseg.diffsegtexts.length;
-            var text = '';
-            for (var i = 0; i < length; ++i) {
-                var diffsegtext = this.diffsegresult.diffseg.diffsegtexts[i];
-                if (diffsegtext.tripitaka.id == base_tripitaka_id) {
-                    text = diffsegtext.text;
-                    break;
-                }
-            }
-            if (text == '') {
-                text = '底本为空';
-            }
-            return text;
-        }
-    },
-    methods: {
-        click: function() {
-            this.sharedata.diffseg_id = this.diffsegresult.diffseg.id;
-            this.$emit('segfocus');
-            console.log('emit segfocus1')
         },
         doJudge: function(segindex) {
             if (this.diffsegresult.typ == 2) {
@@ -400,25 +293,6 @@ Vue.component('diffseg-box-verify', {
         doSplit: function(segindex) {
             this.sharedata.segindex = segindex;
             this.sharedata.splitDialogVisible = true;
-        },
-        diffsegtextsJoin: function(diffsegtexts) {
-            var i = 0;
-            var lst = [];
-            while (i < diffsegtexts.length) {
-                var s = '';
-                var char_pos = diffsegtexts[i].start_char_pos;
-                if (char_pos != null && char_pos != '') {
-                    var pid = char_pos.substr(0, 17);
-                    s = '<a href="/sutra_pages/' + pid + '/view?char_pos='
-                    + char_pos + '" target="_blank">'
-                    + diffsegtexts[i].tripitaka.shortname + '</a>';
-                } else {
-                    s = diffsegtexts[i].tripitaka.shortname;
-                }
-                lst.push(s);
-                ++i;
-            }
-            return lst.join('/');
         },
         getResult: function(diffsegresult) {
             var s = '';
@@ -698,10 +572,10 @@ Vue.component('split-dialog', {
             <tr v-for="(title, index) in title_lst">\
                 <td>{{ title }}</td>\
                 <td v-for="(tripitaka_id, tripitaka_index) in tripitaka_ids">\
-                    <textarea cols="5" v-model="tripitaka_id_to_texts[tripitaka_id][index]" @input="verifyData"></textarea>\
+                    <textarea cols="4" v-model="tripitaka_id_to_texts[tripitaka_id][index]" @input="verifyData"></textarea>\
                 </td>\
                 <td>\
-                    <textarea cols="5" v-model="selected_lst[index]" @input="verifyData"></textarea>\
+                    <textarea cols="4" v-model="selected_lst[index]" @input="verifyData"></textarea>\
                 </td>\
             </tr>\
             </tbody>\
@@ -954,9 +828,9 @@ Vue.component('show-split-dialog', {
 })
 
 Vue.component('column-image', {
-    props: ['imageinfo'],
+    props: ['imageinfo', 'sharedata'],
     template: '\
-    <canvas class="columnimage"></canvas>\
+    <canvas class="columnimage" @click="handleClick"></canvas>\
     ',
     mounted: function() {
         this.updateImage();
@@ -998,6 +872,15 @@ Vue.component('column-image', {
                 context.stroke();
             };
             image.src = vm.imageinfo.url;
+        },
+        handleClick: function() {
+            this.sharedata.pageDialogInfo = {
+                page_url: this.imageinfo.page_url,
+                start_char_pos: this.imageinfo.start_char_pos,
+                end_char_pos: this.imageinfo.end_char_pos
+            }
+            this.sharedata.judgePageDialogVisible = true;
+            this.sharedata.judgeImageDialogVisible = false;
         }
     }
 })
@@ -1012,7 +895,7 @@ Vue.component('judge-image-dialog', {
             <td v-for="(image, index) in images">{{ image.tname }}</td>\
             </tr>\
             <tr class="diffseg-image">\
-            <td v-for="(image, index) in images"><column-image :imageinfo="image"></column-image></td>\
+            <td v-for="(image, index) in images"><column-image :imageinfo="image" :sharedata="sharedata"></column-image></td>\
             </tr>\
             </tbody>\
         </table>\
@@ -1040,7 +923,10 @@ Vue.component('judge-image-dialog', {
                     tid: tid,
                     tname: tname,
                     url: diffsegtexts[i].column_url,
-                    rect: diffsegtexts[i].rect
+                    page_url: diffsegtexts[i].page_url,
+                    rect: diffsegtexts[i].rect,
+                    start_char_pos: diffsegtexts[i].start_char_pos,
+                    end_char_pos: diffsegtexts[i].end_char_pos
                 });
             }
         },
@@ -1054,6 +940,139 @@ Vue.component('judge-image-dialog', {
         },
         handleOK: function () {
             this.sharedata.judgeImageDialogVisible = false;
+        }
+    }
+})
+
+Vue.component('judge-page-dialog', {
+    props: ['sharedata'],
+    template: '\
+    <el-dialog title="" :visible.sync="sharedata.judgePageDialogVisible" width="90%" @open="handleOpen" :before-close="handleOK">\
+        <div class="row">\
+            <div class="col-md-8">\
+                <canvas id="page-canvas" width="800" height="1080"></canvas>\
+            </div>\
+            <div class="col-md-4">\
+                <div class="judge-page-text" v-html="text"></div>\
+            </div>\
+        </div>\
+    </el-dialog>\
+    ',
+    data: function () {
+        return {
+            text: ''
+        }
+    },
+    methods: {
+        clearImage: function() {
+            try {
+                var canvas = document.getElementById("page-canvas");
+                var context = canvas.getContext("2d");
+                context.clearRect(0, 0, canvas.width, canvas.height);
+            } catch(err) {
+            }
+        },
+        setImg: function(img_url, data, start_line_no, start_char_no, end_line_no, end_char_no) {
+            //console.log('setImg: ', img_url)
+            var canvas = document.getElementById("page-canvas");
+            var context = canvas.getContext("2d");
+            var image = new Image();
+            image.onload = function () {
+                var sx = 0;
+                var sy = 0;
+                var sw = canvas.width;
+                var sh = canvas.height;
+                if ('min_x' in data) {
+                    sx = data['min_x'] - 130;
+                    sy = data['min_y'] - 100;
+                    sw = data['max_x'] + 130 - sx;
+                    sh = data['max_y'] + 100 - sy;
+                    if (data['min_y'] < data['max_y'] * 2 / 3) {
+                        if (sy > 200) {
+                            sy = 100;
+                        }
+                        sh = data['max_y'] + 100 - sy;
+                    }
+                }
+                canvas.width = canvas.width;
+                canvas.height = canvas.width / sw * sh;
+                console.log(canvas.width, canvas.height)
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+                var xratio = canvas.width / sw;
+                var yratio = canvas.height / sh;
+                data['char_data'].forEach(function(v){
+                    var line_no = v['line_no'];
+                    var char_no = v['char_no'];
+                    var color = "#F5270B";
+                    var x = v['x'] - sx;
+                    var y = v['y'] - sy;
+                    var w = v['w'];
+                    var h = v['h'];
+                    x = parseInt(x * xratio);
+                    y = parseInt(y * yratio);
+                    w = parseInt(w * xratio);
+                    h = parseInt(h * yratio);
+
+                    var to_draw = false;
+                    
+                    if ('added' in v) {
+                        color = 'ForestGreen';
+                    } else if ('old_char' in v) {
+                        color = 'blue';
+                    }
+                    if (start_line_no != end_line_no) {
+                        if (line_no == start_line_no && char_no >= start_char_no) {
+                            color = '#ff00ff';
+                        } else if (line_no > start_line_no && line_no < end_line_no) {
+                            color = '#ff00ff';
+                        } else if (line_no == end_line_no && char_no <= end_char_no) {
+                            color = '#ff00ff';
+                        }
+                    } else {
+                        if (line_no == start_line_no && char_no >= start_char_no && 
+                            char_no <= end_char_no) {
+                            color = '#ff00ff';
+                        }
+                    }
+                    context.beginPath();
+                    context.moveTo(x, y);
+                    context.lineTo(x + w, y);
+                    context.lineTo(x + w, y + h);
+                    context.lineTo(x, y + h);
+                    context.lineTo(x, y);
+                    //设置样式
+                    context.lineWidth = 1;
+                    context.strokeStyle = color;
+                    context.stroke();
+                });
+            };
+            image.src = img_url;
+        },
+        loadImage: function() {
+            var start_char_pos = this.sharedata.pageDialogInfo.start_char_pos;
+            var end_char_pos = this.sharedata.pageDialogInfo.end_char_pos;
+            var pid = start_char_pos.substr(0, 17);
+            var start_line_no = parseInt(start_char_pos.substr(18, 2));
+            var start_char_no = parseInt(start_char_pos.substr(21, 2));
+            var end_line_no = parseInt(end_char_pos.substr(18, 2));
+            var end_char_no = parseInt(end_char_pos.substr(21, 2));
+            var cut_url = '/api/page/' + pid + '/';
+            var vm = this;
+            axios.get(cut_url).then(function(response) {
+                var data = JSON.parse(response.data.cut_info);
+                vm.text = response.data.text.replace(/\n/g, '<br />');
+                vm.setImg(vm.sharedata.pageDialogInfo.page_url, data,
+                    start_line_no, start_char_no, end_line_no, end_char_no);
+            });
+        },
+        handleOpen: function () {
+            this.clearImage();
+            this.text = '';
+            this.loadImage();
+        },
+        handleOK: function () {
+            this.sharedata.judgePageDialogVisible = false;
         }
     }
 })

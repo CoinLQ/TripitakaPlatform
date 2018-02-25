@@ -11,12 +11,15 @@ import re, json
 
 def set_char_position(diffsegtext, tid_to_reeltext):
     tid = diffsegtext.tripitaka_id
+    if len(diffsegtext.text) > 0:
+        end_index = diffsegtext.position + len(diffsegtext.text) - 1
+    else:
+        end_index = diffsegtext.position
     start_page_no, start_line_no, start_char_no, end_page_no, end_line_no, end_char_no = \
     tid_to_reeltext[tid].get_char_position(
         diffsegtext.position,
-        diffsegtext.position + len(diffsegtext.text))
+        end_index)
     reel = tid_to_reeltext[tid].reel
-    vol_page_no = reel.start_vol_page + start_page_no - 1
     # 在校勘记中的字ID格式：
     # 8位sid_3位卷号_2位卷中页号_1位栏位号_2位行号_2位行中字序号
     # YB000860_001_01_0_01_01

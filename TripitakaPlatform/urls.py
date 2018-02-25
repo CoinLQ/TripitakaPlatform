@@ -33,7 +33,7 @@ urlpatterns = [
     path('verify_correct/<int:task_id>/', do_correct_task, name='do_correct_task'),
     path('sutra_pages/<pid>/view', sutra_page_detail, name='sutra_page_detail'),
     path('judge/<int:task_id>/', do_judge_task, name='do_judge_task'),
-    path('verify_judge/<int:task_id>/', do_judge_verify_task, name='do_judge_verify_task'),
+    path('verify_judge/<int:task_id>/', do_judge_task, name='do_judge_verify_task'),
     path('punct/<int:task_id>/', do_punct_task, name='do_punct_task'),
     path('lqpunct/<int:task_id>/', do_punct_task, name='do_punct_task'),
 

@@ -34,9 +34,9 @@ class BatchTask(models.Model):
 
     @property
     def batch_no(self):
-        return '%d%02d%02d%02d%02d%02d%06d' % (self.created_at.year,
+        return '%d%02d%02d%02d%02d' % (self.created_at.year,
      self.created_at.month, self.created_at.day, self.created_at.hour,
-     self.created_at.minute, self.created_at.second, self.created_at.microsecond)
+     self.created_at.minute)
 
 class Task(models.Model):
     TYPE_CORRECT = 1
@@ -231,29 +231,52 @@ class DiffSegText(models.Model):
             pass
 
     @property
+    def page_url(self):
+        pid = self.start_char_pos[0:17]
+        try:
+            page = Page.objects.get(pid=pid)
+            url = '%s%s%d.jpg' % (settings.IMAGE_URL_PREFIX, page.reel.url_prefix(), page.page_no)
+            return url
+        except:
+            pass
+
+    @property
     def rect(self):
         pid = self.start_char_pos[0:17]
         line_no = self.start_char_pos[18:20]
         char_no = self.start_char_pos[21:23]
-        line_no = int(line_no)
-        char_no = int(char_no)
+        start_line_no = int(line_no)
+        start_char_no = int(char_no)
+        line_no = self.end_char_pos[18:20]
+        char_no = self.end_char_pos[21:23]
+        end_line_no = int(line_no)
+        end_char_no = int(char_no)
         try:
             page = Page.objects.get(pid=pid)
             cut_info = json.loads(page.cut_info)
             for ch in cut_info['char_data']:
-                if (ch['line_no'] == line_no and ch['char_no'] == char_no):
-                    rectx = ch['x']
-                    recty = ch['y']
-                    w = ch['w']
-                    h = ch['h']
-                    break
+                if (ch['line_no'] == start_line_no and ch['char_no'] == start_char_no):
+                    rectx1 = ch['x']
+                    recty1 = ch['y']
+                    w1 = ch['w']
+                if start_line_no == end_line_no:
+                    if (ch['line_no'] == end_line_no and ch['char_no'] == end_char_no):
+                        recty2 = ch['y']
+                        h2 = ch['h']
+                        break
+                else:
+                    if ch['line_no'] == start_line_no:
+                        recty2 = ch['y']
+                        h2 = ch['h']
+                    elif ch['line_no'] > start_line_no:
+                        break
 
-            col_id = '%sc%d0%02d' % (page.reel.image_prefix(), page.page_no, line_no)
+            col_id = '%sc%d0%02d' % (page.reel.image_prefix(), page.page_no, start_line_no)
             column = Column.objects.get(id=col_id)
-            x = rectx - column.x
-            y = recty - column.y
-            x1 = x + w
-            y1 = y + h
+            x = rectx1 - column.x
+            y = recty1 - column.y
+            x1 = x + w1
+            y1 = recty2 - column.y + h2
             return (x, y, x1, y1)
         except:
             pass

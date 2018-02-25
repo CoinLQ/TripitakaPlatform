@@ -880,7 +880,6 @@ Vue.component('column-image', {
                 end_char_pos: this.imageinfo.end_char_pos
             }
             this.sharedata.judgePageDialogVisible = true;
-            this.sharedata.judgeImageDialogVisible = false;
         }
     }
 })
@@ -896,6 +895,9 @@ Vue.component('judge-image-dialog', {
             </tr>\
             <tr class="diffseg-image">\
             <td v-for="(image, index) in images"><column-image :imageinfo="image" :sharedata="sharedata"></column-image></td>\
+            </tr>\
+            <tr>\
+            <td v-for="(image, index) in images"><b v-if="image.cross_line">...</b></td>\
             </tr>\
             </tbody>\
         </table>\
@@ -919,6 +921,8 @@ Vue.component('judge-image-dialog', {
                 if (tname == 'CBETA') {
                     continue;
                 }
+                var cross_line = (diffsegtexts[i].start_char_pos.substr(0, 20) !=
+                diffsegtexts[i].end_char_pos.substr(0, 20));
                 this.images.push({
                     tid: tid,
                     tname: tname,
@@ -926,7 +930,8 @@ Vue.component('judge-image-dialog', {
                     page_url: diffsegtexts[i].page_url,
                     rect: diffsegtexts[i].rect,
                     start_char_pos: diffsegtexts[i].start_char_pos,
-                    end_char_pos: diffsegtexts[i].end_char_pos
+                    end_char_pos: diffsegtexts[i].end_char_pos,
+                    cross_line: cross_line
                 });
             }
         },
@@ -947,7 +952,7 @@ Vue.component('judge-image-dialog', {
 Vue.component('judge-page-dialog', {
     props: ['sharedata'],
     template: '\
-    <el-dialog title="" :visible.sync="sharedata.judgePageDialogVisible" width="90%" @open="handleOpen" :before-close="handleOK">\
+    <el-dialog title="" :visible.sync="sharedata.judgePageDialogVisible" width="80%" @open="handleOpen" :before-close="handleOK">\
         <div class="row">\
             <div class="col-md-8">\
                 <canvas id="page-canvas" width="800" height="1080"></canvas>\

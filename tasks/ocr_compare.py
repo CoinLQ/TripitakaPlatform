@@ -108,6 +108,29 @@ class OCRCompare(object):
         return True
 
     @classmethod
+    def combine_equal_seg(cls, correctsegs):
+        new_correctsegs = []
+        last_tag = None
+        for seg in correctsegs:
+            if new_correctsegs:
+                ast_tag = new_correctsegs[-1]
+            if seg.tag != CorrectSeg.TAG_EQUAL:
+                new_correctsegs.append(seg)
+            else:
+                # 最后的tag是equal
+                if last_tag and last_tag.tag == CorrectSeg.TAG_EQUAL:
+                    if last_tag.line_no != seg.line_no:
+                        new_correctsegs.append(seg)
+                    else:
+                        last_tag.text2 = last_tag.text2 + seg.text2
+                        last_tag.selected_text = last_tag.text2
+                # 最后的tag不是equal
+                else:
+                    new_correctsegs.append(seg)
+
+        return new_correctsegs
+
+    @classmethod
     def generate_compare_reel(cls, text1, text2):
         """
         用于文字校对前的文本比对
@@ -179,7 +202,7 @@ class OCRCompare(object):
                 text1=base_text, text2='', selected_text=None, \
                 page_no=page_no, line_no=line_no, char_no=char_no)
                 correctsegs.append(correctseg)
-        return correctsegs
+        return cls.combine_equal_seg(correctsegs)
 
     @classmethod
     def set_position(cls, from_correctsegs, correctsegs):

@@ -113,7 +113,7 @@ class OCRCompare(object):
         last_tag = None
         for seg in correctsegs:
             if new_correctsegs:
-                ast_tag = new_correctsegs[-1]
+                last_tag = new_correctsegs[-1]
             if seg.tag != CorrectSeg.TAG_EQUAL:
                 new_correctsegs.append(seg)
             else:

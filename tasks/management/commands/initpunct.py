@@ -64,7 +64,7 @@ class Command(BaseCommand):
         task1.save()
         task2 = Task(batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
         reeltext=reelcorrecttext, result=punctuation_json,
-        task_no=2, status=Task.STATUS_READY)
+        task_no=2, status=Task.STATUS_READY, publisher=admin)
         task2.save()
 
         create_punct_task('YB000860', 1, batch_task)

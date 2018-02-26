@@ -438,7 +438,7 @@
         });
       },
       updateCorrectSeg: function(seg, update_text = null) {
-        update_text = seg.selected_text.replace(/↵/g, '').replace(/&nbsp;/g, '').replace(/\n/g, '\n')
+        update_text = seg.selected_text.replace(/↵/g, '').replace(/&nbsp;/g, '').replace(/\n\n$/, '\n')
         axios.put('/api/correct/' + this.sharedata.task_id + '/correctsegs/' + seg.id + '/', {
           selected_text: update_text || seg.selected_text,
           doubtable: seg.doubtable

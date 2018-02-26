@@ -242,6 +242,9 @@ span.white {
     line-height: 22px;
     padding: 5px;
 }
+span.newline {
+    font-size: 12px;
+}
 
 .elpopup {
     margin-top: 30px;
@@ -263,11 +266,12 @@ opacity: 0;
     border: 1px solid #ebebeb;
     border-radius: 3px;
     background-color: whitesmoke;
-    position: fixed;
+    position: relative;
     top: 4px;
     margin-left: -15px;
     width: 110%;
     padding: 10px;
+    z-index: 2001;
 }
 
 .content-container {

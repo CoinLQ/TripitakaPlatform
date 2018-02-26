@@ -15,10 +15,19 @@
       <div class="diff-text-pane" @scroll="handleScroll" >
         <transition name="slide-fade" appear>
             <div v-if="scrolled || (!scrolled)" style="position: inherit;"class='cmd-block'>
-                <el-tag v-show="premitSubmit" type="info">校对中</el-tag>
                 <el-button :disabled="premitSubmit" @click="finishTask()" type="primary" plain>完成</el-button>
                 <el-button @click="nextPopup({})" type="success" plain>下一个</el-button>
                 <el-button @click="nextPopup({shiftKey: true})" type="success" plain>前一个</el-button>
+                <el-switch
+                  v-model="display_space"
+                  active-text=""
+                  inactive-text="删除位显示">
+                </el-switch>
+                <el-switch
+                  v-model="display_newline"
+                  active-text=""
+                  inactive-text="换行显示">
+                </el-switch>
             </div>
         </transition>
         <div class="reel-text-region-o"  @keydown.tab="nextPopup($event)" >
@@ -36,12 +45,12 @@
                         </el-row>
                         <el-row :gutter="20">
                           <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="danger">选择结果</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span id="pop-input" type="text" placehold="结果文" v-html="getSegText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)"></span></div></el-col>
+                          <el-col :span="17"><div class="grid-content bg-purple"><span id="pop-input" type="text" placehold="结果文" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)"></span></div></el-col>
                         </el-row>
                 </el-popover>
             </div>
             <div class="spn" v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id">
-              <span v-if="seg.tag == 1" v-html="getSegText(seg)" @mouseup="textSelection(seg)" @keydown="blockthem" :class="{ changed: (seg.text2 != seg.selected_text) }" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @mouseup="textSelection(seg)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null)}" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span v-if="seg.tag == 4" contenteditable="true" @click="segLinefeedClick(seg, index)" @input="segLinefeedInput(seg, index, $event)" v-html="getSegText(seg)"></span>
+              <span v-if="seg.tag == 1" v-html="getSegText(seg)" @mouseup="textSelection(seg)" @keydown="blockthem" :class="{ changed: (seg.text2 != seg.selected_text) }" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @mouseup="textSelection(seg)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null)}" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span class="newline" v-if="seg.tag == 4" contenteditable="true" @keydown="permitNewline" @click="segClick(seg, $event)" @input="segInput(seg, $event)" v-html="getSegText(seg)"></span>
             </div>
           </div>
           {% endraw %}
@@ -57,9 +66,9 @@
     el: '#correct',
     data: {
       result: '',
-      compare_text: '',
+      display_space: true,
+      display_newline: true,
       current_seg: {},
-      ocr_text: '',
       selected_text:'',
       scrolled: false,
       segid: 1,
@@ -69,7 +78,6 @@
       line_no: 1,
       char_no: 1,
       current_char_no: 1,
-      row_in_text: 1,
       sharedata: {task_id: {{ task.id }}, status: 0, correctsegs: []  }
     },
     computed: {
@@ -148,11 +156,13 @@
       },
       handleScroll: function(){
         window.pp =this;
-        this.scrolled = this.$el.querySelector('div.diff-text-pane').scrollTop >50;
+        this.scrolled = this.$el.querySelector('div.diff-text-pane').scrollTop >20;
         if (this.scrolled) {
           this.$el.querySelector('.cmd-block').style.position='fixed';
+          this.$el.querySelector('.cmd-block').style.width="41%"
         } else {
           this.$el.querySelector('.cmd-block').style.position='inherit';
+          this.$el.querySelector('.cmd-block').style.width="110%"
         }
         
       },
@@ -163,7 +173,7 @@
         let empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
         let segid = this.current_seg.id || this.segid;
         if (evt.shiftKey){
-          seg = _.find(empty_segs, function(o) { return o.id < segid; });
+          seg = _.findLast(empty_segs, function(o) { return o.id < segid; });
         } else {
           seg = _.find(empty_segs, function(o) { return o.id > segid; });
           if (!seg) {
@@ -183,14 +193,26 @@
             return seg.text2
           }
         } else if(!seg.selected_text) {
-            return '<span class="white"></span>'
+            if (seg.tag == 4) {
+              return ''
+            } else if (this.display_space) {
+              return '<span class="white"></span>'
+            } 
+            return ''
         }
         else {
-            // if (seg.selected_text.length >=3 &&seg.selected_text[seg.selected_text.length-2] != '↵' && seg.selected_text[seg.selected_text.length-1] == '\n')
-            // {
-            //   seg.selected_text = seg.selected_text.replace(/\n$/g, '');
-            // }
+          if (this.display_newline) {
             return seg.selected_text.replace(/↵/g, '').replace(/\n\n$/g, '\n').replace(/\n/g, '↵<br>');
+          } else {
+            return seg.selected_text.replace(/↵/g, '').replace(/\n\n$/g, '\n').replace(/\n/g, '<br>');
+          }
+        }
+      },
+      getSegRealText: function(seg) {
+        if (!seg.selected_text) {
+          return ''
+        } else {
+          return this.getSegText(seg);
         }
       },
       setImg: function(img_url, x, y, w, h) {
@@ -243,13 +265,6 @@
           }
         });
       },
-      getLineFeedHtml: function(seg) {
-        if (seg.selected_text == '\n') {
-          return '↵<br>';
-        } else {
-          return '';
-        }
-      },
       selectText: function(seg, index, no, evt) {
         evt.preventDefault();
         if (no == 1) {
@@ -263,6 +278,13 @@
           evt.preventDefault()
         }
         return false;
+      },
+      permitNewline: function(evt) {
+        if (evt.keyCode == 13 || evt.keyCode == 8) {
+          return 
+        }
+        evt.preventDefault()
+        return false
       },
       blockthem: function(evt) {
         if (evt.keyCode == 37 || evt.keyCode == 39)
@@ -291,26 +313,11 @@
           console.log('moveSegDiffToView: ', err)
         }
       },
-      hideAllPopup(e) {
-        let ref_id = 'popover';
-        if (this.segid != 0) {
-            this.$refs[ref_id].doClose();
-        }
-      },
-      handleClose(done) {
-        this.$confirm('确认关闭？')
-          .then(_ => {
-            done();
-          })
-          .catch(_ => {});
-      },
       segClick: function(seg, e) {
         if (e.stopPropagation){
           e.stopPropagation();
         }
         this.segid = seg.id;
-        this.compare_text = seg.text1;
-        this.ocr_text = seg.text2;
         this.selected_text = seg.selected_text;
         
         
@@ -330,12 +337,6 @@
 
         return userSelection;
       },
-      segLinefeedClick: function(seg, index) {
-        this.page_no = seg.page_no;
-        this.line_no = seg.line_no;
-        this.char_no = seg.char_no;
-        this.hideAllPopup(index);
-      },
       inputNode: function(seg ,e) {
         if (e.target.id) {
           return this.$el.querySelector('#' + e.target.id)
@@ -344,19 +345,19 @@
         }
       },
       segInput: function(seg, e) {
-
         let userSelection = this.userSelection();
         let startNode = userSelection.anchorNode,
             startOffset = userSelection.anchorOffset,
             focusNode = userSelection.focusNode,
             focusOffset = userSelection.focusOffset;
         let new_string = e.target.innerText;
-        if (new_string.length >= 2 &&new_string[e.target.innerText.length -1] == '\n' && new_string[new_string.length-2] != '↵') {
-          if ( e.inputType == 'deleteContentBackward') {
-            new_string = new_string.replace(/\n$/g, '')
-            e.target.innerText = new_string
+        if ( e.inputType == 'deleteContentBackward'){
+          if (new_string.length >= 1 &&new_string[new_string.length -1] == '\n') {
+            if ((new_string.length==1) || new_string[new_string.length-2] != '↵'){
+              new_string = new_string.replace(/\n$/g, '')
+              e.target.innerText = new_string
+            }
           }
-          
         }
         seg.selected_text = e.target.innerText;
         //console.log(startNode, startOffset, focusNode, focusOffset )
@@ -401,11 +402,7 @@
           selection.addRange(range);
         }.bind(this))
       },
-      segParagraphMarkInput: function(seg, index, e) {
-        var newtext = e.target.innerText;
-        seg.selected_text = newtext;
-      },
-      segLinefeedInput: function(seg, index, e) {
+      segLinefeedInput: function(seg, e) {
         var newtext = e.target.innerText;
         if (e.inputType == 'insertParagraph') {
           seg.selected_text = '\n';
@@ -415,6 +412,7 @@
         } else {
           seg.selected_text = '\n';
         }
+        this.updateCorrectSeg(seg);
       },
       loadCorrectSegs: function() {
         var vm = this
@@ -438,7 +436,7 @@
         });
       },
       updateCorrectSeg: function(seg, update_text = null) {
-        update_text = seg.selected_text.replace(/↵/g, '').replace(/&nbsp;/g, '').replace(/\n\n$/, '\n')
+        update_text = seg.selected_text.replace(/↵/g, '').replace(/\n\n$/, '\n')
         axios.put('/api/correct/' + this.sharedata.task_id + '/correctsegs/' + seg.id + '/', {
           selected_text: update_text || seg.selected_text,
           doubtable: seg.doubtable

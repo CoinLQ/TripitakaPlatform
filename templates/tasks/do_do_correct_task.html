@@ -9,17 +9,18 @@
       </div>
     </div>
     <div class="col-md-5 right-pane">
-        <transition name="slide-fade" appear>
-            <div v-if="scrolled" class='cmd-block'>
-                <el-tag v-show="premitSubmit" type="info">校对中</el-tag>
-                <el-button :disabled="premitSubmit" @click="finishTask()" type="primary" plain>完成</el-button>
-
-            </div>
-        </transition>
+ 
 
 
       <div class="diff-text-pane" @scroll="handleScroll" >
-
+        <transition name="slide-fade" appear>
+            <div v-if="scrolled || (!scrolled)" style="position: inherit;"class='cmd-block'>
+                <el-tag v-show="premitSubmit" type="info">校对中</el-tag>
+                <el-button :disabled="premitSubmit" @click="finishTask()" type="primary" plain>完成</el-button>
+                <el-button @click="nextPopup({})" type="success" plain>下一个</el-button>
+                <el-button @click="nextPopup({shiftKey: true})" type="success" plain>前一个</el-button>
+            </div>
+        </transition>
         <div class="reel-text-region-o"  @keydown.tab="nextPopup($event)" >
           {% raw %}
           <div id="reel-text-compare" class="reel-text-compare">
@@ -40,12 +41,7 @@
                 </el-popover>
             </div>
             <div class="spn" v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id">
-              <span v-if="seg.tag == 1" v-html="getSegText(seg)" @mouseup="textSelection(seg)" @keydown="blockthem" :class="{ changed: (seg.text2 != seg.selected_text) }" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)" /></span>
-
-              <span v-if="seg.tag == 2" v-html="getSegText(seg)" @mouseup="textSelection(seg)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null)}" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)"></span>
-
-              <span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span>
-              <span v-if="seg.tag == 4" contenteditable="true" @click="segLinefeedClick(seg, index)" @input="segLinefeedInput(seg, index, $event)" v-html="getSegText(seg)"></span>
+              <span v-if="seg.tag == 1" v-html="getSegText(seg)" @mouseup="textSelection(seg)" @keydown="blockthem" :class="{ changed: (seg.text2 != seg.selected_text) }" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @mouseup="textSelection(seg)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null)}" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span v-if="seg.tag == 4" contenteditable="true" @click="segLinefeedClick(seg, index)" @input="segLinefeedInput(seg, index, $event)" v-html="getSegText(seg)"></span>
             </div>
           </div>
           {% endraw %}
@@ -115,13 +111,13 @@
           this.$refs['popover'].doClose();
           return
         }
-        this.current_seg = seg;
         let pos = this.$el.querySelector('div.diff-text-pane').scrollTop + this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().bottom;
         this.$refs['popover'].$el.style.position = 'relative'
         this.$refs['popover'].$el.style.top = pos + 'px';
         if (seg.id == this.current_seg.id) {
           this.$refs['popover'].doToggle();
         } else {
+          this.current_seg = seg;
           this.$refs['popover'].doShow();
         }
       },
@@ -152,17 +148,26 @@
       },
       handleScroll: function(){
         window.pp =this;
-        this.scrolled = this.$el.querySelector('div.diff-text-pane').scrollTop >50
+        this.scrolled = this.$el.querySelector('div.diff-text-pane').scrollTop >50;
+        if (this.scrolled) {
+          this.$el.querySelector('.cmd-block').style.position='fixed';
+        } else {
+          this.$el.querySelector('.cmd-block').style.position='inherit';
+        }
+        
       },
       nextPopup: function(evt) {
-        evt.preventDefault()
+        if (evt.preventDefault) {
+          evt.preventDefault()
+        }
         let empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
+        let segid = this.current_seg.id || this.segid;
         if (evt.shiftKey){
-          seg = _.find(empty_segs, function(o) { return o.id < this.segid; }.bind(this));
+          seg = _.find(empty_segs, function(o) { return o.id < segid; });
         } else {
-          seg = _.find(empty_segs, function(o) { return o.id > this.segid; }.bind(this));
+          seg = _.find(empty_segs, function(o) { return o.id > segid; });
           if (!seg) {
-            seg = _.find(empty_segs, function(o) { return o.id < this.segid; }.bind(this));
+            seg = _.find(empty_segs, function(o) { return o.id < segid; });
           }
         }
         if (!seg) { return }
@@ -178,7 +183,7 @@
             return seg.text2
           }
         } else if(!seg.selected_text) {
-            return '&nbsp;'
+            return '<span class="white"></span>'
         }
         else {
             // if (seg.selected_text.length >=3 &&seg.selected_text[seg.selected_text.length-2] != '↵' && seg.selected_text[seg.selected_text.length-1] == '\n')
@@ -300,18 +305,18 @@
           .catch(_ => {});
       },
       segClick: function(seg, e) {
+        if (e.stopPropagation){
           e.stopPropagation();
-
-          this.segid = seg.id;
-          this.compare_text = seg.text1;
-          this.ocr_text = seg.text2;
-          this.selected_text = seg.selected_text;
-          
-          
-          this.page_no = seg.page_no;
-          this.line_no = seg.line_no;
-          this.char_no = seg.char_no;
-          
+        }
+        this.segid = seg.id;
+        this.compare_text = seg.text1;
+        this.ocr_text = seg.text2;
+        this.selected_text = seg.selected_text;
+        
+        
+        this.page_no = seg.page_no;
+        this.line_no = seg.line_no;
+        this.char_no = seg.char_no;
       },
       userSelection: function() {
         var userSelection, rangeObject;
@@ -433,13 +438,14 @@
         });
       },
       updateCorrectSeg: function(seg, update_text = null) {
-        update_text = seg.selected_text.replace(/↵/g, '').replace(/&nbsp;/g, '')
+        update_text = seg.selected_text.replace(/↵/g, '').replace(/&nbsp;/g, '').replace(/\n/g, '\n')
         axios.put('/api/correct/' + this.sharedata.task_id + '/correctsegs/' + seg.id + '/', {
           selected_text: update_text || seg.selected_text,
           doubtable: seg.doubtable
         })
         .then(function(response) {
           console.log(response);
+          seg.selected_text = response.data.selected_text
         });
       },
       finishTask: function() {

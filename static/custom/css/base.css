@@ -235,6 +235,24 @@ span [type='text'] {
     border: 1px solid #ebeef5;
     font-size: 20px;
 }
+span.white {
+    font-size: 20px;
+    width: 2%;
+    display: inline-block;
+    position: relative;
+    line-height: 22px;
+    padding: 0px;
+}
+span.white:after {
+    content: "";
+    position: absolute;
+    display: block;
+    background: antiquewhite;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
 .elpopup {
     margin-top: 30px;
 }
@@ -257,7 +275,7 @@ opacity: 0;
     background-color: whitesmoke;
     position: fixed;
     top: 4px;
-    margin-left: -1px;
+    margin-left: -15px;
     width: 110%;
     padding: 10px;
 }

@@ -84,7 +84,7 @@
     color: red;
     background-color: #fdd;
 }
-.equaltextmodified, .changed {
+.confirmed {
     background-color: #cfc;
 }
 .seg-row-sel {
@@ -163,24 +163,61 @@ ul.diffseg-region {
 }
 
 
-ul {list-style-type:circle;}
+ul {list-style-type:none;}
 
 .operation {
     display: inline;
     position: relative;
-
-}
-.operation li {
     font-size: 20px;
-    color: red;
 }
-.operation li:hover {
+.operation .el-row {
+    margin-top: 10px;
+}
+.operation .selection {
+    font-size: 20px;
+    width: 100%;
+    background-color: antiquewhite;
+    display: inline-block;
+}
+
+.operation .selection span{
+    font-size: 20px;
+    width: 100%;
+    background-color: antiquewhite;
+    display: inline-block;
+    position: relative;
+    line-height: 22px;
+    padding: 15px;
+}
+.operation .selection > span:after {
+    content: "";
+    position: absolute;
+    display: block;
+    background: antiquewhite;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+.changed {
+    background-color: #ed3f14;
+    position: relative;
+    padding: 0px 3px;
+}
+.operation .selection:hover {
     cursor: pointer;
 }
 
-.operation li span {
-    width: 60px;
-    margin: 5px;
+.operation .ll {
+    padding: 0px 15px;
+}
+.operation .el-tag--danger{
+    margin: 0px -6px;
+}
+
+.operation textarea {
+    line-height: 26px;
+    width: 100%;
 }
 
 
@@ -191,10 +228,34 @@ ul {list-style-type:circle;}
 
 .spn {
     display: inline;
-    margin: 0 -3px;
     padding: 0;
 }
-
+span [type='text'] {
+    width: 100%;
+    line-height: 25px;
+    min-height: 32px;
+    display: inline-block;
+    border: 1px solid #ebeef5;
+    font-size: 20px;
+}
+span.white {
+    font-size: 20px;
+    width: 2%;
+    display: inline-block;
+    position: relative;
+    line-height: 22px;
+    padding: 0px;
+}
+span.white:after {
+    content: "";
+    position: absolute;
+    display: block;
+    background: antiquewhite;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
 .elpopup {
     margin-top: 30px;
 }
@@ -217,7 +278,7 @@ opacity: 0;
     background-color: whitesmoke;
     position: fixed;
     top: 4px;
-    margin-left: -1px;
+    margin-left: -15px;
     width: 110%;
     padding: 10px;
 }

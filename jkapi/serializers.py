@@ -97,6 +97,7 @@ class DiffSegResultSimpleSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('invalid split_info')
 
 class CorrectSegSerializer(serializers.ModelSerializer):
+    selected_text = serializers.CharField(allow_blank=True, trim_whitespace=False, allow_null=True, label='修正文本', required=False, style={'base_template': 'textarea.html'})
     class Meta:
         model = CorrectSeg
         fields = ('id', 'tag', 'position', 'text1', 'text2', 'selected_text', 'page_no', 'line_no', 'char_no', 'doubt_comment')

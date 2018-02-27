@@ -95,7 +95,6 @@
         vm.start_vol_page = response.data.start_vol_page;
         vm.image_url_prefix = response.data.image_url_prefix;
         vm.segid = response.data.cur_focus;
-        vm.loadImage();
       });
       this.loadCorrectSegs();
     },
@@ -255,15 +254,44 @@
         var vm = this;
         axios.get(cut_url).then(function(response) {
           var char_data = response.data['char_data'];
-          for(var i = 0; i < char_data.length; ++i) {
-            var v = char_data[i];
-            var line_no = v['line_no'];
-            var char_no = v['char_no'];
-            if (line_no == vm.line_no && char_no == vm.current_char_no) {
-              vm.setImg(img_url, v['x'], v['y'], v['w'], v['h']);
-            }
+          v = _.find(char_data, function(v) { return v['line_no']  == vm.line_no && v['char_no'] == vm.current_char_no })
+          // 结尾缺字
+          if (!v) {
+            v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no })
+            let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
+            vm.setImg(img_url, v['x'], v['y']+ v['h'], v['w'], (max_char_no['char_no'] -vm.current_char_no +1)*v['h']);
+            return;
           }
+          // 漏框，换算
+          if (!vm.current_seg.text2) {
+            let pre_v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no && v['char_no'] < vm.current_char_no })
+            // 当前位置缺框
+            if (pre_v){
+              vm.setImg(img_url, v['x'], pre_v['y'] + pre_v['h'], v['w'], (v['y'] - pre_v['y'] - pre_v['h']));
+            } else {
+            // 首个字符缺框
+              let last_v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no })
+              let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
+              let offset = (max_char_no['char_no'] - last_v['char_no']) *v['h']
+              let start_y = (v['y'] - offset < 0 ) ? 0 : v['y'] - offset;
+              vm.setImg(img_url, v['x'], start_y ,  v['w'], v['y'] - start_y);
+            }
+            return
+          }
+
+          vm.setImg(img_url, v['x'], v['y'], v['w'], v['h']);
+          // for(var i = 0; i < char_data.length; ++i) {
+          //   var v = char_data[i];
+          //   var line_no = v['line_no'];
+          //   var char_no = v['char_no'];
+          //   console.log(vm.current_char_no)
+          //   if (line_no == vm.line_no && char_no == vm.current_char_no) {
+          //     vm.setImg(img_url, v['x'], v['y'], v['w'], v['h']);
+          //   }
+          // }
         });
+
+        
       },
       selectText: function(seg, index, no, evt) {
         evt.preventDefault();

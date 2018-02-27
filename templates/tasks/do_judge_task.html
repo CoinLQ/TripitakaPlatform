@@ -1,4 +1,15 @@
 {% extends "base.html" %}
+{% block style %}
+<style type="text/css">
+.pager {
+    padding-left: 0;
+    margin: 20px 0;
+    text-align: center;
+    list-style: none;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div id="judge">
   <div class="container">
@@ -20,6 +31,8 @@
           <div is="diffseg-box" :diffsegresult="diffsegresult" :segindex="index" :sharedata="sharedata"></div>
         </li>
       </ul>
+    </div>
+    <div class="row">
       <ul class="pager">
         <li :class="{ disabled: (diffseg_curpage == 1) }"><a href="#" @click.stop.prevent="prevPage">&lt;</a></li>
         <li><input v-model="diffseg_curpage"></li>

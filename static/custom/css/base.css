@@ -78,14 +78,14 @@
     background-color: #cfc;
 }
 .difftext {
-    background-color: #fdd;
+    color: #ff8282;
 }
 .difftextsel {
     color: red;
     background-color: #fdd;
 }
 .confirmed {
-    background-color: #cfc;
+    color: #88c177;
 }
 .seg-row-sel {
     font-size: 26px;
@@ -200,7 +200,7 @@ ul {list-style-type:none;}
     bottom: 0;
 }
 .changed {
-    background-color: #faffaa;
+    color: blueviolet;
 }
 .operation .selection:hover {
     cursor: pointer;
@@ -227,6 +227,7 @@ ul {list-style-type:none;}
 .spn {
     display: inline;
     padding: 0;
+    border-bottom: thin dashed #101010;
 }
 span [type='text'] {
     width: 100%;
@@ -236,11 +237,12 @@ span [type='text'] {
     border: 1px solid #ebeef5;
     font-size: 20px;
 }
-span.white {
+span.removed {
     font-size: 20px;
     width: 0px;
     line-height: 22px;
     padding: 5px;
+    background-color: darkgrey
 }
 span.newline {
     font-size: 12px;

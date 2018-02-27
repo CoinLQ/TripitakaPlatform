@@ -16,7 +16,7 @@
         <transition name="slide-fade" appear>
             <div v-if="scrolled || (!scrolled)" style="position: inherit;"class='cmd-block'>
                 <el-button :disabled="premitSubmit" @click="finishTask()" type="primary" plain>完成</el-button>
-                <el-button @click="nextPopup({})" type="success" plain>下一个</el-button>
+                <el-button @click="nextPopup({})" type="success" plain>后一个</el-button>
                 <el-button @click="nextPopup({shiftKey: true})" type="success" plain>前一个</el-button>
                 <el-switch
                   v-model="display_space"

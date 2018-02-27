@@ -9,9 +9,6 @@
       </div>
     </div>
     <div class="col-md-5 right-pane">
- 
-
-
       <div class="diff-text-pane" @scroll="handleScroll" >
         <transition name="slide-fade" appear>
             <div v-if="scrolled || (!scrolled)" style="position: inherit;"class='cmd-block'>
@@ -28,6 +25,7 @@
                   active-text=""
                   inactive-text="换行显示">
                 </el-switch>
+                <el-button type="success" @click="openDoubtForm">存疑</el-button>
             </div>
         </transition>
         <div class="reel-text-region-o"  @keydown.tab="nextPopup($event)" >
@@ -53,9 +51,59 @@
               <span v-if="seg.tag == 1" v-html="getSegText(seg)" @mouseup="textSelection(seg)" @keydown="blockthem" :class="{ changed: (seg.text2 != seg.selected_text) }" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @mouseup="textSelection(seg)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null)}" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span class="newline" v-if="seg.tag == 4" contenteditable="true" @keydown="permitNewline" @click="segClick(seg, $event)" @input="segInput(seg, $event)" v-html="getSegText(seg)"></span>
             </div>
           </div>
+          <el-dialog title="存疑意见" :visible.sync="doubt.formVisible">
+            <el-form :model="doubt" ref="doubt" label-position="right" >
+              <el-col :span="16">
+                <el-form-item label="存疑文本" label-width="120px">
+                  <el-input v-model="doubt.doubt_text" :disabled="true" auto-complete="off"></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="存疑偏移" label-width="33%">
+                  <el-input v-model="doubt.doubt_char_no" :disabled="true" auto-complete="off"></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="存疑页" label-width="120px">
+                  <el-input v-model="doubt.page_no" :disabled="true" auto-complete="off"></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="存疑行" label-width="33%">
+                  <el-input v-model="doubt.line_no" :disabled="true" auto-complete="off"></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="存疑字" label-width="33%">
+                  <el-input v-model="doubt.char_no" :disabled="true" auto-complete="off"></el-input>
+                </el-form-item>
+              </el-col>
+              <el-form-item label="存疑理由" prop="doubt_comment" :rules="[
+                    { required: true, message: '存疑理由不能为空', trigger: 'blur'},
+                  ]" label-width="120px" >
+                  <el-input v-model="doubt.doubt_comment" required auto-complete="off"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+              <el-button @click="doubt.formVisible = false">取 消</el-button>
+              <el-button type="primary" @click="submitForm('doubt')">确 定</el-button>
+            </div>
+          </el-dialog>
           {% endraw %}
         </div>
       </div>
+      {% raw %}
+      <el-collapse v-model="activeNames">
+        
+        <el-collapse-item name="1">
+          <template slot="title">
+          <span ><i class="el-icon-date"></i> 存疑列表</span>
+          <el-button v-if="doubt_count!=0" type="primary" size="mini" round>{{doubt_count}}</el-button>
+          </template>
+          <div is="doubt-list" :doubts="doubt.collections"></div>
+        </el-collapse-item>
+      </el-collapse>
+      {% endraw %}
     </div>
   </div>
 </form>
@@ -78,12 +126,26 @@
       line_no: 1,
       char_no: 1,
       current_char_no: 1,
-      sharedata: {task_id: {{ task.id }}, status: 0, correctsegs: []  }
+      sharedata: {task_id: {{ task.id }}, status: 0, correctsegs: []  },
+      doubt:{ 
+        formVisible: false,
+        doubt_text: '',
+        line_no: 0,
+        page_no: 0,
+        char_no: 0,
+        doubt_char_no: 0, 
+        doubt_comment: '',
+        collections: []
+      },
+      activeNames: []
     },
     computed: {
       premitSubmit: function (){
         let empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
         return (empty_segs.length != 0) || (this.sharedata.status == 4)
+      },
+      doubt_count: function(){
+        return this.doubt.collections.length;
       }
     },
     created: function() {
@@ -97,8 +159,26 @@
         vm.segid = response.data.cur_focus;
       });
       this.loadCorrectSegs();
+      this.loadDoubtSeg();
     },
     methods: {
+      openDoubtForm: function() {
+        if (!this.doubt.doubt_text) {
+           this.$message('请选择要存疑的文字');
+        } else {
+          this.doubt.formVisible = true;
+        }
+      },
+      submitForm: function(formName) {
+        this.$refs[formName].validate((valid) => {
+          if (valid) {
+            this.createDoubtSeg()
+          } else {
+            console.log('error submit!!');
+            return false;
+          }
+        });
+      },
       spanContent: function(content) {
         if (!content) {
           return '<span></span>'
@@ -131,22 +211,25 @@
       textSelection: function(seg = null){
         var selection = window.getSelection(),
         range = selection.getRangeAt(0);
-        // console.log(range.startOffset);
-        // console.log(range.startContainer);
-        // console.log(range.cloneContents().textContent);
-
+        console.log(range.startOffset);
+        console.log(range.startContainer);
+        console.log(range.cloneContents().textContent);
+        
         if (seg) {
           this.page_no = seg.page_no;
           this.line_no = seg.line_no;
           this.char_no = seg.char_no;
           this.current_seg = seg;
+
+          this.doubt.page_no = seg.page_no;
+          this.doubt.line_no = seg.line_no;
+          this.doubt.char_no = seg.char_no;
         }
-        // console.log(this.page_no,this.line_no, this.char_no);
-        if (range.startOffset <= 1){
-            this.current_char_no = this.char_no;
-        } else {
-            this.current_char_no = this.char_no + range.startOffset -1;
-        }
+
+        this.doubt.doubt_text = range.cloneContents().textContent;
+        this.doubt.doubt_char_no = range.startOffset + this.doubt.char_no;
+
+        this.current_char_no = this.char_no + range.startOffset ;
         
         this.loadImage();
         if (seg) {
@@ -282,15 +365,6 @@
           }
 
           vm.setImg(img_url, v['x'], v['y'], v['w'], v['h']);
-          // for(var i = 0; i < char_data.length; ++i) {
-          //   var v = char_data[i];
-          //   var line_no = v['line_no'];
-          //   var char_no = v['char_no'];
-          //   console.log(vm.current_char_no)
-          //   if (line_no == vm.line_no && char_no == vm.current_char_no) {
-          //     vm.setImg(img_url, v['x'], v['y'], v['w'], v['h']);
-          //   }
-          // }
         });
 
         
@@ -485,6 +559,32 @@
         })
         .catch(function (error) {
           vm.error = '提交出错！';
+        });
+      },
+      createDoubtSeg: function() {
+        axios.post('/api/doubt_seg/'+ this.sharedata.task_id+'/' , {
+          task: this.sharedata.task_id,
+          page_no: this.doubt.page_no,
+          line_no: this.doubt.line_no,
+          char_no: this.doubt.char_no,
+          doubt_text: this.doubt.doubt_text,
+          doubt_char_no: this.doubt.doubt_char_no,
+          doubt_comment: this.doubt.doubt_comment,
+        }).then(function(response) {
+          console.log(response)
+          this.doubt.collections.push(response.data)
+        }.bind(this))
+        .catch(function (error) {
+          console.log(error)
+        });
+      },
+      loadDoubtSeg: function(){
+        axios.get('/api/doubt_seg/'+ this.sharedata.task_id+'/list/').then(function(response) {
+          console.log(response)
+          this.doubt.collections =response.data.models
+        }.bind(this))
+        .catch(function (error) {
+          console.log(error)
         });
       }
     }

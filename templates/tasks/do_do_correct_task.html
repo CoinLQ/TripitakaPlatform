@@ -134,10 +134,12 @@
         // console.log(range.startOffset);
         // console.log(range.startContainer);
         // console.log(range.cloneContents().textContent);
+
         if (seg) {
           this.page_no = seg.page_no;
           this.line_no = seg.line_no;
           this.char_no = seg.char_no;
+          this.current_seg = seg;
         }
         // console.log(this.page_no,this.line_no, this.char_no);
         if (range.startOffset <= 1){

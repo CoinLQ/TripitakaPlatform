@@ -63,6 +63,15 @@ class CorrectSegUpdate(mixins.UpdateModelMixin, generics.GenericAPIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+
+class DoubtSegViewSet(viewsets.ModelViewSet):
+    serializer_class = DoubtSegSerializer
+    permission_classes = (IsTaskPickedByCurrentUser, )
+    queryset = DoubtSeg.objects.all()
+    filter_fields = ('task_id',)
+
+
 class FinishCorrectTask(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
 

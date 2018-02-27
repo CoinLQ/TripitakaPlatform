@@ -10,7 +10,7 @@ from ccapi.views.tasks import CCTaskViewSet, ClassifyTaskViewSet, \
                          PageTaskViewSet, DelTaskViewSet
 from jkapi.views.correct import CorrectTaskDetail, \
 CorrectSegList, CorrectSegUpdate, \
-FinishCorrectTask
+FinishCorrectTask, DoubtSegViewSet
 from jkapi.views.judge import DiffSegResultList, DiffSegResultUpdate, \
 JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected, DiffSegDetail
 from jkapi.views.punct import PunctTaskDetail
@@ -26,6 +26,9 @@ router.register(r'pagetask', PageTaskViewSet)
 router.register(r'deltask', DelTaskViewSet)
 
 router.register(r'page', PageViewSet)
+
+
+router.register(r'doubt_seg', DoubtSegViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),

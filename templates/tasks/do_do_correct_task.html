@@ -93,14 +93,14 @@
         </div>
       </div>
       {% raw %}
-      <el-collapse v-model="activeNames">
+      <el-collapse v-model="activeNames" @change="handleChange">
         
         <el-collapse-item name="1">
           <template slot="title">
           <span ><i class="el-icon-date"></i> 存疑列表</span>
           <el-button v-if="doubt_count!=0" type="primary" size="mini" round>{{doubt_count}}</el-button>
           </template>
-          <div is="doubt-list" :doubts="doubt.collections"></div>
+          <div is="doubt-list" :doubts.sync="doubts" :task_id="sharedata.task_id" :current_doubt.sync="current_doubt"></div>
         </el-collapse-item>
       </el-collapse>
       {% endraw %}
@@ -135,8 +135,9 @@
         char_no: 0,
         doubt_char_no: 0, 
         doubt_comment: '',
-        collections: []
       },
+      current_doubt: {},
+      doubts: [],
       activeNames: []
     },
     computed: {
@@ -145,8 +146,21 @@
         return (empty_segs.length != 0) || (this.sharedata.status == 4)
       },
       doubt_count: function(){
-        return this.doubt.collections.length;
+        return this.doubts.length;
       }
+    },
+    watch: {
+      current_doubt: {
+        handler: function (val, oldVal) { 
+          console.log(val.page_no, val.line_no, val.char_no)
+          let seg = _.find(this.sharedata.correctsegs, function(o) { 
+            return o.page_no == val.page_no && o.line_no == val.line_no && o.char_no == val.char_no; })
+          if (seg) {
+            this.gotoDoubtSeg(seg, val);
+          }
+        },
+        deep: true
+      },
     },
     created: function() {
       var vm = this
@@ -159,7 +173,6 @@
         vm.segid = response.data.cur_focus;
       });
       this.loadCorrectSegs();
-      this.loadDoubtSeg();
     },
     methods: {
       openDoubtForm: function() {
@@ -178,6 +191,13 @@
             return false;
           }
         });
+      },
+      handleChange(val) {
+        if (this.activeNames.length == 0) {
+          this.$el.querySelector('div.diff-text-pane').style.height =this.$el.querySelector('div.diff-text-pane').clientHeight + 250;
+        } else {
+          this.$el.querySelector('div.diff-text-pane').style.height =this.$el.querySelector('div.diff-text-pane').clientHeight - 250;
+        }
       },
       spanContent: function(content) {
         if (!content) {
@@ -562,6 +582,7 @@
         });
       },
       createDoubtSeg: function() {
+        this.doubt.formVisible = false;
         axios.post('/api/doubt_seg/'+ this.sharedata.task_id+'/' , {
           task: this.sharedata.task_id,
           page_no: this.doubt.page_no,
@@ -572,20 +593,51 @@
           doubt_comment: this.doubt.doubt_comment,
         }).then(function(response) {
           console.log(response)
-          this.doubt.collections.push(response.data)
+          this.doubts.unshift(response.data)
         }.bind(this))
         .catch(function (error) {
           console.log(error)
+          this.doubt.formVisible = true;
         });
       },
-      loadDoubtSeg: function(){
-        axios.get('/api/doubt_seg/'+ this.sharedata.task_id+'/list/').then(function(response) {
-          console.log(response)
-          this.doubt.collections =response.data.models
-        }.bind(this))
-        .catch(function (error) {
-          console.log(error)
+      gotoDoubtSeg: function(seg, doubt) {
+        
+        if (seg) {
+          this.page_no = seg.page_no;
+          this.line_no = seg.line_no;
+          this.char_no = seg.char_no;
+          this.current_seg = seg;
+        }
+
+        this.current_char_no = doubt.doubt_char_no ;
+        let segid = seg.id
+        let node = this.$el.querySelector('#segdiff-'+ segid + ' span')
+        node.focus()
+        var offset = this.$el.querySelector('div.diff-text-pane').scrollTop + this.$el.querySelector('#segdiff-' + segid).getBoundingClientRect().top - 360;
+        this.$el.querySelector('div.diff-text-pane').scrollTop = offset;
+
+
+        this.$nextTick(function() {
+
+          let selection = this.userSelection();
+          let textNode = _.find(node.childNodes, function(o) { return o.data && o.data.indexOf(doubt.doubt_text) >= 0; } )
+          var range = document.createRange();
+          // 处理最后一个回车，没有分段Range
+        
+          if (textNode) {
+            range.selectNode(textNode)
+            range.setStart(textNode, doubt.doubt_char_no- doubt.char_no);
+            range.setEnd(textNode, doubt.doubt_char_no- doubt.char_no + doubt.doubt_text.length);
+          } else {
+            textNode = node.childNodes[0]
+            range.selectNode(textNode)
+            range.setStart(textNode, 0);
+            range.setEnd(textNode, 0);
+          }
+          selection.removeAllRanges();
+          selection.addRange(range);
         });
+        this.loadImage();
       }
     }
   });

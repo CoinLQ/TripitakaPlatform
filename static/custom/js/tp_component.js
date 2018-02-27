@@ -1,11 +1,14 @@
 
 Vue.component('doubt-list', {
-    props: ['doubts'],
+    props: ['doubts', 'task_id', 'current_doubt'],
     template: `
         <el-table
         :data="doubts"
+        :cell-style="{height: '20px'}"
+        highlight-current-row
+        @current-change="handleCurrentChange"
         style="width: 100%"
-        max-height="250">
+        max-height="200">
         <el-table-column
           fixed
           prop="id"
@@ -37,15 +40,38 @@ Vue.component('doubt-list', {
         </el-table-column>
       </el-table>
     `,
-    data: function() {
+    data() {
         return {
-            doubts: [],
-            current_doubt: {},
+
         }
     },
     methods: {
-        deleteRow: function(index, rows) {
-            rows.splice(index, 1);
-        }
+        handleCurrentChange(val) {
+            this.$emit('update:current_doubt', val);
+        },
+        deleteRow(index, rows) {
+            axios.delete('/api/doubt_seg/'+ this.task_id+'/'+ rows[index].id +'/delete/').then(function(response) {
+                  console.log(response)
+                  //rows.splice(index, 1);
+                  this.$delete(this.doubts, index)
+                  this.$emit('update:doubts', this.doubts);
+            }.bind(this))
+            .catch(function (error) {
+              console.log(error)
+            });
+        },
+        loadDoubtSeg(){
+            axios.get('/api/doubt_seg/'+ this.task_id+'/list/').then(function(response) {
+              console.log(response)
+              this.$emit('update:doubts', _.reverse(response.data.models))
+            }.bind(this))
+            .catch(function (error) {
+              console.log(error)
+            });
+          }
+    },
+    mounted() {
+        console.log('entered');
+        this.loadDoubtSeg();
     }
 })

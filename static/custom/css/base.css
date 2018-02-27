@@ -280,3 +280,6 @@ opacity: 0;
     margin-left: 0px;
     margin-right: 0px;
 }
+.el-collapse-item__content {
+    padding-bottom: 3px;
+}

@@ -73,7 +73,8 @@ def crop_col_online(img_path, col_data):
     :param col_data:
     :return:
     '''
-    upload_column_image = settings.UPLOAD_COLUMN_IMAGE
+    if not settings.UPLOAD_COLUMN_IMAGE:
+        return
     img_path = img_path.lstrip('/')
     pos = img_path.rfind('/')
     img_prefix = img_path[:pos+1]
@@ -87,6 +88,5 @@ def crop_col_online(img_path, col_data):
         image.save(buffer, format="jpeg")
         b = BytesIO(buffer.getvalue())
         key = "{}{}.jpg".format(img_prefix, col['col_id'])
-        if upload_column_image:
-            s3c.upload_fileobj(b, my_bucket, key)
+        s3c.upload_fileobj(b, my_bucket, key)
 

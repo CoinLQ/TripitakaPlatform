@@ -13,17 +13,17 @@ Vue.component('doubt-list', {
           fixed
           prop="id"
           label="ID"
-          width="150">
+          width="50">
         </el-table-column>
         <el-table-column
           prop="doubt_text"
           label="存疑文本"
-          width="120">
+          width="170">
         </el-table-column>
         <el-table-column
           prop="doubt_comment"
           label="存疑理由"
-          width="120">
+          width="220">
         </el-table-column>
         <el-table-column
           fixed="right"
@@ -51,8 +51,6 @@ Vue.component('doubt-list', {
         },
         deleteRow(index, rows) {
             axios.delete('/api/doubt_seg/'+ this.task_id+'/'+ rows[index].id +'/delete/').then(function(response) {
-                  console.log(response)
-                  //rows.splice(index, 1);
                   this.$delete(this.doubts, index)
                   this.$emit('update:doubts', this.doubts);
             }.bind(this))
@@ -61,8 +59,7 @@ Vue.component('doubt-list', {
             });
         },
         loadDoubtSeg(){
-            axios.get('/api/doubt_seg/'+ this.task_id+'/list/').then(function(response) {
-              console.log(response)
+            axios.get('/api/doubt_seg/'+ this.task_id+'/list/?task='+ this.task_id).then(function(response) {
               this.$emit('update:doubts', _.reverse(response.data.models))
             }.bind(this))
             .catch(function (error) {
@@ -71,7 +68,6 @@ Vue.component('doubt-list', {
           }
     },
     mounted() {
-        console.log('entered');
         this.loadDoubtSeg();
     }
 })

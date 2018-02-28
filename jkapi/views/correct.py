@@ -12,7 +12,7 @@ from tasks.models import *
 from jkapi.serializers import *
 from jkapi.permissions import *
 from tasks.task_controller import correct_submit_async, correct_verify_submit_async
-
+from ccapi.pagination import StandardPagination
 import json, re
 from operator import attrgetter, itemgetter
 
@@ -68,8 +68,12 @@ class CorrectSegUpdate(mixins.UpdateModelMixin, generics.GenericAPIView):
 class DoubtSegViewSet(viewsets.ModelViewSet):
     serializer_class = DoubtSegSerializer
     permission_classes = (IsTaskPickedByCurrentUser, )
-    queryset = DoubtSeg.objects.all()
-    filter_fields = ('task_id',)
+    StandardPagination.page_size = 100
+    filter_fields = ('task',)
+
+    def get_queryset(self):
+        task = self.request.query_params.get('task', None)
+        return DoubtSeg.objects.filter(task_id=task)
 
 
 class FinishCorrectTask(APIView):

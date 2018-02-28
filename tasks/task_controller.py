@@ -357,6 +357,7 @@ def correct_submit(task):
             # 比较一组的两个文字校对任务的结果
             correctsegs = OCRCompare.generate_compare_reel(correct_tasks[0].result, correct_tasks[1].result)
             from_correctsegs = list(CorrectSeg.objects.filter(task=correct_tasks[1]).order_by('id'))
+            OCRCompare.reset_segposition(from_correctsegs)
             OCRCompare.set_position(from_correctsegs, correctsegs)
             for correctseg in correctsegs:
                 correctseg.task = correct_verify_task
@@ -365,6 +366,14 @@ def correct_submit(task):
 
             # 文字校对审定任务设为待领取
             correct_verify_task.status = Task.STATUS_READY
+            task_ids = correct_tasks.values_list('id', flat=True)
+            # TODO: 存疑Tag的合并
+            new_doubt_segs = []
+            for doubt_seg in DoubtSeg.objects.filter(task_id__in=task_ids):
+                doubt_seg.task = correct_verify_task
+                doubt_seg.id = None
+                new_doubt_segs.append(doubt_seg)
+            DoubtSeg.objects.bulk_create(new_doubt_segs)
             correct_verify_task.save(update_fields=['status'])
 
 def correct_verify_submit(task):

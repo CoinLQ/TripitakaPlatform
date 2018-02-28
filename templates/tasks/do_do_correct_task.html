@@ -9,7 +9,23 @@
       </div>
     </div>
     <div class="col-md-5 right-pane">
-      <div class="diff-text-pane" @scroll="handleScroll" >
+      <div class="operation" @keydown.tab="nextPopup($event)">
+                <el-popover ref='popover' width="300" style="position: absolute; top: -500;" placement="bottom" popper-class="elpopup" trigger="manual" >
+                        <el-row :gutter="20">
+                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag>比对本</el-tag></div></el-col>
+                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text1, $event)" class='selection' v-html="spanContent(current_seg.text1)"></span></div></el-col>
+                        </el-row>
+                        <el-row :gutter="20">
+                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag class='ll'>OCR</el-tag></div></el-col>
+                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text2, $event)" class='selection' v-html="spanContent(current_seg.text2)"></span></div></el-col>
+                        </el-row>
+                        <el-row :gutter="20">
+                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="danger">选择结果</el-tag></div></el-col>
+                          <el-col :span="17"><div class="grid-content bg-purple"><span id="pop-input" type="text" placehold="结果文" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)"></span></div></el-col>
+                        </el-row>
+                </el-popover>
+            </div>
+      <div class="diff-text-pane" @scroll="handleScroll">
         <transition name="slide-fade" appear>
             <div v-if="scrolled || (!scrolled)" style="position: inherit;"class='cmd-block'>
                 <el-button :disabled="premitSubmit" @click="finishTask()" type="primary" plain>完成</el-button>
@@ -26,27 +42,14 @@
                   inactive-text="换行显示">
                 </el-switch>
                 <el-button type="success" @click="openDoubtForm">存疑</el-button>
+
             </div>
         </transition>
         <div class="reel-text-region-o"  @keydown.tab="nextPopup($event)" >
-          {% raw %}
+          
           <div id="reel-text-compare" class="reel-text-compare">
-            <div class="operation">
-                <el-popover ref='popover' width="300" style="position: absolute; top: -500;" placement="bottom" trigger="manual" popper-class="elpopup">
-                        <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag>比对本</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text1, $event)" class='selection' v-html="spanContent(current_seg.text1)"></span></div></el-col>
-                        </el-row>
-                        <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag class='ll'>OCR</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text2, $event)" class='selection' v-html="spanContent(current_seg.text2)"></span></div></el-col>
-                        </el-row>
-                        <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="danger">选择结果</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span id="pop-input" type="text" placehold="结果文" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)"></span></div></el-col>
-                        </el-row>
-                </el-popover>
-            </div>
+            {% raw %}
+            
             <div class="spn" v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id">
               <span v-if="seg.tag == 1" v-html="getSegText(seg)" @mouseup="textSelection(seg)" @keydown="blockthem" :class="{ changed: (seg.text2 != seg.selected_text) }" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @mouseup="textSelection(seg)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null)}" @click="segClick(seg, $event)" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span class="newline" v-if="seg.tag == 4" contenteditable="true" @keydown="permitNewline" @click="segClick(seg, $event)" @input="segInput(seg, $event)" v-html="getSegText(seg)"></span>
             </div>
@@ -94,7 +97,6 @@
       </div>
       {% raw %}
       <el-collapse v-model="activeNames" @change="handleChange">
-        
         <el-collapse-item name="1">
           <template slot="title">
           <span ><i class="el-icon-date"></i> 存疑列表</span>
@@ -174,7 +176,19 @@
       });
       this.loadCorrectSegs();
     },
+    mounted: function(){
+      document.addEventListener('click', this.handleDocumentClick);
+    },
+    destroyed: function(){
+      document.removeEventListener('click', this.handleDocumentClick);
+    },
     methods: {
+      handleDocumentClick: function(e) {
+        console.log(e.target)
+        if (!this.$refs['popover'].$el.contains(e.target)) {
+          this.$refs['popover'].doClose();
+        }
+      },
       openDoubtForm: function() {
         if (!this.doubt.doubt_text) {
            this.$message('请选择要存疑的文字');
@@ -217,23 +231,34 @@
         if (seg.tag == "1") {
           this.$refs['popover'].doClose();
           return
+        }//this.$el.querySelector('div.diff-text-pane').scrollTop + 
+        let diff_pane = this.$el.querySelector('div.diff-text-pane');
+        
+        let pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().bottom;
+        if (diff_pane.scrollHeight - diff_pane.scrollTop == diff_pane.clientHeight) {
+          if (diff_pane.clientHeight - pos < 210) {
+            pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().top - 210;
+          }
         }
-        let pos = this.$el.querySelector('div.diff-text-pane').scrollTop + this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().bottom;
-        this.$refs['popover'].$el.style.position = 'relative'
+        console.log(pos)
+        this.$refs['popover'].$el.style.position = 'absolute'
         this.$refs['popover'].$el.style.top = pos + 'px';
         if (seg.id == this.current_seg.id) {
-          this.$refs['popover'].doToggle();
+          this.$refs['popover'].doShow();
         } else {
           this.current_seg = seg;
           this.$refs['popover'].doShow();
         }
       },
+      hidePopup: function (){
+        this.$refs['popover'].doClose();
+      },
       textSelection: function(seg = null){
         var selection = window.getSelection(),
         range = selection.getRangeAt(0);
-        console.log(range.startOffset);
-        console.log(range.startContainer);
-        console.log(range.cloneContents().textContent);
+        // console.log(range.startOffset);
+        // console.log(range.startContainer);
+        // console.log(range.cloneContents().textContent);
         
         if (seg) {
           this.page_no = seg.page_no;
@@ -292,7 +317,7 @@
       getSegText: function(seg) {
         if (seg.selected_text == null) {
           if (!seg.text2) {
-            return '?'
+            return '<span class="ocr-missing"></span>'
           }else {
             return seg.text2
           }

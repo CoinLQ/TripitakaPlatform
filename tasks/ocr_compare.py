@@ -231,3 +231,12 @@ class OCRCompare(object):
                     end_pos = start_pos + len(from_correctsegs[j].selected_text) - 1
                 else:
                     break
+
+    @classmethod
+    def reset_segposition(cls, from_correctsegs):
+        pos = 0
+        for seg in from_correctsegs:
+            seg.position = pos
+            if (seg.selected_text):
+                pos += len(seg.selected_text)
+

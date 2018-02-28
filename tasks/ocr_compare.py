@@ -119,7 +119,7 @@ class OCRCompare(object):
             else:
                 # 最后的tag是equal
                 if last_tag and last_tag.tag == CorrectSeg.TAG_EQUAL:
-                    if last_tag.line_no != seg.line_no:
+                    if last_tag.position + len(last_tag.text2) != seg.position:
                         new_correctsegs.append(seg)
                     else:
                         last_tag.text2 = last_tag.text2 + seg.text2
@@ -214,10 +214,10 @@ class OCRCompare(object):
         j = 0
         if j < from_seg_count:
             start_pos = from_correctsegs[j].position
-            end_pos = start_pos + len(from_correctsegs[j].selected_text) - 1
+            end_pos = start_pos + len(from_correctsegs[j].text2) - 1
             while i < seg_count:
                 pos = correctsegs[i].position
-                if pos < start_pos or j >= from_seg_count:
+                if pos < start_pos:
                     break
                 if pos >= start_pos and pos <= end_pos:
                     offset = pos - start_pos
@@ -225,12 +225,13 @@ class OCRCompare(object):
                     correctsegs[i].line_no = from_correctsegs[j].line_no
                     correctsegs[i].char_no = from_correctsegs[j].char_no + offset
                     i += 1
-                j += 1
-                if j < from_seg_count:
-                    start_pos = from_correctsegs[j].position
-                    end_pos = start_pos + len(from_correctsegs[j].selected_text) - 1
                 else:
-                    break
+                    j += 1
+                    if j < from_seg_count:
+                        start_pos = from_correctsegs[j].position
+                        end_pos = start_pos + len(from_correctsegs[j].text2) - 1
+                    else:
+                        break
 
     @classmethod
     def reset_segposition(cls, from_correctsegs):

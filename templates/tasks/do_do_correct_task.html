@@ -184,7 +184,9 @@
     },
     methods: {
       handleDocumentClick: function(e) {
-        console.log(e.target)
+        if (this.$el.querySelector('div.cmd-block').contains(e.target)) {
+          return;
+        }
         if (!this.$refs['popover'].$el.contains(e.target)) {
           this.$refs['popover'].doClose();
         }
@@ -312,7 +314,6 @@
         if (!seg) { return }
         this.moveSegDiffToView(seg.id);
         this.textSelection(seg);
-        this.segClick(seg, evt);
       },
       getSegText: function(seg) {
         if (seg.selected_text == null) {

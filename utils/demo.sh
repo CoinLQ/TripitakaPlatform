@@ -20,5 +20,6 @@ cp rect/sql/*.py rect/migrations/.
 ./manage.py initjudge
 ./manage.py initpunct
 ./manage.py create_cut_task
+./manage.py loaddata ./data/initial_fixtures/demo_auth.json
 ./manage.py runserver 0.0.0.0:8000
 

@@ -131,6 +131,14 @@ class OCRCompare(object):
         return new_correctsegs
 
     @classmethod
+    def preprocess_ocr_text(cls, text):
+        for key in ['校勘記', '\n音釋\n']:
+            pos = text.find(key)
+            if pos != -1:
+                text = text[:pos]
+        return text
+
+    @classmethod
     def generate_compare_reel(cls, text1, text2):
         """
         用于文字校对前的文本比对

@@ -50,7 +50,8 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_
         base_text_lst.append(sutra_to_body[base_reel.sutra_id])
         base_text_lst.append(base_reel_correct_text.tail)
         base_text = ''.join(base_text_lst)
-        correctsegs = OCRCompare.generate_compare_reel(base_text, reel_ocr_text.text)
+        ocr_text = OCRCompare.preprocess_ocr_text(reel_ocr_text.text)
+        correctsegs = OCRCompare.generate_compare_reel(base_text, ocr_text)
 
     task_id_lst = []
     for task_no in range(1, correct_times + 1):

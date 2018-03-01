@@ -168,8 +168,15 @@ class DoubtSeg(models.Model):
     created_at = models.DateTimeField('创建时间', default=timezone.now)
 
 class ReelCorrectText(models.Model):
+    BODY_START_PATTERN = re.compile('品(第[一二三四五六七八九十百]*(之[一二三四五六七八九十百]*)*)|(品之[一二三四五六七八九十百]*)$')
+    BODY_END_PATTERN = re.compile('卷第[一二三四五六七八九十百]*$')
+    SEPARATORS_PATTERN = re.compile('[pb\n]')
+
     reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)
     text = SutraTextField('经文', blank=True) # 文字校对或文字校对审定后得到的经文
+    head = SutraTextField('经文正文前文本', blank=True, default='')
+    body = SutraTextField('经文正文', blank=True, default='')
+    tail = SutraTextField('经文正文后文本', blank=True, default='')
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True, default=None)
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', default=timezone.now)
@@ -180,6 +187,30 @@ class ReelCorrectText(models.Model):
 
     def __str__(self):
         return '%s (%s)' % (self.reel, self.created_at.strftime('%F %T'))
+
+    def set_text(self, text):
+        self.text = text
+        lines = text.split('\n')
+        line_cnt = len(lines)
+        start_line_index = min(10, line_cnt-1)
+        for i in range(start_line_index):
+            if ReelCorrectText.BODY_START_PATTERN.search(lines[i]):
+                start_line_index = i
+                break
+        author_line_index = -1
+        for i in range(start_line_index-1, -1, -1):
+            if lines[i].endswith('譯'):
+                author_line_index = i
+                break
+        tail_line_index = line_cnt
+        line_index = max(line_cnt-20, 0)
+        for i in range(line_cnt-1, line_index, -1):
+            if ReelCorrectText.BODY_END_PATTERN.search(lines[i]):
+                tail_line_index = i
+                break
+        self.head = ''.join(map(lambda x: (x + '\n'), lines[0 : author_line_index+1]))
+        self.body = ''.join(map(lambda x: (x + '\n'), lines[author_line_index+1 : tail_line_index]))
+        self.tail = '\n'.join(lines[tail_line_index:])
 
 class LQReelText(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)

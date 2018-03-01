@@ -14,6 +14,7 @@ import traceback
 import re, json
 
 CLEAN_PATTERN = re.compile('[「」◎　　 \r]')
+CLEAN_PATTERN_PUNCT = re.compile('[、？「」◎　　 ，；。：　]')
 def read_reel_info(huayan_cb, reel_no, lines):
     start_vol = 0
     start_vol_page = 0
@@ -43,10 +44,10 @@ def read_reel_info(huayan_cb, reel_no, lines):
     edition_type=Reel.EDITION_TYPE_BASE)
     reel.save()
 
-def process_cbeta_text(huayan_cb, reel_no, lines):
+def process_cbeta_text(huayan_cb, reel_no, lines1, lines2):
     reel = Reel.objects.get(sutra=huayan_cb, reel_no=reel_no)
     results = []
-    for line in lines[1:]:
+    for line in lines2[1:]:
         if line.find('----------') != -1:
             break
         if line.startswith('No.'):
@@ -60,10 +61,29 @@ def process_cbeta_text(huayan_cb, reel_no, lines):
             results.append(line_text + '\n')
     sutra_text = ''.join(results)
     punctuation, text = extract_punct(sutra_text)
-    reelcorrecttext = ReelCorrectText(reel=reel, text=text)
+    text = read_text_info(lines1)
+    reelcorrecttext = ReelCorrectText(reel=reel)
+    reelcorrecttext.set_text(text)
     reelcorrecttext.save()
     punct = Punct(reel=reel, reeltext=reelcorrecttext, punctuation=json.dumps(punctuation))
     punct.save()
+
+#得到卷信息的同时也要得到文本信息
+def read_text_info(lines):
+    reeltext = []
+    for line in lines:
+        line = line.strip()
+        if not line.startswith('T'):
+            continue
+        pos = line.find('║')
+        line_text = line[pos+1:].strip()
+        if not line_text or line_text.startswith('No') :
+            continue
+        line_text = line_text.strip()
+        line_text = CLEAN_PATTERN_PUNCT.sub('', line_text)
+        if line_text:
+            reeltext.append( line_text )
+    return '\n'.join(reeltext)
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
@@ -92,12 +112,10 @@ class Command(BaseCommand):
             filename = os.path.join(BASE_DIR, 'data/cbeta_huayan/reel_info/CBETA_60_%s.txt' % reel_no)
             text = ''
             with open(filename, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-                read_reel_info(huayan_cb, reel_no, lines)
-
-        for reel_no in range(1, 61):
+                lines1 = f.readlines()
             filename = os.path.join(BASE_DIR, 'data/cbeta_huayan/text/CB_278_%s.txt' % reel_no)
             text = ''
             with open(filename, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-                process_cbeta_text(huayan_cb, reel_no, lines)
+                lines2 = f.readlines()
+            read_reel_info(huayan_cb, reel_no, lines1)
+            process_cbeta_text(huayan_cb, reel_no, lines1, lines2)

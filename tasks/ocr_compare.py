@@ -119,7 +119,7 @@ class OCRCompare(object):
             else:
                 # 最后的tag是equal
                 if last_tag and last_tag.tag == CorrectSeg.TAG_EQUAL:
-                    if last_tag.line_no != seg.line_no:
+                    if last_tag.position + len(last_tag.text2) != seg.position:
                         new_correctsegs.append(seg)
                     else:
                         last_tag.text2 = last_tag.text2 + seg.text2
@@ -225,7 +225,7 @@ class OCRCompare(object):
             end_pos = start_pos + len(from_correctsegs[j].selected_text) - 1
             while i < seg_count:
                 pos = correctsegs[i].position
-                if pos < start_pos or j >= from_seg_count:
+                if pos < start_pos:
                     break
                 if pos >= start_pos and pos <= end_pos:
                     offset = pos - start_pos
@@ -233,9 +233,37 @@ class OCRCompare(object):
                     correctsegs[i].line_no = from_correctsegs[j].line_no
                     correctsegs[i].char_no = from_correctsegs[j].char_no + offset
                     i += 1
-                j += 1
-                if j < from_seg_count:
-                    start_pos = from_correctsegs[j].position
-                    end_pos = start_pos + len(from_correctsegs[j].selected_text) - 1
                 else:
-                    break
+                    j += 1
+                    if j < from_seg_count:
+                        start_pos = from_correctsegs[j].position
+                        end_pos = start_pos + len(from_correctsegs[j].selected_text) - 1
+                    else:
+                        break
+
+    @classmethod
+    def reset_segposition(cls, from_correctsegs):
+        pos = 0
+        for seg in from_correctsegs:
+            seg.position = pos
+            if (seg.selected_text):
+                pos += len(seg.selected_text)
+
+    @classmethod
+    def combine_correct_doubtseg(cls, doubtsegs_a, doubtsegs_b):
+        doubtsegs_b = list(doubtsegs_b)
+        doubtsegs_a = list(doubtsegs_a)
+        combined_ids = []
+        for seg_b in doubtsegs_b:
+            for seg_a in filter(lambda x: x.page_no == seg_b.page_no and x.line_no == seg_b.line_no and x.char_no == seg_b.char_no, doubtsegs_a):
+                if seg_b.doubt_text == seg_a.doubt_text:
+                    seg_b.doubt_comment = "%s | %s" % (seg_b.doubt_comment, seg_a.doubt_comment)
+                    combined_ids.append(seg_a.id)
+            seg_b.id = None
+
+        for seg_a in doubtsegs_a:
+            if seg_a.id in combined_ids:
+                continue
+            seg_a.id = None
+            doubtsegs_b.append(seg_a)
+        return sorted(doubtsegs_b, key=lambda x: x.page_no, reverse=True)

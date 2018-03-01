@@ -237,12 +237,16 @@ span [type='text'] {
     border: 1px solid #ebeef5;
     font-size: 20px;
 }
-span.removed {
+span.removed, span.ocr-missing {
     font-size: 20px;
     width: 0px;
     line-height: 22px;
     padding: 5px;
     background-color: darkgrey
+}
+
+span.ocr-missing {
+    background-color: coral
 }
 span.newline {
     font-size: 12px;
@@ -279,4 +283,11 @@ opacity: 0;
 .content-container {
     margin-left: 0px;
     margin-right: 0px;
+}
+.el-collapse-item__content {
+    padding-bottom: 3px;
+}
+
+.current {
+    border: solid;
 }

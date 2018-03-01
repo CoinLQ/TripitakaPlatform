@@ -28,10 +28,13 @@ router.register(r'deltask', DelTaskViewSet)
 router.register(r'page', PageViewSet)
 
 
-router.register(r'doubt_seg', DoubtSegViewSet)
-
 urlpatterns = [
     url(r'^', include(router.urls)),
+    
+    url(r'^doubt_seg/(?P<task_id>[0-9]+)/list/$', DoubtSegViewSet.as_view({'get': 'list'})),
+    url(r'^doubt_seg/(?P<task_id>[0-9]+)/$', DoubtSegViewSet.as_view({'post': 'create'})),
+    url(r'^doubt_seg/(?P<task_id>[0-9]+)/(?P<pk>[0-9]+)/$', DoubtSegViewSet.as_view({'put': 'update'})),
+    url(r'^doubt_seg/(?P<task_id>[0-9]+)/(?P<pk>[0-9]+)/delete/$', DoubtSegViewSet.as_view({'delete': 'destroy'})),
     url(r'^correct/(?P<task_id>[0-9]+)/$', CorrectTaskDetail.as_view()),
     url(r'^correct/(?P<task_id>[0-9]+)/correctsegs/$', CorrectSegList.as_view()),
     url(r'^correct/(?P<task_id>[0-9]+)/correctsegs/(?P<pk>[0-9]+)/$', CorrectSegUpdate.as_view()),

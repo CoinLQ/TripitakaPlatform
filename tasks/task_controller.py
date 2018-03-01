@@ -324,11 +324,12 @@ def generate_correct_result(task):
     for correctseg in CorrectSeg.objects.filter(task=task).order_by('id'):
         text_lst.append(correctseg.selected_text)
     result = ''.join(text_lst)
-    result = CORRECT_RESULT_FILTER.sub('', result)
+    # result = CORRECT_RESULT_FILTER.sub('', result)
     # 清除空行
-    text_lst = result.replace('p', '\np\n').replace('b', '\nb\n').split('\n')
-    new_text_lst = [text for text in text_lst if text != '']
-    task.result = '\n'.join(new_text_lst)
+    # text_lst = result.replace('p', '\np\n').replace('b', '\nb\n').split('\n')
+    # new_text_lst = [text for text in text_lst if text != '']
+    # task.result = '\n'.join(new_text_lst)
+    task.result = result
     task.save(update_fields=['result'])
 
 def correct_submit(task):
@@ -357,14 +358,23 @@ def correct_submit(task):
             # 比较一组的两个文字校对任务的结果
             correctsegs = OCRCompare.generate_compare_reel(correct_tasks[0].result, correct_tasks[1].result)
             from_correctsegs = list(CorrectSeg.objects.filter(task=correct_tasks[1]).order_by('id'))
+            OCRCompare.reset_segposition(from_correctsegs)
             OCRCompare.set_position(from_correctsegs, correctsegs)
             for correctseg in correctsegs:
                 correctseg.task = correct_verify_task
                 correctseg.id = None
-            CorrectSeg.objects.bulk_create(correctsegs)        
+            CorrectSeg.objects.bulk_create(correctsegs)
+            
 
             # 文字校对审定任务设为待领取
             correct_verify_task.status = Task.STATUS_READY
+            task_ids = correct_tasks.values_list('id', flat=True)
+
+            new_doubt_segs = OCRCompare.combine_correct_doubtseg(correct_tasks[0].doubt_segs.all(), correct_tasks[1].doubt_segs.all())        
+            for doubt_seg in new_doubt_segs:
+                doubt_seg.task = correct_verify_task
+                doubt_seg.id = None
+            DoubtSeg.objects.bulk_create(new_doubt_segs)
             correct_verify_task.save(update_fields=['status'])
 
 def correct_verify_submit(task):

@@ -107,5 +107,4 @@ class CorrectSegSerializer(serializers.ModelSerializer):
 class DoubtSegSerializer(serializers.ModelSerializer):
     class Meta:
         model = DoubtSeg
-        fields = '__ALL__'
-
+        fields = ('id', 'task', 'doubt_comment', 'doubt_char_no', 'doubt_text', 'page_no', 'line_no', 'char_no', 'created_at')

@@ -29,7 +29,7 @@ def get_reeltext(lqsutra, tripitaka_id, reel_no):
     sid=sutra.sid, vol_no=reel.start_vol, start_vol_page=reel.start_vol_page)
     return reeltext
 
-def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_verify_times):
+def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times):
     if reel.sutra.sid.startswith('CB'): # 不对CBETA生成任务
         return
     # Correct Task
@@ -41,26 +41,15 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_
     reel_ocr_text = reel_ocr_texts[0]
 
     for base_reel in base_reel_lst:
-        reel_correct_texts = list(ReelCorrectText.objects.filter(reel=base_reel).order_by('-id')[0:1])
-        if not reel_correct_texts:
+        try:
+            base_reel_correct_text = ReelCorrectText.objects.filter(reel=base_reel).order_by('-id').first()
+        except:
             print('no base text.')
             return None
-        base_reel_correct_text = reel_correct_texts[0]
-        base_text = base_reel_correct_text.text
-        # 对于比对本，将前后两卷经文都加上
-        base_reel_next = list(Reel.objects.filter(sutra=base_reel.sutra, reel_no=base_reel.reel_no+1))
-        if len(base_reel_next) > 0:
-            base_reel_next = base_reel_next[0]
-            reel_correct_texts = list(ReelCorrectText.objects.filter(reel=base_reel_next).order_by('-id')[0:1])
-            if reel_correct_texts:
-                base_text += reel_correct_texts[0].text
-        if base_reel.reel_no > 1:
-            base_reel_prev = list(Reel.objects.filter(sutra=base_reel.sutra, reel_no=base_reel.reel_no-1))
-            if len(base_reel_prev) > 0:
-                base_reel_prev = base_reel_prev[0]
-                reel_correct_texts = list(ReelCorrectText.objects.filter(reel=base_reel_prev).order_by('-id')[0:1])
-                if reel_correct_texts:
-                    base_text = reel_correct_texts[0].text + base_text
+        base_text_lst = [base_reel_correct_text.head]
+        base_text_lst.append(sutra_to_body[base_reel.sutra_id])
+        base_text_lst.append(base_reel_correct_text.tail)
+        base_text = ''.join(base_text_lst)
         correctsegs = OCRCompare.generate_compare_reel(base_text, reel_ocr_text.text)
 
     task_id_lst = []
@@ -129,6 +118,13 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
         status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
         task.save()
 
+def get_sutra_body(sutra):
+    body_lst = []
+    for reel in Reel.objects.filter(sutra=sutra).order_by('reel_no'):
+        reel_correct_text = ReelCorrectText.objects.filter(reel=reel).order_by('-id').first()
+        body_lst.append(reel_correct_text.body)
+    return '\n\n'.join(body_lst)
+
 # 从龙泉大藏经来发布
 def create_tasks_for_batchtask(batchtask, reel_lst,
 correct_times = 0, correct_verify_times = 0,
@@ -144,6 +140,7 @@ lqmark_times = 0, lqmark_verify_times = 0):
     if correct_times > 2:
         correct_times = 2
 
+    sutra_to_body = {}
     for lqsutra, reel_no in reel_lst:
         # 创建文字校对任务
         origin_sutra_lst = list(lqsutra.sutra_set.all())
@@ -159,6 +156,8 @@ lqmark_times = 0, lqmark_verify_times = 0):
         for sutra in sutra_lst:
             if sutra.sid.startswith('CB'):
                 first_base_sutra = sutra
+                if sutra.id not in sutra_to_body:
+                    sutra_to_body[sutra.id] = get_sutra_body(sutra)
             # # 暂时不使用高丽藏作为比对本
             # if sutra.sid.startswith('GL'):
             #     second_base_sutra = sutra
@@ -180,7 +179,7 @@ lqmark_times = 0, lqmark_verify_times = 0):
             except:
                 # TODO: 记录错误
                 continue
-            create_correct_tasks(batchtask, reel, base_reel_lst, correct_times, correct_verify_times)
+            create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
             create_punct_tasks(batchtask, reel, punct_times, punct_verify_times)
 
         try:

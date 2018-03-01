@@ -214,7 +214,7 @@ class OCRCompare(object):
         j = 0
         if j < from_seg_count:
             start_pos = from_correctsegs[j].position
-            end_pos = start_pos + len(from_correctsegs[j].text2) - 1
+            end_pos = start_pos + len(from_correctsegs[j].selected_text) - 1
             while i < seg_count:
                 pos = correctsegs[i].position
                 if pos < start_pos:
@@ -229,7 +229,7 @@ class OCRCompare(object):
                     j += 1
                     if j < from_seg_count:
                         start_pos = from_correctsegs[j].position
-                        end_pos = start_pos + len(from_correctsegs[j].text2) - 1
+                        end_pos = start_pos + len(from_correctsegs[j].selected_text) - 1
                     else:
                         break
 

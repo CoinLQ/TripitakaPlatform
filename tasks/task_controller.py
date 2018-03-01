@@ -324,11 +324,12 @@ def generate_correct_result(task):
     for correctseg in CorrectSeg.objects.filter(task=task).order_by('id'):
         text_lst.append(correctseg.selected_text)
     result = ''.join(text_lst)
-    result = CORRECT_RESULT_FILTER.sub('', result)
+    # result = CORRECT_RESULT_FILTER.sub('', result)
     # 清除空行
-    text_lst = result.replace('p', '\np\n').replace('b', '\nb\n').split('\n')
-    new_text_lst = [text for text in text_lst if text != '']
-    task.result = '\n'.join(new_text_lst)
+    # text_lst = result.replace('p', '\np\n').replace('b', '\nb\n').split('\n')
+    # new_text_lst = [text for text in text_lst if text != '']
+    # task.result = '\n'.join(new_text_lst)
+    task.result = result
     task.save(update_fields=['result'])
 
 def correct_submit(task):

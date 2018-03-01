@@ -73,6 +73,8 @@ class DoubtSegViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         task = self.request.query_params.get('task', None)
+        # 为了应对DELETE方法
+        task = task or self.request.parser_context['kwargs']['task_id']
         return DoubtSeg.objects.filter(task_id=task)
 
 

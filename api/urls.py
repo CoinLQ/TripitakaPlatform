@@ -28,8 +28,6 @@ router.register(r'deltask', DelTaskViewSet)
 router.register(r'page', PageViewSet)
 
 
-#router.register(r'doubt_seg', DoubtSegViewSet)
-
 urlpatterns = [
     url(r'^', include(router.urls)),
     

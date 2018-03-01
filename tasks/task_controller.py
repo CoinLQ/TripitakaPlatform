@@ -363,17 +363,17 @@ def correct_submit(task):
             for correctseg in correctsegs:
                 correctseg.task = correct_verify_task
                 correctseg.id = None
-            CorrectSeg.objects.bulk_create(correctsegs)        
+            CorrectSeg.objects.bulk_create(correctsegs)
+            
 
             # 文字校对审定任务设为待领取
             correct_verify_task.status = Task.STATUS_READY
             task_ids = correct_tasks.values_list('id', flat=True)
-            # TODO: 存疑Tag的合并
-            new_doubt_segs = []
-            for doubt_seg in DoubtSeg.objects.filter(task_id__in=task_ids):
+
+            new_doubt_segs = OCRCompare.combine_correct_doubtseg(correct_tasks[0].doubt_segs.all(), correct_tasks[1].doubt_segs.all())        
+            for doubt_seg in new_doubt_segs:
                 doubt_seg.task = correct_verify_task
                 doubt_seg.id = None
-                new_doubt_segs.append(doubt_seg)
             DoubtSeg.objects.bulk_create(new_doubt_segs)
             correct_verify_task.save(update_fields=['status'])
 

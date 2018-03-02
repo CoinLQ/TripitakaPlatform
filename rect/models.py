@@ -820,9 +820,15 @@ class DeletionCheckItem(models.Model):
     def create_from_rect(cls, rects, t):
         rect_ids = [rect ['id'] for rect in filter(lambda x: x['op'] == 3, rects)]
         for r in Rect.objects.filter(id__in=rect_ids):
-            DeletionCheckItem(x=r.x, y=r.y, w=r.w, h=r.h, ocolumn_uri=r.column_uri(),
-                            ocolumn_x=r.column_set['x'], ocolumn_y=r.column_set['y'], ch=r.ch,
-                            rect_id=r.id, modifier=t.owner).save()
+            # 对于空列添加框的删除，column_uri异常要忽略
+            try:
+                DeletionCheckItem(x=r.x, y=r.y, w=r.w, h=r.h, ocolumn_uri=r.column_uri(),
+                                ocolumn_x=r.column_set['x'], ocolumn_y=r.column_set['y'], ch=r.ch,
+                                rect_id=r.id, modifier=t.owner).save()
+            except:
+                r.delete()
+                
+
 
     def undo(self):
         Rect.objects.filter(pk=self.rect_id).update(op=2)

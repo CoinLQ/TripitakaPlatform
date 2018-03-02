@@ -128,7 +128,8 @@ class Command(BaseCommand):
             filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % 'YB000860')
             with open(filename, 'r', encoding='utf-8') as f:
                 text = f.read()
-                reelcorrecttext = ReelCorrectText(reel=huayan_yb_1, text=text)
+                reelcorrecttext = ReelCorrectText(reel=huayan_yb_1)
+                reel_correct_text.set_text(text)
                 reelcorrecttext.save()
 
         # 得到精确的切分数据

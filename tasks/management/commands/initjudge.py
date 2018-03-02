@@ -4,6 +4,7 @@ from tdata.models import *
 from tasks.models import *
 from tasks.common import *
 from tasks.task_controller import *
+from tasks.utils.text_align import *
 from .init import save_reel, get_reel
 
 import TripitakaPlatform.settings
@@ -24,7 +25,9 @@ def save_reel_with_correct_text(lqsutra, sid, reel_no, start_vol, start_vol_page
         filename = os.path.join(settings.BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % sid)
         with open(filename, 'r', encoding='utf-8') as f:
             text = f.read()
-            ReelCorrectText(reel=reel, text=text).save()
+            reel_correct_text = ReelCorrectText(reel=reel)
+            reel_correct_text.set_text(text)
+            reel_correct_text.save()
 
     # 得到精确的切分数据
     try:

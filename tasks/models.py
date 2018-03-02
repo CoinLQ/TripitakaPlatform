@@ -283,16 +283,16 @@ class DiffSegText(models.Model):
 
     @property
     def rect(self):
-        pid = self.start_char_pos[0:17]
-        line_no = self.start_char_pos[18:20]
-        char_no = self.start_char_pos[21:23]
-        start_line_no = int(line_no)
-        start_char_no = int(char_no)
-        line_no = self.end_char_pos[18:20]
-        char_no = self.end_char_pos[21:23]
-        end_line_no = int(line_no)
-        end_char_no = int(char_no)
         try:
+            pid = self.start_char_pos[0:17]
+            line_no = self.start_char_pos[18:20]
+            char_no = self.start_char_pos[21:23]
+            start_line_no = int(line_no)
+            start_char_no = int(char_no)
+            line_no = self.end_char_pos[18:20]
+            char_no = self.end_char_pos[21:23]
+            end_line_no = int(line_no)
+            end_char_no = int(char_no)
             page = Page.objects.get(pid=pid)
             cut_info = json.loads(page.cut_info)
             for ch in cut_info['char_data']:

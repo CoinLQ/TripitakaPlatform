@@ -4,7 +4,6 @@ from django.utils import timezone
 from jwt_auth.models import Staff
 from tdata.models import *
 from difflib import SequenceMatcher
-from tasks.utils.reel_process import ReelProcess
 import re, json
 
 # # class SutraStatus(models.Model):
@@ -172,7 +171,7 @@ class ReelCorrectText(models.Model):
     BODY_END_PATTERN = re.compile('卷第[一二三四五六七八九十百]*$')
     SEPARATORS_PATTERN = re.compile('[pb\n]')
 
-    reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)
+    reel = models.ForeignKey(Reel, related_name='reel_correct_texts' ,verbose_name='实体藏经卷', on_delete=models.CASCADE)
     text = SutraTextField('经文', blank=True) # 文字校对或文字校对审定后得到的经文
     head = SutraTextField('经文正文前文本', blank=True, default='')
     body = SutraTextField('经文正文', blank=True, default='')
@@ -368,6 +367,7 @@ class Punct(models.Model):
     reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)
     reeltext = models.ForeignKey(ReelCorrectText, verbose_name='实体藏经卷经文', on_delete=models.CASCADE)
     punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
+    body_punctuation = models.TextField('文本标点', blank=True, null=True)
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始标点结果，不为null表示标点任务和标点审定任务的结果
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', blank=True, null=True, auto_now_add=True)
@@ -376,22 +376,6 @@ class Punct(models.Model):
         verbose_name = '基础标点结果'
         verbose_name_plural = '基础标点结果'
 
-    @staticmethod
-    def create_new(reel, newtext):
-        '''
-        增加新的标点信息
-        '''
-        sutra_cb = Sutra.objects.get(lqsutra=reel.sutra.lqsutra, tripitaka=Tripitaka.objects.get(code='CB'))
-        reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=reel.reel_no)
-        # 这里找的CBETA来源的标点
-        try:
-            punct = Punct.objects.filter(reel=reel_cb).first()
-            _puncts = ReelProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), newtext)
-            task_puncts = json.dumps(_puncts, separators=(',', ':'))
-            return task_puncts
-        except:
-            return '[]'
-
     def __str__(self):
         return '%s' % self.reeltext
 
@@ -399,6 +383,7 @@ class LQPunct(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
     lqreeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
     punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
+    body_punctuation = models.TextField('文本标点', blank=True, null=True)
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始标点结果，不为null表示标点任务和标点审定任务的结果
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', blank=True, null=True)
@@ -409,6 +394,7 @@ class LQPunct(models.Model):
 
     def __str__(self):
         return '%s' % self.lqreeltext
+
 
 # 格式标注相关
 class MarkUnitBase(models.Model):

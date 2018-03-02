@@ -129,7 +129,7 @@ class Command(BaseCommand):
             with open(filename, 'r', encoding='utf-8') as f:
                 text = f.read()
                 reelcorrecttext = ReelCorrectText(reel=huayan_yb_1)
-                reel_correct_text.set_text(text)
+                reelcorrecttext.set_text(text)
                 reelcorrecttext.save()
 
         # 得到精确的切分数据

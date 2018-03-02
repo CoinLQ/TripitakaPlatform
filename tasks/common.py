@@ -11,6 +11,7 @@ from tasks.utils.cut_column import gene_new_col, crop_col_online
 
 from django.conf import settings
 
+
 SEPARATORS_PATTERN = re.compile('[pb\n]')
 
 def compact_json_dumps(obj):

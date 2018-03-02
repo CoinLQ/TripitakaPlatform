@@ -24,7 +24,7 @@ def create_punct_task(sid, reel_no, batch_task):
         task_puncts = punct.punctuation
     except:
         text = SEPARATORS_PATTERN.sub('', reel_correct_text.text)
-        task_puncts = Punct.create_new(reel, text)
+        task_puncts = PunctProcess.create_new(reel, text)
         punct = Punct(reel=reel, reeltext=reel_correct_text, punctuation=task_puncts)
         punct.save()
 

@@ -279,6 +279,8 @@
         this.loadImage();
         if (seg && seg.tag == 2) {
           this.loadPopup(seg);
+        } else {
+          this.$refs['popover'].doClose();
         }
         
         //range.moveStart('character', 1);

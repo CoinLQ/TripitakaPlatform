@@ -60,9 +60,10 @@ def gene_new_col(image_name_prefix, char_lst):
     col_group_dict = dict([(col, list(col_group)) for col, col_group in col_groups])
     col_data = []
     for col in col_group_dict.keys():
-        x, y, x1, y1 = gene_col_data(col_group_dict[col])
-        col_data.append(
-            {"col_id": "{}{:02d}".format(col_id, col), "x": x, "y": y, "x1": x1, "y1": y1})
+        if col_group_dict[col]:
+            x, y, x1, y1 = gene_col_data(col_group_dict[col])
+            col_data.append(
+                {"col_id": "{}{:02d}".format(col_id, col), "x": x, "y": y, "x1": x1, "y1": y1})
     #print('col_data: ', col_data)
     return col_data
 

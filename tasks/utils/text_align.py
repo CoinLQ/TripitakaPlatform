@@ -13,12 +13,8 @@ def get_sutra_body_text(sutra):
 def get_align_pos(text1, text2):
     opcodes = SequenceMatcher(lambda x: x in 'pb\n', text1, text2, False).get_opcodes()
     opcode_cnt = len(opcodes)
-    for i in range(0, opcode_cnt):
-        tag, i1, i2, j1, j2 = opcodes[i]
-        print(tag, i1, i2, j1, j2, text1[i1:i2], text2[j1:j2])
     start_index = 0
     end_index = len(text1)
-    offset = 0
     for i in range(0, opcode_cnt-1):
         tag, i1, i2, j1, j2 = opcodes[i]
         if tag == 'delete' and (i2 - i1) >= 50:

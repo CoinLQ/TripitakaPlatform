@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.conf import settings
-from .utils.reel_process import ReelProcess
+from .utils.punct_process import PunctProcess
 from tasks.common import clean_separators
 from django.utils.encoding import smart_text
 # Create your tests here.
@@ -36,7 +36,7 @@ class BaseModelTest(TestCase):
         base_punct = [[3,'\n'],[6,","]]
         o = 'qca\nbxc,d'
         s = 'a\nbyvvc,ddf'
-        self.assertEqual(s, ReelProcess().reel_align_punct(base_text, base_punct, b))
+        self.assertEqual(s, PunctProcess().reel_align_punct(base_text, base_punct, b))
 
     def test_punct_case2(self):
         base_text = "qcabxcd"
@@ -44,7 +44,7 @@ class BaseModelTest(TestCase):
         base_punct = [[7,",,,"]]
         o = "qcabxcd,,,"
         s = "abyvvcd,,,df"
-        self.assertEqual(s, ReelProcess().reel_align_punct(base_text, base_punct, b))
+        self.assertEqual(s, PunctProcess().reel_align_punct(base_text, base_punct, b))
 
     def test_punct_case3(self):
         base_text = "qcabxcd"
@@ -52,7 +52,7 @@ class BaseModelTest(TestCase):
         base_punct = [[7, ",,,"]]
         o = "qcabxcd,,,"
         s = "abyv,,,"
-        self.assertEqual(s, ReelProcess().reel_align_punct(base_text, base_punct, b))
+        self.assertEqual(s, PunctProcess().reel_align_punct(base_text, base_punct, b))
 
     def test_punct_case4(self):
         base_text = "qcabxcd"
@@ -60,7 +60,7 @@ class BaseModelTest(TestCase):
         base_punct = [[-1, '\n'], [2, '\n'], [3, '\n'], [4, ','], [5, ','], [6, '.']]
         o = "q\\nc\\na\\nb,x,c.d"
         s = '\na\nb,yvv,c.ddf'
-        self.assertEqual(s,ReelProcess().reel_align_punct(base_text, base_punct, b))
+        self.assertEqual(s,PunctProcess().reel_align_punct(base_text, base_punct, b))
 
 
     def test_realworld_case(self):
@@ -68,7 +68,6 @@ class BaseModelTest(TestCase):
         base_cebta_reel001 = clean_separators(open(settings.BASE_DIR+"/data/sutra_text/CBETA_HUAYAN_0001.txt").read())
         yb_reel001_content = clean_separators(open(settings.BASE_DIR+"/data/sutra_text/YB000860_001_fixed.txt").read())
         # open(settings.BASE_DIR+"/data/sutra_text/YB000860_001_puncted.txt", 'w').write(
-        #     smart_text(ReelProcess().reel_align_punct(base_cebta_reel001, base_punct, yb_reel001_content))
+        #     smart_text(PunctProcess().reel_align_punct(base_cebta_reel001, base_punct, yb_reel001_content))
         # )
-        self.assertEqual(smart_text(ReelProcess().reel_align_punct(base_cebta_reel001, base_punct, yb_reel001_content)), open(settings.BASE_DIR+"/data/sutra_text/YB000860_001_puncted.txt").read())
-
+        self.assertEqual(smart_text(PunctProcess().reel_align_punct(base_cebta_reel001, base_punct, yb_reel001_content)), open(settings.BASE_DIR+"/data/sutra_text/YB000860_001_puncted.txt").read())

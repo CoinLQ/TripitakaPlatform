@@ -102,7 +102,7 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
         sutra_cb = Sutra.objects.get(lqsutra=reel.sutra.lqsutra, tripitaka=CB)
         reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=reel.reel_no)
         punct = Punct.objects.filter(reel=reel_cb)[0]        
-        _puncts = ReelProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), reelcorrecttext.text)
+        _puncts = PunctProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), reelcorrecttext.text)
         task_puncts = json.dumps(_puncts, separators=(',', ':'))
     except:
         pass
@@ -292,7 +292,7 @@ def publish_correct_result(task):
             traceback.print_exc()
 
         text = SEPARATORS_PATTERN.sub('', reel_correct_text.text)
-        task_puncts = Punct.create_new(task.reel, text)
+        task_puncts = PunctProcess.create_new(task.reel, text)
         punct = Punct(reel=task.reel, reeltext=reel_correct_text, punctuation=task_puncts)
         punct.save()
 
@@ -491,7 +491,7 @@ def publish_judge_result(task):
             sutra_cb = Sutra.objects.get(lqsutra=task.lqreel.lqsutra, tripitaka=Tripitaka.objects.get(code='CB'))
             reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=task.lqreel.reel_no)
             punct = Punct.objects.filter(reel=reel_cb).first()
-            _puncts = ReelProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), lqreeltext.text)
+            _puncts = PunctProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), lqreeltext.text)
             task_puncts = json.dumps(_puncts, separators=(',', ':'))
 
             punct = LQPunct(lqreel=task.lqreel, lqreeltext=lqreeltext, punctuation=task_puncts)

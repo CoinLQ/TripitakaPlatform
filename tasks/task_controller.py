@@ -10,7 +10,7 @@ from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, ReelText, \
 clean_separators, compute_accurate_cut
 from tasks.reeldiff_processor import generate_reeldiff
 from tasks.ocr_compare import OCRCompare
-
+from tasks.utils.punct_process import PunctProcess
 import json, re, logging, traceback
 from operator import attrgetter, itemgetter
 from difflib import SequenceMatcher

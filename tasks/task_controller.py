@@ -101,8 +101,8 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
         CB = Tripitaka.objects.get(code='CB')
         sutra_cb = Sutra.objects.get(lqsutra=reel.sutra.lqsutra, tripitaka=CB)
         reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=reel.reel_no)
-        punct = Punct.objects.filter(reel=reel_cb)[0]        
-        _puncts = PunctProcess().new_puncts(punct.reeltext.text, json.loads(punct.punctuation), reelcorrecttext.text)
+        punct = Punct.objects.filter(reel=reel_cb)[0]
+        _puncts = PunctProcess.create_new(reel, reelcorrecttext.text)
         task_puncts = json.dumps(_puncts, separators=(',', ':'))
     except:
         pass

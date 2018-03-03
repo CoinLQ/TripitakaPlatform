@@ -1,7 +1,9 @@
 
 from difflib import SequenceMatcher
 from tasks.models import Punct, LQPunct
+from tdata.models import Sutra, Tripitaka, Reel
 from tasks.common import clean_separators
+from .text_align import get_align_pos
 # from tasks.models import ReelCorrectText
 import json
 from django.db.models.signals import pre_save, post_save
@@ -70,7 +72,7 @@ class PunctProcess(object):
             punct[0] = punct[0] - len(head_text)
         return new_puncts
 
-    def get_sutra_body_text_and_puncts(sutra):
+    def get_sutra_body_text_and_puncts(self, sutra):
         body_lst = []
         punct_lst = []
         for reel in Reel.objects.filter(sutra=sutra).order_by('reel_no'):

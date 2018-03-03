@@ -7,6 +7,14 @@
       <div class="canvas-pane">
         <canvas id="page-canvas"></canvas>
       </div>
+      <div>
+        <select v-model="scale">
+          <option value="1">1倍</option>
+          <option value="2">2倍</option>
+          <option value="3">3倍</option>
+          <option value="4">4倍</option>
+        </select>
+      </div>
     </div>
     <div class="col-md-5 right-pane">
       <div class="operation" @keydown.tab="nextPopup($event)">
@@ -140,7 +148,13 @@
       },
       current_doubt: {},
       doubts: [],
-      activeNames: []
+      activeNames: [],
+      scale: 1,
+      img_url: '',
+      x: 0,
+      y: 0,
+      w: 0,
+      h: 0
     },
     computed: {
       premitSubmit: function (){
@@ -167,6 +181,11 @@
         },
         deep: true
       },
+      scale: function (val, oldVal) {
+        if (val != oldVal) {
+          this.setImg();
+        }
+      }
     },
     created: function() {
       var vm = this
@@ -345,19 +364,26 @@
           return this.getSegText(seg);
         }
       },
-      setImg: function(img_url, x, y, w, h) {
+      setImg: function() {
+        var img_url = this.img_url;
+        var x = this.x * this.scale;
+        var y = this.y * this.scale;
+        var w = this.w * this.scale;
+        var h = this.h * this.scale;
+        var scale = this.scale;
         var canvas = document.getElementById("page-canvas");
         var context = canvas.getContext("2d");
         var image = new Image();
         image.onload = function () {
           canvas.width = canvas.width;
-          canvas.height = image.height;
-          canvas.width = image.width;
+          canvas.height = image.height * scale;
+          canvas.width = image.width * scale;
 
           x = ~~x; y = ~~y; w = ~~w; h = ~~h;
 
           context.scale(0.8, 0.8);
-          context.drawImage(image, 0, 0);
+          context.drawImage(image, 0, 0, image.width, image.height,
+          0, 0, image.width * scale, image.height * scale);
 
           //设置样式
           context.lineWidth = 1;
@@ -380,7 +406,7 @@
       loadImage: function() {
         var vol_page = this.start_vol_page + this.page_no - 1;
         var url_prefix = 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image' + this.image_url_prefix + vol_page.toString();
-        var img_url = url_prefix + '.jpg';
+        this.img_url = url_prefix + '.jpg';
         var cut_url = url_prefix + '.cut';
         var vm = this;
         axios.get(cut_url).then(function(response) {
@@ -390,7 +416,11 @@
           if (!v) {
             v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no })
             let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
-            vm.setImg(img_url, v['x'], v['y']+ v['h'], v['w'], (max_char_no['char_no'] -vm.current_char_no +1)*v['h']);
+            vm.x = v['x'];
+            vm.y = v['y']+ v['h'];
+            vm.w = v['w'];
+            vm.h = (max_char_no['char_no'] - vm.current_char_no +1)*v['h'];
+            vm.setImg();
             return;
           }
           // 漏框，换算
@@ -398,19 +428,31 @@
             let pre_v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no && v['char_no'] < vm.current_char_no })
             // 当前位置缺框
             if (pre_v){
-              vm.setImg(img_url, v['x'], pre_v['y'] + pre_v['h'], v['w'], (v['y'] - pre_v['y'] - pre_v['h']));
+              vm.x = v['x'];
+              vm.y = pre_v['y'] + pre_v['h'];
+              vm.w = v['w'];
+              vm.h = (v['y'] - pre_v['y'] - pre_v['h']);
+              vm.setImg();
             } else {
             // 首个字符缺框
               let last_v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no })
               let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
               let offset = (max_char_no['char_no'] - last_v['char_no']) *v['h']
               let start_y = (v['y'] - offset < 0 ) ? 0 : v['y'] - offset;
-              vm.setImg(img_url, v['x'], start_y ,  v['w'], v['y'] - start_y);
+              vm.x = v['x'];
+              vm.y = start_y;
+              vm.w = v['w'];
+              vm.h = v['y'] - start_y;
+              vm.setImg();
             }
             return
           }
 
-          vm.setImg(img_url, v['x'], v['y'], v['w'], v['h']);
+          vm.x = v['x'];
+          vm.y = v['y'];
+          vm.w = v['w'];
+          vm.h = v['h'];
+          vm.setImg();
         });
 
         

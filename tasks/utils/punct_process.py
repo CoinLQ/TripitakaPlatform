@@ -1,7 +1,7 @@
 
 from difflib import SequenceMatcher
+from tasks.models import Punct, LQPunct
 from tasks.common import clean_separators
-from tdata.models import *
 # from tasks.models import ReelCorrectText
 import json
 from django.db.models.signals import pre_save, post_save

@@ -4,7 +4,7 @@ from tdata.models import *
 from tasks.models import *
 from tasks.common import *
 from tasks.task_controller import *
-
+from tasks.utils.punct_process import PunctProcess
 import TripitakaPlatform.settings
 
 import os, sys

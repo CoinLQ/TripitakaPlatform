@@ -15,6 +15,7 @@ def get_align_pos(text1, text2):
     opcode_cnt = len(opcodes)
     start_index = 0
     end_index = len(text1)
+
     for i in range(0, opcode_cnt-1):
         tag, i1, i2, j1, j2 = opcodes[i]
         if tag == 'delete' and (i2 - i1) >= 50:

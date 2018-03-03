@@ -16,12 +16,23 @@ import re, json
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        # BASE_DIR = settings.BASE_DIR
+        # yb_reel001_content = clean_separators(open(settings.BASE_DIR+"/data/sutra_text/YB000860_001_fixed.txt", "r", encoding='utf-8').read())
+        # sutra = Sutra.objects.filter(sid='YB000860').first()
+        # reel, created =Reel.objects.get_or_create(sutra=sutra, reel_no=1)
+        # reeltext, created = ReelCorrectText.objects.get_or_create(reel=reel, text=yb_reel001_content)
+        # reeltext.task = Task.objects.first()
+        # reeltext.publisher = Staff.objects.first()
+        # reeltext.save()
+        # batchtask = BatchTask.objects.first()
+        # create_punct_tasks(batchtask, reel, 2, 1)
+
         BASE_DIR = settings.BASE_DIR
-        yb_reel001_content = clean_separators(open(settings.BASE_DIR+"/data/sutra_text/YB000860_001_fixed.txt", "r", encoding='utf-8').read())
+        yb_reel001_content = clean_separators(open(settings.BASE_DIR+"/data/sutra_text/YB000860_002_fixed.txt", "r", encoding='utf-8').read())
         sutra = Sutra.objects.filter(sid='YB000860').first()
-        reel, created =Reel.objects.get_or_create(sutra=sutra, reel_no=1)
+        reel, created =Reel.objects.get_or_create(sutra=sutra, reel_no=2)
         reeltext, created = ReelCorrectText.objects.get_or_create(reel=reel, text=yb_reel001_content)
-        reeltext.task = Task.objects.first()
+        reeltext.task = Task.objects.all()[1]
         reeltext.publisher = Staff.objects.first()
         reeltext.save()
         batchtask = BatchTask.objects.first()

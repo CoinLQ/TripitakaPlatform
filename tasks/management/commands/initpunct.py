@@ -19,14 +19,14 @@ def create_punct_task(sid, reel_no, batch_task):
     sutra = Sutra.objects.get(sid=sid)
     reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
     reel_correct_text = ReelCorrectText.objects.filter(reel=reel)[0]
-    try:
-        punct = Punct.objects.get(reeltext=reel_correct_text)
-        task_puncts = punct.punctuation
-    except:
-        text = SEPARATORS_PATTERN.sub('', reel_correct_text.text)
-        task_puncts = PunctProcess.create_new(reel, text)
-        punct = Punct(reel=reel, reeltext=reel_correct_text, punctuation=task_puncts)
-        punct.save()
+    # try:
+    #     punct = Punct.objects.get(reeltext=reel_correct_text)
+    #     task_puncts = punct.punctuation
+    # except:
+    text = SEPARATORS_PATTERN.sub('', reel_correct_text.text)
+    task_puncts = PunctProcess.create_new(reel, text)
+    punct = Punct(reel=reel, reeltext=reel_correct_text, punctuation=task_puncts)
+    punct.save()
 
     for task_no in [1, 2]:
         task = Task(batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=reel,

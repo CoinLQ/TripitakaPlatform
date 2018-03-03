@@ -20,6 +20,8 @@ class PunctProcess(object):
             if pos < mark['idx']:
                 break
             offset = mark["offset"]
+        if (offset == 0):
+            offset = sparses[0]["offset"]
         return offset
 
     def gen_sparses(self, base, compare):
@@ -33,6 +35,8 @@ class PunctProcess(object):
             offset = offset - ((i2-i1)-(j2-j1))
             sparses.append({"idx": j2, "offset": offset})
             if tag == 'delete':
+                # print('{:7}   base[{}:{}] --> compare[{}:{}] {!r:>8} --> {!r}'.format(
+                #     tag, i1, i2, j1, j2, base[i1:i2], compare[j1:j2]))
                 filter_ranges.append( (i1, i2) )
         return sparses, filter_ranges
 
@@ -63,6 +67,17 @@ class PunctProcess(object):
         result_text += new_reel_text[begin:]
         return result_text
 
+    def output_punct_texts(self, new_puncts, new_reel_text):
+        begin=0
+        result_text = ''
+        for punct in new_puncts:
+            if punct[0] < 0:
+                continue
+            result_text += "%s%s" % (new_reel_text[begin: punct[0]], punct[1])
+            begin = punct[0]
+        result_text += new_reel_text[begin:]
+        return result_text
+
     def body_punct(self, base_reel_text, head_text, tail_text, puncts):
         _puncts = filter(lambda a: a[0]> len(head_text), puncts)
         
@@ -78,7 +93,7 @@ class PunctProcess(object):
         for reel in Reel.objects.filter(sutra=sutra).order_by('reel_no'):
             reel_correct_text = reel.reel_correct_texts.order_by('-id').first()
             punct_lst.append(json.loads(Punct.objects.filter(reeltext=reel_correct_text).first().body_punctuation))
-            body_lst.append(reel_correct_text.body)
+            body_lst.append(clean_separators(reel_correct_text.body))
         puncts = PunctProcess.combined_punct(punct_lst)
         return [''.join(body_lst) , puncts]
 
@@ -104,13 +119,15 @@ class PunctProcess(object):
         body_and_puncts = PunctProcess().get_sutra_body_text_and_puncts(sutra_cb)
         body_text = clean_separators(body_and_puncts[0])
         puncts = body_and_puncts[1]
-        pos_pair = get_align_pos(newtext, newtext)
+        pos_pair = get_align_pos(body_text, newtext)
         aligned_puncts = list(filter(lambda n: n[0] >= pos_pair[0] and n[0] <= pos_pair[1], puncts))
         reel_align_text = body_text[pos_pair[0]:pos_pair[1]]
+        PunctProcess().output_punct_texts(aligned_puncts, reel_align_text)
         # 这里找的CBETA来源的标点
         try:
-            _puncts = PunctProcess().new_puncts(reel_align_text, aligned_puncts, newtext)
+            _puncts = PunctProcess().new_puncts(reel_align_text, aligned_puncts, clean_separators(newtext))
             task_puncts = json.dumps(_puncts, separators=(',', ':'))
+            #PunctProcess().output_punct_texts(_puncts, newtext)
             return task_puncts
         except:
             return '[]'
@@ -119,5 +136,5 @@ class PunctProcess(object):
 @receiver(pre_save, sender=LQPunct)
 def update_body_punctuation_fields(sender, instance, **kwargs):
     punctuation = json.loads(instance.punctuation)
-    body_puncts = PunctProcess().body_punct(instance.reeltext.text, instance.reeltext.head, instance.reeltext.tail, punctuation)
-    instance.body_punctuation = json.dumps(body_puncts)
+    body_puncts = PunctProcess().body_punct(clean_separators(instance.reeltext.text), clean_separators(instance.reeltext.head), clean_separators(instance.reeltext.tail), punctuation)
+    instance.body_punctuation = json.dumps(body_puncts, separators=(',', ':'))

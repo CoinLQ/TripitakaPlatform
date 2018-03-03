@@ -100,7 +100,6 @@ class PunctProcess(object):
         '''
         增加新的标点信息
         '''
-
         sutra_cb = Sutra.objects.get(lqsutra=reel.sutra.lqsutra, tripitaka=Tripitaka.objects.get(code='CB'))
         body_and_puncts = PunctProcess().get_sutra_body_text_and_puncts(sutra_cb)
         body_text = clean_separators(body_and_puncts[0])
@@ -110,7 +109,7 @@ class PunctProcess(object):
         reel_align_text = body_text[pos_pair[0]:pos_pair[1]]
         # 这里找的CBETA来源的标点
         try:
-            _puncts = PunctProcess.new_puncts(reel_align_text, aligned_puncts, newtext)
+            _puncts = PunctProcess().new_puncts(reel_align_text, aligned_puncts, newtext)
             task_puncts = json.dumps(_puncts, separators=(',', ':'))
             return task_puncts
         except:

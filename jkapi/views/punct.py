@@ -109,6 +109,8 @@ class PunctTaskDetail(APIView):
         elif self.task.typ == Task.TYPE_PUNCT_VERIFY:
             if self.task.status == Task.STATUS_NOT_READY:
                 return Response({'msg': 'not ready'})
+            reeltext = self.task.reeltext
+            text = SEPARATORS_PATTERN.sub('', reeltext.text)
             punct_tasks = list(Task.objects.filter(batch_task=task.batchtask,
             typ=Task.TYPE_PUNCT, reel=task.reel))
             puncts = [json.loads(t.result) for t in punct_tasks]
@@ -122,6 +124,8 @@ class PunctTaskDetail(APIView):
         elif self.task.typ == Task.TYPE_LQPUNCT_VERIFY:
             if self.task.status == Task.STATUS_NOT_READY:
                 return Response({'msg': 'not ready'})
+            lqreeltext = self.task.lqtext
+            text = SEPARATORS_PATTERN.sub('', lqreeltext.text)
             punct_tasks = list(Task.objects.filter(batch_task=task.batchtask,
             typ=Task.TYPE_LQPUNCT, reel=task.lqreel))
             puncts = [json.loads(t.result) for t in punct_tasks]

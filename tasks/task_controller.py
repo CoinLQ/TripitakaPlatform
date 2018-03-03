@@ -102,8 +102,7 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
         sutra_cb = Sutra.objects.get(lqsutra=reel.sutra.lqsutra, tripitaka=CB)
         reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=reel.reel_no)
         punct = Punct.objects.filter(reel=reel_cb)[0]
-        _puncts = PunctProcess.create_new(reel, reelcorrecttext.text)
-        task_puncts = json.dumps(_puncts, separators=(',', ':'))
+        task_puncts = PunctProcess.create_new(reel, reelcorrecttext.text)
     except:
         pass
     for task_no in range(1, punct_times + 1):

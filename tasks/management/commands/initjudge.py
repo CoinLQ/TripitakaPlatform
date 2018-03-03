@@ -22,7 +22,7 @@ def save_reel_with_correct_text(lqsutra, sid, reel_no, start_vol, start_vol_page
     try:
         reel_correct_text = ReelCorrectText.get(reel=reel)
     except:
-        filename = os.path.join(settings.BASE_DIR, 'data/sutra_text/%s_%03d.txt' % (sid, reel_no))
+        filename = os.path.join(settings.BASE_DIR, 'data/sutra_text/%s_%03d_fixed.txt' % (sid, reel_no))
         with open(filename, 'r', encoding='utf-8') as f:
             text = f.read()
             reel_correct_text = ReelCorrectText(reel=reel)

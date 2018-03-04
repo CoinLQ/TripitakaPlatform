@@ -34,10 +34,10 @@ class DiffSegResultList(generics.ListAPIView):
         queryset = DiffSegResult.objects.filter(task_id=self.task.id)
         if 'all_equal' in self.request.GET:
             all_equal = self.request.GET.get('all_equal')
-            return queryset.filter(all_equal=all_equal).order_by('id')
+            return queryset.filter(all_equal=all_equal).order_by('diffseg__base_pos')
         if 'diffseg_id' in self.request.GET:
             diffseg_id_lst = self.request.GET.get('diffseg_id').split(',')
-            return queryset.filter(diffseg_id__in=diffseg_id_lst).order_by('id')
+            return queryset.filter(diffseg_id__in=diffseg_id_lst).order_by('diffseg__base_pos')
         return queryset.order_by('id')
 
 class DiffSegResultUpdate(generics.UpdateAPIView):
@@ -51,26 +51,38 @@ class JudgeTaskDetail(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
     
     def get(self, request, task_id, format=None):
-        base_text = clean_separators(self.task.reeldiff.base_text.text)
+        base_text = clean_separators(self.task.reeldiff.base_text.body)
         diffseg_pos_lst = self.task.reeldiff.diffseg_pos_lst
+        #base_sutra = Sutra.objects.get(sid='CB002780')
+        #base_reel = Reel.objects.get(sutra=base_sutra, reel_no=1)
         base_reel = self.task.reeldiff.base_text.reel
         tripitaka_info = {}
         lqsutra = self.task.lqreel.lqsutra
         for sutra in lqsutra.sutra_set.all():
-            reel = Reel.objects.get(sutra=sutra, reel_no=self.task.lqreel.reel_no)
-            tripitaka_info[sutra.tripitaka_id] = {
-                'url_prefix': reel.url_prefix(),
-                'start_vol_page': reel.start_vol_page,
-            }
+            try:
+                reel = Reel.objects.get(sutra=sutra, reel_no=self.task.lqreel.reel_no)
+                tripitaka_info[sutra.tripitaka_id] = {
+                    'url_prefix': reel.url_prefix(),
+                    'start_vol_page': reel.start_vol_page,
+                }
+            except:
+                pass
         puncts = base_reel.punct_set.all()[0:1]
         punct = puncts[0]
+        punctuation = json.loads(punct.punctuation)
+        head_len = len(clean_separators(punct.reeltext.head))
+        new_punctuation = []
+        for p in punctuation:
+            pos = p[0] - head_len
+            if pos > 0:
+                new_punctuation.append([pos, p[1]])
         response = {
             'task_id': task_id,
             'status': self.task.status,
             'is_verify': (self.task.typ == Task.TYPE_JUDGE_VERIFY),
             'base_text': base_text,
             'diffseg_pos_lst': json.loads(diffseg_pos_lst),
-            'punct_lst': json.loads(punct.punctuation),
+            'punct_lst': new_punctuation,
             'base_tripitaka_id': base_reel.sutra.tripitaka_id,
             'image_url_prefix': settings.IMAGE_URL_PREFIX,
             'tripitaka_info': tripitaka_info,

@@ -98,8 +98,6 @@ class Command(BaseCommand):
 
         # CBETA第1卷
         CB = Tripitaka.objects.get(code='CB')
-        #CB.sutra_set.all().delete()
-
         try:
             huayan_cb = Sutra.objects.get(sid='CB002780')
         except:
@@ -110,7 +108,6 @@ class Command(BaseCommand):
 
         for reel_no in range(1, 61):
             filename = os.path.join(BASE_DIR, 'data/cbeta_huayan/reel_info/CBETA_60_%s.txt' % reel_no)
-            text = ''
             with open(filename, 'r', encoding='utf-8') as f:
                 lines1 = f.readlines()
             filename = os.path.join(BASE_DIR, 'data/cbeta_huayan/text/CB_278_%s.txt' % reel_no)

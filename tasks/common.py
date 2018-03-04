@@ -11,7 +11,6 @@ from tasks.utils.cut_column import gene_new_col, crop_col_online
 
 from django.conf import settings
 
-
 SEPARATORS_PATTERN = re.compile('[pb\n]')
 
 def compact_json_dumps(obj):
@@ -544,57 +543,6 @@ def extract_page_line_separators(text):
         else:
             pos += 1
     return separators
-
-class ReelText(object):
-    def __init__(self, reel, text, tripitaka_id, sid, vol_no, start_vol_page):
-        self.reel = reel
-        self.text = SEPARATORS_PATTERN.sub('', text)
-        self.tripitaka_id = tripitaka_id
-        self.tripitaka = Tripitaka.objects.get(id=tripitaka_id)
-        self.sid = sid
-        self.vol_no = vol_no
-        self.start_vol_page = start_vol_page
-        self.separators = extract_page_line_separators(text)
-
-    def get_char_position(self, start_index, end_index):
-        count_p = 0
-        count_n = 0
-        start_page_no = -1
-        start_line_no = -1
-        start_char_no = -1
-        end_page_no = -1
-        end_line_no = -1
-        end_char_no = -1
-        last_pos = 0
-        separator_count = len(self.separators)
-        i = 0
-        while i <= separator_count:
-            if i < separator_count:
-                pos, separator = self.separators[i]
-            else:
-                pos = len(self.text)
-            if pos > start_index and start_char_no == -1:
-                # 第一次pos > start_index时
-                start_page_no = count_p
-                start_line_no = count_n
-                start_char_no = start_index - last_pos + 1
-            if pos > end_index and end_char_no == -1:
-                # 第一次pos > end_index时
-                end_page_no = count_p
-                end_line_no = count_n
-                end_char_no = end_index - last_pos + 1
-                break
-
-            if i == separator_count:
-                break
-            if separator == 'p':
-                count_p += 1
-                count_n = 0
-            elif separator == '\n':
-                count_n += 1
-            last_pos = pos
-            i += 1
-        return (start_page_no, start_line_no, start_char_no, end_page_no, end_line_no, end_char_no)
 
 def get_reel_text(reel):
     pages = []

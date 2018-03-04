@@ -6,9 +6,8 @@ from django.db.models import Q
 
 from tdata.models import *
 from tasks.models import *
-from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, ReelText, \
+from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, \
 clean_separators, compute_accurate_cut
-from tasks.reeldiff_processor import generate_reeldiff
 from tasks.ocr_compare import OCRCompare
 from tasks.utils.punct_process import PunctProcess
 import json, re, logging, traceback
@@ -17,17 +16,6 @@ from difflib import SequenceMatcher
 from background_task import background
 
 logger = logging.getLogger(__name__)
-
-def get_reeltext(lqsutra, tripitaka_id, reel_no):
-    sutra = Sutra.objects.get(lqsutra=lqsutra, tripitaka_id=tripitaka_id)
-    reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
-    reel_correct_texts = list(ReelCorrectText.objects.filter(reel=reel).order_by('-id')[0:1])
-    if not reel_correct_texts:
-        return None
-    reel_correct_text = reel_correct_texts[0]
-    reeltext = ReelText(reel=reel, text=reel_correct_text.text, tripitaka_id=tripitaka_id,
-    sid=sutra.sid, vol_no=reel.start_vol, start_vol_page=reel.start_vol_page)
-    return reeltext
 
 def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times):
     if reel.sutra.sid.startswith('CB'): # 不对CBETA生成任务
@@ -188,70 +176,6 @@ lqmark_times = 0, lqmark_verify_times = 0):
             create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_times)
         except:
             print('create judge task failed: ', lqsutra, reel_no)
-
-def create_reeldiff_for_judge_task(lqreel, lqsutra):
-    reel_no = lqreel.reel_no
-    judge_task_lst = list(Task.objects.filter(lqreel=lqreel, typ=Task.TYPE_JUDGE, status=Task.STATUS_NOT_READY))
-    if not judge_task_lst:
-        print('没有校勘判取任务: ', lqreel)
-        logging.info('没有校勘判取任务: %s' % lqreel)
-        return None
-
-    sutra_lst = list(lqsutra.sutra_set.all())
-    sutra_id_lst = [sutra.id for sutra in sutra_lst]
-
-    # 找实体卷，底本和对校本
-    reel_lst = list(Reel.objects.filter(sutra_id__in=sutra_id_lst, reel_no=reel_no, edition_type__in=[Reel.EDITION_TYPE_BASE, Reel.EDITION_TYPE_CHECKED]))
-    reel_id_lst = [reel.id for reel in reel_lst]
-    if len(reel_lst) <= 1:
-        return None
-
-    try:
-        base_reel_index = reel_id_lst.index(judge_task_lst[0].base_reel.id)
-    except:
-        logging.error('校勘判取任务%s设定的底本不存在' % judge_task_lst[0].id)
-        return None
-    # 将底本换到第一个位置
-    reel = reel_lst[base_reel_index]
-    reel_lst[base_reel_index] = reel_lst[0]
-    reel_lst[0] = reel
-    reel_id_lst = [reel.id for reel in reel_lst]
-    new_sutra_lst = [reel.sutra for reel in reel_lst]
-
-    reel_id_to_text = {}
-    reel_id_to_reel_correct_text = {}
-    for reel_correct_text in ReelCorrectText.objects.filter(reel_id__in=reel_id_lst):
-        reel_id = reel_correct_text.reel_id
-        if reel_id in reel_id_to_text and reel_id_to_reel_correct_text[reel_id].created_at > reel_correct_text.created_at:
-            pass
-        else:
-            reel_id_to_text[reel_id] = reel_correct_text.text
-            reel_id_to_reel_correct_text[reel_id] = reel_correct_text
-    if len(reel_id_to_text) != len(reel_lst):
-        print('reel_id_to_text', reel_lst)
-        logging.info('此卷的文字校对还未完成，暂时不触发校勘判取任务')
-        return None
-    correct_text_lst = []
-    reel_correct_text_lst = []
-    for reel in reel_lst:
-        correct_text_lst.append( reel_id_to_text[reel.id] )
-        reel_correct_text_lst.append( reel_id_to_reel_correct_text[reel.id] )
-    reeldiff = ReelDiff(lqsutra=lqsutra, reel_no=reel_no, base_text=reel_correct_text_lst[0])
-    reeldiff.save()
-    reeldiff.correct_texts.set(reel_correct_text_lst)
-
-    generate_reeldiff(reeldiff, new_sutra_lst, reel_lst, correct_text_lst)
-    for task in judge_task_lst:
-        for diffseg in reeldiff.diffseg_set.all():
-            diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text='')
-            diffsegresult.save()
-
-    task_id_lst = [task.id for task in judge_task_lst]
-    Task.objects.filter(id__in=task_id_lst).update(reeldiff=reeldiff, status=Task.STATUS_READY)
-    judge_verify_task_lst = list(Task.objects.filter(lqreel=lqreel, typ=Task.TYPE_JUDGE_VERIFY, status=Task.STATUS_NOT_READY))
-    task_id_lst = [task.id for task in judge_verify_task_lst]
-    Task.objects.filter(id__in=task_id_lst).update(reeldiff=reeldiff)
-    #Task.objects.filter(id__in=task_id_lst).update(reeldiff=reeldiff, status=Task.STATUS_PROCESSING) # for test
 
 def publish_correct_result(task):
     '''

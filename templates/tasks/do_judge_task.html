@@ -184,6 +184,9 @@
             var text_count = 0;
             for (var j = 0; j < diffsegtexts.length; ++j) {
               var text = diffsegtexts[j].text;
+              if (text == null) {
+                continue;
+              }
               if (text in text_to_diffsegtexts) {
                 text_to_diffsegtexts[text].push(diffsegtexts[j]);
               } else {

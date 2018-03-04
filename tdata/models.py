@@ -60,8 +60,8 @@ class LQSutra(models.Model):
     code = models.CharField(verbose_name='龙泉经目编码', max_length=5, blank=False)
     variant_code = models.CharField(verbose_name='龙泉经目别本编码', max_length=1, default='0')
     name = models.CharField(verbose_name='龙泉经目名称', max_length=64, blank=False)
-    author = models.CharField(verbose_name='著译者', max_length=255, blank=True)
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
+    author = models.CharField(verbose_name='著译者', max_length=255, blank=True)
     remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
@@ -80,8 +80,8 @@ class Sutra(models.Model):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', null=True,
     blank=True, on_delete=models.SET_NULL) #（为"LQ"+ 经序号 + 别本号）
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
-    remark = models.TextField('备注', blank=True, default='')
     author = models.CharField('作译者', max_length=32, blank=True, default='')
+    remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
         verbose_name = '实体经'

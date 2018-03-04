@@ -253,10 +253,11 @@ class DiffSegText(models.Model):
     """
     diffseg = models.ForeignKey(DiffSeg, on_delete=models.CASCADE, related_name='diffsegtexts')
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE)
-    text = models.TextField('文本', default='', blank=True)
+    text = models.TextField('文本', blank=True, null=True)
     position = models.IntegerField('在卷文本中的位置（前有几个字）', default=0)
-    start_char_pos = models.CharField('起始经字位置', max_length=32, default='')
-    end_char_pos = models.CharField('结束经字位置', max_length=32, default='')
+    offset = models.IntegerField('所在卷文本在整部经文中位置', default=0)
+    start_char_pos = models.CharField('起始经字位置', max_length=32, default='', null=True)
+    end_char_pos = models.CharField('结束经字位置', max_length=32, default='', null=True)
 
     @property
     def column_url(self):

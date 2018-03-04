@@ -921,6 +921,9 @@ Vue.component('judge-image-dialog', {
                 if (tname == 'CBETA') {
                     continue;
                 }
+                if (diffsegtexts[i].text == null) {
+                    continue;
+                }
                 var cross_line = (diffsegtexts[i].start_char_pos.substr(0, 20) !=
                 diffsegtexts[i].end_char_pos.substr(0, 20));
                 this.images.push({

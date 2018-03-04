@@ -3,12 +3,14 @@ from jwt_auth.models import Staff
 from tdata.models import *
 from tasks.models import *
 from tasks.common import *
+from tasks.reeldiff_processor import *
 from tasks.task_controller import *
 from tasks.utils.text_align import *
 from .init import save_reel, get_reel
 
 import TripitakaPlatform.settings
 
+from difflib import SequenceMatcher
 import os, sys
 from os.path import isfile, join
 import traceback
@@ -35,97 +37,54 @@ def save_reel_with_correct_text(lqsutra, sid, reel_no, start_vol, start_vol_page
     except Exception:
         traceback.print_exc()
 
+def create_data(lqsutra):
+    save_reel_with_correct_text(lqsutra, 'QL000870', 1, 24, 1, 17, '24')
+    save_reel_with_correct_text(lqsutra, 'ZH000860', 1, 12, 1, 12, '12')
+    save_reel_with_correct_text(lqsutra, 'GL000790', 1, 0, 1, 21, '79', '1')
+    save_reel_with_correct_text(lqsutra, 'QS000810', 1, 21, 449, 461, '21')
+    save_reel_with_correct_text(lqsutra, 'ZC000780', 1, 10, 21, 48, '10')
+    save_reel_with_correct_text(lqsutra, 'SX000770', 1, 956, 2, 38, '956')
+    save_reel_with_correct_text(lqsutra, 'PL000810', 1, 1114, 2, 25, '1114')
+    save_reel_with_correct_text(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
+    save_reel_with_correct_text(lqsutra, 'QL000870', 2, 24, 18, 31, '24')
+    save_reel_with_correct_text(lqsutra, 'ZH000860', 2, 12, 13, 24, '12')
+    save_reel_with_correct_text(lqsutra, 'QS000810', 2, 21, 461, 472, '21')
+    save_reel_with_correct_text(lqsutra, 'SX000770', 2, 957, 2, 36, '957')
+    save_reel_with_correct_text(lqsutra, 'YB000860', 2, 27, 25, 45, '27')
+
 class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
-        admin = Staff.objects.get(username='admin')
+        try:
+            admin = Staff.objects.get(username='admin')
+        except:
+            admin = Staff(email='admin@example.com', username='admin')
+            admin.set_password('admin')
+            admin.is_admin = True
+            admin.save()
 
         # get LQSutra
         lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
-        # CBETA第1卷
-        huayan_cb_1 = get_reel('CB002780', 1)
-        if not huayan_cb_1:
+        create_data(lqsutra)
+        # create BatchTask
+        batch_task = BatchTask(priority=2, publisher=admin)
+        batch_task.save()
+
+        CB = Tripitaka.objects.get(code='CB')
+        try:
+            base_sutra = Sutra.objects.get(lqsutra=lqsutra, tripitaka=CB)
+        except:
             print('please run ./manage.py import_cbeta_huayan60')
             return
-
-        save_reel_with_correct_text(lqsutra, 'QL000870', 1, 24, 1, 17, '24')
-        save_reel_with_correct_text(lqsutra, 'ZH000860', 1, 12, 1, 12, '12')
-        save_reel_with_correct_text(lqsutra, 'GL000790', 1, 0, 1, 21, '79', '1')
-        save_reel_with_correct_text(lqsutra, 'QS000810', 1, 21, 449, 461, '21')
-        save_reel_with_correct_text(lqsutra, 'ZC000780', 1, 10, 21, 48, '10')
-        save_reel_with_correct_text(lqsutra, 'SX000770', 1, 956, 2, 38, '956')
-        save_reel_with_correct_text(lqsutra, 'PL000810', 1, 1114, 2, 25, '1114')
-        save_reel_with_correct_text(lqsutra, 'QL000870', 2, 24, 18, 31, '24')
-        save_reel_with_correct_text(lqsutra, 'ZH000860', 2, 12, 13, 24, '12')
-        save_reel_with_correct_text(lqsutra, 'QS000810', 2, 21, 461, 472, '21')
-        save_reel_with_correct_text(lqsutra, 'SX000770', 2, 957, 2, 36, '957')
-        save_reel_with_correct_text(lqsutra, 'YB000860', 2, 27, 25, 45, '27')
-
-        # get LQReel
-        try:
-            lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=1)
-        except:
-            # create LQReel
-            lqreel = LQReel(lqsutra=lqsutra, reel_no=1)
-            lqreel.save()
-
-        YB = Tripitaka.objects.get(code='YB')
-        huayan_yb = Sutra.objects.get(sid='YB000860')
-        huayan_yb_1 = Reel.objects.get(sutra=huayan_yb, reel_no=1)
-        ReelCorrectText.objects.filter(reel=huayan_yb_1).delete()
-
-        # create BatchTask
-        priority = 2
-        CORRECT_TIMES = 2
-        CORRECT_VERIFY_TIMES = 1
-        JUDGE_TIMES = 2
-        JUDGE_VERIFY_TIMES = 1
-        reel_no = 1
-        batch_task = BatchTask.objects.all()[0]
-
-        # 校勘判取
-        Task.objects.filter(batch_task=batch_task, typ=Task.TYPE_JUDGE).delete()
-        Task.objects.filter(batch_task=batch_task, typ=Task.TYPE_JUDGE_VERIFY).delete()
-        ReelDiff.objects.all().delete()
-
-        task1 = Task(batch_task=batch_task, typ=Task.TYPE_JUDGE, lqreel=lqreel, base_reel=huayan_cb_1, task_no=1, status=Task.STATUS_NOT_READY,
-        publisher=admin)
-        task1.lqreel = lqreel
-        task1.save()
-
-        task2 = Task(batch_task=batch_task, typ=Task.TYPE_JUDGE, lqreel=lqreel, base_reel=huayan_cb_1, task_no=2, status=Task.STATUS_NOT_READY,
-        publisher=admin)
-        task2.lqreel = lqreel
-        task2.save()
-
-        task3 = Task(batch_task=batch_task, typ=Task.TYPE_JUDGE_VERIFY, lqreel=lqreel, base_reel=huayan_cb_1, task_no=0, status=Task.STATUS_NOT_READY,
-        publisher=admin)
-        task3.lqreel = lqreel
-        task3.save()
-
-        correct_task = Task.objects.get(pk=3)
-        filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % 'YB000860')
-        with open(filename, 'r', encoding='utf-8') as f:
-            correct_text = f.read()
-            correct_task.result = correct_text
-            Task.objects.filter(id=correct_task.id).update(result=correct_text)
-            ReelCorrectText.objects.filter(task=correct_task).delete()
-            publish_correct_result(correct_task)
-
-            task1.status = Task.STATUS_PROCESSING
-            task1.picker = admin
-            task1.picked_at = timezone.now()
-            task1.save(update_fields=['status', 'picker', 'picked_at'])
-
-        #     # 得到精确的切分数据
-        #     try:
-        #         compute_accurate_cut(correct_task.reel)
-        #     except Exception:
-        #         traceback.print_exc()
+        for reel_no in range(1, 3):
+            base_reel = Reel.objects.get(sutra=base_sutra, reel_no=reel_no)
+            lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
+            create_judge_tasks(batch_task, lqreel, base_reel, 2, 1)
+        judge_tasks = create_data_for_judge_tasks(batch_task, lqsutra, base_sutra, 2)
 
         set_result = False
         if set_result:
-            task_ids = [task1.id, task2.id]
+            task_ids = [t.id for t in judge_tasks]
             tasks = list(Task.objects.filter(id__in=task_ids))
             for task in tasks:
                 for diffseg in task.reeldiff.diffseg_set.all():

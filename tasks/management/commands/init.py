@@ -86,13 +86,7 @@ class Command(BaseCommand):
         huayan_yb_1, reel_ocr_text_yb_1 = save_reel(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
 
         # create BatchTask
-        BatchTask.objects.all().delete()
-        priority = 2
-        CORRECT_TIMES = 2
-        CORRECT_VERIFY_TIMES = 1
-        JUDGE_TIMES = 2
-        JUDGE_VERIFY_TIMES = 1
-        batch_task = BatchTask(priority=priority, publisher=admin)
+        batch_task = BatchTask(priority=2, publisher=admin)
         batch_task.save()
 
         # create Tasks

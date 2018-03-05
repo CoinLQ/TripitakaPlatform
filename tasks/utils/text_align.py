@@ -18,13 +18,17 @@ def get_align_pos(text1, text2):
 
     for i in range(0, opcode_cnt-1):
         tag, i1, i2, j1, j2 = opcodes[i]
-        if tag == 'delete' and (i2 - i1) >= 50:
+        if tag == 'delete' and (i2 - i1) >= 30:
+            start_index = i2
+        elif tag == 'replace' and (i2 - i1) - (j2 - j1) >= 30:
             start_index = i2
         elif tag == 'equal' and (i2 - i1) >= 20:
             break
     for i in range(opcode_cnt-1, 0, -1):
         tag, i1, i2, j1, j2 = opcodes[i]
-        if tag == 'delete' and (i2 - i1) >= 50:
+        if tag == 'delete' and (i2 - i1) >= 30:
+            end_index = i1
+        elif tag == 'replace' and (i2 - i1) - (j2 - j1) >= 30:
             end_index = i1
         elif tag == 'equal' and (i2 - i1) >= 20:
             break

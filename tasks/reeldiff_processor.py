@@ -330,9 +330,6 @@ def get_multireeltext(sutra):
         multireeltext.add_reeltext(reel, reelcorrecttext.body, reelcorrecttext.head)
     return multireeltext
 
-# def generate_reeldiff(reeldiff, multireeltexts):
-#     generate_text_diff(multireeltexts, reeldiff)
-
 class ReelText(object):
     def __init__(self, reel, text_len, head_text, separators):
         self.reel = reel

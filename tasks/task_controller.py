@@ -193,6 +193,7 @@ def publish_correct_result(task):
             if reeltext_count == 0:
                 reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task, publisher=task.picker)
                 reel_correct_text.save()
+                task.reel.set_correct_ready()
     else: # 与最新的一份记录比较
         text1 = saved_reel_correct_texts[0].text
         text2 = task.result
@@ -202,6 +203,7 @@ def publish_correct_result(task):
                 if reeltext_count == 0:
                     reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task, publisher=task.picker)
                     reel_correct_text.save()
+                    task.reel.set_correct_ready()
                     text_changed = True
         else:
             return
@@ -238,8 +240,8 @@ def publish_correct_result(task):
         print('没找到龙泉藏经卷对应的记录')
         logging.error('没找到龙泉藏经卷对应的记录')
         return None
-
-    create_reeldiff_for_judge_task(lqreel, lqsutra)
+    if is_sutra_ready_for_judge(lqsutra):
+        create_data_for_judge_tasks(batch_task, lqsutra, base_sutra, lqsutra.total_reels)
 
 CORRECT_RESULT_FILTER = re.compile('[ 　ac-oq-zA-Z0-9.?\-",/，。、：]')
 def generate_correct_result(task):
@@ -341,7 +343,7 @@ def judge_submit_result(task):
     # 比较校勘判取任务的结果
     diffsegresults_lst = []
     for i in range(task_count):
-        diffsegresults = list(DiffSegResult.objects.filter(task_id=judge_tasks[i].id).order_by('diffseg__diffseg_no').all())
+        diffsegresults = list(DiffSegResult.objects.filter(task_id=judge_tasks[i].id).order_by('diffseg__base_pos').all())
         diffsegresults_lst.append(diffsegresults)
 
     to_save_diffsegresults = []
@@ -381,7 +383,6 @@ def publish_judge_result(task):
         return
     base_correct_text = task.reeldiff.base_text
     base_text = clean_separators(base_correct_text.text)
-    base_tripitaka_id = base_correct_text.reel.sutra.tripitaka_id
     text_lst = []
     base_index = 0
     base_text_length = len(base_text)

@@ -448,9 +448,18 @@ def create_diffsegresults_for_judge_task(reeldiff_lst, batchtask, lqsutra, base_
                 diffsegresult_lst.append(diffsegresult)
         DiffSegResult.objects.bulk_create(diffsegresult_lst)
         Task.objects.filter(id__in=judge_task_ids).update(reeldiff=reeldiff, status=Task.STATUS_READY)
+        Task.objects.filter(batch_task=batchtask, typ=Task.TYPE_JUDGE_VERIFY, lqreel=lqreel).update(reeldiff=reeldiff)
     return all_judge_tasks
 
 def create_data_for_judge_tasks(batchtask, lqsutra, base_sutra, max_reel_no):
     reeldiff_lst = create_reeldiff(lqsutra, base_sutra)
     return create_diffsegresults_for_judge_task(reeldiff_lst, batchtask, lqsutra, base_sutra, \
     max_reel_no)
+
+def is_sutra_ready_for_judge(lqsutra):
+    sutra_lst = list(lqsutra.sutra_set.all())
+    for sutra in sutra_lst:
+        for reel in sutra.reel_set.all():
+            if reel.ocr_ready and (not reel.correct_ready):
+                return False
+    return True

@@ -15,6 +15,7 @@ import traceback
 import re, json
 
 def save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
+    ocr_ready=True, correct_ready=True,
     path1='', path2='', path3=''):
     tcode = sid[:2]
     tripitaka = Tripitaka.objects.get(code=tcode)
@@ -30,7 +31,8 @@ def save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
     except:
         reel = Reel(sutra=sutra, reel_no=reel_no, start_vol=start_vol,
         start_vol_page=start_vol_page, end_vol=start_vol, end_vol_page=end_vol_page, edition_type=Reel.EDITION_TYPE_CHECKED,
-        path1=path1, path2=path2, path3=path3)
+        path1=path1, path2=path2, path3=path3,
+        ocr_ready=ocr_ready, correct_ready=correct_ready)
         reel.save()
     try:
         reel_ocr_text = ReelOCRText.get(reel=reel)

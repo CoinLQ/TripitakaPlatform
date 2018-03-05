@@ -126,8 +126,10 @@ class Reel(models.Model):
     edition_type = models.SmallIntegerField('版本类型', choices=EDITION_TYPE_CHOICES, default=0)
     remark = models.TextField('备注', blank=True, default='')
     image_ready = models.BooleanField(verbose_name='图片状态', default=False)
-    cut_ready = models.BooleanField(verbose_name='切分数据状态', default=False)
+    cut_ready = models.BooleanField(verbose_name='文字校对生成的切分数据状态', default=False)
     column_ready = models.BooleanField(verbose_name='切列图状态', default=False)
+    ocr_ready = models.BooleanField(verbose_name='OCR数据状态', default=False)
+    correct_ready = models.BooleanField(verbose_name='是否有文字校对经文', default=False)
 
     class Meta:
         verbose_name = '实体卷'
@@ -163,6 +165,11 @@ class Reel(models.Model):
                 if self.path3:
                     path_lst.append(self.path3)
         return '_'.join(path_lst)
+
+    def set_correct_ready(self):
+        if not self.correct_ready:
+            self.correct_ready = True
+            self.save(update_fields=['correct_ready'])
 
 class ReelOCRText(models.Model):
     reel = models.OneToOneField(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, primary_key=True)

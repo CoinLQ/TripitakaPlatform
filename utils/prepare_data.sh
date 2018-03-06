@@ -22,5 +22,6 @@ mkdir logs
 ./manage.py create_lqreel
 ./manage.py import_cbeta_huayan60
 ./manage.py generate_reel_path
+./manage.py import_ocr_ready_list
 ./manage.py download_ready_ocrtext
 ./manage.py create_huayan60_tasks

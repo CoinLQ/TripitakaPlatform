@@ -136,10 +136,20 @@ class OCRCompare(object):
             pos = text.find(key)
             if pos != -1:
                 text = text[:pos]
+        lines = text.split('\n')
+        filter_keywords = ['永乐北藏', '乾薩大藏']
+        new_lines = []
+        for line in lines:
+            for keyword in filter_keywords:
+                if line.find(keyword) != -1:
+                    line = ''
+                    break
+            new_lines.append(line)
+        text = '\n'.join(new_lines)
         return text
 
     @classmethod
-    def generate_compare_reel(cls, text1, text2):
+    def generate_correct_diff(cls, text1, text2):
         """
         用于文字校对前的文本比对
         text1是基础本；text2是要比对的版本。
@@ -213,6 +223,16 @@ class OCRCompare(object):
                 page_no=page_no, line_no=line_no, char_no=char_no)
                 correctsegs.append(correctseg)
         return cls.combine_equal_seg(correctsegs)
+
+    @classmethod
+    def compare_reel(cls, text1, text2):
+        """
+        用于文字校对前的文本比对
+        text1是基础本；text2是要比对的版本。
+        """
+        ocr_text = OCRCompare.preprocess_ocr_text(text2)
+        correctsegs = OCRCompare.generate_correct_diff(text1, ocr_text)
+        return correctsegs
 
     @classmethod
     def set_position(cls, from_correctsegs, correctsegs):

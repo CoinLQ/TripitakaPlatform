@@ -15,8 +15,7 @@ import traceback
 import re, json
 
 def save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
-    ocr_ready=True, correct_ready=True,
-    path1='', path2='', path3=''):
+    path1='', path2='', path3='', ocr_ready=True, correct_ready=True):
     tcode = sid[:2]
     tripitaka = Tripitaka.objects.get(code=tcode)
     try:

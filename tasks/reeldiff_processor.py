@@ -34,9 +34,8 @@ def generate_text_diff(reeltext_lst, reeldiff_lst, skip_ranges_lst):
     if n <= 1:
         return []
     opcodes_lst = []
-    junk_func = lambda x: x in " \t"
     for i in range(1, n):
-        opcodes = SequenceMatcher(junk_func, reeltext_lst[0].text, reeltext_lst[i].text, False).get_opcodes()
+        opcodes = SequenceMatcher(None, reeltext_lst[0].text, reeltext_lst[i].text, False).get_opcodes()
         opcodes_lst.append(opcodes)
 
     reeldiff_idx = 0
@@ -95,7 +94,7 @@ def generate_text_diff(reeltext_lst, reeldiff_lst, skip_ranges_lst):
             if position_lst[0] >= reeldiff_lst[reeldiff_idx].base_text_len:
                 distance = position_lst[0] - reeldiff_lst[reeldiff_idx].base_text_len
                 for i in range(n):
-                    offset_lst[i] = position_lst[i] - distance
+                    offset_lst[i] += position_lst[i] - distance
                 for i in range(n):
                     position_lst[i] = distance
                 reeldiff_idx += 1
@@ -220,7 +219,7 @@ def generate_text_diff(reeltext_lst, reeldiff_lst, skip_ranges_lst):
             if reset_reeldiff:
                 reeldiff_idx += 1
                 for i in range(n):
-                    offset_lst[i] = position_lst[i]
+                    offset_lst[i] += position_lst[i]
                 for i in range(n):
                     position_lst[i] = 0
     

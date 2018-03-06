@@ -42,8 +42,6 @@ def save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
     return reel, reel_ocr_text
 
 def get_reel(sid, reel_no):
-    tcode = sid[:2]
-    tripitaka = Tripitaka.objects.get(code=tcode)
     try:
         sutra = Sutra.objects.get(sid=sid)
         reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
@@ -108,7 +106,7 @@ class Command(BaseCommand):
         task3.reel = huayan_yb_1
         task3.save()
 
-        correctsegs = OCRCompare.generate_compare_reel(huayan_cb_1_correct_text.text, reel_ocr_text_yb_1.text)
+        correctsegs = OCRCompare.compare_reel(huayan_cb_1_correct_text.text, reel_ocr_text_yb_1.text)
         tasks = [task1, task2]
         for i in range(2):
             for correctseg in correctsegs:

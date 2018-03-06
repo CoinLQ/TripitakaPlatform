@@ -38,8 +38,7 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_
         base_text_lst.append(sutra_to_body[base_reel.sutra_id])
         base_text_lst.append(base_reel_correct_text.tail)
         base_text = ''.join(base_text_lst)
-        ocr_text = OCRCompare.preprocess_ocr_text(reel_ocr_text.text)
-        correctsegs = OCRCompare.generate_compare_reel(base_text, ocr_text)
+        correctsegs = OCRCompare.compare_reel(base_text, reel_ocr_text.text)
 
     task_id_lst = []
     for task_no in range(1, correct_times + 1):
@@ -281,7 +280,7 @@ def correct_submit(task):
             correct_verify_task = correct_verify_tasks[0]
 
             # 比较一组的两个文字校对任务的结果
-            correctsegs = OCRCompare.generate_compare_reel(correct_tasks[0].result, correct_tasks[1].result)
+            correctsegs = OCRCompare.generate_correct_diff(correct_tasks[0].result, correct_tasks[1].result)
             from_correctsegs = list(CorrectSeg.objects.filter(task=correct_tasks[1]).order_by('id'))
             OCRCompare.reset_segposition(from_correctsegs)
             OCRCompare.set_position(from_correctsegs, correctsegs)

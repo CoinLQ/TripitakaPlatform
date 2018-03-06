@@ -41,7 +41,7 @@ class Command(BaseCommand):
             lqsutra.save()
         
         #导入龙泉经目 OK            
-        # self.ImportLQSutra()
+        self.ImportLQSutra()
                                   
 
         # #1) call 获得或创建管理员  OK
@@ -51,7 +51,7 @@ class Command(BaseCommand):
         # self.ImportSutra()
 
         #导入详目    ok
-        self.ImportSutraJuan()     
+        # self.ImportSutraJuan()     
    
         return None
                              
@@ -647,7 +647,7 @@ class Command(BaseCommand):
      #导入卷的时候用到的获得tripitaka 的子函数    
     def __save_data(self, datalist ,):
         BASE_DIR = settings.BASE_DIR
-        save_file = BASE_DIR+'/data/textdata/'+ datalist[0]        
+        save_file = BASE_DIR+'/data/sutra_list/'+ datalist[0]        
         print(save_file)
         key=datalist[1]
         strData='#'
@@ -666,7 +666,7 @@ class Command(BaseCommand):
             i=i+1
             for strkey in key:
                 try: 
-                    strData+=str(d[strkey])+'\t'                                        
+                    strData+=str(d[strkey]).replace('\n','')+'\t'                                        
                 except : pass 
             strData+='\n'    
 

@@ -445,6 +445,8 @@ def create_diffsegresults_for_judge_task(reeldiff_lst, batchtask, lqsutra, base_
             for diffseg in diffsegs:
                 diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text='')
                 diffsegresult_lst.append(diffsegresult)
+            task.reeldiff = reeldiff
+            task.status = Task.STATUS_READY
         DiffSegResult.objects.bulk_create(diffsegresult_lst)
         Task.objects.filter(id__in=judge_task_ids).update(reeldiff=reeldiff, status=Task.STATUS_READY)
         Task.objects.filter(batch_task=batchtask, typ=Task.TYPE_JUDGE_VERIFY, lqreel=lqreel).update(reeldiff=reeldiff)

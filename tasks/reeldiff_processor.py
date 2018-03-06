@@ -61,6 +61,8 @@ def generate_text_diff(reeltext_lst, reeldiff_lst, skip_ranges_lst):
             break
 
         min_length = min(length_lst)
+        if position_lst[0] + min_length >= reeldiff_lst[reeldiff_idx].base_text_len:
+            min_length = reeldiff_lst[reeldiff_idx].base_text_len - position_lst[0]
         if all_equal:
             position_lst[0] += min_length
             for i in range(n - 1):
@@ -87,23 +89,7 @@ def generate_text_diff(reeltext_lst, reeldiff_lst, skip_ranges_lst):
                             opcodes_lst[i].pop(0)
                         else:
                             opcodes_lst[i][0] = (tag, i1 + min_length, i2, j1, j2)
-                    elif tag == 'insert': # in skip range
-                        if (i2 - i1) == min_length:
-                            opcodes_lst[i].pop(0)
-                        position_lst[i+1] += (j2 - j1)
-            if position_lst[0] >= reeldiff_lst[reeldiff_idx].base_text_len:
-                distance = position_lst[0] - reeldiff_lst[reeldiff_idx].base_text_len
-                for i in range(n):
-                    offset_lst[i] += position_lst[i] - distance
-                for i in range(n):
-                    position_lst[i] = distance
-                reeldiff_idx += 1
         else:
-            reset_reeldiff = False
-            if position_lst[0] + min_length >= reeldiff_lst[reeldiff_idx].base_text_len:
-                min_length = reeldiff_lst[reeldiff_idx].base_text_len - position_lst[0]
-                reset_reeldiff = True
-
             diffseg = DiffSeg(base_pos=position_lst[0], reeldiff=reeldiff_lst[reeldiff_idx])
             diffseg_lst.append(diffseg)
             # print('diffseg start: ', position_lst)
@@ -216,12 +202,12 @@ def generate_text_diff(reeltext_lst, reeldiff_lst, skip_ranges_lst):
             #     print(diffsegtext.tripitaka.code, diffsegtext.position, diffsegtext.offset, diffsegtext.text)
             # print('diffseg end: ', position_lst)
 
-            if reset_reeldiff:
-                reeldiff_idx += 1
-                for i in range(n):
-                    offset_lst[i] += position_lst[i]
-                for i in range(n):
-                    position_lst[i] = 0
+        if position_lst[0] == reeldiff_lst[reeldiff_idx].base_text_len:
+            reeldiff_idx += 1
+            for i in range(n):
+                offset_lst[i] += position_lst[i]
+            for i in range(n):
+                position_lst[i] = 0
     
     diffseg_lst, diffsegtexts_lst = merge_diffseg(diffseg_lst, diffsegtexts_lst)
     create_diffseg(diffseg_lst, diffsegtexts_lst, reeltext_lst)

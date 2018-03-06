@@ -137,7 +137,7 @@ class OCRCompare(object):
             if pos != -1:
                 text = text[:pos]
         lines = text.split('\n')
-        filter_keywords = ['永乐北藏', '乾薩大藏']
+        filter_keywords = ['永乐北藏', '乾薩大藏', '乾隆大藏']
         new_lines = []
         for line in lines:
             for keyword in filter_keywords:

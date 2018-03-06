@@ -166,8 +166,9 @@ lqmark_times = 0, lqmark_verify_times = 0):
             except:
                 # TODO: 记录错误
                 continue
-            create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
-            create_punct_tasks(batchtask, reel, punct_times, punct_verify_times)
+            if reel.ocr_ready:
+                create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
+                create_punct_tasks(batchtask, reel, punct_times, punct_verify_times)
 
         try:
             lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)

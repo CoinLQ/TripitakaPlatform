@@ -26,7 +26,7 @@ class Command(BaseCommand):
                 if sutra.lqsutra != lqsutra:
                     continue
                 reel_ocr_text_lst = []
-                for reel in sutra.reel_set.all():
+                for reel in Reel.objects.filter(sutra=sutra, ocr_ready=True):
                     try:
                         reel_ocr_text = ReelOCRText.objects.get(reel_id = reel.id)
                     except:

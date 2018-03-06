@@ -53,8 +53,6 @@ class JudgeTaskDetail(APIView):
     def get(self, request, task_id, format=None):
         base_text = clean_separators(self.task.reeldiff.base_text.body)
         diffseg_pos_lst = self.task.reeldiff.diffseg_pos_lst
-        #base_sutra = Sutra.objects.get(sid='CB002780')
-        #base_reel = Reel.objects.get(sutra=base_sutra, reel_no=1)
         base_reel = self.task.reeldiff.base_text.reel
         tripitaka_info = {}
         lqsutra = self.task.lqreel.lqsutra

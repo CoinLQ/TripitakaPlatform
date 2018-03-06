@@ -266,7 +266,7 @@ class DiffSegText(models.Model):
         line_no = int(line_no)
         try:
             page = Page.objects.get(pid=pid)
-            url = '%s%sc%d0%02d.jpg' % (settings.IMAGE_URL_PREFIX, page.reel.url_prefix(), page.page_no, line_no)
+            url = '%s%sc%d0%02d.jpg' % (settings.COL_IMAGE_URL_PREFIX, page.reel.url_prefix(), page.page_no, line_no)
             return url
         except:
             pass

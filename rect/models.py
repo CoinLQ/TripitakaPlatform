@@ -12,6 +12,8 @@ from django.db.models import Min, Sum, Case, When, Value, Count, F
 from django_bulk_update.manager import BulkUpdateManager
 from .lib.arrange_rect import ArrangeRect
 from django.forms.models import model_to_dict
+from django.conf import settings
+
 from dotmap import DotMap
 from PIL import Image, ImageFont, ImageDraw
 from celery import shared_task
@@ -340,7 +342,7 @@ class Rect(models.Model):
     def column_uri_path(col_s3_id):
         col_id = str(col_s3_id)
         col_path = col_id.replace('_', '/')
-        return 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/%s/%s.jpg' % (os.path.dirname(col_path), col_id)
+        return '%s/%s/%s.jpg' % (settings.COL_IMAGE_URL_PREFIX, os.path.dirname(col_path), col_id)
 
     @staticmethod
     def canonicalise_uuid(uuid):

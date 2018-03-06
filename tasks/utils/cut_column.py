@@ -80,8 +80,8 @@ def crop_col_online(img_path, col_data):
     pos = img_path.rfind('/')
     img_prefix = img_path[:pos+1]
     s3c = boto3.client('s3')
-    my_bucket = 'lqdzj-image'
-    img_url = "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/" + img_path
+    my_bucket = 'lqdzj-col'
+    img_url = "%s/%s" % (settings.IMAGE_URL_PREFIX, img_path)
     img = Image.open(BytesIO(urllib.request.urlopen(img_url).read()))
     for col in col_data:
         image = img.crop((col['x'], col['y'], col['x1'], col['y1']))

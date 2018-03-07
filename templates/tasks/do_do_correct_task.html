@@ -136,7 +136,7 @@
       line_no: 1,
       char_no: 1,
       current_char_no: 1,
-      sharedata: {task_id: {{ task.id }}, status: 0, correctsegs: []  },
+      sharedata: {task_id: {{ task.id }}, task_typ: {{task.typ}}, status: 0, correctsegs: []  },
       doubt:{ 
         formVisible: false,
         doubt_text: '',
@@ -159,7 +159,8 @@
     computed: {
       premitSubmit: function (){
         let empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
-        return (empty_segs.length != 0) || (this.sharedata.status == 4)
+        // 对于文字校对审查，已经完成的，禁止再提交
+        return (empty_segs.length != 0 || (this.sharedata.status == 4 && this.sharedata.task_typ == 2) ) 
       },
       doubt_count: function(){
         return this.doubts.length;

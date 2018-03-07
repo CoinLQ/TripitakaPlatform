@@ -193,8 +193,6 @@ class SplitBar(object):
 
 
 
-    # TODO: 中华大藏经 三栏分布未完成
-
     def zh_mode_split_bar(self, columns):
         flat_list = [item for sublist in columns for item in sublist]
         mean_height = int(np.mean(list(map(lambda X: int(X['h']), flat_list))))

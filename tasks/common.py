@@ -246,6 +246,8 @@ def get_accurate_cut(text1, text2, cut_json, pid):
     char_lst = generate_accurate_chars(clean_text1, clean_text2, old_char_lst, debug)
 
     column_count = 0
+    if not char_lst:
+        return char_lst, 0, 0, [], 0, 0, 0
     line_count = char_lst[-1]['line_no']
     char_count_lst = [0] * line_count
     char_map = {}

@@ -19,7 +19,9 @@ from background_task import background
 logger = logging.getLogger(__name__)
 
 def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times):
-    if reel.sutra.sid.startswith('CB'): # 不对CBETA生成任务
+    if correct_times == 0:
+        return
+    if reel.sutra.sid.startswith('CB') or reel.sutra.sid.startswith('GL'): # 不对CBETA, GL生成任务
         return
     # Correct Task
     print('create_correct_tasks: ', reel)
@@ -28,7 +30,8 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_
         print('no ocr text for reel: ', reel)
         return None
     reel_ocr_text = reel_ocr_texts[0]
-
+    ocr_text = OCRCompare.preprocess_ocr_text(reel_ocr_text.text)
+    correctsegs_lst = []
     for base_reel in base_reel_lst:
         try:
             base_reel_correct_text = ReelCorrectText.objects.filter(reel=base_reel).order_by('-id').first()
@@ -39,14 +42,16 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_
         base_text_lst.append(sutra_to_body[base_reel.sutra_id])
         base_text_lst.append(base_reel_correct_text.tail)
         base_text = ''.join(base_text_lst)
-        correctsegs = OCRCompare.compare_reel(base_text, reel_ocr_text.text)
+        correctsegs = OCRCompare.generate_correct_diff(base_text, ocr_text)
+        correctsegs_lst.append(correctsegs)
 
     task_id_lst = []
     for task_no in range(1, correct_times + 1):
         task = Task(batch_task=batchtask, reel=reel, typ=Task.TYPE_CORRECT, task_no=task_no, status=Task.STATUS_NOT_READY,
         publisher=batchtask.publisher)
         task.save()
-
+        index = (task_no - 1) % len(correctsegs_lst)
+        correctsegs = correctsegs_lst[index]
         for correctseg in correctsegs:
             correctseg.task = task
             correctseg.id = None
@@ -60,6 +65,8 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_
         task.save()
 
 def create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_times):
+    if judge_times == 0:
+        return
     for task_no in range(1, judge_times + 1):
         task = Task(batch_task=batchtask, typ=Task.TYPE_JUDGE, lqreel=lqreel,
         base_reel=base_reel, task_no=task_no, status=Task.STATUS_NOT_READY,
@@ -73,6 +80,8 @@ def create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_t
         task.save()
 
 def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
+    if punct_times == 0:
+        return
     reelcorrecttext = None
     punctuation_json = '[]'
     status = Task.STATUS_NOT_READY
@@ -139,27 +148,25 @@ lqmark_times = 0, lqmark_verify_times = 0):
                 sutra_lst.append(sutra)
 
         # 先得到两个base_reel，CBETA和高丽藏
-        first_base_sutra = None
-        second_base_sutra = None
+        base_sutra_lst = []
         for sutra in sutra_lst:
-            if sutra.sid.startswith('CB'):
-                first_base_sutra = sutra
+            if sutra.sid.startswith('CB') or sutra.sid.startswith('GL'):
+                base_sutra_lst.append(sutra)
                 if sutra.id not in sutra_to_body:
                     sutra_to_body[sutra.id] = get_sutra_body(sutra)
-            # # 暂时不使用高丽藏作为比对本
-            # if sutra.sid.startswith('GL'):
-            #     second_base_sutra = sutra
-        if not first_base_sutra and not second_base_sutra:
+        if not base_sutra_lst:
             # 记录错误
             print('no base sutra')
             continue
+        if not base_sutra_lst[0].sid.startswith('CB'):
+            base_sutra_lst[0], base_sutra_lst[1] = base_sutra_lst[1], base_sutra_lst[0]
         base_reel_lst = []
-        if first_base_sutra:
-            reel = Reel.objects.get(sutra=first_base_sutra, reel_no=reel_no)
-            base_reel_lst.append(reel)
-        if second_base_sutra:
-            reel = Reel.objects.get(sutra=second_base_sutra, reel_no=reel_no)
-            base_reel_lst.append(reel)
+        for sutra in base_sutra_lst:
+            try:
+                reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
+                base_reel_lst.append(reel)
+            except:
+                pass
 
         for sutra in sutra_lst:
             try:

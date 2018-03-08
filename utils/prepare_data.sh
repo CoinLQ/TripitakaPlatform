@@ -19,6 +19,7 @@ mkdir logs
 ./manage.py set_cut_ready
 #./manage.py import_sutra_reel
 ./manage.py import_reel
+./manage.py import_gl
 ./manage.py create_lqreel
 ./manage.py import_cbeta_huayan60
 ./manage.py generate_reel_path

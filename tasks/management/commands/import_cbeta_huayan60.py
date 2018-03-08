@@ -14,7 +14,7 @@ import traceback
 import re, json
 
 CLEAN_PATTERN = re.compile('[「」◎　　 \r]')
-CLEAN_PATTERN_PUNCT = re.compile('[、？「」◎　　 ，；。：　]')
+CLEAN_PATTERN_PUNCT = re.compile('[、？「」◎　　 ，；。：！　]')
 def read_reel_info(huayan_cb, reel_no, lines):
     start_vol = 0
     start_vol_page = 0

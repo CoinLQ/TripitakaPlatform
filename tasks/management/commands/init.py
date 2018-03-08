@@ -4,6 +4,7 @@ from jwt_auth.models import Staff
 from tdata.models import *
 from tasks.models import *
 from tasks.common import *
+from tasks.task_controller import create_tasks_for_batchtask
 from tasks.ocr_compare import OCRCompare
 
 import TripitakaPlatform.settings
@@ -72,16 +73,6 @@ class Command(BaseCommand):
             lqsutra = LQSutra(sid='LQ003100', name='大方廣佛華嚴經', total_reels=60)
             lqsutra.save()
 
-        # create Sutra
-        # Sutra.objects.all().delete()
-
-        # CBETA第1卷
-        huayan_cb_1 = get_reel('CB002780', 1)
-        if not huayan_cb_1:
-            print('please run ./manage.py import_cbeta_huayan60')
-            return
-        huayan_cb_1_correct_text = ReelCorrectText.objects.get(reel=huayan_cb_1)
-
         huayan_yb_1, reel_ocr_text_yb_1 = save_reel(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
 
         # create BatchTask
@@ -89,47 +80,9 @@ class Command(BaseCommand):
         batch_task.save()
 
         # create Tasks
-        # Correct Task
         # 文字校对
-        task1 = Task(batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_cb_1, task_no=1, status=Task.STATUS_PROCESSING,
-        publisher=admin, picker=admin, picked_at=timezone.now())
-        task1.reel = huayan_yb_1
-        task1.save()
-
-        task2 = Task(batch_task=batch_task, typ=Task.TYPE_CORRECT, base_reel=huayan_cb_1, task_no=2, status=Task.STATUS_READY,
-        publisher=admin)
-        task2.reel = huayan_yb_1
-        task2.save()
-
-        task3 = Task(batch_task=batch_task, typ=Task.TYPE_CORRECT_VERIFY, base_reel=huayan_cb_1, task_no=0, status=Task.STATUS_NOT_READY,
-        publisher=admin)
-        task3.reel = huayan_yb_1
-        task3.save()
-
-        correctsegs = OCRCompare.compare_reel(huayan_cb_1_correct_text.text, reel_ocr_text_yb_1.text)
-        tasks = [task1, task2]
-        for i in range(2):
-            for correctseg in correctsegs:
-                correctseg.task = tasks[i]
-                correctseg.id = None
-            CorrectSeg.objects.bulk_create(correctsegs)
-
-        # 用于测试计算精确切分数据
-        try:
-            reelcorrecttext = ReelCorrectText.objects.get(reel=huayan_yb_1)
-        except:
-            filename = os.path.join(BASE_DIR, 'data/sutra_text/%s_001_fixed.txt' % 'YB000860')
-            with open(filename, 'r', encoding='utf-8') as f:
-                text = f.read()
-                reelcorrecttext = ReelCorrectText(reel=huayan_yb_1)
-                reelcorrecttext.set_text(text)
-                reelcorrecttext.save()
-
-        # 得到精确的切分数据
-        try:
-            compute_accurate_cut(huayan_yb_1)
-        except Exception:
-            traceback.print_exc()
+        reel_lst = [(lqsutra, 1)]
+        create_tasks_for_batchtask(batch_task, reel_lst, 2, 1)
 
 
 

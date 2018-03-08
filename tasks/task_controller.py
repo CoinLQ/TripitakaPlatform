@@ -10,6 +10,7 @@ from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, \
 clean_separators, compute_accurate_cut
 from tasks.ocr_compare import OCRCompare
 from tasks.utils.punct_process import PunctProcess
+from tasks.reeldiff_processor import is_sutra_ready_for_judge, create_data_for_judge_tasks
 import json, re, logging, traceback
 from operator import attrgetter, itemgetter
 from difflib import SequenceMatcher
@@ -114,9 +115,9 @@ def get_sutra_body(sutra):
 
 # 从龙泉大藏经来发布
 def create_tasks_for_batchtask(batchtask, reel_lst,
-correct_times = 0, correct_verify_times = 0,
-judge_times = 0, judge_verify_times = 0,
-punct_times = 0, punct_verify_times = 0,
+correct_times = 2, correct_verify_times = 0,
+judge_times = 2, judge_verify_times = 0,
+punct_times = 2, punct_verify_times = 0,
 lqpunct_times = 0, lqpunct_verify_times = 0,
 mark_times = 0, mark_verify_times = 0,
 lqmark_times = 0, lqmark_verify_times = 0):

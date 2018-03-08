@@ -25,6 +25,10 @@ class CorrectTaskSerializer(TaskSerializer):
     sutra = serializers.SerializerMethodField()
     reel_no = serializers.SerializerMethodField()
     priority = serializers.SerializerMethodField()
+    task_no = serializers.SerializerMethodField()
+
+    def get_task_no(self, obj):
+        return "%s校" % obj.get_task_no_display()
 
     def get_priority(self, obj):
         return obj.get_priority_display()
@@ -50,7 +54,7 @@ class CorrectTaskSerializer(TaskSerializer):
     class Meta:
         model = Task
         fields = ('batch_task', 'lqsutra_name', 'tripitaka_name',
-        'sutra', 'reel_no', 'priority', 'id', 'status', 'picked_at', 'finished_at')
+        'sutra', 'reel_no', 'priority', 'id', 'status', 'task_no', 'picked_at', 'finished_at')
         read_only_fields = ('id', )
 
 class VerifyCorrectTaskSerializer(CorrectTaskSerializer):
@@ -63,7 +67,10 @@ class JudgeTaskSerializer(TaskSerializer):
     lqreel_no = serializers.SerializerMethodField()
     base_tripitaka_name = serializers.SerializerMethodField()
     priority = serializers.SerializerMethodField()
+    task_no = serializers.SerializerMethodField()
 
+    def get_task_no(self, obj):
+        return "%s校" % obj.get_task_no_display()
 
     def get_priority(self, obj):
         return obj.get_priority_display()
@@ -91,7 +98,7 @@ class JudgeTaskSerializer(TaskSerializer):
     class Meta:
         model = Task
         fields = ('batch_task', 'lqsutra_name', 'base_tripitaka_name',
-            'lqreel_no', 'priority', 'id',  'status', 'picked_at', 'finished_at')
+            'lqreel_no', 'priority', 'id',  'status', 'task_no', 'picked_at', 'finished_at')
         read_only_fields = ('id', )
 
 
@@ -102,14 +109,18 @@ class VerifyJudgeTaskSerializer(JudgeTaskSerializer):
 
 class PunctTaskSerializer(CorrectTaskSerializer):
     progress = serializers.SerializerMethodField()
+    task_no = serializers.SerializerMethodField()
 
+    def get_task_no(self, obj):
+        return "%s标" % obj.get_task_no_display()
+    
     def get_progress(self, obj):
         return "%s标" % obj.progress
 
     class Meta:
         model = Task
         fields = ('batch_task', 'lqsutra_name', 'tripitaka_name',
-        'sutra',  'reel_no', 'priority', 'progress', 'id',
+        'sutra',  'reel_no', 'priority', 'progress', 'task_no', 'id',
         'status', 'picked_at', 'finished_at')
         read_only_fields = ('id', )
 

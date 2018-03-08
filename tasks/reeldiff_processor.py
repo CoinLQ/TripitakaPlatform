@@ -168,8 +168,10 @@ def generate_text_diff(reeltext_lst, reeldiff_lst, skip_ranges_lst):
                                 add_length = j2 - j1
                                 opcodes_lst[i].pop(0)
                             else:
-                                s = reeltext_lst[i+1].text[j1:j1+min_length]
-                                opcodes_lst[i][0] = (tag, i1+min_length, i2, j1+min_length, j2)
+                                if (j2 - j1) < min_length:
+                                    add_length = j2 - j1
+                                s = reeltext_lst[i+1].text[j1:j1+add_length]
+                                opcodes_lst[i][0] = (tag, i1+min_length, i2, j1+add_length, j2)
                             start = position_lst[0] + offset_lst[0] - min_length
                             end = start + min_length
                             if is_in_skip_range(skip_ranges_lst[i], start, end):

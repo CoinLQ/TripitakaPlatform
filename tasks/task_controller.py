@@ -272,15 +272,20 @@ def correct_submit(task):
     # 如果都已完成
     if all_finished:
         if task_count == 1:
-            publish_correct_result(task)
+            # 系统暂不支持单一校对，如果只有一个校对任务，不进行后续的任务任务。
+            pass
+            # publish_correct_result(task)
         elif task_count == 2:
             # 查到文字校对审定任务
             correct_verify_tasks = list(Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT_VERIFY))
             if len(correct_verify_tasks) == 0:
                 return 
             correct_verify_task = correct_verify_tasks[0]
-
-            # 比较一组的两个文字校对任务的结果
+            if correct_verify_task.status > Task.STATUS_READY:
+                # 已被领取的任务，不再重新发布
+                return
+            # 比较一组的两个字校对任务的结果
+            CorrectSeg.objects.filter(task=correct_verify_task).delete()
             correctsegs = OCRCompare.generate_correct_diff(correct_tasks[0].result, correct_tasks[1].result)
             from_correctsegs = list(CorrectSeg.objects.filter(task=correct_tasks[1]).order_by('id'))
             OCRCompare.reset_segposition(from_correctsegs)
@@ -295,6 +300,7 @@ def correct_submit(task):
             correct_verify_task.status = Task.STATUS_READY
             task_ids = correct_tasks.values_list('id', flat=True)
 
+            DoubtSeg.objects.filter(task=correct_verify_task).delete()
             new_doubt_segs = OCRCompare.combine_correct_doubtseg(correct_tasks[0].doubt_segs.all(), correct_tasks[1].doubt_segs.all())        
             for doubt_seg in new_doubt_segs:
                 doubt_seg.task = correct_verify_task

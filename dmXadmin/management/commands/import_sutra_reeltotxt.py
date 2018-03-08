@@ -90,7 +90,7 @@ class Command(BaseCommand):
         
         reel_lst = []
         reel_lst.append('reel_list.txt')
-        key=('sid','name','reel_no','start_v','start_p','end_v','end_p','remark')
+        key=('sid','name','reel_no','start_vol','start_vol_page','end_vol','end_vol_page','remark')
         reel_lst.append(key)
 
         reel_no_str_set = set()
@@ -163,10 +163,10 @@ class Command(BaseCommand):
                         d['sid']=sutra.sid
                         d['name']=sutra.name
                         d['reel_no']=reel_no
-                        d['start_v']=start_vol                        
-                        d['start_p']=start_vol_page
-                        d['end_v']=end_vol                            
-                        d['end_p']=end_vol_page
+                        d['start_vol']=start_vol                        
+                        d['start_vol_page']=start_vol_page
+                        d['end_vol']=end_vol                            
+                        d['end_vol_page']=end_vol_page
                         d['remark']=remark                                                            
                         reel_lst.append(d) 
                         print(d)

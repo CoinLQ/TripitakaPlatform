@@ -3,7 +3,6 @@ from django.db import models
 from django.utils import timezone
 from jwt_auth.models import Staff
 from tdata.models import *
-from difflib import SequenceMatcher
 import re, json
 
 # # class SutraStatus(models.Model):

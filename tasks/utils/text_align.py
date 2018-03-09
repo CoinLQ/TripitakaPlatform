@@ -1,7 +1,8 @@
 from tdata.models import Reel
 from tasks.models import ReelCorrectText
 
-from difflib import SequenceMatcher
+from cdifflib import CSequenceMatcher
+SequenceMatcher=CSequenceMatcher
 
 def get_sutra_body_text(sutra):
     body_lst = []

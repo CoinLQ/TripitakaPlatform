@@ -6,7 +6,8 @@ import os, sys
 from os.path import isfile, join
 import traceback
 
-from difflib import SequenceMatcher
+from cdifflib import CSequenceMatcher
+SequenceMatcher=CSequenceMatcher
 import re, json
 
 def set_char_position(diffsegtext, tid_to_reeltext):

@@ -232,7 +232,6 @@ class ReelDiff(models.Model):
     published_at = models.DateTimeField('发布时间', blank=True, null=True)
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True,
     verbose_name='发布用户')
-    correct_texts = models.ManyToManyField(ReelCorrectText)
     diffseg_pos_lst = models.TextField('DiffSeg位置信息')
 
 class DiffSeg(models.Model):

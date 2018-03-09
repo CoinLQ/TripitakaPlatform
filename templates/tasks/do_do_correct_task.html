@@ -40,7 +40,7 @@
                         </el-row>
                         <el-row :gutter="20">
                           <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="danger">选择结果</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span id="pop-input" type="text" placehold="结果文" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)"></span></div></el-col>
+                          <el-col :span="17"><div class="grid-content bg-purple"><span id="pop-input" type="text" placehold="结果文" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)" ></span></div></el-col>
                         </el-row>
                 </el-popover>
             </div>
@@ -721,7 +721,6 @@
           // 解决当前行为空，焦点丢失的问题，重新focus
           if (!seg.selected_text) {
               this.$nextTick(function() {
-              this.$el.querySelector('#segdiff-'+ seg.id + ' span').focus()
               this.$el.querySelector('#pop-input').focus()
             }.bind(this))
           }

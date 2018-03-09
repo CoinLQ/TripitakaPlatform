@@ -260,10 +260,10 @@ class DiffSegText(models.Model):
 
     @property
     def column_url(self):
-        pid = self.start_char_pos[0:17]
-        line_no = self.start_char_pos[18:20]
-        line_no = int(line_no)
         try:
+            pid = self.start_char_pos[0:17]
+            line_no = self.start_char_pos[18:20]
+            line_no = int(line_no)
             page = Page.objects.get(pid=pid)
             url = '%s%sc%d0%02d.jpg' % (settings.COL_IMAGE_URL_PREFIX, page.reel.url_prefix(), page.page_no, line_no)
             return url
@@ -272,8 +272,8 @@ class DiffSegText(models.Model):
 
     @property
     def page_url(self):
-        pid = self.start_char_pos[0:17]
         try:
+            pid = self.start_char_pos[0:17]
             page = Page.objects.get(pid=pid)
             url = '%s%s%d.jpg' % (settings.IMAGE_URL_PREFIX, page.reel.url_prefix(), page.page_no)
             return url

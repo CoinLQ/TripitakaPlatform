@@ -296,3 +296,8 @@ opacity: 0;
 .current {
     border: thin;
 }
+
+.scale-op {
+    position: relative;
+    top: 10px;
+}

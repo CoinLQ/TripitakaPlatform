@@ -7,14 +7,25 @@
       <div class="canvas-pane">
         <canvas id="page-canvas"></canvas>
       </div>
-      <div>
-        <select v-model="scale">
-          <option value="1">1倍</option>
-          <option value="2">2倍</option>
-          <option value="3">3倍</option>
-          <option value="4">4倍</option>
-        </select>
+      {% raw %}
+      <div class='scale-op'>
+        <el-button-group>
+          <el-button type="primary" size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
+          <el-button type="primary" size="mini" round>{{scale_rate}}</el-button>
+          <el-button type="primary" size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
+        </el-button-group>
+         <div class="block" style="display:none;width: 30%;margin-left: 50px;">
+            <span class="demonstration">图片大小</span>
+            <el-slider
+              v-model="scale"
+              :step="1"
+              :max="5"
+              :min="1"
+              show-stops>
+            </el-slider>
+          </div>
       </div>
+      {% endraw %}
     </div>
     <div class="col-md-5 right-pane">
       <div class="operation">
@@ -108,7 +119,7 @@
         <el-collapse-item name="1">
           <template slot="title">
           <span ><i class="el-icon-date"></i> 存疑列表</span>
-          <el-button v-if="doubt_count!=0" type="primary" size="mini" round>{{doubt_count}}</el-button>
+          <el-button v-if="doubt_count!=0" type="danger" size="mini" round>{{doubt_count}}</el-button>
           </template>
           <div is="doubt-list" :doubts.sync="doubts" :task_id="sharedata.task_id" :current_doubt.sync="current_doubt"></div>
         </el-collapse-item>
@@ -164,6 +175,9 @@
       },
       doubt_count: function(){
         return this.doubts.length;
+      },
+      scale_rate: function() {
+        return "1:"+ this.scale
       }
     },
     watch: {
@@ -183,7 +197,16 @@
         deep: true
       },
       scale: function (val, oldVal) {
+        if (val > 5){
+          this.scale = 5
+          return
+        } 
+        if (val < 1){
+          this.scale = 1
+          return;
+        }
         if (val != oldVal) {
+
           this.setImg();
         }
       }

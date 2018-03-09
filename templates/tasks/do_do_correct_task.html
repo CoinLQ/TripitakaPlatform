@@ -75,35 +75,15 @@
           </div>
           <el-dialog title="存疑意见" :visible.sync="doubt.formVisible">
             <el-form :model="doubt" ref="doubt" label-position="right" >
-              <el-col :span="16">
+              <el-col :span="24">
                 <el-form-item label="存疑文本" label-width="120px">
                   <el-input v-model="doubt.doubt_text" :disabled="true" auto-complete="off"></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="存疑偏移" label-width="33%">
-                  <el-input v-model="doubt.doubt_char_no" :disabled="true" auto-complete="off"></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="存疑页" label-width="120px">
-                  <el-input v-model="doubt.page_no" :disabled="true" auto-complete="off"></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="存疑行" label-width="33%">
-                  <el-input v-model="doubt.line_no" :disabled="true" auto-complete="off"></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="存疑字" label-width="33%">
-                  <el-input v-model="doubt.char_no" :disabled="true" auto-complete="off"></el-input>
                 </el-form-item>
               </el-col>
               <el-form-item label="存疑理由" prop="doubt_comment" :rules="[
                     { required: true, message: '存疑理由不能为空', trigger: 'blur'},
                   ]" label-width="120px" >
-                  <el-input v-model="doubt.doubt_comment" required auto-complete="off"></el-input>
+                  <el-input type="textarea" :autosize="{ minRows: 3, maxRows: 5}" v-model="doubt.doubt_comment" required auto-complete="off"></el-input>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -750,6 +730,7 @@
         }).then(function(response) {
           console.log(response)
           this.doubts.unshift(response.data)
+          this.doubt.doubt_comment=''
         }.bind(this))
         .catch(function (error) {
           console.log(error)

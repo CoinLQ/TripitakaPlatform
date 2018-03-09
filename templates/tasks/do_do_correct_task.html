@@ -7,17 +7,28 @@
       <div class="canvas-pane">
         <canvas id="page-canvas"></canvas>
       </div>
-      <div>
-        <select v-model="scale">
-          <option value="1">1倍</option>
-          <option value="2">2倍</option>
-          <option value="3">3倍</option>
-          <option value="4">4倍</option>
-        </select>
+      {% raw %}
+      <div class='scale-op'>
+        <el-button-group>
+          <el-button type="primary" size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
+          <el-button type="primary" size="mini" round>{{scale_rate}}</el-button>
+          <el-button type="primary" size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
+        </el-button-group>
+         <div class="block" style="display:none;width: 30%;margin-left: 50px;">
+            <span class="demonstration">图片大小</span>
+            <el-slider
+              v-model="scale"
+              :step="1"
+              :max="5"
+              :min="1"
+              show-stops>
+            </el-slider>
+          </div>
       </div>
+      {% endraw %}
     </div>
     <div class="col-md-5 right-pane">
-      <div class="operation" @keydown.tab="nextPopup($event)">
+      <div class="operation">
                 <el-popover ref='popover' width="300" style="position: absolute; top: -500;" placement="bottom" popper-class="elpopup" trigger="manual" >
                         <el-row :gutter="20">
                           <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag>比对本</el-tag></div></el-col>
@@ -53,7 +64,7 @@
 
             </div>
         </transition>
-        <div class="reel-text-region-o"  @keydown.tab="nextPopup($event)" >
+        <div class="reel-text-region-o">
           
           <div id="reel-text-compare" class="reel-text-compare">
             {% raw %}
@@ -108,7 +119,7 @@
         <el-collapse-item name="1">
           <template slot="title">
           <span ><i class="el-icon-date"></i> 存疑列表</span>
-          <el-button v-if="doubt_count!=0" type="primary" size="mini" round>{{doubt_count}}</el-button>
+          <el-button v-if="doubt_count!=0" type="danger" size="mini" round>{{doubt_count}}</el-button>
           </template>
           <div is="doubt-list" :doubts.sync="doubts" :task_id="sharedata.task_id" :current_doubt.sync="current_doubt"></div>
         </el-collapse-item>
@@ -125,7 +136,7 @@
     data: {
       result: '',
       display_space: true,
-      display_newline: true,
+      display_newline: false,
       current_seg: {},
       selected_text:'',
       scrolled: false,
@@ -164,6 +175,9 @@
       },
       doubt_count: function(){
         return this.doubts.length;
+      },
+      scale_rate: function() {
+        return "1:"+ this.scale
       }
     },
     watch: {
@@ -183,7 +197,16 @@
         deep: true
       },
       scale: function (val, oldVal) {
+        if (val > 5){
+          this.scale = 5
+          return
+        } 
+        if (val < 1){
+          this.scale = 1
+          return;
+        }
         if (val != oldVal) {
+
           this.setImg();
         }
       }
@@ -202,9 +225,11 @@
     },
     mounted: function(){
       document.addEventListener('click', this.handleDocumentClick);
+      document.addEventListener('keydown', this.handleDocumentTab);
     },
     destroyed: function(){
       document.removeEventListener('click', this.handleDocumentClick);
+      document.addEventListener('keydown', this.handleDocumentTab);
     },
     methods: {
       handleDocumentClick: function(e) {
@@ -213,6 +238,13 @@
         }
         if (!this.$refs['popover'].$el.contains(e.target)) {
           this.$refs['popover'].doClose();
+        }
+      },
+      handleDocumentTab: function(e) {
+        if (e.keyCode == 9) {
+            e.preventDefault();
+            this.nextPopup(e);
+          return false;
         }
       },
       openDoubtForm: function() {
@@ -262,7 +294,7 @@
             pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().top - 210;
           }
         }
-        console.log(pos)
+        //console.log(pos)
         this.$refs['popover'].$el.style.position = 'absolute'
         this.$refs['popover'].$el.style.top = pos + 'px';
         this.$refs['popover'].doShow();
@@ -274,8 +306,10 @@
         if (e.stopPropagation){
           e.stopPropagation();
         }
-        var selection = window.getSelection(),
-        range = selection.getRangeAt(0);
+        var userSelection = this.userSelection(),
+        range = userSelection.getRangeAt(0),
+        orig_seg = this.current_seg;
+        
         // console.log(range.startOffset);
         // console.log(range.startContainer);
         // console.log(range.cloneContents().textContent);
@@ -302,11 +336,31 @@
         } else {
           this.$refs['popover'].doClose();
         }
-        
+      
+        this.$nextTick(function() {
+          let userSelection = this.userSelection();
+          if (userSelection.getRangeAt(0).startContainer.length == 1 && userSelection.getRangeAt(0).cloneContents().textContent == "")
+          {
+            if (seg && orig_seg != seg) {
+              var range = document.createRange();
+              userSelection = this.userSelection();
+              let node = this.inputNode(seg, e);
+              let textNode = node.childNodes[0]
+
+              textNode = node.childNodes[0]
+              range.selectNode(textNode)
+              range.setStart(textNode, 0);
+              range.setEnd(textNode, 0);
+              
+              userSelection.removeAllRanges();
+              userSelection.addRange(range);
+            }
+          }
+        }.bind(this)
+        )
         //range.moveStart('character', 1);
       },
       handleScroll: function(){
-        window.pp =this;
         this.scrolled = this.$el.querySelector('div.diff-text-pane').scrollTop >20;
         if (this.scrolled) {
           this.$el.querySelector('.cmd-block').style.position='fixed';
@@ -480,7 +534,34 @@
         return false
       },
       blockthem: function(evt) {
-        if (evt.keyCode == 37 || evt.keyCode == 39)
+        if (evt.keyCode == 46){
+          var selection = window.getSelection(),
+          range = selection.getRangeAt(0);
+          let is_tail = false;
+          // delete键按在列尾
+          if (range.startContainer.length == range.startOffset) {
+            is_tail = true;
+          }
+          newline = _.findLast(this.sharedata.correctsegs, function(v) { return v['line_no']  == this.current_seg.line_no && v['page_no']  == this.current_seg.page_no }.bind(this))
+          last_tags = _.filter(this.sharedata.correctsegs, function(v) { return v['line_no']  == this.current_seg.line_no && v['page_no']  == this.current_seg.page_no && v.tag != 4 && v.position > this.current_seg.position }.bind(this))
+          let all_selected_text = _.reduce(last_tags, function(sum, n) { return sum + n.selected_text;}, '');
+          //console.log('all:', all_selected_text)
+          // 余下所有非回车tag，内容都有空
+          if (all_selected_text == "" && is_tail) {
+            // 最后一个的内容是回车
+            if (newline.selected_text == '\n') {
+              let idx = _.find(this.sharedata.correctsegs, function(v) { return v.position == newline.position});
+              newline.selected_text = ''
+              this.$set(this.sharedata.correctsegs, idx, newline)
+            }
+          }
+          this.$nextTick(function () {
+            // DOM is now updated
+            // `this` is bound to the current instance
+            this.textSelection()
+          }.bind(this))
+          return
+        }else if (evt.keyCode == 37 || evt.keyCode == 39)
         {
           this.$nextTick(function () {
             // DOM is now updated
@@ -531,7 +612,7 @@
         return userSelection;
       },
       inputNode: function(seg ,e) {
-        if (e.target.id) {
+        if (e.target && e.target.id) {
           return this.$el.querySelector('#' + e.target.id)
         } else {
           return this.$el.querySelector('#segdiff-' + seg.id + ' span')
@@ -637,13 +718,11 @@
         .then(function(response) {
           console.log(response);
           seg.selected_text = response.data.selected_text
-          // 解决当前行为空，焦点丢失的问题，跳回上一个有内容可focus的块
+          // 解决当前行为空，焦点丢失的问题，重新focus
           if (!seg.selected_text) {
-            let ok_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text});
-            new_seg = _.findLast(ok_segs, function(o) { return o.id < seg.id; });
               this.$nextTick(function() {
-              this.textSelection(new_seg)
-              this.$el.querySelector('#segdiff-'+ new_seg.id + ' span').focus()
+              this.$el.querySelector('#segdiff-'+ seg.id + ' span').focus()
+              this.$el.querySelector('#pop-input').focus()
             }.bind(this))
           }
         }.bind(this));

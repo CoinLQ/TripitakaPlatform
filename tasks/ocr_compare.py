@@ -165,7 +165,7 @@ class OCRCompare(object):
         char_no = 0
         opcodes = SequenceMatcher(lambda x: x in 'pb\n', text1, text2, False).get_opcodes()
         for tag, i1, i2, j1, j2 in opcodes:
-            if ((i2-i1) - (j2-j1) > 50):
+            if ((i2-i1) - (j2-j1) > 200):
                 break
             if ((i2-i1) - (j2-j1) > 30):
                 base_text = ''

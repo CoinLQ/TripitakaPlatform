@@ -226,7 +226,7 @@ Vue.component('diffseg-box', {
                 <span v-if="idx != 0">/</span><a href="#" @click="openPageDialog(diffsegtext)">{{ diffsegtext.tripitaka.shortname }}</a>\
             </span>\
             <span v-if="text">：{{ text }}</span>\
-            <span v-else>为空</span>\
+            <span v-else>：为空</span>\
             <span v-if="index < (diffsegresult.text_count - 1)">；</span>\
             <span v-else>。</span>\
         </span>\
@@ -238,7 +238,6 @@ Vue.component('diffseg-box', {
         </div>\
         <div>\
             <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>\
-            <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">存疑</a>\
             <a href="#" class="diffseg-btn" @click.stop.prevent="doMerge(segindex)">合并</a>\
             <a href="#" class="diffseg-btn" v-if="diffsegresult.merged_diffsegresults.length == 0" @click.stop.prevent="doSplit(segindex)">拆分</a>\
         </div>\
@@ -324,9 +323,9 @@ Vue.component('diffseg-box', {
             if (diffsegresult.selected == 0) {
                 s += '未判取';
             } else if (diffsegresult.doubt == 0) {
-                s += '判取文本：' + diffsegresult.selected_text;
+                s += diffsegresult.selected_text;
             } else if (diffsegresult.doubt == 1) {
-                s += '判取文本：' + diffsegresult.selected_text + '。存疑，' + diffsegresult.doubt_comment + '。';
+                s += diffsegresult.selected_text + '。存疑理由：' + diffsegresult.doubt_comment + '。';
             }
             return s;
         },

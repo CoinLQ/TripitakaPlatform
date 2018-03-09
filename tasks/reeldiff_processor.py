@@ -315,7 +315,8 @@ def get_multireeltext(sutra):
     queryset = Reel.objects.filter(sutra=sutra)
     for reel in queryset.order_by('reel_no'):
         reelcorrecttext = ReelCorrectText.objects.filter(reel_id=reel.id).order_by('-id').first()
-        multireeltext.add_reeltext(reel, reelcorrecttext.body, reelcorrecttext.head)
+        if reelcorrecttext:
+            multireeltext.add_reeltext(reel, reelcorrecttext.body, reelcorrecttext.head)
     return multireeltext
 
 class ReelText(object):

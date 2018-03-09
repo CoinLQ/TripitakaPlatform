@@ -63,7 +63,6 @@ class LQSutra(models.Model):
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
     author = models.CharField(verbose_name='著译者', max_length=255, blank=True)
     remark = models.TextField('备注', blank=True, default='')
-    judge_correct_texts = models.ManyToManyField('ReelCorrectText')
 
     class Meta:
         verbose_name = u"龙泉经目"

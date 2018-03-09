@@ -1,4 +1,5 @@
-from difflib import SequenceMatcher
+from cdifflib import CSequenceMatcher
+SequenceMatcher=CSequenceMatcher
 import re, json, os
 import urllib.request
 import traceback

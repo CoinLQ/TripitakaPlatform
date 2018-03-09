@@ -13,7 +13,6 @@ from tasks.utils.punct_process import PunctProcess
 from tasks.reeldiff_processor import is_sutra_ready_for_judge, create_data_for_judge_tasks
 import json, re, logging, traceback
 from operator import attrgetter, itemgetter
-from difflib import SequenceMatcher
 from background_task import background
 
 logger = logging.getLogger(__name__)

@@ -31,6 +31,7 @@ django-celery-results==1.0.1
 SQLAlchemy==1.1.15
 -e git+https://github.com/CoinLQ/django-rest-framework-jwt#egg=djangorestframework-jwt
 -e git+https://github.com/CoinLQ/jwt_auth#egg=jwt_auth
+-e git+https://github.com/CoinLQ/cdifflib#egg=cdifflib
 django-jsonfield==1.0.1
 django-bulk-update==2.2.0
 pycurl==7.43.0 --global-option="--with-openssl"

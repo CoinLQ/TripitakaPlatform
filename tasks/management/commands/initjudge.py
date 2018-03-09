@@ -10,7 +10,6 @@ from .init import save_reel, get_reel
 
 import TripitakaPlatform.settings
 
-from difflib import SequenceMatcher
 import os, sys
 from os.path import isfile, join
 import traceback

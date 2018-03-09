@@ -11,7 +11,6 @@ import os, sys
 from os.path import isfile, join
 import traceback
 
-from difflib import SequenceMatcher
 import re, json
 import xlrd
 

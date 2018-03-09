@@ -1,5 +1,6 @@
 from django.conf import settings
-from difflib import SequenceMatcher
+from cdifflib import CSequenceMatcher
+SequenceMatcher=CSequenceMatcher
 import re
 
 from tdata.models import Configuration
@@ -162,7 +163,11 @@ class OCRCompare(object):
         page_no = 0
         line_no = 0
         char_no = 0
+        import time
+        time1 = time.time()
         opcodes = SequenceMatcher(lambda x: x in 'pb\n', text1, text2, False).get_opcodes()
+        spent = time.time() - time1
+        print('get_opcodes spent: ', spent)
         for tag, i1, i2, j1, j2 in opcodes:
             if ((i2-i1) - (j2-j1) > 30):
                 base_text = ''

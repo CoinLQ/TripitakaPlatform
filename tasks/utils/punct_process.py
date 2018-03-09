@@ -1,5 +1,6 @@
 
-from difflib import SequenceMatcher
+from cdifflib import CSequenceMatcher
+SequenceMatcher=CSequenceMatcher
 from tasks.models import Punct, LQPunct
 from tdata.models import Sutra, Tripitaka, Reel
 from tasks.common import clean_separators

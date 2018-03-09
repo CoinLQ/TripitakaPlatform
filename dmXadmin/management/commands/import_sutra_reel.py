@@ -33,43 +33,25 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
 
-        try:
-            lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
-        except:
-            # create LQSutra
-            lqsutra = LQSutra(sid='LQ003100', name='大方廣佛華嚴經', total_reels=60)
-            lqsutra.save()
+        # try:
+        #     lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
+        # except:
+        #     # create LQSutra
+        #     lqsutra = LQSutra(sid='LQ003100', name='大方廣佛華嚴經', total_reels=60)
+        #     lqsutra.save()
         
         #导入龙泉经目 OK            
-        #self.ImportLQSutra()
-
-        # #1) call 获得或创建管理员  OK
-        # admin= self.CreateAdmin()
+        self.ImportLQSutra()
 
         #导入经目  OK
         self.ImportSutra()
 
         #导入详目    ok
-        #self.ImportSutraJuan()     
+        self.ImportSutraJuan()     
    
         return None
                              
-
-    #FUNC_1 CreateAdmin 获得或创建管理员
-    def CreateAdmin(self):
-        admin=None
-        try :            
-            admin = User.objects.get_by_natural_key('admin') 
-        except User.DoesNotExist:  
-            print("查询用户错误")
-
-        if (admin):
-            print("已经存在admin用户了")            
-        else:                             
-            admin = User.objects.create_superuser('admin', 'admin@example.com', 'longquan')
-            print("创建admn用户")
-        return admin
-
+ 
     #FUNC_2 ImportSutraJuan 导入详目  
     # 1           2           3           4           5       6           7           8      9       
     # 龍泉編碼	高麗編碼	實體經名	    卷序號	    起始冊碼	起始頁碼	終止頁碼	終止冊碼	備註
@@ -84,14 +66,14 @@ class Command(BaseCommand):
         BASE_DIR = settings.BASE_DIR
         sutra_libs_file = '/data/xiangmu'        
         jingmufils=self.__get_excel_file(BASE_DIR+sutra_libs_file)
-        Reel.objects.all().delete()
+        #Reel.objects.all().delete()
         #藏经版本
-        
+         
         reel_lst = []
-        reel_no_str_set = set()
+        reel_no_str_set = set() 
         # load data
         for oneSutraFile in jingmufils :
-            print (oneSutraFile)
+            #print (oneSutraFile)
             data = xlrd.open_workbook(oneSutraFile)
             table = data.sheets()[0]
             nrows = table.nrows
@@ -149,13 +131,13 @@ class Command(BaseCommand):
                             errMsg= "行"+str(i+1)+": reel_no<0"
                         reel_no_str = '%s%03d' % (sutra.sid, reel_no)
                         if reel_no > 0 and reel_no_str not in reel_no_str_set:
-                            print('reel: ', reel_no_str)
+                            #print('reel: ', reel_no_str)
                             reel_no_str_set.add(reel_no_str)
                             reel = Reel(sutra=sutra,reel_no=reel_no, start_vol=start_vol,start_vol_page=start_vol_page
                                             , end_vol= end_vol, end_vol_page=end_vol_page,remark=remark )
                             if sutra.tripitaka.code in tcode_lst1 and reel.start_vol > 0:
                                 reel.path1 = str(reel.start_vol)
-                            elif sutra.tripitaka.code in tcode_lst1:
+                            elif sutra.tripitaka.code in tcode_lst2:
                                 reel.path1 = str(int(sutra.code))
                                 reel.path2 = str(reel.reel_no)
                             reel_lst.append(reel)
@@ -207,13 +189,14 @@ class Command(BaseCommand):
         BASE_DIR = settings.BASE_DIR
         sutra_libs_file = '/data/jingmu'        
         jingmufils=self.__get_excel_file(BASE_DIR+sutra_libs_file)
-        Sutra.objects.all().delete()
+        #Sutra.objects.all().delete()
+         
         errorlist=[]
         # load data
         sutra_lst = []
         sid_set = set()
         for oneSutraFile in jingmufils :
-            print (oneSutraFile)
+            #print (oneSutraFile)
             errorlist.append(oneSutraFile)
             data = xlrd.open_workbook(oneSutraFile)
             table = data.sheets()[0]
@@ -344,7 +327,8 @@ class Command(BaseCommand):
     def ImportLQSutra(self):       
         lqsutra=None
         #清空
-        LQSutra.objects.all().delete() 
+        #LQSutra.objects.all().delete() 
+         
         #从excel中读取
         BASE_DIR = settings.BASE_DIR
         sutra_libs_file = 'data/LQBM.xls' #龙泉编码文件
@@ -357,6 +341,7 @@ class Command(BaseCommand):
 
         #解析属性
         lqsutra_lst = []
+        id_no_str_set = set() 
         for i in range(nrows):
             if i > 0  :
                 values = table.row_values(i)                               
@@ -370,11 +355,14 @@ class Command(BaseCommand):
                     if len(str(values[3]).strip())==0:
                         nvolumns=0
                     else:                                           
-                        nvolumns= int (values[3])#卷数                    
-                    lqsutra = LQSutra(sid=id, variant_code=variant_code,name=sname,author=sauthor, total_reels=nvolumns,remark='' )
-                    if sid != 'LQ003100':
-                        continue
-                    lqsutra_lst.append(lqsutra)
+                        nvolumns= int (values[3])#卷数   
+                    if id not in id_no_str_set :
+                        myTestprint(id)
+                        id_no_str_set.add(id)
+                        lqsutra = LQSutra(sid=id, variant_code=variant_code,name=sname,author=sauthor, total_reels=nvolumns,remark='' )
+                        # if sid != 'LQ003100':
+                        #     continue
+                        lqsutra_lst.append(lqsutra)
                 except:
                     print('error j='+str(i)+'value:'+str(values[3])+'::'+id+sname+str(nvolumns))
                     pass
@@ -393,8 +381,7 @@ class Command(BaseCommand):
         
         nbiebenhao=0
         if hgindex ==4 or hgindex2 ==4 or hgindex3 ==4 :#带有横杠的
-            nbiebenhao=int(orignid[5:]) 
-            print
+            nbiebenhao=int(orignid[5:])              
             if (nbiebenhao<0):
                 nbiebenhao*=-1#转正 兼容 ’--‘分隔符
         if (nbiebenhao<=9):
@@ -560,7 +547,7 @@ class Command(BaseCommand):
         else:# 都不存在，就跳过，记录日志。
             myTestprint (" __get_sutra 11 变化了, 但是没有这个经.记录日志,并返回")
             a=("行 "+str(i+1)+":经号无效，通过经名也无法获得经数据，无法录入系统。")
-            print(a)                                           
+            #print(a)                                           
             errorlist.append(a)   
             return changed,None,errMsg
 

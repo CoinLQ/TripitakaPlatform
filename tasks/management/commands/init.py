@@ -35,7 +35,7 @@ def save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
         ocr_ready=ocr_ready, correct_ready=correct_ready)
         reel.save()
     try:
-        reel_ocr_text = ReelOCRText.get(reel=reel)
+        reel_ocr_text = ReelOCRText.objects.get(reel=reel)
     except:
         text = get_reel_text(reel)
         reel_ocr_text = ReelOCRText(reel=reel, text = text)

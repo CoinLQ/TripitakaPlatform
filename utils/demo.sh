@@ -16,9 +16,12 @@ cp rect/sql/*.py rect/migrations/.
 ./manage.py create_configuration
 ./manage.py import_tripitaka_list
 ./manage.py import_cbeta_huayan60
-./manage.py create_lqreel
+./manage.py set_cut_ready
 ./manage.py import_reel
+./manage.py create_lqreel
+./manage.py generate_reel_path
 ./manage.py import_gl
+./manage.py import_ocr_ready_list
 ./manage.py init
 ./manage.py initjudge
 ./manage.py initpunct

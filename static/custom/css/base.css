@@ -109,6 +109,9 @@
 .judge-page-text {
     font-size: 20px;
 }
+.judge-page-text-focus {
+    color: #ff00ff;
+}
 ul.diffseg-region {
     list-style-type: none;
     padding: 10px 0px;

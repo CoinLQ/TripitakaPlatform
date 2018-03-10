@@ -150,6 +150,23 @@ class OCRCompare(object):
         return text
 
     @classmethod
+    def get_base_text(cls, base_text_lst, ocr_text):
+        body = base_text_lst[1]
+        opcodes = SequenceMatcher(lambda x: x in 'pb\n', body, ocr_text, False).get_opcodes()
+        for tag, i1, i2, j1, j2 in opcodes:
+            if ((i2-i1) - (j2-j1) > 200):
+                break
+        index = len(ocr_text) - j1 + i1
+        body_len = len(body)
+        while index < body_len:
+            if body[index] not in 'pb\n':
+                index += 1
+            else:
+                break
+        base_text_lst[1] = body[:index]
+        return ''.join(base_text_lst)
+
+    @classmethod
     def generate_correct_diff(cls, text1, text2):
         """
         用于文字校对前的文本比对
@@ -165,8 +182,6 @@ class OCRCompare(object):
         char_no = 0
         opcodes = SequenceMatcher(lambda x: x in 'pb\n', text1, text2, False).get_opcodes()
         for tag, i1, i2, j1, j2 in opcodes:
-            if ((i2-i1) - (j2-j1) > 200):
-                break
             if ((i2-i1) - (j2-j1) > 30):
                 base_text = ''
             else:

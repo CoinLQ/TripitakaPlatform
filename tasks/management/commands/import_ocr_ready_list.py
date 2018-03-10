@@ -24,7 +24,10 @@ class Command(BaseCommand):
                     continue
                 sid = line[0:8]
                 reel_no = int(line[9:12])
-                sutra = Sutra.objects.get(sid=sid)
-                reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
-                reel_ids.append(reel.id)
+                try:
+                    sutra = Sutra.objects.get(sid=sid)
+                    reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
+                    reel_ids.append(reel.id)
+                except:
+                    traceback.print_exc()
             Reel.objects.filter(id__in=reel_ids).update(ocr_ready=True)

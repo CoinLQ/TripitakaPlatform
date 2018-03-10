@@ -11,6 +11,7 @@ import os, sys
 from os.path import isfile, join
 import traceback
 
+from difflib import SequenceMatcher
 import re, json
 import xlrd
 
@@ -41,16 +42,15 @@ class Command(BaseCommand):
         
         #导入龙泉经目 OK            
         self.ImportLQSutra()
-
+                               
         #导入经目  OK
         self.ImportSutra()
 
         #导入详目    ok
         self.ImportSutraJuan()     
    
-        return None
-                             
- 
+        return None                             
+
     #FUNC_2 ImportSutraJuan 导入详目  
     # 1           2           3           4           5       6           7           8      9       
     # 龍泉編碼	高麗編碼	實體經名	    卷序號	    起始冊碼	起始頁碼	終止頁碼	終止冊碼	備註
@@ -67,9 +67,13 @@ class Command(BaseCommand):
         jingmufils=self.__get_excel_file(BASE_DIR+sutra_libs_file)
         #Reel.objects.all().delete()
         #藏经版本
-         
+        
         reel_lst = []
-        reel_no_str_set = set() 
+        reel_lst.append('reel_list.txt')
+        key=('sid','name','reel_no','start_vol','start_vol_page','end_vol','end_vol_page','remark')
+        reel_lst.append(key)
+
+        reel_no_str_set = set()
         # load data
         for oneSutraFile in jingmufils :
             #print (oneSutraFile)
@@ -88,7 +92,7 @@ class Command(BaseCommand):
             for i in range(nrows):
                 if (tripitaka == None) : break 
                 
-                if i  >0      :
+                if i  >0   :
                     try:
                         #初始化
                         sutra_sid='' ; reel_no=-1
@@ -129,17 +133,29 @@ class Command(BaseCommand):
                         if reel_no < 0:
                             errMsg= "行"+str(i+1)+": reel_no<0"
                         reel_no_str = '%s%03d' % (sutra.sid, reel_no)
-                        if reel_no > 0 and reel_no_str not in reel_no_str_set:
-                            #print('reel: ', reel_no_str)
-                            reel_no_str_set.add(reel_no_str)
-                            reel = Reel(sutra=sutra,reel_no=reel_no, start_vol=start_vol,start_vol_page=start_vol_page
-                                            , end_vol= end_vol, end_vol_page=end_vol_page,remark=remark )
-                            if sutra.tripitaka.code in tcode_lst1 and reel.start_vol > 0:
-                                reel.path1 = str(reel.start_vol)
-                            elif sutra.tripitaka.code in tcode_lst2:
-                                reel.path1 = str(int(sutra.code))
-                                reel.path2 = str(reel.reel_no)
-                            reel_lst.append(reel)
+                        #if reel_no > 0 and reel_no_str not in reel_no_str_set:
+                        #print('reel: ', reel_no_str)
+                        reel_no_str_set.add(reel_no_str)
+                        # reel = Reel(sutra=sutra,reel_no=reel_no, start_vol=start_vol,start_vol_page=start_vol_page
+                        #                 , end_vol= end_vol, end_vol_page=end_vol_page,remark=remark )
+                        #key=('sid','name','reel_no','start_vol_page','end_vol','end_vol_page','remark')
+                        d={}
+                        d['sid']=sutra.sid
+                        d['name']=sutra.name
+                        d['reel_no']=reel_no
+                        d['start_vol']=start_vol                        
+                        d['start_vol_page']=start_vol_page
+                        d['end_vol']=end_vol                            
+                        d['end_vol_page']=end_vol_page
+                        d['remark']=remark                                                            
+                        reel_lst.append(d) 
+                        #print(d)
+                            # if sutra.tripitaka.code in tcode_lst1 and reel.start_vol > 0:
+                            #     reel.path1 = str(reel.start_vol)
+                            # elif sutra.tripitaka.code in tcode_lst1:
+                            #     reel.path1 = str(int(sutra.code))
+                            #     reel.path2 = str(reel.reel_no)
+                            #reel_lst.append(reel)
                         if (len(errMsg)>0):                                          
                             myTestprint(errMsg)                                          
                             errorlist.append(errMsg)                                                                                                           
@@ -154,13 +170,13 @@ class Command(BaseCommand):
                             errMsg=err
                             a="(error_b) "    
                         a='行'+str(i+1)+":"+a+errMsg
-                        print(a)                                          
+                        #print(a)                                          
                         errorlist.append(a)
                     except :  
                         a='行'+str(i+1)+':(error_c) '+errMsg 
-                        print(a)                                          
+                        #print(a)                                          
                         errorlist.append(a)  
-                    #break                     
+                    # break                     
             #break                                       
             fl=open(oneSutraFile+'.log', 'w')
             for s in errorlist:
@@ -168,7 +184,9 @@ class Command(BaseCommand):
                 fl.write("\n")
             fl.write('共%d条记录' % len(errorlist))    
             fl.close()
-        Reel.objects.bulk_create(reel_lst)
+            #break
+        #Reel.objects.bulk_create(reel_lst)
+        self.__save_data(reel_lst)
         return None          
 
    #FUNC_3 ImportSutra 导入经目
@@ -189,10 +207,12 @@ class Command(BaseCommand):
         sutra_libs_file = '/data/jingmu'        
         jingmufils=self.__get_excel_file(BASE_DIR+sutra_libs_file)
         #Sutra.objects.all().delete()
-         
         errorlist=[]
         # load data
         sutra_lst = []
+        sutra_lst.append('sutra_list.txt')
+        key=('sid','tripitaka','name','lqsutra','total_r','remark')
+        sutra_lst.append(key)
         sid_set = set()
         for oneSutraFile in jingmufils :
             #print (oneSutraFile)
@@ -269,8 +289,8 @@ class Command(BaseCommand):
 
 
                             #查看经号是否重复
-                            if len( Sutra.objects.filter(sid=sid)) >0 :
-                                errMsg+='存疑D,经编号重复：'+sid    
+                            # if len( Sutra.objects.filter(sid=sid)) >0 :
+                            #     errMsg+='存疑D,经编号重复：'+sid    
 
                         mytotal_reels=values[3]
                         try :                            
@@ -297,14 +317,20 @@ class Command(BaseCommand):
                         myTestprint(lqsutra_id) ; myTestprint(lqsutra);myTestprint(sid) ; myTestprint(name); 
                         myTestprint(variant_code);myTestprint("total_reels"+str(total_reels))
                         myTestprint('remark:'+remark)      ; myTestprint('tripitaka:'+tripitaka.code)
-
+                        #key=('sid','tripitaka','name','lqsutra','total_reels','remark')
                         if sid not in sid_set:
                             sid_set.add(sid)
-                            sutra = Sutra(sid=sid,lqsutra=lqsutra, name=name,tripitaka=tripitaka,
-                            variant_code= variant_code, total_reels=total_reels,
-                            remark=remark, code =code)
-                            #sutra.save()
-                            sutra_lst.append(sutra)
+                            d={}
+                            d['sid']=sid
+                            d['name']=name
+                            d['tripitaka']=tripitaka.code
+                            if lqsutra ==None :
+                                d['lqsutra']=''
+                            else:
+                                d['lqsutra']=lqsutra.sid                            
+                            d['total_r']=total_reels
+                            d['remark']=remark                                                            
+                            sutra_lst.append(d)                                                        
                     except:
                         a=("error: "+str(i+1)+":"+str(values[0])+":"+str(values[1])+":"+str(values[2])+":"+str(values[3])+".errmsg:"+errMsg)                    
                         print(a)
@@ -318,7 +344,8 @@ class Command(BaseCommand):
             fl.write('共%d条记录' % (len(errorlist)-1)  )      
             fl.close()    
             errorlist.clear()
-        Sutra.objects.bulk_create(sutra_lst)
+            #break
+        self.__save_data(sutra_lst)
         return None 
 
     #FUNC_4 ImportLQSutra 创建龙泉藏经 龙泉经目 第一个需求
@@ -327,7 +354,6 @@ class Command(BaseCommand):
         lqsutra=None
         #清空
         #LQSutra.objects.all().delete() 
-         
         #从excel中读取
         BASE_DIR = settings.BASE_DIR
         sutra_libs_file = 'data/LQBM.xls' #龙泉编码文件
@@ -340,9 +366,11 @@ class Command(BaseCommand):
 
         #解析属性
         lqsutra_lst = []
-        id_no_str_set = set() 
+        lqsutra_lst.append('lqsutra_list.txt')
+        key=('sid','name','total_reels','author','remark')
+        lqsutra_lst.append(key)
         for i in range(nrows):
-            if i > 0  :
+            if i > 0 :                
                 values = table.row_values(i)                               
                 sname=values[1]#经名
                 nvolumns =1
@@ -355,18 +383,17 @@ class Command(BaseCommand):
                         nvolumns=0
                     else:                                           
                         nvolumns= int (values[3])#卷数   
-                    if id not in id_no_str_set :
-                        myTestprint(id)
-                        id_no_str_set.add(id)
-                        lqsutra = LQSutra(sid=id, variant_code=variant_code,name=sname,author=sauthor, total_reels=nvolumns,remark='' )
-                        # if sid != 'LQ003100':
-                        #     continue
-                        lqsutra_lst.append(lqsutra)
+                    d={}
+                    d['sid']=id
+                    d['name']=sname
+                    d['total_reels']=nvolumns
+                    d['author']=sauthor                                                            
+                    lqsutra_lst.append(d)
                 except:
                     print('error j='+str(i)+'value:'+str(values[3])+'::'+id+sname+str(nvolumns))
                     pass
-        LQSutra.objects.bulk_create(lqsutra_lst)
-        return None       
+        self.__save_data(lqsutra_lst)
+        return         
     
     
     #        
@@ -380,7 +407,8 @@ class Command(BaseCommand):
         
         nbiebenhao=0
         if hgindex ==4 or hgindex2 ==4 or hgindex3 ==4 :#带有横杠的
-            nbiebenhao=int(orignid[5:])              
+            nbiebenhao=int(orignid[5:]) 
+            
             if (nbiebenhao<0):
                 nbiebenhao*=-1#转正 兼容 ’--‘分隔符
         if (nbiebenhao<=9):
@@ -596,6 +624,39 @@ class Command(BaseCommand):
 
         return  reel_no,start_vol,start_vol_page,end_vol,end_vol_page,errMsg 
 
+     #导入卷的时候用到的获得tripitaka 的子函数    
+    def __save_data(self, datalist ,):
+        BASE_DIR = settings.BASE_DIR
+        save_file = BASE_DIR+'/data/sutra_list/'+ datalist[0]        
+        #print(save_file)
+        key=datalist[1]
+        strData='#'
+        for strkey in key:
+            strData+=strkey+'\t'
+            if ( strkey =='sid'):
+                strData+='\t'
+            if ( strkey =='name'):
+                strData+='\t\t'
+
+        strData+='\n'
+        n=len(datalist)
+        i=2                        
+        while(i<n):
+            d=datalist[i]
+            i=i+1
+            for strkey in key:
+                try: 
+                    strData+=str(d[strkey]).replace('\n','')+'\t'                                        
+                except : pass 
+            strData+='\n'    
+
+        #print(strData)    
+
+        with open(save_file, 'w') as fout:
+            fout.write(strData)
+        fout.close    
+
+        
     # #FUNC_4 LQSutra 创建某个版本的佛经
     # def CreateSutra(self,bandCode,strsid,code,var_code,sname,lqsutra,t_reels):  
     #     BASE_DIR = settings.BASE_DIR

@@ -1038,27 +1038,33 @@ Vue.component('judge-page-dialog', {
                     if (start_line_no != end_line_no) {
                         if (line_no == start_line_no && char_no >= start_char_no) {
                             color = '#ff00ff';
+                            to_draw = true;
                         } else if (line_no > start_line_no && line_no < end_line_no) {
                             color = '#ff00ff';
+                            to_draw = true;
                         } else if (line_no == end_line_no && char_no <= end_char_no) {
                             color = '#ff00ff';
+                            to_draw = true;
                         }
                     } else {
                         if (line_no == start_line_no && char_no >= start_char_no && 
                             char_no <= end_char_no) {
                             color = '#ff00ff';
+                            to_draw = true;
                         }
                     }
-                    context.beginPath();
-                    context.moveTo(x, y);
-                    context.lineTo(x + w, y);
-                    context.lineTo(x + w, y + h);
-                    context.lineTo(x, y + h);
-                    context.lineTo(x, y);
-                    //设置样式
-                    context.lineWidth = 1;
-                    context.strokeStyle = color;
-                    context.stroke();
+                    if (to_draw) {
+                        context.beginPath();
+                        context.moveTo(x, y);
+                        context.lineTo(x + w, y);
+                        context.lineTo(x + w, y + h);
+                        context.lineTo(x, y + h);
+                        context.lineTo(x, y);
+                        //设置样式
+                        context.lineWidth = 1;
+                        context.strokeStyle = color;
+                        context.stroke();
+                    }
                 });
             };
             image.src = img_url;
@@ -1075,10 +1081,58 @@ Vue.component('judge-page-dialog', {
             var vm = this;
             axios.get(cut_url).then(function(response) {
                 var data = JSON.parse(response.data.cut_info);
-                vm.text = response.data.text.replace(/\n/g, '<br />');
+                vm.text = vm.getDisplayHtml(response.data.text,
+                    start_line_no, start_char_no, end_line_no, end_char_no);
                 vm.setImg(vm.sharedata.pageDialogInfo.page_url, data,
                     start_line_no, start_char_no, end_line_no, end_char_no);
             });
+        },
+        getDisplayHtml: function(text, start_line_no, start_char_no, end_line_no, end_char_no) {
+            var lines = text.split('\n');
+            var text_lst = [];
+            for (var i = 0; i < lines.length; ++i) {
+                var line_no = i + 1;
+                if (line_no < start_line_no) {
+                    text_lst.push(lines[i]);
+                    text_lst.push('<br />');
+                } else if (line_no == start_line_no) {
+                    if (start_char_no != 1) {
+                        text_lst.push(lines[i].substr(0, start_char_no-1));
+                    }
+                    text_lst.push('<span class="judge-page-text-focus">');
+                    if (start_line_no == end_line_no) {
+                        var focus_length = end_char_no + 1 - start_char_no;
+                        text_lst.push(lines[i].substr(start_char_no-1, focus_length));
+                        text_lst.push('</span>');
+                        if (end_char_no == lines[i].length) {
+                            text_lst.push('<br />');
+                        } else {
+                            text_lst.push(lines[i].substr(end_char_no));
+                            text_lst.push('<br />');
+                        }
+                    } else {
+                        text_lst.push(lines[i].substr(start_char_no-1));
+                        text_lst.push('<br />');
+                    }
+                } else if (line_no > start_line_no && line_no < end_line_no) {
+                    text_lst.push(lines[i]);
+                    text_lst.push('<br />');
+                } else if (line_no == end_line_no) {
+                    text_lst.push(lines[i].substr(0, end_char_no));
+                    text_lst.push('</span>');
+                    if (end_char_no == lines[i].length) {
+                        text_lst.push('<br />');
+                    } else {
+                        text_lst.push(lines[i].substr(end_char_no));
+                        text_lst.push('<br />');
+                    }
+                } else {
+                    text_lst.push(lines[i]);
+                    text_lst.push('<br />');
+                }
+            }
+            var html = text_lst.join('');
+            return html;
         },
         handleOpen: function () {
             this.clearImage();

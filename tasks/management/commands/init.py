@@ -73,7 +73,7 @@ class Command(BaseCommand):
             lqsutra = LQSutra(sid='LQ003100', name='大方廣佛華嚴經', total_reels=60)
             lqsutra.save()
 
-        huayan_yb_1, reel_ocr_text_yb_1 = save_reel(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
+        save_reel(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
 
         # create BatchTask
         batch_task = BatchTask(priority=2, publisher=admin)

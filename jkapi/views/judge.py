@@ -17,7 +17,7 @@ from tasks.models import *
 from jkapi.serializers import *
 from jkapi.permissions import *
 from tasks.task_controller import judge_submit_result_async, publish_judge_result_async
-from tasks.common import clean_separators
+from tasks.common import clean_separators, extract_line_separators
 
 import json, re
 from operator import attrgetter, itemgetter
@@ -52,6 +52,7 @@ class JudgeTaskDetail(APIView):
     
     def get(self, request, task_id, format=None):
         base_text = clean_separators(self.task.reeldiff.base_text.body)
+        orig_separators = extract_line_separators(self.task.reeldiff.base_text.body)
         diffseg_pos_lst = self.task.reeldiff.diffseg_pos_lst
         base_reel = self.task.reeldiff.base_text.reel
         tripitaka_info = {}
@@ -65,22 +66,16 @@ class JudgeTaskDetail(APIView):
                 }
             except:
                 pass
-        puncts = base_reel.punct_set.all()[0:1]
-        punct = puncts[0]
-        punctuation = json.loads(punct.punctuation)
-        head_len = len(clean_separators(punct.reeltext.head))
-        new_punctuation = []
-        for p in punctuation:
-            pos = p[0] - head_len
-            if pos > 0:
-                new_punctuation.append([pos, p[1]])
+        punct = Punct.objects.filter(reeltext=self.task.reeldiff.base_text).order_by('-id').first()
+        punctuation = json.loads(punct.body_punctuation)
         response = {
             'task_id': task_id,
             'status': self.task.status,
             'is_verify': (self.task.typ == Task.TYPE_JUDGE_VERIFY),
             'base_text': base_text,
             'diffseg_pos_lst': json.loads(diffseg_pos_lst),
-            'punct_lst': new_punctuation,
+            'punct_lst': punctuation,
+            'orig_separators': orig_separators,
             'base_tripitaka_id': base_reel.sutra.tripitaka_id,
             'image_url_prefix': settings.IMAGE_URL_PREFIX,
             'tripitaka_info': tripitaka_info,

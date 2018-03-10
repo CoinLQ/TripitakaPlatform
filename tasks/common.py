@@ -547,6 +547,18 @@ def extract_page_line_separators(text):
             pos += 1
     return separators
 
+def extract_line_separators(text):
+    if text == '':
+        return []
+    separators = []
+    pos = 0
+    for c in text:
+        if c == '\n':
+            separators.append( (pos, c) )
+        elif c not in 'pb':
+            pos += 1
+    return separators
+
 def get_reel_text(reel):
     pages = []
     for vol_page in range(reel.start_vol_page, reel.end_vol_page+1):

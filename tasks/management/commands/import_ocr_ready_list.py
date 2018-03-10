@@ -19,6 +19,9 @@ class Command(BaseCommand):
         with open(filename, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             for line in lines:
+                line = line.strip()
+                if (not line) or line.startswith('#'):
+                    continue
                 sid = line[0:8]
                 reel_no = int(line[9:12])
                 sutra = Sutra.objects.get(sid=sid)

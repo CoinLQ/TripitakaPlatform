@@ -220,6 +220,7 @@ Vue.component('diffseg-box', {
     template: '\
     <div class="diffseg-box" @click.stop.prevent="click">\
         <div><span>{{ base_text }}</span>\
+        <span><a href="#" @click.stop.prevent="showImage(diffsegresult)">查看列图</a></span>\
         </div>\
         <span v-for="(diffsegtexts, text, index) in diffsegresult.text_to_diffsegtexts">\
             <span v-for="(diffsegtext, idx) in diffsegtexts">\
@@ -332,6 +333,10 @@ Vue.component('diffseg-box', {
         showSplit: function(judge_result) {
             this.sharedata.show_split_diffsegresult = judge_result;
             this.sharedata.showSplitDialogVisible = true;
+        },
+        showImage: function(diffsegresult) {
+            this.sharedata.image_diffseg_id = diffsegresult.diffseg.id;
+            this.sharedata.judgeImageDialogVisible = true;
         }
     }
 })
@@ -402,8 +407,10 @@ Vue.component('judge-dialog', {
         <div class="radio"><label>\
             <input type="radio" v-model="doubt" value="1" />是\
         </label></div>\
-        <div>存疑说明：</div>\
-        <textarea class="form-control" rows="3" v-model="doubt_comment"></textarea>\
+        <div v-show="doubt == 1">\
+            <div>存疑说明：</div>\
+            <textarea class="form-control" rows="3" v-model="doubt_comment"></textarea>\
+        </div>\
         <span slot="footer" class="dialog-footer">\
             <span class="alert alert-danger" v-if="error">{{ error }}</span>\
             <el-button type="primary" @click="handleOK">确定</el-button>\

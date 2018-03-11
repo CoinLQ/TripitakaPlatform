@@ -32,9 +32,8 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_
     ocr_text = OCRCompare.preprocess_ocr_text(reel_ocr_text.text)
     correctsegs_lst = []
     for base_reel in base_reel_lst:
-        try:
-            base_reel_correct_text = ReelCorrectText.objects.filter(reel=base_reel).order_by('-id').first()
-        except:
+        base_reel_correct_text = ReelCorrectText.objects.filter(reel=base_reel).order_by('-id').first()
+        if not base_reel_correct_text:
             print('no base text.')
             return None
         base_text_lst = [base_reel_correct_text.head]
@@ -118,7 +117,8 @@ def get_sutra_body(sutra):
     body_lst = []
     for reel in Reel.objects.filter(sutra=sutra).order_by('reel_no'):
         reel_correct_text = ReelCorrectText.objects.filter(reel=reel).order_by('-id').first()
-        body_lst.append(reel_correct_text.body)
+        if reel_correct_text:
+            body_lst.append(reel_correct_text.body)
     return '\n\n'.join(body_lst)
 
 # 从龙泉大藏经来发布

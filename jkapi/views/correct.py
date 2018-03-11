@@ -6,7 +6,7 @@ from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-
+from django.utils import timezone
 from tdata.models import *
 from tasks.models import *
 from jkapi.serializers import *
@@ -82,8 +82,10 @@ class FinishCorrectTask(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
 
     def post(self, request, task_id, format=None):
+        if not self.task.finished_at:
+            self.task.finished_at = timezone.now()
         self.task.status = Task.STATUS_FINISHED
-        self.task.save(update_fields=['status'])
+        self.task.save(update_fields=['status', 'finished_at'])
         # TODO: changed to background job
         if self.task.typ == Task.TYPE_CORRECT:
             correct_submit_async(task_id)

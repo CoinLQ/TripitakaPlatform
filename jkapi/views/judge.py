@@ -44,8 +44,30 @@ class DiffSegResultUpdate(generics.UpdateAPIView):
     serializer_class = DiffSegResultSimpleSerializer
     permission_classes = (IsTaskPickedByCurrentUser, )
 
-    def get_queryset(self):
-        return DiffSegResult.objects.filter()
+    def get_object(self, pk):
+        try:
+            return DiffSegResult.objects.get(pk=pk)
+        except DiffSegResult.DoesNotExist:
+            raise Http404
+
+    def put(self, request, task_id, pk, format=None):
+        diffsegresult = self.get_object(pk)
+        serializer = DiffSegResultSimpleSerializer(diffsegresult, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            merged_diffsegresults = serializer._validated_data.get('merged_diffsegresults', [])
+            all_segresults = []
+            add_current = False
+            for segresult in merged_diffsegresults:
+                if segresult.id > diffsegresult.id and (not add_current):
+                    all_segresults.append(diffsegresult)
+                    add_current = True
+                all_segresults.append(segresult)
+            for segresult in merged_diffsegresults:
+                merged = list(filter(lambda x: x != segresult, all_segresults))
+                segresult.merged_diffsegresults.set(merged)
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class JudgeTaskDetail(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )

@@ -296,6 +296,13 @@ Vue.component('diffseg-box', {
         },
         getResult: function(diffsegresult) {
             var s = '';
+            if (diffsegresult.selected == 0) {
+                s += '未判取。';
+            } else if (diffsegresult.doubt == 0) {
+                s += diffsegresult.selected_text + '。';
+            } else if (diffsegresult.doubt == 1) {
+                s += diffsegresult.selected_text + '。存疑理由：' + diffsegresult.doubt_comment + '。';
+            }
             var merged_length = diffsegresult.merged_diffsegresults.length;
             if (diffsegresult.typ == 1) {
                 var little_count = 0;
@@ -316,17 +323,10 @@ Vue.component('diffseg-box', {
                     if (great_count != 0) {
                         texts.push('后' + great_count + '条');
                     }
-                    s = '已与' + texts.join('、') + '合并；';
+                    s += '合并结果：已与' + texts.join('、') + '合并。';
                 }
             } else if (diffsegresult.typ == 2) {
-                s = '已作拆分；'
-            }
-            if (diffsegresult.selected == 0) {
-                s += '未判取';
-            } else if (diffsegresult.doubt == 0) {
-                s += diffsegresult.selected_text;
-            } else if (diffsegresult.doubt == 1) {
-                s += diffsegresult.selected_text + '。存疑理由：' + diffsegresult.doubt_comment + '。';
+                s += '拆分结果：已拆分。'
             }
             return s;
         },

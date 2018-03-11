@@ -19,12 +19,13 @@ class OCRCompare(object):
             return
         config = Configuration.objects.first()
         variant_map = {}
-        i = 1
         for line in config.variant.split('\n'):
             line = line.strip()
+            if not line:
+                continue
+            map_ch = line[0]
             for ch in line:
-                variant_map[ch] = i
-            i += 1
+                variant_map[ch] = map_ch
         cls.variant_map = variant_map
 
     @classmethod
@@ -102,9 +103,9 @@ class OCRCompare(object):
             ch2 = text2[i]
             if ch1 == ch2:
                 continue
-            ch_no1 = cls.variant_map.get(ch1, -1)
-            ch_no2 = cls.variant_map.get(ch2, -2)
-            if ch_no1 != ch_no2:
+            map_ch1 = cls.variant_map.get(ch1, ch1)
+            map_ch2 = cls.variant_map.get(ch2, ch2)
+            if map_ch1 != map_ch2:
                 return False
         return True
 

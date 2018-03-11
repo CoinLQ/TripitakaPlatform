@@ -44,9 +44,8 @@ class DiffSegResultSimpleSerializer(serializers.ModelSerializer):
     def validate(self, data):
         typ = data['typ']
         if typ == DiffSegResult.TYPE_SELECT:
-            if 'selected_text' not in data:
-                raise serializers.ValidationError('no selected_text')
-            self.is_valid_selected_text(data['selected_text'])
+            if 'selected_text' in data:
+                self.is_valid_selected_text(data['selected_text'])
         elif typ == DiffSegResult.TYPE_SPLIT:
             if 'split_info' not in data:
                 raise serializers.ValidationError('no split_info')

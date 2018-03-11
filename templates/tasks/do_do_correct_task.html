@@ -200,8 +200,9 @@
         vm.start_vol_page = response.data.start_vol_page;
         vm.image_url_prefix = response.data.image_url_prefix;
         vm.segid = response.data.cur_focus;
-      });
-      this.loadCorrectSegs();
+        this.loadCorrectSegs();
+      }.bind(this));
+      
     },
     mounted: function(){
       document.addEventListener('click', this.handleDocumentClick);

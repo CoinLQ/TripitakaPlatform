@@ -6,7 +6,7 @@ from tasks.common import *
 from tasks.reeldiff_processor import *
 from tasks.task_controller import *
 from tasks.utils.text_align import *
-from .init import save_reel, get_reel
+from .init import get_or_create_admin, save_reel, get_reel
 
 import TripitakaPlatform.settings
 
@@ -54,13 +54,7 @@ def create_data(lqsutra):
 class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
-        try:
-            admin = Staff.objects.get(username='admin')
-        except:
-            admin = Staff(email='admin@example.com', username='admin')
-            admin.set_password('admin')
-            admin.is_admin = True
-            admin.save()
+        admin = get_or_create_admin()
 
         # get LQSutra
         lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷

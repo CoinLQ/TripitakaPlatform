@@ -7,7 +7,7 @@ from django.db.models import Q
 from tdata.models import *
 from tasks.models import *
 from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, \
-clean_separators, compute_accurate_cut
+clean_separators, clean_jiazhu, compute_accurate_cut
 from tasks.ocr_compare import OCRCompare
 from tasks.utils.punct_process import PunctProcess
 from tasks.reeldiff_processor import is_sutra_ready_for_judge, create_data_for_judge_tasks
@@ -118,7 +118,7 @@ def get_sutra_body(sutra):
     for reel in Reel.objects.filter(sutra=sutra).order_by('reel_no'):
         reel_correct_text = ReelCorrectText.objects.filter(reel=reel).order_by('-id').first()
         if reel_correct_text:
-            body_lst.append(reel_correct_text.body)
+            body_lst.append(clean_jiazhu(reel_correct_text.body))
     return '\n\n'.join(body_lst)
 
 # 从龙泉大藏经来发布

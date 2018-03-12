@@ -1,6 +1,7 @@
 from tdata.models import *
 from tasks.models import *
 from tasks.common import *
+from tasks.utils.variant_map import VariantMap
 
 import os, sys
 from os.path import isfile, join
@@ -321,34 +322,6 @@ def get_multireeltext(sutra, variant_map=None):
                 body = variant_map.replace_variant(body)
             multireeltext.add_reeltext(reel, body, reelcorrecttext.head)
     return multireeltext
-
-class VariantMap(object):
-    def __init__(self):
-        self.variant_map = None
-
-    def load_variant_map(self, text):
-        if self.variant_map:
-            return
-        ch_set = set(text)
-        config = Configuration.objects.first()
-        variant_map = {}
-        for line in config.variant.split('\n'):
-            line = line.strip()
-            if not line:
-                continue
-            map_ch = line[0]
-            for ch in line[1:]:
-                if ch in ch_set:
-                    map_ch = ch
-                    break
-            for ch in line:
-                variant_map[ch] = map_ch
-        self.variant_map = variant_map
-
-    def replace_variant(self, text):
-        ch_lst = [self.variant_map.get(ch, ch) for ch in text]
-        new_text = ''.join(ch_lst)
-        return new_text
 
 class ReelText(object):
     def __init__(self, reel, text_len, head_text, separators):

@@ -3,7 +3,7 @@ from cdifflib import CSequenceMatcher
 SequenceMatcher=CSequenceMatcher
 from tasks.models import Punct, LQPunct
 from tdata.models import Sutra, Tripitaka, Reel
-from tasks.common import clean_separators
+from tasks.common import clean_separators, extract_line_separators, compact_json_dumps
 from .text_align import get_align_pos
 # from tasks.models import ReelCorrectText
 import json
@@ -123,15 +123,22 @@ class PunctProcess(object):
         pos_pair = get_align_pos(body_text, newtext)
         aligned_puncts = list(filter(lambda n: n[0] >= pos_pair[0] and n[0] <= pos_pair[1], puncts))
         reel_align_text = body_text[pos_pair[0]:pos_pair[1]]
-        PunctProcess().output_punct_texts(aligned_puncts, reel_align_text)
+        #PunctProcess().output_punct_texts(aligned_puncts, reel_align_text)
         # 这里找的CBETA来源的标点
         try:
             _puncts = PunctProcess().new_puncts(reel_align_text, aligned_puncts, clean_separators(newtext))
-            task_puncts = json.dumps(_puncts, separators=(',', ':'))
             #PunctProcess().output_punct_texts(_puncts, newtext)
-            return task_puncts
+            return _puncts
         except:
-            return '[]'
+            return []
+
+    @staticmethod
+    def create_new_for_correcttext(reel, reel_correct_text):
+        head_puncts = extract_line_separators(reel_correct_text.head)
+        text = clean_separators(reel_correct_text.text)
+        body_puncts = PunctProcess.create_new(reel, text)
+        task_puncts = head_puncts + body_puncts
+        return compact_json_dumps(task_puncts)
 
 @receiver(pre_save, sender=Punct)
 @receiver(pre_save, sender=LQPunct)

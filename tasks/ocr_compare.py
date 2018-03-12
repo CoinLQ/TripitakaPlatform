@@ -7,28 +7,12 @@ from tdata.models import Configuration
 from tasks.models import CorrectSeg
 from tasks.common import clean_separators
 from tasks.utils.text_align import get_align_pos
+from tasks.utils.variant_map import VariantMap
 
 class OCRCompare(object):
     '''
     用于文字校对前的文本比对，OCR文本除文本外，只含有p或\n
     '''
-
-    variant_map = None
-
-    @classmethod
-    def load_variant_map(cls):
-        if cls.variant_map:
-            return
-        config = Configuration.objects.first()
-        variant_map = {}
-        for line in config.variant.split('\n'):
-            line = line.strip()
-            if not line:
-                continue
-            map_ch = line[0]
-            for ch in line:
-                variant_map[ch] = map_ch
-        cls.variant_map = variant_map
 
     @classmethod
     def insert(cls, result_lst, t):
@@ -95,21 +79,6 @@ class OCRCompare(object):
         elif text == '\n':
             return CorrectSeg.TAG_LINEFEED
         return CorrectSeg.TAG_DIFF
-
-    @classmethod
-    def check_variant_equal(cls, text1, text2):
-        if len(text1) != len(text2):
-            return False
-        for i in range(len(text1)):
-            ch1 = text1[i]
-            ch2 = text2[i]
-            if ch1 == ch2:
-                continue
-            map_ch1 = cls.variant_map.get(ch1, ch1)
-            map_ch2 = cls.variant_map.get(ch2, ch2)
-            if map_ch1 != map_ch2:
-                return False
-        return True
 
     @classmethod
     def combine_equal_seg(cls, correctsegs):
@@ -190,7 +159,10 @@ class OCRCompare(object):
         用于文字校对前的文本比对
         text1是基础本；text2是要比对的版本。
         """
-        cls.load_variant_map()
+        variant_map = VariantMap()
+        variant_map.load_variant_map(text2)
+        text1 = variant_map.replace_variant(text1)
+        text2 = variant_map.replace_variant(text2)
         SEPARATORS_PATTERN = re.compile('[pb\n]')
         text1 = SEPARATORS_PATTERN.sub('', text1)
         correctsegs = []
@@ -201,7 +173,7 @@ class OCRCompare(object):
         opcodes = SequenceMatcher(lambda x: x in 'pb\n', text1, text2, False).get_opcodes()
         for tag, i1, i2, j1, j2 in opcodes:
             if ((i2-i1) - (j2-j1) > 30):
-                base_text = ''
+               base_text = ''
             else:
                 base_text = text1[i1:i2]
             if tag == 'equal':
@@ -240,9 +212,6 @@ class OCRCompare(object):
                         text1=base_text, text2=result, selected_text=None, \
                         page_no=page_no, line_no=line_no, char_no=char_no)
                         replace_not_inserted = False
-                        if OCRCompare.check_variant_equal(base_text, result):
-                            correctseg.tag = CorrectSeg.TAG_EQUAL
-                            correctseg.selected_text = result
                     else:
                         tag = cls.get_tag(result)
                         correctseg = CorrectSeg(tag=tag, position=pos, \

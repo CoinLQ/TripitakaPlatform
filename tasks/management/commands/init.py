@@ -15,6 +15,16 @@ import traceback
 
 import re, json
 
+def get_or_create_admin():
+    try:
+        admin = Staff.objects.get(username='admin')
+    except:
+        admin = Staff(email='admin@example.com', username='admin')
+        admin.set_password('admin')
+        admin.is_admin = True
+        admin.save()
+    return admin
+
 def save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
     path1='', path2='', path3='', ocr_ready=True, correct_ready=True):
     tcode = sid[:2]
@@ -54,17 +64,7 @@ def get_reel(sid, reel_no):
 class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
-        try:
-            auth.models.User.objects.create_superuser('admin', 'admin@example.com', 'longquan')
-        except:
-            pass
-        try:
-            admin = Staff.objects.get(username='admin')
-        except:
-            admin = Staff(email='admin@example.com', username='admin')
-            admin.set_password('admin')
-            admin.is_admin = True
-            admin.save()
+        admin = get_or_create_admin()
 
         try:
             lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷

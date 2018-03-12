@@ -6,7 +6,7 @@ import re
 from tdata.models import Configuration
 from tasks.models import CorrectSeg
 from tasks.common import clean_separators
-from tasks.utils.text_align import get_align_pos_for_correct
+from tasks.utils.text_align import get_align_pos
 
 class OCRCompare(object):
     '''
@@ -156,14 +156,32 @@ class OCRCompare(object):
     def get_base_text(cls, base_text_lst, ocr_text):
         body = base_text_lst[1]
         clean_ocr_text = clean_separators(ocr_text)
-        start_index, end_index = get_align_pos_for_correct(body, clean_ocr_text)
+        clean_body = clean_separators(body)
+        start_index, end_index = get_align_pos(clean_body, clean_ocr_text)
+        start = 0
+        end = 0
         body_len = len(body)
-        while end_index < body_len:
-            if body[end_index] not in 'pb\n':
-                end_index += 1
+        i = 0
+        index = 0
+        for i in range(body_len):
+            if body[i] not in 'pb\n':
+                index += 1
+                if index == start_index:
+                    start = i
+                if index == end_index:
+                    end = i
+                    break
+        while start > 0:
+            if body[start] not in 'pb\n':
+                start -= 1
             else:
                 break
-        base_text_lst[1] = body[start_index:end_index]
+        while end < body_len:
+            if body[end] not in 'pb\n':
+                end += 1
+            else:
+                break
+        base_text_lst[1] = body[start:end]
         return ''.join(base_text_lst)
 
     @classmethod

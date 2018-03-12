@@ -5,6 +5,9 @@ from tasks.models import *
 from tasks.common import *
 from tasks.task_controller import *
 from tasks.utils.punct_process import PunctProcess
+from .init import get_or_create_admin
+from .initjudge import save_reel_with_correct_text
+
 import TripitakaPlatform.settings
 
 import os, sys
@@ -23,8 +26,7 @@ def create_punct_task(sid, reel_no, batch_task):
     #     punct = Punct.objects.get(reeltext=reel_correct_text)
     #     task_puncts = punct.punctuation
     # except:
-    text = SEPARATORS_PATTERN.sub('', reel_correct_text.text)
-    task_puncts = PunctProcess.create_new(reel, text)
+    task_puncts = PunctProcess.create_new_for_correcttext(reel, reel_correct_text)
     punct = Punct(reel=reel, reeltext=reel_correct_text, punctuation=task_puncts)
     punct.save()
 
@@ -38,7 +40,7 @@ def create_punct_task(sid, reel_no, batch_task):
 class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
-        admin = Staff.objects.get(username='admin')
+        admin = get_or_create_admin()
 
         # get LQSutra
         lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
@@ -52,7 +54,8 @@ class Command(BaseCommand):
         punctuation_json = punct.punctuation
 
         # create BatchTask
-        batch_task = BatchTask.objects.all()[0]
+        batch_task = BatchTask(priority=2, publisher=admin)
+        batch_task.save()
 
         # 标点
         Task.objects.filter(batch_task=batch_task, typ=Task.TYPE_PUNCT).delete()
@@ -67,6 +70,9 @@ class Command(BaseCommand):
         task_no=2, status=Task.STATUS_READY, publisher=admin)
         task2.save()
 
+        save_reel_with_correct_text(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
+        save_reel_with_correct_text(lqsutra, 'ZH000860', 1, 12, 1, 12, '12')
+        save_reel_with_correct_text(lqsutra, 'QL000870', 1, 24, 1, 17, '24')
         create_punct_task('YB000860', 1, batch_task)
         create_punct_task('ZH000860', 1, batch_task)
         create_punct_task('QL000870', 1, batch_task)

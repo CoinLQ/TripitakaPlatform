@@ -80,21 +80,32 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
         if (model_name in TASK_MODELS):
             if model_name == 'correct':
                 return ('priority', 'id')
-            elif model_name == 'review_correct':
+            elif model_name == 'verify_correct':
                 return ('batch_task', 'lqsutra_name', 'tripitaka_name', 'reel__sutra', 'reel__reel_no', 'priority', 'id')
             elif model_name == 'judge':
                 return ('batch_task', 'lqsutra_name', 'tripitaka_name', 'reel__sutra', 'reel__reel_no', 'priority', 'id')
-            elif model_name =='review_judge':
+            elif model_name =='verify_judge':
                 return ('batch_task', 'lqsutra_name', 'tripitaka_name', 'reel__sutra', 'reel__reel_no', 'priority', 'id')
         else:
             return getattr(self.model.Config, 'filter_fields', ())
 
+    def _search_fields(self):
+        model_name = self.model_name
+        if (model_name in TASK_MODELS):
+            if model_name in ['correct', 'verify_correct', 'punct', 'verify_punct']:
+                return ('reel__sutra__name', 'reel__sutra__tripitaka__name', 'reel__sutra__sid')
+            elif model_name in ['judge', 'verify_judge', 'lqpunct', 'verify_lqpunct']:
+                return ('lqreel__lqsutra__name', 'lqreel__lqsutra__sid')
+        else:
+            return getattr(self.model.Config, 'search_fields', ())
+
     def get(self, request, *args, **kwargs):
         self.app_name, self.model_name = get_app_model_name(kwargs)
 
-        self.queryset = self.query_set(self.model_name).order_by('-priority')
+        self.queryset = self.query_set(self.model_name)
+        self.queryset = self.queryset.order_by('-priority')
         self.filter_fields = getattr(self.model.Config, 'filter_fields', ())
-        self.search_fields = self._filter_fields() # getattr(self.model.Config, 'search_fields', ())
+        self.search_fields = self._search_fields()
         self.serializer_class = self.get_serializer_class()
 
         return super(CommonListAPIView, self).get(request, *args, **kwargs)
@@ -171,11 +182,11 @@ class CommonHistoryAPIView(CommonListAPIView):
         if (model_name in TASK_MODELS):
             if model_name == 'correct':
                 return ('priority', 'id')
-            elif model_name == 'review_correct':
+            elif model_name == 'verify_correct':
                 return ('batch_task', 'lqsutra_name', 'tripitaka_name', 'reel__sutra', 'reel__reel_no', 'priority', 'id')
             elif model_name == 'judge':
                 return ('batch_task', 'lqsutra_name', 'tripitaka_name', 'reel__sutra', 'reel__reel_no', 'priority', 'id')
-            elif model_name =='review_judge':
+            elif model_name =='verify_judge':
                 return ('batch_task', 'lqsutra_name', 'tripitaka_name', 'reel__sutra', 'reel__reel_no', 'priority', 'id')
         else:
             return getattr(self.model.Config, 'filter_fields', ())
@@ -185,7 +196,7 @@ class CommonHistoryAPIView(CommonListAPIView):
 
         self.queryset = self.query_set(self.model_name, request).order_by('-priority')
         self.filter_fields = getattr(self.model.Config, 'filter_fields', ())
-        self.search_fields = self._filter_fields() # getattr(self.model.Config, 'search_fields', ())
+        self.search_fields = self._search_fields()
         self.serializer_class = self.get_serializer_class()
 
         return super(CommonListAPIView, self).get(request, *args, **kwargs)

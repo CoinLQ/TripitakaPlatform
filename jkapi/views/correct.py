@@ -64,11 +64,13 @@ class CorrectSegUpdate(mixins.UpdateModelMixin, generics.GenericAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class DoubtSegPagination(StandardPagination):       
+       page_size = 100
 
 class DoubtSegViewSet(viewsets.ModelViewSet):
     serializer_class = DoubtSegSerializer
     permission_classes = (IsTaskPickedByCurrentUser, )
-    StandardPagination.page_size = 100
+    pagination_class = DoubtSegPagination
     filter_fields = ('task',)
 
     def get_queryset(self):

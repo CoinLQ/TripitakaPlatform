@@ -102,7 +102,7 @@
 }
 .judge-base-text {
     padding: 10px;
-    height: 400px;
+    height: 200px;
     overflow: scroll;
     border: 1px #ccc solid;
 }

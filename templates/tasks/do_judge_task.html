@@ -16,14 +16,11 @@
     <div class="row">
       <div class="judge-base-text" id="judge-base-text">
         <span v-for="e in merged_base_text">
-            <span is="sutra-unit" :data="e" :sharedata="sharedata"></span>
+            <span is="sutra-unit" :data="e" :sharedata="sharedata" v-on:diffpage="diffseg_curpage = $event"></span>
         </span>
       </div>
       <div class="row">
         <div class="col-md-6">
-      {% if judge_task_ids %}
-          <input type="checkbox" v-model="show_all" id="show_all" /><label for="show_all">显示所有</label>
-      {% endif %}
         </div>
         <div class="col-md-6">
           <div class="pull-right">
@@ -33,6 +30,11 @@
       </div>
     </div>
     <div class="row">
+      <div class='jk-list' >校勘列表
+      {% if judge_task_ids %}
+          <label for="show_all" style="float:right">显示所有</label><input type="checkbox" v-model="show_all" id="show_all" />
+      {% endif %}
+      </div>
       <ul class="diffseg-region">
         <li v-for="(diffsegresult, index) in sharedata.diffsegresults">
           <div is="diffseg-box" :diffsegresult="diffsegresult" :segindex="index" :sharedata="sharedata"></div>
@@ -71,7 +73,6 @@
     data: {
       show_all: false,
       base_text: '',
-      diffseg_pos_lst: [],
       punct_lst: [],
       orig_separators: [],
       show_punct: true,
@@ -81,6 +82,7 @@
       submit_disabled: true,
       submit_title: '',
       sharedata: {
+        diffseg_pos_lst: [],
         task_id: {{ task.id }},
         judge_task_ids: {{ judge_task_ids }},
         status: 0,
@@ -103,7 +105,7 @@
       axios.get('/api/judge/' + vm.sharedata.task_id + '/')
       .then(function(response) {
         vm.base_text = response.data.base_text;
-        vm.diffseg_pos_lst = response.data.diffseg_pos_lst;
+        vm.sharedata.diffseg_pos_lst = response.data.diffseg_pos_lst;
         vm.punct_lst = response.data.punct_lst;
         vm.orig_separators = response.data.orig_separators;
         vm.sharedata.base_tripitaka_id = response.data.base_tripitaka_id;
@@ -111,7 +113,8 @@
         vm.sharedata.is_verify = response.data.is_verify;
         vm.sharedata.image_url_prefix = response.data.image_url_prefix;
         vm.sharedata.tripitaka_info = response.data.tripitaka_info;
-        vm.loadSutraText();
+        vm.reloadDiffsegs(1); 
+  
         if (vm.sharedata.status == 4) {
           vm.submit_title = '已完成';
         } else {
@@ -121,30 +124,9 @@
           vm.show_all = true;
         }
       });
-      this.reloadDiffsegs(1);      
+           
       this.checkAllSelected(); 
-      //console.log(lines);
-      //this.merged_base_text = lines.join('<br />');
-      //console.log(this.merged_base_text);
-      //var lines = judge_merge_text_punct1(this.base_text, this.diffseg_pos_lst, this.punct_lst);
-      //$('#judge-base-text2').html(lines.join('<br />'));
-
-      // 点击每个校勘记区域时，将底本经文中对应的文本段置为红色，并进入可视区。
-      // $('.diffseg-box').click(function(e){
-      //   var diffseg_id = $(this).attr('diffseg-id');
-      //   var tag = $('#diffseg-tag-' + diffseg_id);
-      //   var offset = tag.position().top - 60;
-      //   $('.diffseg-tag').removeClass('diffseg-tag-selected');
-      //   $('.diffseg-tag').removeClass('diffseg-tag-notext-selected');
-      //   if (tag.hasClass('diffseg-tag-notext')) {
-      //     tag.addClass('diffseg-tag-notext-selected');
-      //   } else {
-      //     tag.addClass('diffseg-tag-selected');
-      //   }
-      //   $('div.judge-base-text').animate({
-      //     scrollTop: offset + $('div.judge-base-text').scrollTop()
-      //   }, 500);
-      // });
+     
     },
     watch: {
       diffseg_curpage: function (newPage, oldPage) {
@@ -163,9 +145,9 @@
       loadSutraText: function() {
         // 加载底本经文
         if (this.show_punct) {
-          this.merged_base_text = judge_merge_text_punct(this.base_text, this.diffseg_pos_lst, this.punct_lst);
+          this.merged_base_text = judge_merge_text_punct(this.base_text, this.sharedata.diffseg_pos_lst, this.punct_lst);
         } else {
-          this.merged_base_text = judge_merge_text_punct(this.base_text, this.diffseg_pos_lst, this.orig_separators);
+          this.merged_base_text = judge_merge_text_punct(this.base_text, this.sharedata.diffseg_pos_lst, this.orig_separators);
         }
       },
       prevPage: function() {
@@ -178,6 +160,9 @@
         if (this.diffseg_curpage < this.diffseg_page_count) {
           ++this.diffseg_curpage;
         }
+      },
+      changePage: function (page_n) {
+        this.diffseg_curpage = page_n
       },
       reloadDiffsegs: function(newPage) {
         var vm = this;
@@ -218,6 +203,7 @@
           if (!vm.sharedata.is_verify) {
             vm.sharedata.diffsegresults = diffsegresults;
             vm.sharedata.segindex = 0;
+            vm.loadSutraText();
             return ;
           }
           if (diffseg_ids.length > 0) {
@@ -247,6 +233,7 @@
               });
             }
           }
+
         });
       },
       checkAllSelected: function() {

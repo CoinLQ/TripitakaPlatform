@@ -131,12 +131,20 @@ ul.diffseg-region {
 .diffseg-tag-notext-selected {
     background: darkred;
 }
+.diffseg-tag-judged {
+    color: green !important;
+}
 .diffseg-tag-white {
     display: inline-block;
     width: 4px;
 }
-.diffseg-tag-selected {
+
+.judge-base-text a {
     color: red;
+}
+.judge-base-text a.diffseg-tag-selected {
+    color: white;
+    background-color: blue;
 }
 .diffseg-btn {
     margin-right: 10px;
@@ -303,4 +311,20 @@ opacity: 0;
 .scale-op {
     position: relative;
     top: 10px;
+}
+.selected-box {
+    border: 1px red solid;
+}
+
+.jk-list {
+    background-color: lightslategrey;
+    color: white;
+    text-align: center;
+    font-size: 16px;
+    line-height: 1.2;
+    padding: 5px 3px;
+}
+
+#show_all {
+    float: right;
 }

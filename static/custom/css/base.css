@@ -218,7 +218,8 @@ ul {list-style-type:none;}
 }
 
 .operation .ll {
-    padding: 0px 15px;
+    width: 60px;
+    text-align: center;
 }
 .operation .el-tag--danger{
     margin: 0px -6px;

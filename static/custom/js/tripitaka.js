@@ -997,12 +997,12 @@ Vue.component('judge-image-dialog', {
 Vue.component('judge-page-dialog', {
     props: ['sharedata'],
     template: `
-    <el-dialog title="" :visible.sync="sharedata.judgePageDialogVisible" width="80%" @open="handleOpen" :before-close="handleOK">
+    <el-dialog title="" :visible.sync="sharedata.judgePageDialogVisible" width="95%" height="95%" top="2vh" @open="handleOpen" :before-close="handleOK">
         <div class="row">
-            <div class="col-md-8">
+            <div class="col-md-8 canvas-wrapper">
                 <canvas id="page-canvas" width="800" height="1080"></canvas>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 text-wrapper">
                 <div class="judge-page-text" v-html="text"></div>
             </div>
         </div>

@@ -12,10 +12,32 @@
     overflow: scroll;
     box-shadow: 0px 0px 1px 2px #363E4E;
 }
-.page-canvas {
-    width: 100%;
+
+.canvas-wrapper {
+    float: left;
+    overflow: scroll;
+    width: 64%;
     height: 100%;
+    margin: 0px 1%;
+    border: 2px solid darkgrey;
+    box-shadow: 0 1px 5px grey;
 }
+
+.text-wrapper {
+float: left;
+    width: 33%;
+    border: 2px solid lightgrey;
+    background: #efe9a5 linear-gradient(#ededed, #a3a3a3);
+    padding: 5px 10px;
+    box-shadow: 0 1px 5px grey;
+    text-shadow: 1 0px 0px #335163;
+}
+.text-wrapper:after {
+    content: '';
+    display: block;
+    clear: both;
+}
+
 .selected-text > textarea {
     width: 150px;
     border: 0;

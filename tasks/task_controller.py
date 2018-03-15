@@ -236,6 +236,8 @@ def publish_correct_result(task):
 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra
+    batch_task = task.batch_task
+    base_sutra = judge_tasks[0].base_reel.sutra
     if not lqsutra:
         print('没有关联的龙泉藏经')
         logging.error('没有关联的龙泉藏经')
@@ -261,7 +263,7 @@ def publish_correct_result(task):
                     create_data_for_judge_tasks(batch_task, lqsutra, base_sutra, lqsutra.total_reels)
                     return
                 else: # 在上面代码运行时间内，有校勘判取任务被领取
-                    Task.objects.filter(batch_task=batch_task, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
+                    Task.objects.filter(batch_task=task.batch_task, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
                     status=Task.STATUS_NOT_READY).update(status=Task.STATUS_READY)
             # 已有校勘判取任务被领取，需要复制已有的判取结果
             if text_changed:

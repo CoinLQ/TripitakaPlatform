@@ -2,6 +2,7 @@ from tdata.models import *
 from tasks.models import *
 from tasks.common import *
 from tasks.utils.variant_map import VariantMap
+from collections import defaultdict
 
 import os, sys
 from os.path import isfile, join
@@ -487,16 +488,26 @@ def copy_judge_result(old_diffsegresults, diffsegresults):
             if diffsegresult.typ == DiffSegResult.TYPE_SPLIT:
                 diffsegresult.split_info = old_diffsegresult.split_info
             elif old_diffsegresult.merged_diffsegresults:
-                pass
-
+                ids = old_diffsegresult.merged_diffsegresults.values_list('id', flatten=true)
+                new_merged = []
+                bigger_len = len(list(filter(lambda x: x > old_diffsegresult.id, ids)))
+                less_len = len(list(filter(lambda x: x < old_diffsegresult.id, ids)))
+                for r in range( -1 * less_len, bigger_len+1):
+                    if r == 0:
+                        continue
+                    index = idx + r
+                    if index >=0 and index < new_len:
+                        new_merged.append(diffsegresults[index])
+                diffsegresult.merged_diffsegresults.set(new_merged)
         old_idx += 1
         idx += 1
+
 
 def create_new_diffsegresults_for_judge_task(reeldiff_lst, batchtask, lqsutra, base_sutra, max_reel_no):
     for reel_no in range(1, max_reel_no + 1):
         diffsegresults = []
         reeldiff = reeldiff_lst[reel_no - 1]
-        diffsegs = list(reeldiff.diffseg_set.all())
+        diffsegs = list(reeldiff.diffseg_set.order_by('id').all())
         lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
         judge_task_lst = list(Task.objects.filter(batch_task=batchtask, typ=Task.TYPE_JUDGE, lqreel=lqreel))
         judge_task_ids = [t.id for t in judge_task_lst]
@@ -504,7 +515,7 @@ def create_new_diffsegresults_for_judge_task(reeldiff_lst, batchtask, lqsutra, b
             for diffseg in diffsegs:
                 diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text='')
                 diffsegresults.append(diffsegresult)
-            old_diffsegresults = list(task.diffsegresult_set.all())
+            old_diffsegresults = list(task.diffsegresult_set.order_by('id').all())
             DiffSegResult.objects.bulk_create(diffsegresults)
             copy_judge_result(old_diffsegresults, diffsegresults)
         Task.objects.filter(id__in=judge_task_ids).update(reeldiff=reeldiff)

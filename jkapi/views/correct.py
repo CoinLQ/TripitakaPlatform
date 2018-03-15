@@ -84,11 +84,12 @@ class FinishCorrectTask(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
 
     def post(self, request, task_id, format=None):
+        update_fields=['status']
         if not self.task.finished_at:
+            update_fields.append('finished_at')
             self.task.finished_at = timezone.now()
         self.task.status = Task.STATUS_FINISHED
-        self.task.save(update_fields=['status', 'finished_at'])
-        # TODO: changed to background job
+        self.task.save(update_fields=update_fields)
         if self.task.typ == Task.TYPE_CORRECT:
             correct_submit_async(task_id)
         elif self.task.typ == Task.TYPE_CORRECT_VERIFY:

@@ -21,28 +21,14 @@ class Command(BaseCommand):
         variant_map = {}
         with open(BASE_DIR + '/data/variant.txt', 'r') as f:
             lines = f.readlines()
-        ch_set_list = []
-        next_index = 0
-        
         for line in lines:
             line = line.rstrip('\n')
-            index = None
-            added_ch = ''
-            for ch in line:
-                index = variant_map.get(ch, None)
-                if index is not None:
-                    added_ch = ch
-                    break
-            if index is None:
-                ch_set_list.append(set())
-                index = next_index
-                next_index += 1
-            for ch in line:
-                if ch != added_ch and ch not in variant_map:
-                    variant_map[ch] = index
-                    ch_set_list[index].add(ch)
+            map_ch = line[0]
+            ch_set = variant_map.setdefault(map_ch, set())
+            for ch in line[1:]:
+                ch_set.add(ch)
         with open(BASE_DIR + '/data/variant_converted.txt', 'w') as f:
-            for ch_set in ch_set_list:
-                line = '%s\n' % ''.join(list(ch_set))
+            for map_ch, ch_set in variant_map.items():
+                line = '%s%s\n' % (map_ch, ''.join(list(ch_set)))
                 f.write(line)
         

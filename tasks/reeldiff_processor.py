@@ -442,7 +442,7 @@ def create_diffsegresults_for_judge_task(reeldiff_lst, batchtask, lqsutra, base_
     
         for task in judge_task_lst:
             for diffseg in diffsegs:
-                diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text='')
+                diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text=None)
                 diffsegresult_lst.append(diffsegresult)
             task.reeldiff = reeldiff
             task.status = Task.STATUS_READY
@@ -452,15 +452,21 @@ def create_diffsegresults_for_judge_task(reeldiff_lst, batchtask, lqsutra, base_
     return all_judge_tasks
 
 def get_text_map(diffseg):
-    text_map = {}
+    text_map = defaultdict(None)
     for diffsegtext in diffseg.diffsegtexts:
         text_map[diffsegtext.tripitaka_id] = diffsegtext.text
     return text_map
 
-def text_equal_for_diffseg(old_diffseg, diffseg):
+
+def text_equal_for_diffseg(old_diffseg, diffseg, selected_text):
     old_text_map = get_text_map(old_diffseg)
     text_map = get_text_map(diffseg)
-    return old_text_map == text_map
+    # 当加入藏的文变化了，但更新后的文内容与已判断选定结果相同，不算异文，继续合并之前的判取结果
+    for new_key in text_map.keys():
+        if text_map[new_key] != old_text_map[new_key]:
+            if (selected_text is not None) and text_map[new_key] != selected_text:
+                return False
+    return True
 
 def copy_judge_result(old_diffsegresults, diffsegresults):
     old_len = len(old_diffsegresults)
@@ -479,7 +485,7 @@ def copy_judge_result(old_diffsegresults, diffsegresults):
             idx += 1
             continue
         if old_diffsegresult.diffseg.base_length == diffsegresult.diffseg.base_length and \
-            text_equal_for_diffseg(old_diffsegresult.diffseg, diffsegresult.diffseg):
+            text_equal_for_diffseg(old_diffsegresult.diffseg, diffsegresult.diffseg, old_diffsegresult.selected_text):
             diffsegresult.typ = old_diffsegresult.typ
             diffsegresult.selected_text = old_diffsegresult.selected_text
             diffsegresult.selected = old_diffsegresult.selected
@@ -488,11 +494,11 @@ def copy_judge_result(old_diffsegresults, diffsegresults):
             if diffsegresult.typ == DiffSegResult.TYPE_SPLIT:
                 diffsegresult.split_info = old_diffsegresult.split_info
             elif old_diffsegresult.merged_diffsegresults:
-                ids = old_diffsegresult.merged_diffsegresults.values_list('id', flatten=true)
+                ids = old_diffsegresult.merged_diffsegresults.values_list('id', flatten=True)
                 new_merged = []
                 bigger_len = len(list(filter(lambda x: x > old_diffsegresult.id, ids)))
                 less_len = len(list(filter(lambda x: x < old_diffsegresult.id, ids)))
-                for r in range( -1 * less_len, bigger_len+1):
+                for r in range( -1 * less_len, bigger_len + 1):
                     if r == 0:
                         continue
                     index = idx + r
@@ -513,7 +519,7 @@ def create_new_diffsegresults_for_judge_task(reeldiff_lst, batchtask, lqsutra, b
         judge_task_ids = [t.id for t in judge_task_lst]
         for task in judge_task_lst:
             for diffseg in diffsegs:
-                diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text='')
+                diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text=None)
                 diffsegresults.append(diffsegresult)
             old_diffsegresults = list(task.diffsegresult_set.order_by('id').all())
             DiffSegResult.objects.bulk_create(diffsegresults)

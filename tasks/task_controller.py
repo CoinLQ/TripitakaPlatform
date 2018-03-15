@@ -10,7 +10,8 @@ from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, \
 clean_separators, clean_jiazhu, compute_accurate_cut
 from tasks.ocr_compare import OCRCompare
 from tasks.utils.punct_process import PunctProcess
-from tasks.reeldiff_processor import is_sutra_ready_for_judge, create_data_for_judge_tasks
+from tasks.reeldiff_processor import is_sutra_ready_for_judge, create_data_for_judge_tasks, \
+create_new_data_for_judge_tasks
 import json, re, logging, traceback
 from operator import attrgetter, itemgetter
 from background_task import background
@@ -237,7 +238,6 @@ def publish_correct_result(task):
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra
     batch_task = task.batch_task
-    base_sutra = judge_tasks[0].base_reel.sutra
     if not lqsutra:
         print('没有关联的龙泉藏经')
         logging.error('没有关联的龙泉藏经')
@@ -246,6 +246,7 @@ def publish_correct_result(task):
     if len(judge_tasks) == 0:
         print('没有校勘判取任务')
         return
+    base_sutra = judge_tasks[0].base_reel.sutra
     judge_task_not_ready = (judge_tasks[0].status == Task.STATUS_NOT_READY)
     if is_sutra_ready_for_judge(lqsutra):
         if judge_task_not_ready: # 第一次创建校勘判取任务的数据

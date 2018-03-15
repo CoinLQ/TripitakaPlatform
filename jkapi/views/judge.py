@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 from django.conf import settings
 
 from rest_framework import mixins, viewsets, generics
@@ -110,9 +111,10 @@ class FinishJudgeTask(APIView):
     def post(self, request, task_id, format=None):
         objs = list(DiffSegResult.objects.filter(task_id=task_id, selected=0)[0:1])
         all_selected = (len(objs) == 0)
-        if all_selected:
+        if all_selected and self.task.status != Task.STATUS_FINISHED:
+            self.task.finished_at = timezone.now()
             self.task.status = Task.STATUS_FINISHED
-            self.task.save(update_fields=['status'])
+            self.task.save(update_fields=['status', 'finished_at'])
             if self.task.typ == Task.TYPE_JUDGE:
                 judge_submit_result_async(task_id)
             elif self.task.typ == Task.TYPE_JUDGE_VERIFY:

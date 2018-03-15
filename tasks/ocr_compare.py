@@ -7,12 +7,14 @@ from tdata.models import Configuration
 from tasks.models import CorrectSeg
 from tasks.common import clean_separators
 from tasks.utils.text_align import get_align_pos
-from tasks.utils.variant_map import VariantMap
+from tasks.utils.variant_map import VariantManager
 
 class OCRCompare(object):
     '''
     用于文字校对前的文本比对，OCR文本除文本外，只含有p或\n
     '''
+
+    variant_manager = None
 
     @classmethod
     def insert(cls, result_lst, t):
@@ -79,6 +81,21 @@ class OCRCompare(object):
         elif text == '\n':
             return CorrectSeg.TAG_LINEFEED
         return CorrectSeg.TAG_DIFF
+
+    @classmethod
+    def check_variant_equal(cls, text1, text2):
+        if len(text1) != len(text2):
+            return False
+        for i in range(len(text1)):
+            ch1 = text1[i]
+            ch2 = text2[i]
+            if ch1 == ch2:
+                continue
+            map_ch1 = cls.variant_manager.variant_map.get(ch1, ch1)
+            map_ch2 = cls.variant_manager.variant_map.get(ch2, ch2)
+            if map_ch1 != map_ch2:
+                return False
+        return True
 
     @classmethod
     def combine_equal_seg(cls, correctsegs):
@@ -159,10 +176,9 @@ class OCRCompare(object):
         用于文字校对前的文本比对
         text1是基础本；text2是要比对的版本。
         """
-        variant_map = VariantMap()
-        variant_map.load_variant_map(text2)
-        text1 = variant_map.replace_variant(text1)
-        text2 = variant_map.replace_variant(text2)
+        if not cls.variant_manager:
+            cls.variant_manager = VariantManager()
+            cls.variant_manager.load_variant_map()
         SEPARATORS_PATTERN = re.compile('[pb\n]')
         text1 = SEPARATORS_PATTERN.sub('', text1)
         correctsegs = []
@@ -212,6 +228,9 @@ class OCRCompare(object):
                         text1=base_text, text2=result, selected_text=None, \
                         page_no=page_no, line_no=line_no, char_no=char_no)
                         replace_not_inserted = False
+                        if OCRCompare.check_variant_equal(base_text, result):
+                            correctseg.tag = CorrectSeg.TAG_EQUAL
+                            correctseg.selected_text = result
                     else:
                         tag = cls.get_tag(result)
                         correctseg = CorrectSeg(tag=tag, position=pos, \

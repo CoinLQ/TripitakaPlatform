@@ -75,20 +75,6 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
 
         return getattr(serializer_module, serialize_name)
 
-    def _filter_fields(self):
-        model_name = self.model_name
-        if (model_name in TASK_MODELS):
-            if model_name == 'correct':
-                return ('priority', 'id')
-            elif model_name == 'verify_correct':
-                return ('batch_task', 'lqsutra_name', 'tripitaka_name', 'reel__sutra', 'reel__reel_no', 'priority', 'id')
-            elif model_name == 'judge':
-                return ('batch_task', 'lqsutra_name', 'tripitaka_name', 'reel__sutra', 'reel__reel_no', 'priority', 'id')
-            elif model_name =='verify_judge':
-                return ('batch_task', 'lqsutra_name', 'tripitaka_name', 'reel__sutra', 'reel__reel_no', 'priority', 'id')
-        else:
-            return getattr(self.model.Config, 'filter_fields', ())
-
     def _search_fields(self):
         model_name = self.model_name
         if (model_name in TASK_MODELS):
@@ -176,20 +162,6 @@ class CommonHistoryAPIView(CommonListAPIView):
         serializer_module = sys.modules[module_str]
 
         return getattr(serializer_module, serialize_name)
-
-    def _filter_fields(self):
-        model_name = self.model_name
-        if (model_name in TASK_MODELS):
-            if model_name == 'correct':
-                return ('priority', 'id')
-            elif model_name == 'verify_correct':
-                return ('batch_task', 'lqsutra_name', 'tripitaka_name', 'reel__sutra', 'reel__reel_no', 'priority', 'id')
-            elif model_name == 'judge':
-                return ('batch_task', 'lqsutra_name', 'tripitaka_name', 'reel__sutra', 'reel__reel_no', 'priority', 'id')
-            elif model_name =='verify_judge':
-                return ('batch_task', 'lqsutra_name', 'tripitaka_name', 'reel__sutra', 'reel__reel_no', 'priority', 'id')
-        else:
-            return getattr(self.model.Config, 'filter_fields', ())
 
     def get(self, request, *args, **kwargs):
         self.app_name, self.model_name = get_app_model_name(kwargs)

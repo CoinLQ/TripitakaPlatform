@@ -103,6 +103,13 @@ class VerifyJudgeTaskSerializer(JudgeTaskSerializer):
 class PunctTaskSerializer(CorrectTaskSerializer):
     progress = serializers.SerializerMethodField()
     task_no = serializers.SerializerMethodField()
+    lqsutra_name = serializers.SerializerMethodField()
+
+    def get_lqsutra_name(self, obj):
+        try:
+            return obj.lqreel.lqsutra.name
+        except:
+            return ''
 
     def get_task_no(self, obj):
         return "%s标" % obj.get_task_no_display()

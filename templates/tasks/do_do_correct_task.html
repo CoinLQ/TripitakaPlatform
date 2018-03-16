@@ -3,11 +3,11 @@
 {% block content %}
 <div id="correct">
   <div class="row content-container">
+    {% raw %}
     <div class="col-md-7 left-pane">
       <div class="canvas-pane">
         <canvas id="page-canvas"></canvas>
       </div>
-      {% raw %}
       <div class='scale-op'>
         <el-button-group>
           <el-button type="primary" size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
@@ -25,17 +25,16 @@
             </el-slider>
           </div>
       </div>
-      {% endraw %}
     </div>
     <div class="col-md-5 right-pane">
       <div class="operation">
                 <el-popover ref='popover' width="300" style="position: absolute; top: -500;" placement="bottom" popper-class="elpopup" trigger="manual" >
                         <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag>比对本</el-tag></div></el-col>
+                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag class='ll'>{{compare_text}}</el-tag></div></el-col>
                           <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text1, $event)" class='selection' v-html="spanContent(current_seg.text1)"></span></div></el-col>
                         </el-row>
                         <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag class='ll'>OCR</el-tag></div></el-col>
+                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag class='ll'>{{ocr_text}}</el-tag></div></el-col>
                           <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text2, $event)" class='selection' v-html="spanContent(current_seg.text2)"></span></div></el-col>
                         </el-row>
                         <el-row :gutter="20">
@@ -44,6 +43,7 @@
                         </el-row>
                 </el-popover>
             </div>
+    {% endraw %}
       <div class="diff-text-pane" @scroll="handleScroll">
         <transition name="slide-fade" appear>
             <div v-if="scrolled || (!scrolled)" style="position: inherit;"class='cmd-block'>
@@ -75,35 +75,15 @@
           </div>
           <el-dialog title="存疑意见" :visible.sync="doubt.formVisible">
             <el-form :model="doubt" ref="doubt" label-position="right" >
-              <el-col :span="16">
+              <el-col :span="24">
                 <el-form-item label="存疑文本" label-width="120px">
                   <el-input v-model="doubt.doubt_text" :disabled="true" auto-complete="off"></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="存疑偏移" label-width="33%">
-                  <el-input v-model="doubt.doubt_char_no" :disabled="true" auto-complete="off"></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="存疑页" label-width="120px">
-                  <el-input v-model="doubt.page_no" :disabled="true" auto-complete="off"></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="存疑行" label-width="33%">
-                  <el-input v-model="doubt.line_no" :disabled="true" auto-complete="off"></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="存疑字" label-width="33%">
-                  <el-input v-model="doubt.char_no" :disabled="true" auto-complete="off"></el-input>
                 </el-form-item>
               </el-col>
               <el-form-item label="存疑理由" prop="doubt_comment" :rules="[
                     { required: true, message: '存疑理由不能为空', trigger: 'blur'},
                   ]" label-width="120px" >
-                  <el-input v-model="doubt.doubt_comment" required auto-complete="off"></el-input>
+                  <el-input type="textarea" :autosize="{ minRows: 3, maxRows: 5}" v-model="doubt.doubt_comment" required auto-complete="off"></el-input>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -178,6 +158,14 @@
       },
       scale_rate: function() {
         return "1:"+ this.scale
+      },
+      compare_text: function() {
+        if (this.sharedata.task_typ == 2) { return "一校" }
+        return "比对本"
+      },
+      ocr_text: function() {
+        if (this.sharedata.task_typ == 2) { return "二校" }
+        return "OCR"
       }
     },
     watch: {
@@ -220,8 +208,9 @@
         vm.start_vol_page = response.data.start_vol_page;
         vm.image_url_prefix = response.data.image_url_prefix;
         vm.segid = response.data.cur_focus;
-      });
-      this.loadCorrectSegs();
+        this.loadCorrectSegs();
+      }.bind(this));
+      
     },
     mounted: function(){
       document.addEventListener('click', this.handleDocumentClick);
@@ -750,6 +739,7 @@
         }).then(function(response) {
           console.log(response)
           this.doubts.unshift(response.data)
+          this.doubt.doubt_comment=''
         }.bind(this))
         .catch(function (error) {
           console.log(error)

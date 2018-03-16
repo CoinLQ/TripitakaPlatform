@@ -6,7 +6,7 @@ from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-
+from django.utils import timezone
 from tdata.models import *
 from tasks.models import *
 from jkapi.serializers import *
@@ -64,11 +64,13 @@ class CorrectSegUpdate(mixins.UpdateModelMixin, generics.GenericAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class DoubtSegPagination(StandardPagination):       
+       page_size = 100
 
 class DoubtSegViewSet(viewsets.ModelViewSet):
     serializer_class = DoubtSegSerializer
     permission_classes = (IsTaskPickedByCurrentUser, )
-    StandardPagination.page_size = 100
+    pagination_class = DoubtSegPagination
     filter_fields = ('task',)
 
     def get_queryset(self):
@@ -82,9 +84,12 @@ class FinishCorrectTask(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
 
     def post(self, request, task_id, format=None):
+        update_fields=['status']
+        if not self.task.finished_at:
+            update_fields.append('finished_at')
+            self.task.finished_at = timezone.now()
         self.task.status = Task.STATUS_FINISHED
-        self.task.save(update_fields=['status'])
-        # TODO: changed to background job
+        self.task.save(update_fields=update_fields)
         if self.task.typ == Task.TYPE_CORRECT:
             correct_submit_async(task_id)
         elif self.task.typ == Task.TYPE_CORRECT_VERIFY:

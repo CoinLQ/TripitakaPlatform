@@ -1,8 +1,8 @@
 from tdata.models import *
 from tasks.models import *
 from tasks.common import *
-from tasks.utils.variant_map import VariantMap
 from collections import defaultdict
+from tasks.utils.variant_map import VariantManager
 
 import os, sys
 from os.path import isfile, join
@@ -312,15 +312,15 @@ def get_skip_ranges_lst(sutra_lst, multireeltexts):
         skip_ranges_lst.append(skip_ranges)
     return skip_ranges_lst
 
-def get_multireeltext(sutra, variant_map=None):
+def get_multireeltext(sutra, variant_manager=None):
     multireeltext = MultiReelText(sutra.tripitaka_id)
     queryset = Reel.objects.filter(sutra=sutra)
     for reel in queryset.order_by('reel_no'):
         reelcorrecttext = ReelCorrectText.objects.filter(reel_id=reel.id).order_by('-id').first()
         if reelcorrecttext:
             body = reelcorrecttext.body
-            if variant_map:
-                body = variant_map.replace_variant(body)
+            if variant_manager:
+                body = variant_manager.replace_variant(body)
             multireeltext.add_reeltext(reel, body, reelcorrecttext.head)
     return multireeltext
 
@@ -401,6 +401,7 @@ class MultiReelText(object):
                 return reeltext.get_char_position(reeltext.text_len)
 
 def create_reeldiff(lqsutra, base_sutra):
+    #import pdb; pdb.set_trace()
     sutra_lst = list(lqsutra.sutra_set.all())
     sutra_id_lst = [sutra.id for sutra in sutra_lst]
     base_sutra_index = sutra_id_lst.index(base_sutra.id)
@@ -411,10 +412,10 @@ def create_reeldiff(lqsutra, base_sutra):
     sutra_lst[0] = temp_sutra
 
     multireeltexts = [get_multireeltext(base_sutra)]
-    variant_map = VariantMap()
-    variant_map.load_variant_map(multireeltexts[0].text)
+    variant_manager = VariantManager()
+    variant_manager.load_variant_map(multireeltexts[0].text)
     for sutra in sutra_lst[1:]:
-        multireeltexts.append( get_multireeltext(sutra, variant_map) )
+        multireeltexts.append( get_multireeltext(sutra, variant_manager) )
     reeldiff_lst = []
     for reel in Reel.objects.filter(sutra=sutra_lst[0]).order_by('reel_no'):
         reelcorrecttext = ReelCorrectText.objects.filter(reel=reel).order_by('-id').first()

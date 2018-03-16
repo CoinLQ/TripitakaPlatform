@@ -1,10 +1,10 @@
 from tdata.models import Configuration
 
-class VariantMap(object):
+class VariantManager(object):
     def __init__(self):
         self.variant_map = None
 
-    def load_variant_map(self, text):
+    def load_variant_map(self, text=''):
         if self.variant_map:
             return
         ch_set = set(text)
@@ -15,10 +15,11 @@ class VariantMap(object):
             if not line:
                 continue
             map_ch = line[0]
-            for ch in line[1:]:
-                if ch in ch_set:
-                    map_ch = ch
-                    break
+            if ch_set:
+                for ch in line[1:]:
+                    if ch in ch_set:
+                        map_ch = ch
+                        break
             for ch in line:
                 variant_map[ch] = map_ch
         self.variant_map = variant_map

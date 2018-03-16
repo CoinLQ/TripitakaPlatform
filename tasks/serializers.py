@@ -20,7 +20,6 @@ class TaskSerializer(serializers.ModelSerializer):
 
 class CorrectTaskSerializer(TaskSerializer):
     batch_task = serializers.SerializerMethodField()
-    lqsutra_name = serializers.SerializerMethodField()
     tripitaka_name = serializers.SerializerMethodField()
     sutra = serializers.SerializerMethodField()
     reel_no = serializers.SerializerMethodField()
@@ -32,12 +31,6 @@ class CorrectTaskSerializer(TaskSerializer):
 
     def get_priority(self, obj):
         return obj.get_priority_display()
-
-    def get_lqsutra_name(self, obj):
-        try:
-            return obj.lqreel.lqsutra.name
-        except:
-            return ''
 
     def get_tripitaka_name(self, obj):
         return obj.reel.sutra.tripitaka.name
@@ -53,7 +46,7 @@ class CorrectTaskSerializer(TaskSerializer):
 
     class Meta:
         model = Task
-        fields = ('batch_task', 'lqsutra_name', 'tripitaka_name',
+        fields = ('batch_task', 'tripitaka_name',
         'sutra', 'reel_no', 'priority', 'id', 'status', 'task_no', 'picked_at', 'finished_at')
         read_only_fields = ('id', )
 
@@ -110,6 +103,13 @@ class VerifyJudgeTaskSerializer(JudgeTaskSerializer):
 class PunctTaskSerializer(CorrectTaskSerializer):
     progress = serializers.SerializerMethodField()
     task_no = serializers.SerializerMethodField()
+    lqsutra_name = serializers.SerializerMethodField()
+
+    def get_lqsutra_name(self, obj):
+        try:
+            return obj.lqreel.lqsutra.name
+        except:
+            return ''
 
     def get_task_no(self, obj):
         return "%s标" % obj.get_task_no_display()

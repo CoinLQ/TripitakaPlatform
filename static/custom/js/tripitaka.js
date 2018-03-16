@@ -217,34 +217,34 @@ axios.defaults.xsrfCookieName = "csrftoken";
 
 Vue.component('diffseg-box', {
     props: ['diffsegresult', 'segindex', 'sharedata'],
-    template: '\
-    <div class="diffseg-box" @click.stop.prevent="click">\
-        <div><span>{{ base_text }}</span>\
-        <span><a href="#" @click.stop.prevent="showImage(diffsegresult)">查看列图</a></span>\
-        </div>\
-        <span v-for="(diffsegtexts, text, index) in diffsegresult.text_to_diffsegtexts">\
-            <span v-for="(diffsegtext, idx) in diffsegtexts">\
-                <span v-if="idx != 0">/</span><a href="#" @click="openPageDialog(diffsegtext)">{{ diffsegtext.tripitaka.shortname }}</a>\
-            </span>\
-            <span v-if="text">：{{ text }}</span>\
-            <span v-else>：为空</span>\
-            <span v-if="index < (diffsegresult.text_count - 1)">；</span>\
-            <span v-else>。</span>\
-        </span>\
-        <div v-if="sharedata.is_verify" v-for="(judge_result, index) in diffsegresult.judge_results">\
-            <div>\
-                <span>判取{{ index + 1 }}：{{ getResult(judge_result) }}</span>\
-                <a href="#" v-if="judge_result.typ == 2" @click.stop.prevent="showSplit(judge_result)">显示拆分方案</a>\
-            </div>\
-        </div>\
-        <div>\
-            <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>\
-            <a href="#" class="diffseg-btn" @click.stop.prevent="doMerge(segindex)">合并</a>\
-            <a href="#" class="diffseg-btn" v-if="diffsegresult.merged_diffsegresults.length == 0" @click.stop.prevent="doSplit(segindex)">拆分</a>\
-        </div>\
-        <div>处理结果：{{ getResult(diffsegresult) }}\
-        </div>\
-    </div>',
+    template: `
+    <div :class="currentKls" @click.stop.prevent="click">
+        <div><span>{{ base_text }}</span>
+        <span><a href="#" @click.stop.prevent="showImage(diffsegresult)">查看列图</a></span>
+        </div>
+        <span v-for="(diffsegtexts, text, index) in diffsegresult.text_to_diffsegtexts">
+            <span v-for="(diffsegtext, idx) in diffsegtexts">
+                <span v-if="idx != 0">/</span><a href="#" @click="openPageDialog(diffsegtext)">{{ diffsegtext.tripitaka.shortname }}</a>
+            </span>
+            <span v-if="text">：{{ text }}</span>
+            <span v-else>：为空</span>
+            <span v-if="index < (diffsegresult.text_count - 1)">；</span>
+            <span v-else>。</span>
+        </span>
+        <div v-if="sharedata.is_verify" v-for="(judge_result, index) in diffsegresult.judge_results">
+            <div>
+                <span>判取{{ index + 1 }}：{{ getResult(judge_result) }}</span>
+                <a href="#" v-if="judge_result.typ == 2" @click.stop.prevent="showSplit(judge_result)">显示拆分方案</a>
+            </div>
+        </div>
+        <div>
+            <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>
+            <a href="#" class="diffseg-btn" @click.stop.prevent="doMerge(segindex)">合并</a>
+            <a href="#" class="diffseg-btn" v-if="diffsegresult.merged_diffsegresults.length == 0" @click.stop.prevent="doSplit(segindex)">拆分</a>
+        </div>
+        <div>处理结果：{{ getResult(diffsegresult) }}
+        </div>
+    </div>`,
     computed: {
         base_text: function() {
             var base_tripitaka_id = this.sharedata.base_tripitaka_id;
@@ -261,13 +261,33 @@ Vue.component('diffseg-box', {
                 text = '底本为空';
             }
             return text;
+        },
+        currentKls: function() {
+            if (this.sharedata.diffseg_id == this.diffsegresult.diffseg.id) {
+                return 'diffseg-box selected-box';
+            }
+            else {
+                return 'diffseg-box';
+            }
         }
     },
     methods: {
+        jumptodiffseg: function(diffseg_id) {
+            try {
+              if (!$('a[diffsegno='+ diffseg_id + ']')) {
+                return
+              }
+              $('a[diffsegno='+ diffseg_id + ']').focus()
+              var offset = $('#judge-base-text').scrollTop() + $('a[diffsegno='+ diffseg_id + ']')[0].getBoundingClientRect().top - 360;
+              $('#judge-base-text').scrollTop = offset;
+            } catch(err) {
+              console.log('jumptodiffseg: ', err)
+            }
+        },
         click: function() {
             this.sharedata.diffseg_id = this.diffsegresult.diffseg.id;
-            this.$emit('segfocus');
-            console.log('emit segfocus')
+            this.jumptodiffseg(this.sharedata.diffseg_id)
+            
         },
         openPageDialog: function(diffsegtext) {
             if (diffsegtext.page_url != null) {
@@ -344,80 +364,96 @@ Vue.component('diffseg-box', {
 // 经文显示单元
 Vue.component('sutra-unit', {
     props: ['data', 'sharedata'],
-    template: '\
-    <span>\
-        <span v-if="data.type == 0">{{ data.text }}</span>\
-        <span v-else-if="data.type == 1" tag="br"><br /></span>\
-        <span v-else-if="data.type == 2"><a href="#" :diffsegno="data.diffseg_id" :class="className" @click="showImage()"><span class="diffseg-tag-white"></span></a></span>\
-        <span v-else-if="data.type == 3"><a href="#" :diffsegno="data.diffseg_id" :class="className" @click="showImage()">{{ data.text }}</a></span>\
-        <span v-else>\
-            <a href="#" :diffsegno="data.diffseg_id" :class="className" @click="showImage()">\
-                <span v-for="(line, index) in data.lines" tag="seg">{{ line }}<br v-if="index < data.lines.length-1" /></span>\
-            </a>\
-        </span>\
-    </span>\
-    ',
+    template: `
+    <span>
+        <span v-if="data.type == 0">{{ data.text }}</span>
+        <span v-else-if="data.type == 1" tag="br"><br /></span>
+        <span v-else-if="data.type == 2"><a href="#" :diffsegno="data.diffseg_id" :class="className" @click="choiceThis()"><span class="diffseg-tag-white"></span></a></span>
+        <span v-else-if="data.type == 3"><a href="#" :diffsegno="data.diffseg_id" :class="className" @click="choiceThis()">{{ data.text }}</a></span>
+        <span v-else>
+            <a href="#" :diffsegno="data.diffseg_id" :class="className" @click="choiceThis()">
+                <span v-for="(line, index) in data.lines" tag="seg">{{ line }}<br v-if="index < data.lines.length-1" /></span>
+            </a>
+        </span>
+    </span>
+    `,
     computed: {
         className: function() {
             if (this.data.type == 2) {
                 if (this.sharedata.diffseg_id == this.data.diffseg_id) {
                     return 'diffseg-tag-notext-selected';
                 } else {
-                    return 'diffseg-tag-notext';
+                    let elem = _.find(this.sharedata.diffsegresults, function(v) {return v.id == this.data.diffseg_id}.bind(this))
+                    if (elem && elem.selected_text) {
+                        return 'diffseg-tag-judged';
+                    } else {
+                        return 'diffseg-tag-notext';
+                    }
+
+                    
                 }
             } else if (this.data.type == 3) {
                 if (this.sharedata.diffseg_id == this.data.diffseg_id) {
                     return 'diffseg-tag-selected';
+                }else {
+                    let elem = _.find(this.sharedata.diffsegresults, function(v) {return v.id == this.data.diffseg_id}.bind(this))
+                    if (elem && elem.selected_text) {
+                        return 'diffseg-tag-judged';
+                    } 
                 }
             }
             return '';
         }
     },
     methods: {
-        showImage: function() {
+        choiceThis: function() {
+            this.sharedata.diffseg_id = this.data.diffseg_id;
             this.sharedata.image_diffseg_id = this.data.diffseg_id;
-            console.log(this.sharedata.image_diffseg_id);
-            this.sharedata.judgeImageDialogVisible = true;
+            let idx = _.findIndex(this.sharedata.diffseg_pos_lst, function(v) {return v.diffseg_id == this.data.diffseg_id}.bind(this))
+            console.log(parseInt(idx/5)+1);
+            this.$emit('diffpage', parseInt(idx/5)+1)
+            
+            //this.sharedata.judgeImageDialogVisible = true;
         }
     }
 })
 
 Vue.component('judge-dialog', {
     props: ['sharedata'],
-    template: '\
-    <el-dialog title="判取" :visible.sync="sharedata.judgeDialogVisible" width="30%" @open="handleOpen" :before-close="handleCancel">\
-        <table class="table table-bordered">\
-            <thead>\
-            <tr><th>判取</th><th>版本</th><th>用字</th></tr>\
-            </thead>\
-            <tbody v-if="sharedata.segindex >= 0">\
-            <tr v-for="(diffsegtexts, text) in sharedata.diffsegresults[sharedata.segindex].text_to_diffsegtexts">\
-                <td>\
-                    <input type="radio" v-bind:value="text" v-model="selected_text" />\
-                </td>\
-                <td>{{ joinTnames(diffsegtexts) }}</td>\
-                <td>{{ text }}</td>\
-            </tr>\
-            </tbody>\
-        </table>\
-        <span>是否存疑：</span>\
-        <div class="radio"><label>\
-            <input type="radio" v-model="doubt" value="0" />否\
-        </label></div>\
-        <div class="radio"><label>\
-            <input type="radio" v-model="doubt" value="1" />是\
-        </label></div>\
-        <div v-show="doubt == 1">\
-            <div>存疑说明：</div>\
-            <textarea class="form-control" rows="3" v-model="doubt_comment"></textarea>\
-        </div>\
-        <span slot="footer" class="dialog-footer">\
-            <span class="alert alert-danger" v-if="error">{{ error }}</span>\
-            <el-button type="primary" @click="handleOK">确定</el-button>\
-            <el-button @click="handleCancel">取消</el-button>\
-        </span>\
-    </el-dialog>\
-    ',
+    template: `
+    <el-dialog title="判取" :visible.sync="sharedata.judgeDialogVisible" width="30%" @open="handleOpen" :before-close="handleCancel">
+        <table class="table table-bordered">
+            <thead>
+            <tr><th>判取</th><th>版本</th><th>用字</th></tr>
+            </thead>
+            <tbody v-if="sharedata.segindex >= 0">
+            <tr v-for="(diffsegtexts, text) in sharedata.diffsegresults[sharedata.segindex].text_to_diffsegtexts">
+                <td>
+                    <input type="radio" v-bind:value="text" v-model="selected_text" />
+                </td>
+                <td>{{ joinTnames(diffsegtexts) }}</td>
+                <td>{{ text }}</td>
+            </tr>
+            </tbody>
+        </table>
+        <span>是否存疑：</span>
+        <div class="radio"><label>
+            <input type="radio" v-model="doubt" value="0" />否
+        </label></div>
+        <div class="radio"><label>
+            <input type="radio" v-model="doubt" value="1" />是
+        </label></div>
+        <div v-show="doubt == 1">
+            <div>存疑说明：</div>
+            <textarea class="form-control" rows="3" v-model="doubt_comment"></textarea>
+        </div>
+        <span slot="footer" class="dialog-footer">
+            <span class="alert alert-danger" v-if="error">{{ error }}</span>
+            <el-button type="primary" @click="handleOK">确定</el-button>
+            <el-button @click="handleCancel">取消</el-button>
+        </span>
+    </el-dialog>
+    `,
     data: function() {
         return {
             diffsegresult_id: '',
@@ -473,22 +509,22 @@ Vue.component('judge-dialog', {
 
 Vue.component('merge-dialog', {
     props: ['sharedata'],
-    template: '\
-    <el-dialog title="合并" :visible.sync="sharedata.mergeDialogVisible" width="30%" @open="handleOpen" :before-close="handleCancel">\
-        <p>选择待合并的校勘记</p>\
-        <ul>\
-            <li v-for="diffsegresult in diffsegresults">\
-            <input type="checkbox" :id="diffsegresult.id" :value="diffsegresult.id" v-model="diffsegresult_ids" />\
-            <label :for="diffsegresult.id">{{ getBaseText(diffsegresult) }}</label>\
-            </li>\
-        </ul>\
-        <span slot="footer" class="dialog-footer">\
-            <span class="alert alert-danger" v-if="error">{{ error }}</span>\
-            <el-button type="primary" @click="handleOK">合并</el-button>\
-            <el-button @click="handleCancel">取消</el-button>\
-        </span>\
-    </el-dialog>\
-    ',
+    template: `
+    <el-dialog title="合并" :visible.sync="sharedata.mergeDialogVisible" width="30%" @open="handleOpen" :before-close="handleCancel">
+        <p>选择待合并的校勘记</p>
+        <ul>
+            <li v-for="diffsegresult in diffsegresults">
+            <input type="checkbox" :id="diffsegresult.id" :value="diffsegresult.id" v-model="diffsegresult_ids" />
+            <label :for="diffsegresult.id">{{ getBaseText(diffsegresult) }}</label>
+            </li>
+        </ul>
+        <span slot="footer" class="dialog-footer">
+            <span class="alert alert-danger" v-if="error">{{ error }}</span>
+            <el-button type="primary" @click="handleOK">合并</el-button>
+            <el-button @click="handleCancel">取消</el-button>
+        </span>
+    </el-dialog>
+    `,
     data: function() {
         return {
             diffsegresult_id: '',
@@ -562,37 +598,37 @@ Vue.component('merge-dialog', {
 
 Vue.component('split-dialog', {
     props: ['sharedata'],
-    template: '\
-    <el-dialog title="拆分" :visible.sync="sharedata.splitDialogVisible" width="50%" @open="handleOpen" :before-close="handleCancel">\
-        <button class="btn" @click="incrementSplitCount">新增</button>\
-        <button class="btn" @click="decrementSplitCount">减少</button><span>减少到1将取消原先的拆分。</span>\
-        <table class="table table-bordered table-condensed">\
-            <thead>\
-                <tr>\
-                    <th></th>\
-                    <th v-for="tname in tname_lst">{{ tname }}</th>\
-                    <th>我的选择</th>\
-                </tr>\
-            </thead>\
-            <tbody>\
-            <tr v-for="(title, index) in title_lst">\
-                <td>{{ title }}</td>\
-                <td v-for="(tripitaka_id, tripitaka_index) in tripitaka_ids">\
-                    <textarea cols="4" v-model="tripitaka_id_to_texts[tripitaka_id][index]" @input="verifyData"></textarea>\
-                </td>\
-                <td>\
-                    <textarea cols="4" v-model="selected_lst[index]" @input="verifyData"></textarea>\
-                </td>\
-            </tr>\
-            </tbody>\
-        </table>\
-        <span slot="footer" class="dialog-footer">\
-            <span class="alert alert-danger" v-if="error">{{ error }}</span>\
-            <el-button type="primary" @click="handleOK" :disabled="okDisabled">确定</el-button>\
-            <el-button @click="handleCancel">取消</el-button>\
-        </span>\
-    </el-dialog>\
-    ',
+    template: `
+    <el-dialog title="拆分" :visible.sync="sharedata.splitDialogVisible" width="50%" @open="handleOpen" :before-close="handleCancel">
+        <button class="btn" @click="incrementSplitCount">新增</button>
+        <button class="btn" @click="decrementSplitCount">减少</button><span>减少到1将取消原先的拆分。</span>
+        <table class="table table-bordered table-condensed">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th v-for="tname in tname_lst">{{ tname }}</th>
+                    <th>我的选择</th>
+                </tr>
+            </thead>
+            <tbody>
+            <tr v-for="(title, index) in title_lst">
+                <td>{{ title }}</td>
+                <td v-for="(tripitaka_id, tripitaka_index) in tripitaka_ids">
+                    <textarea cols="4" v-model="tripitaka_id_to_texts[tripitaka_id][index]" @input="verifyData"></textarea>
+                </td>
+                <td>
+                    <textarea cols="4" v-model="selected_lst[index]" @input="verifyData"></textarea>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <span slot="footer" class="dialog-footer">
+            <span class="alert alert-danger" v-if="error">{{ error }}</span>
+            <el-button type="primary" @click="handleOK" :disabled="okDisabled">确定</el-button>
+            <el-button @click="handleCancel">取消</el-button>
+        </span>
+    </el-dialog>
+    `,
     data: function () {
         return {
             diffsegresult_id: '',
@@ -760,33 +796,33 @@ Vue.component('split-dialog', {
 
 Vue.component('show-split-dialog', {
     props: ['sharedata'],
-    template: '\
-    <el-dialog title="拆分" :visible.sync="sharedata.showSplitDialogVisible" width="50%" @open="handleOpen" :before-close="handleOK">\
-        <table class="table table-bordered table-condensed">\
-            <thead>\
-                <tr>\
-                    <th></th>\
-                    <th v-for="tname in tname_lst">{{ tname }}</th>\
-                    <th>我的选择</th>\
-                </tr>\
-            </thead>\
-            <tbody>\
-            <tr v-for="(title, index) in title_lst">\
-                <td>{{ title }}</td>\
-                <td v-for="(tripitaka_id, tripitaka_index) in tripitaka_ids">\
-                {{ tripitaka_id_to_texts[tripitaka_id][index] }}\
-                </td>\
-                <td>\
-                {{ selected_lst[index] }}\
-                </td>\
-            </tr>\
-            </tbody>\
-        </table>\
-        <span slot="footer" class="dialog-footer">\
-            <el-button type="primary" @click="handleOK">确定</el-button>\
-        </span>\
-    </el-dialog>\
-    ',
+    template: `
+    <el-dialog title="拆分" :visible.sync="sharedata.showSplitDialogVisible" width="50%" @open="handleOpen" :before-close="handleOK">
+        <table class="table table-bordered table-condensed">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th v-for="tname in tname_lst">{{ tname }}</th>
+                    <th>我的选择</th>
+                </tr>
+            </thead>
+            <tbody>
+            <tr v-for="(title, index) in title_lst">
+                <td>{{ title }}</td>
+                <td v-for="(tripitaka_id, tripitaka_index) in tripitaka_ids">
+                {{ tripitaka_id_to_texts[tripitaka_id][index] }}
+                </td>
+                <td>
+                {{ selected_lst[index] }}
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <span slot="footer" class="dialog-footer">
+            <el-button type="primary" @click="handleOK">确定</el-button>
+        </span>
+    </el-dialog>
+    `,
     data: function () {
         return {
             split_count: 2,
@@ -892,23 +928,23 @@ Vue.component('column-image', {
 
 Vue.component('judge-image-dialog', {
     props: ['sharedata'],
-    template: '\
-    <el-dialog title="" :visible.sync="sharedata.judgeImageDialogVisible" width="50%" @open="handleOpen" :before-close="handleOK">\
-        <table class="table table-condensed">\
-            <tbody>\
-            <tr>\
-            <td v-for="(image, index) in images">{{ image.tname }}</td>\
-            </tr>\
-            <tr class="diffseg-image">\
-            <td v-for="(image, index) in images"><column-image :imageinfo="image" :sharedata="sharedata"></column-image></td>\
-            </tr>\
-            <tr>\
-            <td v-for="(image, index) in images"><b v-if="image.cross_line">...</b></td>\
-            </tr>\
-            </tbody>\
-        </table>\
-    </el-dialog>\
-    ',
+    template: `
+    <el-dialog title="" :visible.sync="sharedata.judgeImageDialogVisible" width="50%" @open="handleOpen" :before-close="handleOK">
+        <table class="table table-condensed">
+            <tbody>
+            <tr>
+            <td v-for="(image, index) in images">{{ image.tname }}</td>
+            </tr>
+            <tr class="diffseg-image">
+            <td v-for="(image, index) in images"><column-image :imageinfo="image" :sharedata="sharedata"></column-image></td>
+            </tr>
+            <tr>
+            <td v-for="(image, index) in images"><b v-if="image.cross_line">...</b></td>
+            </tr>
+            </tbody>
+        </table>
+    </el-dialog>
+    `,
     data: function () {
         return {
             images: []
@@ -960,18 +996,18 @@ Vue.component('judge-image-dialog', {
 
 Vue.component('judge-page-dialog', {
     props: ['sharedata'],
-    template: '\
-    <el-dialog title="" :visible.sync="sharedata.judgePageDialogVisible" width="80%" @open="handleOpen" :before-close="handleOK">\
-        <div class="row">\
-            <div class="col-md-8">\
-                <canvas id="page-canvas" width="800" height="1080"></canvas>\
-            </div>\
-            <div class="col-md-4">\
-                <div class="judge-page-text" v-html="text"></div>\
-            </div>\
-        </div>\
-    </el-dialog>\
-    ',
+    template: `
+    <el-dialog title="" :visible.sync="sharedata.judgePageDialogVisible" width="95%" height="95%" top="2vh" @open="handleOpen" :before-close="handleOK">
+        <div class="row">
+            <div class="col-md-8 canvas-wrapper">
+                <canvas id="page-canvas" width="800" height="1080"></canvas>
+            </div>
+            <div class="col-md-4 text-wrapper">
+                <div class="judge-page-text" v-html="text"></div>
+            </div>
+        </div>
+    </el-dialog>
+    `,
     data: function () {
         return {
             text: ''

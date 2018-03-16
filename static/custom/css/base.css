@@ -12,10 +12,32 @@
     overflow: scroll;
     box-shadow: 0px 0px 1px 2px #363E4E;
 }
-.page-canvas {
-    width: 100%;
+
+.canvas-wrapper {
+    float: left;
+    overflow: scroll;
+    width: 64%;
     height: 100%;
+    margin: 0px 1%;
+    border: 2px solid darkgrey;
+    box-shadow: 0 1px 5px grey;
 }
+
+.text-wrapper {
+float: left;
+    width: 33%;
+    border: 2px solid lightgrey;
+    background: #efe9a5 linear-gradient(#ededed, #a3a3a3);
+    padding: 5px 10px;
+    box-shadow: 0 1px 5px grey;
+    text-shadow: 1 0px 0px #335163;
+}
+.text-wrapper:after {
+    content: '';
+    display: block;
+    clear: both;
+}
+
 .selected-text > textarea {
     width: 150px;
     border: 0;
@@ -102,7 +124,7 @@
 }
 .judge-base-text {
     padding: 10px;
-    height: 400px;
+    height: 200px;
     overflow: scroll;
     border: 1px #ccc solid;
 }
@@ -131,12 +153,20 @@ ul.diffseg-region {
 .diffseg-tag-notext-selected {
     background: darkred;
 }
+.diffseg-tag-judged {
+    color: green !important;
+}
 .diffseg-tag-white {
     display: inline-block;
     width: 4px;
 }
-.diffseg-tag-selected {
+
+.judge-base-text a {
     color: red;
+}
+.judge-base-text a.diffseg-tag-selected {
+    color: white;
+    background-color: blue;
 }
 .diffseg-btn {
     margin-right: 10px;
@@ -210,7 +240,8 @@ ul {list-style-type:none;}
 }
 
 .operation .ll {
-    padding: 0px 15px;
+    width: 60px;
+    text-align: center;
 }
 .operation .el-tag--danger{
     margin: 0px -6px;
@@ -303,4 +334,20 @@ opacity: 0;
 .scale-op {
     position: relative;
     top: 10px;
+}
+.selected-box {
+    border: 1px red solid;
+}
+
+.jk-list {
+    background-color: lightslategrey;
+    color: white;
+    text-align: center;
+    font-size: 16px;
+    line-height: 1.2;
+    padding: 5px 3px;
+}
+
+#show_all {
+    float: right;
 }

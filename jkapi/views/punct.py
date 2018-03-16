@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 
 from rest_framework import mixins, viewsets, generics
 from rest_framework.pagination import PageNumberPagination
@@ -10,7 +11,8 @@ from rest_framework import status
 from tdata.models import *
 from tasks.models import *
 from tasks.common import SEPARATORS_PATTERN
-from tasks.task_controller import punct_submit_result, publish_punct_result
+from tasks.task_controller import punct_submit_result_async, publish_punct_result_async,\
+lqpunct_submit_result_async, publish_lqpunct_result_async
 from jkapi.serializers import *
 from jkapi.permissions import *
 
@@ -141,6 +143,12 @@ class PunctTaskDetail(APIView):
         return Response(response)
 
     def post(self, request, task_id, format=None):
+        if self.task.status == Task.STATUS_FINISHED:
+            response = {
+                'task_id': task_id,
+                'status': self.task.status,
+                }
+            return Response(response)
         update_fields = []
         if 'punct_result' in request.data:
             punct_json = json.dumps(request.data['punct_result'],separators=(',', ':'))
@@ -148,7 +156,9 @@ class PunctTaskDetail(APIView):
             update_fields.append('result')
         if 'finished' in request.data:
             self.task.status = Task.STATUS_FINISHED
+            self.task.finished_at = timezone.now()
             update_fields.append('status')
+            update_fields.append('finished_at')
         if update_fields:
             self.task.save(update_fields=update_fields)
         if self.task.status == Task.STATUS_FINISHED:

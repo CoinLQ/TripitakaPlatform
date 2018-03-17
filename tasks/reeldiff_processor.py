@@ -400,7 +400,6 @@ class MultiReelText(object):
                 return reeltext.get_char_position(reeltext.text_len)
 
 def create_reeldiff(lqsutra, base_sutra):
-    #import pdb; pdb.set_trace()
     sutra_lst = list(lqsutra.sutra_set.all())
     sutra_id_lst = [sutra.id for sutra in sutra_lst]
     base_sutra_index = sutra_id_lst.index(base_sutra.id)

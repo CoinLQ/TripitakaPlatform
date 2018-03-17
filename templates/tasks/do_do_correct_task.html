@@ -151,7 +151,7 @@
       premitSubmit: function (){
         let empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
         // 对于文字校对审查，已经完成的，禁止再提交
-        return (empty_segs.length != 0 || (this.sharedata.status == 4 && this.sharedata.task_typ == 2) ) 
+        return (empty_segs.length != 0 || (this.sharedata.status >= 4 && this.sharedata.task_typ == 2) ) 
       },
       doubt_count: function(){
         return this.doubts.length;
@@ -256,9 +256,9 @@
       },
       handleChange(val) {
         if (this.activeNames.length == 0) {
-          this.$el.querySelector('div.diff-text-pane').style.height =this.$el.querySelector('div.diff-text-pane').clientHeight + 250;
+          this.$el.querySelector('div.diff-text-pane').style.height =this.$el.querySelector('.canvas-pane').clientHeight;
         } else {
-          this.$el.querySelector('div.diff-text-pane').style.height =this.$el.querySelector('div.diff-text-pane').clientHeight - 250;
+          this.$el.querySelector('div.diff-text-pane').style.height =this.$el.querySelector('.canvas-pane').clientHeight - 250;
         }
       },
       spanContent: function(content) {

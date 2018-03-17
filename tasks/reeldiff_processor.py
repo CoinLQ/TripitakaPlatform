@@ -1,6 +1,7 @@
 from tdata.models import *
 from tasks.models import *
 from tasks.common import *
+from collections import defaultdict
 from tasks.utils.variant_map import VariantManager
 
 import os, sys
@@ -441,7 +442,7 @@ def create_diffsegresults_for_judge_task(reeldiff_lst, batchtask, lqsutra, base_
     
         for task in judge_task_lst:
             for diffseg in diffsegs:
-                diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text='')
+                diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text=None)
                 diffsegresult_lst.append(diffsegresult)
             task.reeldiff = reeldiff
             task.status = Task.STATUS_READY
@@ -450,10 +451,115 @@ def create_diffsegresults_for_judge_task(reeldiff_lst, batchtask, lqsutra, base_
         Task.objects.filter(batch_task=batchtask, typ=Task.TYPE_JUDGE_VERIFY, lqreel=lqreel).update(reeldiff=reeldiff)
     return all_judge_tasks
 
+def get_text_map(diffseg):
+    text_map = defaultdict(None)
+    for diffsegtext in diffseg.diffsegtexts:
+        text_map[diffsegtext.tripitaka_id] = diffsegtext.text
+    return text_map
+
+
+def text_equal_for_diffseg(old_diffseg, diffseg, selected_text):
+    old_text_map = get_text_map(old_diffseg)
+    text_map = get_text_map(diffseg)
+    # 当加入藏的文变化了，但更新后的文内容与已判断选定结果相同，不算异文，继续合并之前的判取结果
+    for new_key in text_map.keys():
+        if text_map[new_key] != old_text_map[new_key]:
+            if (selected_text is not None) and text_map[new_key] != selected_text:
+                return False
+    return True
+
+def copy_judge_result(old_diffsegresults, diffsegresults):
+    old_len = len(old_diffsegresults)
+    new_len = len(diffsegresults)
+    old_idx = 0
+    idx = 0
+    while old_idx < old_len and idx < new_len:
+        old_diffsegresult = old_diffsegresults[old_idx]
+        diffsegresult = diffsegresults[idx]
+        old_base_pos = old_diffsegresult.diffseg.base_pos
+        base_pos = diffsegresult.diffseg.base_pos
+        if old_base_pos < base_pos:
+            old_idx += 1
+            continue
+        elif old_base_pos > base_pos:
+            idx += 1
+            continue
+        if old_diffsegresult.diffseg.base_length == diffsegresult.diffseg.base_length and \
+            text_equal_for_diffseg(old_diffsegresult.diffseg, diffsegresult.diffseg, old_diffsegresult.selected_text):
+            diffsegresult.typ = old_diffsegresult.typ
+            diffsegresult.selected_text = old_diffsegresult.selected_text
+            diffsegresult.selected = old_diffsegresult.selected
+            diffsegresult.doubt = old_diffsegresult.doubt
+            diffsegresult.doubt_comment = old_diffsegresult.doubt_comment
+            if diffsegresult.typ == DiffSegResult.TYPE_SPLIT:
+                diffsegresult.split_info = old_diffsegresult.split_info
+            elif old_diffsegresult.merged_diffsegresults:
+                ids = old_diffsegresult.merged_diffsegresults.values_list('id', flatten=True)
+                new_merged = []
+                bigger_len = len(list(filter(lambda x: x > old_diffsegresult.id, ids)))
+                less_len = len(list(filter(lambda x: x < old_diffsegresult.id, ids)))
+                for r in range( -1 * less_len, bigger_len + 1):
+                    if r == 0:
+                        continue
+                    index = idx + r
+                    if index >=0 and index < new_len:
+                        new_merged.append(diffsegresults[index])
+                diffsegresult.merged_diffsegresults.set(new_merged)
+        old_idx += 1
+        idx += 1
+
+
+def create_new_diffsegresults_for_judge_task(reeldiff_lst, batchtask, lqsutra, base_sutra, max_reel_no):
+    for reel_no in range(1, max_reel_no + 1):
+        diffsegresults = []
+        reeldiff = reeldiff_lst[reel_no - 1]
+        diffsegs = list(reeldiff.diffseg_set.order_by('id').all())
+        lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
+        judge_task_lst = list(Task.objects.filter(batch_task=batchtask, typ=Task.TYPE_JUDGE, lqreel=lqreel))
+        judge_task_ids = [t.id for t in judge_task_lst]
+        for task in judge_task_lst:
+            for diffseg in diffsegs:
+                diffsegresult = DiffSegResult(task=task, diffseg=diffseg, selected_text=None)
+                diffsegresults.append(diffsegresult)
+            old_diffsegresults = list(task.diffsegresult_set.order_by('id').all())
+            DiffSegResult.objects.bulk_create(diffsegresults)
+            copy_judge_result(old_diffsegresults, diffsegresults)
+        Task.objects.filter(id__in=judge_task_ids).update(reeldiff=reeldiff)
+        judge_verify_task = Task.objects.get(batch_task=batchtask, typ=Task.TYPE_JUDGE_VERIFY, lqreel=lqreel)
+        DiffSegResult.objects.filter(task=judge_verify_task).delete()
+        judge_verify_task.reeldiff = reeldiff
+        judge_verify_task.save(update_fields=['reeldiff'])
+
 def create_data_for_judge_tasks(batchtask, lqsutra, base_sutra, max_reel_no):
     reeldiff_lst = create_reeldiff(lqsutra, base_sutra)
     return create_diffsegresults_for_judge_task(reeldiff_lst, batchtask, lqsutra, base_sutra, \
     max_reel_no)
+
+def create_new_data_for_judge_tasks(batchtask, lqsutra, base_sutra, max_reel_no):
+    Task.objects.filter(batch_task=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
+    status__in=[Task.STATUS_PROCESSING, Task.STATUS_FINISHED]).update(status=Task.STATUS_PAUSED)
+    Task.objects.filter(batch_task=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
+    status=Task.STATUS_READY).update(status=Task.STATUS_NOT_READY)
+    # 校勘判取审定任务的状态改为STATUS_NOT_READY
+    Task.objects.get(batch_task=batchtask, typ=Task.TYPE_JUDGE_VERIFY, lqreel__lqsutra=lqsutra)\
+    .update(status=Task.STATUS_NOT_READY)
+    judge_tasks = list(Task.objects.filter(batch_task=batch_task, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE))
+    task_ids = [t.id for t in judge_tasks]
+
+    old_diffsegresult_ids = list([diffsegresult.id for diffsegresult in \
+    DiffSegResult.objects.filter(task_id__in=task_ids)])
+    old_reeldiff_ids = list([reeldiff.id for reeldiff in ReelDiff.objects.filter(lqsutra=lqsutra)])
+
+    reeldiff_lst = create_reeldiff(lqsutra, base_sutra)
+    create_new_diffsegresults_for_judge_task(reeldiff_lst, batchtask, lqsutra, base_sutra, \
+    max_reel_no)
+    DiffSegResult.objects.filter(id__in=old_diffsegresult_ids).delete()
+    ReelDiff.objects.filter(id__in=old_reeldiff_ids).delete()
+
+    Task.objects.filter(batch_task=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
+    status=Task.STATUS_PAUSED).update(status=Task.STATUS_PROCESSING)
+    Task.objects.filter(batch_task=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
+    status=Task.STATUS_NOT_READY).update(status=Task.STATUS_READY)
 
 def is_sutra_ready_for_judge(lqsutra):
     sutra_lst = list(lqsutra.sutra_set.all())

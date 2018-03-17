@@ -10,7 +10,8 @@ from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, \
 clean_separators, clean_jiazhu, compute_accurate_cut
 from tasks.ocr_compare import OCRCompare
 from tasks.utils.punct_process import PunctProcess
-from tasks.reeldiff_processor import is_sutra_ready_for_judge, create_data_for_judge_tasks
+from tasks.reeldiff_processor import is_sutra_ready_for_judge, create_data_for_judge_tasks, \
+create_new_data_for_judge_tasks
 import json, re, logging, traceback
 from operator import attrgetter, itemgetter
 from background_task import background
@@ -202,9 +203,9 @@ def publish_correct_result(task):
                 reel_correct_text.save()
                 task.reel.set_correct_ready()
     else: # 与最新的一份记录比较
-        text1 = saved_reel_correct_texts[0].text
-        text2 = task.result
-        if text1 != text2:
+        old_text = saved_reel_correct_texts[0].text
+        new_text = task.result
+        if old_text != new_text:
             with transaction.atomic():
                 reeltext_count = ReelCorrectText.objects.filter(task_id=task.id).count()
                 if reeltext_count == 0:
@@ -236,18 +237,38 @@ def publish_correct_result(task):
 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra
+    batch_task = task.batch_task
     if not lqsutra:
         print('没有关联的龙泉藏经')
         logging.error('没有关联的龙泉藏经')
         return None
-    try:
-        lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
-    except:
-        print('没找到龙泉藏经卷对应的记录')
-        logging.error('没找到龙泉藏经卷对应的记录')
-        return None
+    judge_tasks = list(Task.objects.filter(batch_task=batch_task, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE))
+    if len(judge_tasks) == 0:
+        print('没有校勘判取任务')
+        return
+    base_sutra = judge_tasks[0].base_reel.sutra
+    judge_task_not_ready = (judge_tasks[0].status == Task.STATUS_NOT_READY)
     if is_sutra_ready_for_judge(lqsutra):
-        create_data_for_judge_tasks(batch_task, lqsutra, base_sutra, lqsutra.total_reels)
+        if judge_task_not_ready: # 第一次创建校勘判取任务的数据
+            create_data_for_judge_tasks(batch_task, lqsutra, base_sutra, lqsutra.total_reels)
+            return
+        else: # 已经创建过校勘判取任务的数据
+            if all([t.status == Task.STATUS_READY for t in judge_tasks]): # 都还没被领取
+                # 尝试将校勘判取任务的状态改为STATUS_NOT_READY
+                count = Task.objects.filter(batch_task=batch_task, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
+                status=Task.STATUS_READY).update(status=Task.STATUS_NOT_READY)
+                if count == len(judge_tasks):
+                    task_ids = [t.id for t in judge_tasks]
+                    DiffSegResult.objects.filter(task_id__in=task_ids).delete()
+                    ReelDiff.objects.filter(lqsutra=lqsutra).delete()
+                    create_data_for_judge_tasks(batch_task, lqsutra, base_sutra, lqsutra.total_reels)
+                    return
+                else: # 在上面代码运行时间内，有校勘判取任务被领取
+                    Task.objects.filter(batch_task=task.batch_task, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
+                    status=Task.STATUS_NOT_READY).update(status=Task.STATUS_READY)
+            # 已有校勘判取任务被领取，需要复制已有的判取结果
+            if text_changed:
+                create_new_data_for_judge_tasks(batch_task, lqsutra, base_sutra, lqsutra.total_reels)
 
 CORRECT_RESULT_FILTER = re.compile('[ 　ac-oq-zA-Z0-9.?\-",/，。、：]')
 def generate_correct_result(task):

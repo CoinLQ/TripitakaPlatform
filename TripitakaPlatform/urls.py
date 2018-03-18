@@ -35,7 +35,9 @@ urlpatterns = [
     path('judge/<int:task_id>/', do_judge_task, name='do_judge_task'),
     path('verify_judge/<int:task_id>/', do_judge_task, name='do_judge_verify_task'),
     path('punct/<int:task_id>/', do_punct_task, name='do_punct_task'),
+    path('verify_punct/<int:task_id>/', do_punct_task, name='do_punct_task'),
     path('lqpunct/<int:task_id>/', do_punct_task, name='do_punct_task'),
+    path('verify_lqpunct/<int:task_id>/', do_punct_task, name='do_punct_task'),
 
     path('tools/cutfixed_pages/', cutfixed_pages, name='cutfixed_pages'),
     path('tools/cutfixed_pages/<pid>/', cutfixed_page_detail, name='cutfixed_page_detail'),

@@ -459,12 +459,12 @@ def publish_judge_result(task):
             .update(lqtext=lqreeltext, result=task_puncts, status=Task.STATUS_READY)
 
 def punct_submit_result(task):
-    verify_tasks = list(Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=task.reel))
+    verify_tasks = list(Task.objects.filter(batch_task=task.batch_task, typ=Task.TYPE_PUNCT_VERIFY, reel=task.reel))
     if len(verify_tasks) == 0:
         publish_punct_result(task)
         return
     verify_task = verify_tasks[0]
-    punct_tasks = Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_PUNCT, reel=task.reel)
+    punct_tasks = Task.objects.filter(batch_task=task.batch_task, typ=Task.TYPE_PUNCT, reel=task.reel)
     if all([t.status == Task.STATUS_FINISHED for t in punct_tasks]):
         verify_task.status = Task.STATUS_READY
         verify_task.result = punct_tasks[0].result
@@ -476,12 +476,12 @@ def publish_punct_result(task):
     punct.save()
 
 def lqpunct_submit_result(task):
-    verify_tasks = list(Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_LQPUNCT_VERIFY, lqreel=task.lqreel))
+    verify_tasks = list(Task.objects.filter(batch_task=task.batch_task, typ=Task.TYPE_LQPUNCT_VERIFY, lqreel=task.lqreel))
     if len(verify_tasks) == 0:
         publish_lqpunct_result(task)
         return
     verify_task = verify_tasks[0]
-    punct_tasks = Task.objects.filter(batch_task=task.batchtask, typ=Task.TYPE_LQPUNCT, lqreel=task.lqreel)
+    punct_tasks = Task.objects.filter(batch_task=task.batch_task, typ=Task.TYPE_LQPUNCT, lqreel=task.lqreel)
     if all([t.status == Task.STATUS_FINISHED for t in punct_tasks]):
         verify_task.status = Task.STATUS_READY
         verify_task.result = punct_tasks[0].result

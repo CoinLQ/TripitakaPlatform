@@ -449,7 +449,7 @@ Vue.component('judge-dialog', {
         </div>
         <span slot="footer" class="dialog-footer">
             <span class="alert alert-danger" v-if="error">{{ error }}</span>
-            <el-button type="primary" :disabled="sharedata.submit_disabled" @click="handleOK">确定</el-button>
+            <el-button type="primary" :disabled="sharedata.permit_modify" @click="handleOK">确定</el-button>
             <el-button @click="handleCancel">取消</el-button>
         </span>
     </el-dialog>
@@ -520,7 +520,7 @@ Vue.component('merge-dialog', {
         </ul>
         <span slot="footer" class="dialog-footer">
             <span class="alert alert-danger" v-if="error">{{ error }}</span>
-            <el-button type="primary" :disabled="sharedata.submit_disabled" @click="handleOK">合并</el-button>
+            <el-button type="primary" :disabled="sharedata.permit_modify" @click="handleOK">合并</el-button>
             <el-button @click="handleCancel">取消</el-button>
         </span>
     </el-dialog>
@@ -624,7 +624,7 @@ Vue.component('split-dialog', {
         </table>
         <span slot="footer" class="dialog-footer">
             <span class="alert alert-danger" v-if="error">{{ error }}</span>
-            <el-button type="primary" @click="handleOK" :disabled="sharedata.submit_disabled && okDisabled">确定</el-button>
+            <el-button type="primary" @click="handleOK" :disabled="sharedata.permit_modify && okDisabled">确定</el-button>
             <el-button @click="handleCancel">取消</el-button>
         </span>
     </el-dialog>
@@ -819,7 +819,7 @@ Vue.component('show-split-dialog', {
             </tbody>
         </table>
         <span slot="footer" class="dialog-footer">
-            <el-button type="primary" :disabled="sharedata.submit_disabled" @click="handleOK">确定</el-button>
+            <el-button type="primary" :disabled="sharedata.permit_modify" @click="handleOK">确定</el-button>
         </span>
     </el-dialog>
     `,

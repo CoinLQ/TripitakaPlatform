@@ -87,6 +87,7 @@
         judge_task_ids: {{ judge_task_ids }},
         status: 0,
         submit_disabled: true,
+        permit_modify: false,
         base_tripitaka_id: null,
         judgeDialogVisible: false,
         mergeDialogVisible: false,
@@ -124,10 +125,12 @@
         if (!vm.sharedata.is_verify) {
           vm.show_all = true;
         }
+        // 包括被Pause的情况
+        if (vm.sharedata.status >= 4) {
+          vm.sharedata.permit_modify = true
+        }
       });
-           
-      this.checkAllSelected(); 
-     
+      this.checkAllSelected();
     },
     watch: {
       diffseg_curpage: function (newPage, oldPage) {
@@ -285,6 +288,7 @@
           vm.sharedata.status = response.data.status;
           if (vm.sharedata.status == 4) {
             vm.sharedata.submit_disabled = true;
+            vm.sharedata.permit_modify = true;
           }
           alert('提交成功！');
         })

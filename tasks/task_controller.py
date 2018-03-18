@@ -347,6 +347,7 @@ def judge_submit_result(task):
     lqreel = task.lqreel
     judge_tasks = list(Task.objects.filter(batch_task_id=task.batch_task_id, lqreel_id=lqreel.id, typ=Task.TYPE_JUDGE).all())
     task_count = len(judge_tasks)
+    import pdb;pdb.set_trace()
     if task_count == 0:
         return None
     all_finished = True

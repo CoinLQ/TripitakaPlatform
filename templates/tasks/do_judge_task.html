@@ -49,7 +49,7 @@
         <li :class="{ disabled: (diffseg_curpage == diffseg_page_count) }"><a href="#" @click.stop.prevent="nextPage">&gt;</a></li>
       </ul>
       <div class="text-center">
-        <button class="btn btn-primary" :disabled="submit_disabled" :title="submit_title" @click.stop.prevent="finishJudgeTask">提交</button>
+        <button class="btn btn-primary" :disabled="premitSubmit" :title="submit_title" @click.stop.prevent="finishJudgeTask">提交</button>
       </div>
     </div>
     <div class="row">
@@ -79,13 +79,14 @@
       diffseg_page_count: 1,
       diffseg_curpage: 1,
       merged_base_text: [],
-      submit_disabled: true,
       submit_title: '',
       sharedata: {
         diffseg_pos_lst: [],
         task_id: {{ task.id }},
+        task_typ: {{task.typ}},
         judge_task_ids: {{ judge_task_ids }},
         status: 0,
+        submit_disabled: true,
         base_tripitaka_id: null,
         judgeDialogVisible: false,
         mergeDialogVisible: false,
@@ -138,8 +139,20 @@
         }
       },
       show_punct: function(newValue, oldValue) {
-        this.loadSutraText();
+        if (!this.sharedata.is_verify) {
+          this.loadSutraText();
+        } else {
+          this.loadVerifySutraText();
+        }
       }
+    },
+    computed: {
+      premitSubmit: function () {
+        if (this.sharedata.submit_disabled || this.sharedata.status >= 4 ) {
+          this.sharedata.submit_disabled = true
+        }
+        return this.sharedata.submit_disabled
+      },
     },
     methods: {
       loadSutraText: function() {
@@ -148,6 +161,17 @@
           this.merged_base_text = judge_merge_text_punct(this.base_text, this.sharedata.diffseg_pos_lst, this.punct_lst);
         } else {
           this.merged_base_text = judge_merge_text_punct(this.base_text, this.sharedata.diffseg_pos_lst, this.orig_separators);
+        }
+      },
+      loadVerifySutraText: function() {
+        // 加载底本经文
+        diffseg_ids = _.map(this.sharedata.diffsegresults, function(v) { return v.diffseg.id; })
+        diffseg_pos_lst = _.filter(this.sharedata.diffseg_pos_lst, function(v) { return diffseg_ids.indexOf(v.diffseg_id) != -1 })
+
+        if (this.show_punct) {
+          this.merged_base_text = judge_merge_text_punct(this.base_text, diffseg_pos_lst, this.punct_lst);
+        } else {
+          this.merged_base_text = judge_merge_text_punct(this.base_text, diffseg_pos_lst, this.orig_separators);
         }
       },
       prevPage: function() {
@@ -203,6 +227,7 @@
             vm.loadSutraText();
             return ;
           }
+          vm.sharedata.diffsegresults = diffsegresults;
           if (diffseg_ids.length > 0) {
             var diffseg_id_to_judge_results = {};
             for (var i = 0; i < vm.sharedata.judge_task_ids.length; ++i) {
@@ -227,17 +252,19 @@
 
                 vm.sharedata.diffsegresults = diffsegresults;
                 vm.sharedata.segindex = 0;
+                vm.loadVerifySutraText();
               });
             }
           }
 
         });
+       
       },
       checkAllSelected: function() {
         var vm = this
         axios.get('/api/judge/' + vm.sharedata.task_id + '/allselected/')
         .then(function(response) {
-          vm.submit_disabled = ! response.data.all_selected;
+          vm.sharedata.submit_disabled = ! response.data.all_selected;
         })
       },
       setCurrentSeg: function (diffseg_id) {
@@ -257,7 +284,7 @@
         .then(function(response) {
           vm.sharedata.status = response.data.status;
           if (vm.sharedata.status == 4) {
-            vm.submit_disabled = true;
+            vm.sharedata.submit_disabled = true;
           }
           alert('提交成功！');
         })

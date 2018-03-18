@@ -601,6 +601,7 @@ def get_reel_text(reel):
 def clean_separators(text):
     return SEPARATORS_PATTERN.sub('', text)
 
-JIAZHU_PATTERN = re.compile('<[^\n]*>')
+#JIAZHU_PATTERN = re.compile('<[^\n]*>')
+JIAZHU_PATTERN = re.compile('[<>]')
 def clean_jiazhu(text):
     return JIAZHU_PATTERN.sub('', text)

@@ -33,9 +33,13 @@ def create_punct_task(sid, reel_no, batch_task):
     for task_no in [1, 2]:
         task = Task(batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=reel,
         reeltext=reel_correct_text, result=task_puncts,
-        task_no=task_no, status=Task.STATUS_PROCESSING,
-        publisher=batch_task.publisher, picker=batch_task.publisher)
+        task_no=task_no, status=Task.STATUS_READY,
+        publisher=batch_task.publisher)
         task.save()
+    task = Task(batch_task=batch_task, typ=Task.TYPE_PUNCT_VERIFY, reel=reel,
+    reeltext=reel_correct_text,
+    task_no=0, status=Task.STATUS_NOT_READY, publisher=batch_task.publisher)
+    task.save()
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
@@ -62,13 +66,16 @@ class Command(BaseCommand):
 
         task1 = Task(batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
         reeltext=reelcorrecttext, result=punctuation_json,
-        task_no=1, status=Task.STATUS_PROCESSING,
-        publisher=admin, picker=admin)
+        task_no=1, status=Task.STATUS_READY, publisher=admin)
         task1.save()
         task2 = Task(batch_task=batch_task, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
         reeltext=reelcorrecttext, result=punctuation_json,
         task_no=2, status=Task.STATUS_READY, publisher=admin)
         task2.save()
+        task3 = Task(batch_task=batch_task, typ=Task.TYPE_PUNCT_VERIFY, reel=huayan_cb_1,
+        reeltext=reelcorrecttext, result=punctuation_json,
+        task_no=0, status=Task.STATUS_NOT_READY, publisher=admin)
+        task3.save()
 
         save_reel_with_correct_text(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
         save_reel_with_correct_text(lqsutra, 'ZH000860', 1, 12, 1, 12, '12')

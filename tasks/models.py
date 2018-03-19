@@ -89,7 +89,7 @@ class Task(models.Model):
         (STATUS_REVOKED, '已回收'),
     )
 
-    batch_task = models.ForeignKey(BatchTask, on_delete=models.CASCADE)
+    batchtask = models.ForeignKey(BatchTask, on_delete=models.CASCADE)
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE, related_name='tasks',
     blank=True, null=True)
     lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE, blank=True, null=True)

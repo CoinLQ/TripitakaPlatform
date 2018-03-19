@@ -76,13 +76,13 @@ class Command(BaseCommand):
         save_reel(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
 
         # create BatchTask
-        batch_task = BatchTask(priority=2, publisher=admin)
-        batch_task.save()
+        batchtask = BatchTask(priority=2, publisher=admin)
+        batchtask.save()
 
         # create Tasks
         # 文字校对
         reel_lst = [(lqsutra, 1)]
-        create_tasks_for_batchtask(batch_task, reel_lst, 2, 1)
+        create_tasks_for_batchtask(batchtask, reel_lst, 2, 1)
 
 
 

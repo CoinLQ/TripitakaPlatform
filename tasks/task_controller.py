@@ -46,7 +46,7 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_
 
     task_id_lst = []
     for task_no in range(1, correct_times + 1):
-        task = Task(batch_task=batchtask, reel=reel, typ=Task.TYPE_CORRECT, task_no=task_no, status=Task.STATUS_NOT_READY,
+        task = Task(batchtask=batchtask, reel=reel, typ=Task.TYPE_CORRECT, task_no=task_no, status=Task.STATUS_NOT_READY,
         publisher=batchtask.publisher)
         task.save()
         index = (task_no - 1) % len(correctsegs_lst)
@@ -59,7 +59,7 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_
     Task.objects.filter(id__in=task_id_lst).update(status=Task.STATUS_READY) # 实际修改任务状态
 
     if correct_verify_times:
-        task = Task(batch_task=batchtask, reel=reel, typ=Task.TYPE_CORRECT_VERIFY, task_no=0, status=Task.STATUS_NOT_READY,
+        task = Task(batchtask=batchtask, reel=reel, typ=Task.TYPE_CORRECT_VERIFY, task_no=0, status=Task.STATUS_NOT_READY,
         publisher=batchtask.publisher)
         task.save()
 
@@ -67,13 +67,13 @@ def create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_t
     if judge_times == 0:
         return
     for task_no in range(1, judge_times + 1):
-        task = Task(batch_task=batchtask, typ=Task.TYPE_JUDGE, lqreel=lqreel,
+        task = Task(batchtask=batchtask, typ=Task.TYPE_JUDGE, lqreel=lqreel,
         base_reel=base_reel, task_no=task_no, status=Task.STATUS_NOT_READY,
         publisher=batchtask.publisher)
         task.save()
     # 校勘判取审定任务只有一次
     if judge_verify_times:
-        task = Task(batch_task=batchtask, typ=Task.TYPE_JUDGE_VERIFY, lqreel=lqreel,
+        task = Task(batchtask=batchtask, typ=Task.TYPE_JUDGE_VERIFY, lqreel=lqreel,
         base_reel=base_reel, task_no=0, status=Task.STATUS_NOT_READY,
         publisher=batchtask.publisher)
         task.save()
@@ -102,14 +102,14 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
     except:
         pass
     for task_no in range(1, punct_times + 1):
-        task = Task(batch_task=batchtask, typ=Task.TYPE_PUNCT, reel=reel,
+        task = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT, reel=reel,
         reeltext=reelcorrecttext, result=task_puncts, task_no=task_no,
         status=status, publisher=batchtask.publisher)
         task.save()
 
     # 标点审定任务只有一次
     if punct_verify_times:
-        task = Task(batch_task=batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=reel,
+        task = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=reel,
         reeltext=reelcorrecttext, result='[]', task_no=task_no,
         status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
         task.save()
@@ -237,12 +237,12 @@ def publish_correct_result(task):
 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra
-    batch_task = task.batch_task
+    batchtask = task.batchtask
     if not lqsutra:
         print('没有关联的龙泉藏经')
         logging.error('没有关联的龙泉藏经')
         return None
-    judge_tasks = list(Task.objects.filter(batch_task=batch_task, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE))
+    judge_tasks = list(Task.objects.filter(batchtask=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE))
     if len(judge_tasks) == 0:
         print('没有校勘判取任务')
         return
@@ -250,25 +250,25 @@ def publish_correct_result(task):
     judge_task_not_ready = (judge_tasks[0].status == Task.STATUS_NOT_READY)
     if is_sutra_ready_for_judge(lqsutra):
         if judge_task_not_ready: # 第一次创建校勘判取任务的数据
-            create_data_for_judge_tasks(batch_task, lqsutra, base_sutra, lqsutra.total_reels)
+            create_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
             return
         else: # 已经创建过校勘判取任务的数据
             if all([t.status == Task.STATUS_READY for t in judge_tasks]): # 都还没被领取
                 # 尝试将校勘判取任务的状态改为STATUS_NOT_READY
-                count = Task.objects.filter(batch_task=batch_task, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
+                count = Task.objects.filter(batchtask=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
                 status=Task.STATUS_READY).update(status=Task.STATUS_NOT_READY)
                 if count == len(judge_tasks):
                     task_ids = [t.id for t in judge_tasks]
                     DiffSegResult.objects.filter(task_id__in=task_ids).delete()
                     ReelDiff.objects.filter(lqsutra=lqsutra).delete()
-                    create_data_for_judge_tasks(batch_task, lqsutra, base_sutra, lqsutra.total_reels)
+                    create_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
                     return
                 else: # 在上面代码运行时间内，有校勘判取任务被领取
-                    Task.objects.filter(batch_task=task.batch_task, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
+                    Task.objects.filter(batchtask=task.batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
                     status=Task.STATUS_NOT_READY).update(status=Task.STATUS_READY)
             # 已有校勘判取任务被领取，需要复制已有的判取结果
             if text_changed:
-                create_new_data_for_judge_tasks(batch_task, lqsutra, base_sutra, lqsutra.total_reels)
+                create_new_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
 
 CORRECT_RESULT_FILTER = re.compile('[ 　ac-oq-zA-Z0-9.?\-",/，。、：]')
 def generate_correct_result(task):
@@ -290,7 +290,7 @@ def correct_submit(task):
     '''
     generate_correct_result(task)
     # 检查一组的几个文字校对任务是否都已完成
-    correct_tasks = Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT).order_by('task_no')
+    correct_tasks = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_CORRECT).order_by('task_no')
     all_finished = True
     for correct_task in correct_tasks:
         if correct_task.status != Task.STATUS_FINISHED:
@@ -304,7 +304,7 @@ def correct_submit(task):
             # publish_correct_result(task)
         elif task_count == 2:
             # 查到文字校对审定任务
-            correct_verify_tasks = list(Task.objects.filter(reel=task.reel, batch_task=task.batch_task, typ=Task.TYPE_CORRECT_VERIFY))
+            correct_verify_tasks = list(Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_CORRECT_VERIFY))
             if len(correct_verify_tasks) == 0:
                 return 
             correct_verify_task = correct_verify_tasks[0]
@@ -345,7 +345,7 @@ def judge_submit_result(task):
     '''
     print('judge_submit_result')
     lqreel = task.lqreel
-    judge_tasks = list(Task.objects.filter(batch_task_id=task.batch_task_id, lqreel_id=lqreel.id, typ=Task.TYPE_JUDGE).all())
+    judge_tasks = list(Task.objects.filter(batchtask_id=task.batchtask_id, lqreel_id=lqreel.id, typ=Task.TYPE_JUDGE).all())
     task_count = len(judge_tasks)
     if task_count == 0:
         return None
@@ -356,7 +356,7 @@ def judge_submit_result(task):
     if not all_finished:
         return None
 
-    judge_verify_tasks = list(Task.objects.filter(batch_task_id=task.batch_task_id,
+    judge_verify_tasks = list(Task.objects.filter(batchtask_id=task.batchtask_id,
     lqreel_id=lqreel.id, typ=Task.TYPE_JUDGE_VERIFY, status=Task.STATUS_NOT_READY).all())
     if len(judge_verify_tasks) == 0:
         # 直接发布校勘判取结果
@@ -459,12 +459,12 @@ def publish_judge_result(task):
             .update(lqtext=lqreeltext, result=task_puncts, status=Task.STATUS_READY)
 
 def punct_submit_result(task):
-    verify_tasks = list(Task.objects.filter(batch_task=task.batch_task, typ=Task.TYPE_PUNCT_VERIFY, reel=task.reel))
+    verify_tasks = list(Task.objects.filter(batchtask=task.batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=task.reel))
     if len(verify_tasks) == 0:
         publish_punct_result(task)
         return
     verify_task = verify_tasks[0]
-    punct_tasks = Task.objects.filter(batch_task=task.batch_task, typ=Task.TYPE_PUNCT, reel=task.reel)
+    punct_tasks = Task.objects.filter(batchtask=task.batchtask, typ=Task.TYPE_PUNCT, reel=task.reel)
     if all([t.status == Task.STATUS_FINISHED for t in punct_tasks]):
         verify_task.status = Task.STATUS_READY
         verify_task.result = punct_tasks[0].result
@@ -476,12 +476,12 @@ def publish_punct_result(task):
     punct.save()
 
 def lqpunct_submit_result(task):
-    verify_tasks = list(Task.objects.filter(batch_task=task.batch_task, typ=Task.TYPE_LQPUNCT_VERIFY, lqreel=task.lqreel))
+    verify_tasks = list(Task.objects.filter(batchtask=task.batchtask, typ=Task.TYPE_LQPUNCT_VERIFY, lqreel=task.lqreel))
     if len(verify_tasks) == 0:
         publish_lqpunct_result(task)
         return
     verify_task = verify_tasks[0]
-    punct_tasks = Task.objects.filter(batch_task=task.batch_task, typ=Task.TYPE_LQPUNCT, lqreel=task.lqreel)
+    punct_tasks = Task.objects.filter(batchtask=task.batchtask, typ=Task.TYPE_LQPUNCT, lqreel=task.lqreel)
     if all([t.status == Task.STATUS_FINISHED for t in punct_tasks]):
         verify_task.status = Task.STATUS_READY
         verify_task.result = punct_tasks[0].result

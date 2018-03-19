@@ -62,8 +62,8 @@ class Command(BaseCommand):
         lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
         create_data(lqsutra)
         # create BatchTask
-        batch_task = BatchTask(priority=2, publisher=admin)
-        batch_task.save()
+        batchtask = BatchTask(priority=2, publisher=admin)
+        batchtask.save()
 
         CB = Tripitaka.objects.get(code='CB')
         try:
@@ -74,8 +74,8 @@ class Command(BaseCommand):
         for reel_no in range(1, 3):
             base_reel = Reel.objects.get(sutra=base_sutra, reel_no=reel_no)
             lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
-            create_judge_tasks(batch_task, lqreel, base_reel, 2, 1)
-        judge_tasks = create_data_for_judge_tasks(batch_task, lqsutra, base_sutra, 2)
+            create_judge_tasks(batchtask, lqreel, base_reel, 2, 1)
+        judge_tasks = create_data_for_judge_tasks(batchtask, lqsutra, base_sutra, 2)
 
         set_result = True
         if set_result:

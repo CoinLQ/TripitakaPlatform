@@ -19,7 +19,7 @@ class TaskSerializer(serializers.ModelSerializer):
 
 
 class CorrectTaskSerializer(TaskSerializer):
-    batch_task = serializers.SerializerMethodField()
+    batchtask = serializers.SerializerMethodField()
     tripitaka_name = serializers.SerializerMethodField()
     sutra = serializers.SerializerMethodField()
     reel_no = serializers.SerializerMethodField()
@@ -41,12 +41,12 @@ class CorrectTaskSerializer(TaskSerializer):
     def get_reel_no(self, obj):
         return obj.reel.reel_no
 
-    def get_batch_task(self, obj):
-        return obj.batch_task.batch_no
+    def get_batchtask(self, obj):
+        return obj.batchtask.batch_no
 
     class Meta:
         model = Task
-        fields = ('batch_task', 'tripitaka_name',
+        fields = ('batchtask', 'tripitaka_name',
         'sutra', 'reel_no', 'priority', 'id', 'status', 'task_no', 'picked_at', 'finished_at')
         read_only_fields = ('id', )
 
@@ -55,7 +55,7 @@ class VerifyCorrectTaskSerializer(CorrectTaskSerializer):
 
 
 class JudgeTaskSerializer(TaskSerializer):
-    batch_task = serializers.SerializerMethodField()
+    batchtask = serializers.SerializerMethodField()
     lqsutra_name = serializers.SerializerMethodField()
     lqreel_no = serializers.SerializerMethodField()
     base_tripitaka_name = serializers.SerializerMethodField()
@@ -85,12 +85,12 @@ class JudgeTaskSerializer(TaskSerializer):
         except:
             return ''
 
-    def get_batch_task(self, obj):
-        return obj.batch_task.batch_no
+    def get_batchtask(self, obj):
+        return obj.batchtask.batch_no
 
     class Meta:
         model = Task
-        fields = ('batch_task', 'lqsutra_name', 'base_tripitaka_name',
+        fields = ('batchtask', 'lqsutra_name', 'base_tripitaka_name',
             'lqreel_no', 'priority', 'id',  'status', 'task_no', 'picked_at', 'finished_at')
         read_only_fields = ('id', )
 
@@ -119,7 +119,7 @@ class PunctTaskSerializer(CorrectTaskSerializer):
 
     class Meta:
         model = Task
-        fields = ('batch_task', 'lqsutra_name', 'tripitaka_name',
+        fields = ('batchtask', 'lqsutra_name', 'tripitaka_name',
         'sutra',  'reel_no', 'priority', 'progress', 'task_no', 'id',
         'status', 'picked_at', 'finished_at')
         read_only_fields = ('id', )
@@ -135,7 +135,7 @@ class LqpunctTaskSerializer(JudgeTaskSerializer):
 
     class Meta:
         model = Task
-        fields = ('batch_task', 'lqsutra_name', 'base_tripitaka_name',
+        fields = ('batchtask', 'lqsutra_name', 'base_tripitaka_name',
             'lqreel_no', 'priority', 'progress', 'id',  'status', 'picked_at', 'finished_at')
         read_only_fields = ('id', )
 

@@ -8,7 +8,7 @@ def do_judge_task(request, task_id):
         judge_task_ids = []
     elif task.typ == Task.TYPE_JUDGE_VERIFY:
         judge_task_ids = [ judge_task.id for judge_task in \
-        Task.objects.filter(batch_task_id=task.batch_task_id, \
+        Task.objects.filter(batchtask_id=task.batchtask_id, \
         lqreel_id=task.lqreel.id, typ=Task.TYPE_JUDGE).order_by('task_no') ]
     else:
         return redirect('/')

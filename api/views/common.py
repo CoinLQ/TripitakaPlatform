@@ -79,9 +79,9 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
         model_name = self.model_name
         if (model_name in TASK_MODELS):
             if model_name in ['correct', 'verify_correct', 'punct', 'verify_punct']:
-                return ('reel__sutra__name', 'reel__sutra__tripitaka__name', 'reel__sutra__sid')
+                return ('reel__sutra__name', 'reel__sutra__tripitaka__name', 'reel__sutra__sid', 'reel__reel_no')
             elif model_name in ['judge', 'verify_judge', 'lqpunct', 'verify_lqpunct']:
-                return ('lqreel__lqsutra__name', 'lqreel__lqsutra__sid')
+                return ('lqreel__lqsutra__name', 'lqreel__lqsutra__sid', 'lqreel__reel_no')
         else:
             return getattr(self.model.Config, 'search_fields', ())
 

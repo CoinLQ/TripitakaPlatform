@@ -141,8 +141,9 @@ ul.diffseg-region {
 }
 .diffseg-box {
     border: 1px #ccc solid;
-    padding: 10px;
-    margin: 10px 0px 0px 0px;
+    border-radius: 5px;
+    padding: 5px 10px;
+    margin: 2px 0px 0px 0px;
 }
 .recheck-tag {
     background-color: yellow;
@@ -167,7 +168,7 @@ ul.diffseg-region {
 }
 .judge-base-text a.diffseg-tag-selected {
     color: white;
-    background-color: blue;
+    background-color: indigo;
 }
 .diffseg-btn {
     margin-right: 10px;

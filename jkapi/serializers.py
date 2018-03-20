@@ -86,9 +86,9 @@ class DiffSegResultSimpleSerializer(serializers.ModelSerializer):
             for tripitaka_id, oldtext in tripitaka_id_to_oldtext.items():
                 tripitaka_id = '%s' % tripitaka_id
                 texts = tripitaka_id_to_texts[tripitaka_id]
-                if len(texts) != split_count:
+                if (len(texts) != split_count) and (len(texts) != 0):
                     raise Exception()
-                if oldtext != ''.join(texts):
+                if (oldtext != ''.join(texts)) and (oldtext is not None):
                     raise Exception()
             if selected_text != ''.join(selected_lst):
                 raise Exception()

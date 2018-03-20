@@ -43,6 +43,7 @@ def create_punct_task(sid, reel_no, batchtask):
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        print('initpunct start')
         BASE_DIR = settings.BASE_DIR
         admin = get_or_create_admin()
 
@@ -83,3 +84,4 @@ class Command(BaseCommand):
         create_punct_task('YB000860', 1, batchtask)
         create_punct_task('ZH000860', 1, batchtask)
         create_punct_task('QL000870', 1, batchtask)
+        print('initpunct done')

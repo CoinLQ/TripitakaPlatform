@@ -63,6 +63,7 @@ def get_reel(sid, reel_no):
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        print('init start')
         BASE_DIR = settings.BASE_DIR
         admin = get_or_create_admin()
 
@@ -83,7 +84,4 @@ class Command(BaseCommand):
         # 文字校对
         reel_lst = [(lqsutra, 1)]
         create_tasks_for_batchtask(batchtask, reel_lst, 2, 1)
-
-
-
-
+        print('init done')

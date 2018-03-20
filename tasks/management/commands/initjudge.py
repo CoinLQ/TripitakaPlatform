@@ -55,6 +55,7 @@ def create_data(lqsutra):
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        print('initjudge start')
         BASE_DIR = settings.BASE_DIR
         admin = get_or_create_admin()
 
@@ -87,3 +88,4 @@ class Command(BaseCommand):
                         diffsegresult.selected_text = diffsegtexts[0].text
                         diffsegresult.selected = 1
                         diffsegresult.save()
+        print('initjudge done')

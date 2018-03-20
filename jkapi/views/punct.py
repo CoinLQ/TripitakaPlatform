@@ -143,12 +143,8 @@ class PunctTaskDetail(APIView):
         return Response(response)
 
     def post(self, request, task_id, format=None):
-        if self.task.status == Task.STATUS_FINISHED:
-            response = {
-                'task_id': task_id,
-                'status': self.task.status,
-                }
-            return Response(response)
+        if self.task.status >= Task.STATUS_FINISHED:
+            return Response({'task_id': task_id, 'status': self.task.status})
         update_fields = []
         if 'punct_result' in request.data:
             punct_json = json.dumps(request.data['punct_result'],separators=(',', ':'))

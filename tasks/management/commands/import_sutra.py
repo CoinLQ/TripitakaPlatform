@@ -14,15 +14,15 @@ import traceback
 
 import re, json
 
+tcode_lst1 = ['PL', 'SX', 'YB', 'QL', 'ZH', 'QS', 'ZC']
+tcode_lst2 = ['GL', 'LC']
+
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        #call 龙泉经 ImportLQSutra
-        
-        # self.ImportLQSutra()
-
-        #call 其他大藏经 ImportSutra
-        # self.ImportSutra()
-
+        # 龙泉藏经
+        self.ImportLQSutra()
+        # 实体藏经
+        self.ImportSutra()
         self.ImportReel()
 
 
@@ -53,7 +53,7 @@ class Command(BaseCommand):
                 
                 try:
                     lqsutra = LQSutra.objects.get(sid=sid)
-                except:  
+                except:
                     if sid not in sid_set:
                         sid_set.add(sid)                        
                         lqsutra = LQSutra(sid=sid, variant_code=variant_code,name=sname,author=sauthor, 
@@ -79,13 +79,13 @@ class Command(BaseCommand):
                     continue
 
                 line = line.replace('\n','')
-
-                sid,stripitak, sname , slqsutra , stotal_reels,  sremark= line.split('\t',5)                                                                             
+                sid, stripitak, sname, slqsutra, stotal_reels, sremark= line.split('\t',5)                                                                             
                 scode=sid[2:7]#code 
                 try :
                     lqsutra=LQSutra.objects.get(sid=slqsutra) 
                 except:
-                    pass
+                    print('lqsutra %s not exist: ' % slqsutra, line)
+                    continue
 
                 try :
                     tripitaka=Tripitaka.objects.get(code=stripitak) 
@@ -165,7 +165,7 @@ class Command(BaseCommand):
                         if sutra.tripitaka.code in tcode_lst1 and reel.start_vol > 0:
                             reel.path1 = str(reel.start_vol)
                         elif sutra.tripitaka.code in tcode_lst2:
-                            reel.path1 = str(int(sutra.code))
+                            reel.path1 = str(int(sid[2:7]))
                             reel.path2 = str(reel.reel_no)
                         mylist.append(reel)
             Reel.objects.bulk_create(mylist)                                                                            

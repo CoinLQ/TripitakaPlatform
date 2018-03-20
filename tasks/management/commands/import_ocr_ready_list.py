@@ -1,9 +1,8 @@
 from django.core.management.base import BaseCommand, CommandError
+from django.conf import settings
 from tdata.models import *
 from tasks.models import *
 from tasks.common import *
-
-import TripitakaPlatform.settings
 
 import os, sys
 from os.path import isfile, join
@@ -26,8 +25,13 @@ class Command(BaseCommand):
                 reel_no = int(line[9:12])
                 try:
                     sutra = Sutra.objects.get(sid=sid)
+                except:
+                    print('Sutra not exist: ', sid)
+                    continue
+                try:
                     reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
                     reel_ids.append(reel.id)
                 except:
-                    traceback.print_exc()
+                    print('Reel not exist: ', sid, reel_no)
+                    continue
             Reel.objects.filter(id__in=reel_ids).update(ocr_ready=True)

@@ -12,7 +12,7 @@ import re, json
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        zip_file_url = 'https://s3.cn-north-1.amazonaws.com.cn/sutra-text/GL000790.zip'
+        zip_file_url = 'https://s3.cn-north-1.amazonaws.com.cn/sutra-text/GL.zip'
         r = requests.get(zip_file_url)
         with zipfile.ZipFile(io.BytesIO(r.content)) as myzip:
             for name in myzip.namelist():

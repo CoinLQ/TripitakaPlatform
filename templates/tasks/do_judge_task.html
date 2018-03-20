@@ -24,7 +24,14 @@
         </div>
         <div class="col-md-6">
           <div class="pull-right">
-            <input type="checkbox" v-model="show_punct" id="show_punct" /><label for="show_punct">显示标点</label>
+            <el-switch
+                style="display: block;margin: 3px;"
+                v-model="show_punct"
+                active-color="lightslategrey"
+                inactive-color="#ccc"
+                active-text="显示标点"
+                inactive-text="">
+            </el-switch>
           </div>
         </div>
       </div>
@@ -42,14 +49,21 @@
       </ul>
     </div>
     <div class="row">
-      <ul class="pager">
-        <li :class="{ disabled: (diffseg_curpage == 1) }"><a href="#" @click.stop.prevent="prevPage">&lt;</a></li>
-        <li><input v-model="diffseg_curpage"></li>
-        <li>/ {{ diffseg_page_count }}</li>
-        <li :class="{ disabled: (diffseg_curpage == diffseg_page_count) }"><a href="#" @click.stop.prevent="nextPage">&gt;</a></li>
-      </ul>
-      <div class="text-center">
-        <button class="btn btn-primary" :disabled="premitSubmit" :title="submit_title" @click.stop.prevent="finishJudgeTask">提交</button>
+      <div class="col-md-8 col-xs-8">
+        <div class="el-pagination">
+          <div class="el-pagination__rightwrapper"></div><button type="button" class="btn-prev" :class="{ disabled: (diffseg_curpage == 1) }"><i class="el-icon el-icon-arrow-left" @click.stop.prevent="prevPage"></i>
+          </button>
+          <ul class="el-pager"></ul>
+          <button type="button" class="btn-next" :class="{ disabled: (diffseg_curpage == diffseg_page_count) }"><i class="el-icon el-icon-arrow-right" @click.stop.prevent="nextPage"></i></button>
+          <span class="el-pagination__jump">前往
+            <div class="el-input el-pagination__editor is-in-pagination">
+              <input v-model="diffseg_curpage" autocomplete="off" type="number" rows="2" min="1" validateevent="true" class="el-input__inner"></div>/ {{ diffseg_page_count }}页</span>
+        </div>
+      </div>
+      <div class="col-md-4 col-xs-4">
+        <div class="text-center">
+          <button class="btn btn-primary" :disabled="premitSubmit" :title="submit_title" @click.stop.prevent="finishJudgeTask">提交</button>
+        </div>
       </div>
     </div>
     <div class="row">

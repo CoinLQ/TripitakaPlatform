@@ -239,7 +239,7 @@ Vue.component('diffseg-box', {
         </div>
         <div>
             <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>
-            <a href="#" class="diffseg-btn" @click.stop.prevent="doMerge(segindex)">合并</a>
+            <a href="#" class="diffseg-btn" @click.stop.prevent="doMerge(segindex)" :disabled="diffsegresult.typ == 2">合并</a>
             <a href="#" class="diffseg-btn" v-if="diffsegresult.merged_diffsegresults.length == 0" @click.stop.prevent="doSplit(segindex)">拆分</a>
         </div>
         <div>处理结果：{{ getResult(diffsegresult) }}
@@ -307,6 +307,9 @@ Vue.component('diffseg-box', {
             this.sharedata.judgeDialogVisible = true;
         },
         doMerge: function(segindex) {
+            if (this.diffsegresult.typ == 2) {
+                return ;
+            }
             this.sharedata.segindex = segindex;
             this.sharedata.mergeDialogVisible = true;
         },
@@ -574,6 +577,14 @@ Vue.component('merge-dialog', {
                     merged_diffsegresults.push(id);
                 }
             }
+            let new_results = _.sortedUniq(merged_diffsegresults);
+            for (let n =1;  n< new_results.length; n++) {
+                if (new_results[n] - new_results[n-1] != 1)
+                {
+                    alert('请选择连续段合并。')
+                    return;
+                }
+            }
             var url = '/api/judge/' + this.sharedata.task_id + 
             '/diffsegresults/' + this.diffsegresult_id + '/';
             axios.put(url, {
@@ -599,7 +610,7 @@ Vue.component('merge-dialog', {
 Vue.component('split-dialog', {
     props: ['sharedata'],
     template: `
-    <el-dialog title="拆分" :visible.sync="sharedata.splitDialogVisible" width="50%" @open="handleOpen" :before-close="handleCancel">
+    <el-dialog title="拆分" :visible.sync="sharedata.splitDialogVisible" width="100%" @open="handleOpen" :before-close="handleCancel">
         <button class="btn" @click="incrementSplitCount">新增</button>
         <button class="btn" @click="decrementSplitCount">减少</button><span>减少到1将取消原先的拆分。</span>
         <table class="table table-bordered table-condensed">
@@ -646,6 +657,9 @@ Vue.component('split-dialog', {
     methods: {
         splitText: function(text, count) {
             var textseg_lst = [];
+            if (!text) {
+                return textseg_lst
+            }
             var seg_length = Math.ceil(text.length / count);
             for (var i = 0; i < text.length;) {
                 textseg_lst.push(text.substr(i, seg_length));
@@ -659,6 +673,7 @@ Vue.component('split-dialog', {
         },
         generateSplitItems: function() {
             var diffsegresult = this.sharedata.diffsegresults[this.sharedata.segindex];
+            debugger;
             if (diffsegresult.typ == 2) {
                 var split_info = JSON.parse(diffsegresult.split_info);
                 this.split_count = split_info.split_count;
@@ -929,7 +944,7 @@ Vue.component('column-image', {
 Vue.component('judge-image-dialog', {
     props: ['sharedata'],
     template: `
-    <el-dialog title="" :visible.sync="sharedata.judgeImageDialogVisible" width="50%" @open="handleOpen" :before-close="handleOK">
+    <el-dialog title="" :visible.sync="sharedata.judgeImageDialogVisible" width="100%" @open="handleOpen" :before-close="handleOK">
         <table class="table table-condensed">
             <tbody>
             <tr>

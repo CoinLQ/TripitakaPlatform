@@ -109,6 +109,8 @@ class FinishJudgeTask(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
 
     def post(self, request, task_id, format=None):
+        if self.task.status >= Task.STATUS_FINISHED:
+            return Response({'task_id': task_id, 'status': self.task.status})
         objs = list(DiffSegResult.objects.filter(task_id=task_id, selected=0)[0:1])
         all_selected = (len(objs) == 0)
         if all_selected and self.task.status != Task.STATUS_FINISHED:

@@ -84,6 +84,8 @@ class FinishCorrectTask(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
 
     def post(self, request, task_id, format=None):
+        if self.task.status >= Task.STATUS_FINISHED:
+            return Response({'task_id': task_id, 'status': self.task.status})
         update_fields=['status']
         if not self.task.finished_at:
             update_fields.append('finished_at')
@@ -95,3 +97,4 @@ class FinishCorrectTask(APIView):
         elif self.task.typ == Task.TYPE_CORRECT_VERIFY:
             correct_verify_submit_async(task_id)
         return Response({'task_id': task_id, 'status': self.task.status})
+

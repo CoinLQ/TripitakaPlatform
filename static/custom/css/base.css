@@ -127,6 +127,7 @@ float: left;
     height: 200px;
     overflow: scroll;
     border: 1px #ccc solid;
+    font-size: 18px;
 }
 .judge-page-text {
     font-size: 20px;

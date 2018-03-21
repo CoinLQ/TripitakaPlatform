@@ -68,18 +68,15 @@ def process_cbeta_text(huayan_cb, reel_no, lines1, lines2):
     punct.save()
 
 #得到cbeta的卷编号
-def read_code_info( path ): 
-    filename=path
+def read_code_info( filename ): 
     with open(filename, 'r', encoding='utf-8') as f:
         lines2 = f.readlines() 
-    strRet=''
     for line in lines2:
         line = line.strip()
-        if line.startswith('No. '):                        
-            strRet= line[4:].strip()            
-            nf=strRet.find(' ')
-            strRet=strRet[0:nf]
-            return strRet
+        if line.startswith('T'):                        
+            code = line[4:8]
+            return code
+    return ''
 
 #得到卷信息的同时也要得到文本信息
 def read_text_info(lines):
@@ -122,9 +119,10 @@ class Command(BaseCommand):
                 continue
 
             name=lqsutra.name #'大方廣佛華嚴經'#根据 sid从龙泉经目对象中获得            
-            total_reels=lqsutra.total_reels#根据 sid从龙泉经目对象中获得  
-            code= '00'+read_code_info(textfilename+'/1.txt') # 文件名固定 code='00278'#从cbeta中读取
-            sutra_sid='CB'+code+'0'#TODO 还得考虑格式化固定位数的问题。                                                        
+            total_reels=lqsutra.total_reels#根据 sid从龙泉经目对象中获得
+            code = int(read_code_info(reelfilename+'/1.txt'))
+            code= '%05d' % code # 文件名固定 code='00278'#从cbeta中读取
+            sutra_sid='CB%s0' % code
             print('import cbeta text', name, sutra_sid )
             #下面创建经对象        
             try:

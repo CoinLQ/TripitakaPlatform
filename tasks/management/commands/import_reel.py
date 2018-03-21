@@ -26,6 +26,7 @@ class Command(BaseCommand):
         reel_lst = []
         for lqsutra_sid in options['LQSutra_sid']:
             # get LQSutra
+            print(lqsutra_sid)
             lqsutra = LQSutra.objects.get(sid=lqsutra_sid)
             filename = os.path.join(BASE_DIR, 'data/reel_info/%s.txt' % lqsutra_sid)
             with open(filename, 'r', encoding='utf-8') as f:

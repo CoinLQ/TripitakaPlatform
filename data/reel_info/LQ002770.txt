@@ -1,0 +1,4 @@
+#sid    name    reel_no start_vol       start_vol_page  end_vol_page
+YB000200	般若波羅蜜多心經	1	18	939	939
+QL000200	般若波羅蜜多心經	1	16	606	607
+GL000200	般若波羅蜜多心經	1	20	1	1

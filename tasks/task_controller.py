@@ -114,6 +114,21 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
         status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
         task.save()
 
+def create_lqpunct_tasks(batchtask, lqreel, lqpunct_times, lqpunct_verify_times):
+    if lqpunct_times == 0:
+        return
+    for task_no in range(1, lqpunct_times + 1):
+        task = Task(batchtask=batchtask, typ=Task.TYPE_LQPUNCT, lqreel=lqreel,
+        task_no=task_no, status=Task.STATUS_NOT_READY,
+        publisher=batchtask.publisher)
+        task.save()
+    # 审定任务只有一次
+    if lqpunct_verify_times:
+        task = Task(batchtask=batchtask, typ=Task.TYPE_LQPUNCT_VERIFY, lqreel=lqreel,
+        task_no=0, status=Task.STATUS_NOT_READY,
+        publisher=batchtask.publisher)
+        task.save()
+
 def get_sutra_body(sutra):
     body_lst = []
     for reel in Reel.objects.filter(sutra=sutra).order_by('reel_no'):
@@ -184,6 +199,8 @@ lqmark_times = 0, lqmark_verify_times = 0):
             create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_times)
         except:
             print('create judge task failed: ', lqsutra, reel_no)
+        if lqreel:
+            create_lqpunct_tasks(batchtask, lqreel, lqpunct_times, lqpunct_verify_times)
 
 def publish_correct_result(task):
     '''
@@ -230,10 +247,9 @@ def publish_correct_result(task):
 
         # 基础标点任务
         # 检查是否有未就绪的基础标点任务，如果有，状态设为READY
-        punct_tasks = list(Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY))
-        if len(punct_tasks) > 0:
-            punct_task_ids = [task.id for task in punct_tasks]
-            Task.objects.filter(id__in=punct_task_ids).update(reeltext=reel_correct_text, result=task_puncts, status=Task.STATUS_READY)
+        Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY)\
+        .update(reeltext=reel_correct_text, result=task_puncts, status=Task.STATUS_READY)
+        # 基础标点审定任务
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
@@ -462,6 +478,8 @@ def publish_judge_result(task):
             # 检查是否有未就绪的定本标点任务，如果有，状态设为READY
             Task.objects.filter(lqreel=task.lqreel, typ=Task.TYPE_LQPUNCT, status=Task.STATUS_NOT_READY)\
             .update(lqtext=reeltext, result=task_puncts, status=Task.STATUS_READY)
+            Task.objects.filter(lqreel=task.lqreel, typ=Task.TYPE_LQPUNCT_VERIFY, status=Task.STATUS_NOT_READY)\
+            .update(lqtext=reeltext)
 
 def punct_submit_result(task):
     print('punct_submit_result')

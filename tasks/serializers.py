@@ -1,13 +1,18 @@
 from rest_framework import serializers
 from .models import Task
 from django.conf import settings
+from django.utils.timezone import localtime
 
+class DateTimeTzAwareField(serializers.DateTimeField):
 
+    def to_representation(self, value):
+        value = localtime(value);
+        return super(DateTimeTzAwareField, self).to_representation(value)
 
 class TaskSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
-    picked_at = serializers.DateTimeField(format=settings.DATETIME_FORMAT)
-    finished_at = serializers.DateTimeField(format=settings.DATETIME_FORMAT)
+    picked_at = DateTimeTzAwareField(format=settings.DATETIME_FORMAT)
+    finished_at = DateTimeTzAwareField(format=settings.DATETIME_FORMAT)
 
 
     def get_status(self, obj):
@@ -27,7 +32,7 @@ class CorrectTaskSerializer(TaskSerializer):
     task_no = serializers.SerializerMethodField()
 
     def get_task_no(self, obj):
-        return "%s校" % obj.get_task_no_display()
+        return "校%s" % obj.get_task_no_display()
 
     def get_priority(self, obj):
         return obj.get_priority_display()
@@ -63,7 +68,7 @@ class JudgeTaskSerializer(TaskSerializer):
     task_no = serializers.SerializerMethodField()
 
     def get_task_no(self, obj):
-        return "%s校" % obj.get_task_no_display()
+        return "校%s" % obj.get_task_no_display()
 
     def get_priority(self, obj):
         return obj.get_priority_display()
@@ -112,10 +117,10 @@ class PunctTaskSerializer(CorrectTaskSerializer):
             return ''
 
     def get_task_no(self, obj):
-        return "%s标" % obj.get_task_no_display()
+        return "标%s" % obj.get_task_no_display()
     
     def get_progress(self, obj):
-        return "%s标" % obj.progress
+        return "%s%" % obj.progress
 
     class Meta:
         model = Task
@@ -130,13 +135,16 @@ class VerifyPunctTaskSerializer(PunctTaskSerializer):
 class LqpunctTaskSerializer(JudgeTaskSerializer):
     progress = serializers.SerializerMethodField()
 
+    def get_task_no(self, obj):
+        return "标%s" % obj.get_task_no_display()
+    
     def get_progress(self, obj):
-        return "%s标" % obj.progress
+        return "%s%" % obj.progress
 
     class Meta:
         model = Task
         fields = ('batchtask', 'lqsutra_name', 'base_tripitaka_name',
-            'lqreel_no', 'priority', 'progress', 'id',  'status', 'picked_at', 'finished_at')
+            'lqreel_no', 'priority', 'progress', 'task_no', 'id',  'status', 'picked_at', 'finished_at')
         read_only_fields = ('id', )
 
 class VerifyLqpunctTaskSerializer(LqpunctTaskSerializer):

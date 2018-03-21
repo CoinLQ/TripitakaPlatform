@@ -30,12 +30,12 @@ class Command(BaseCommand):
         for sid in options['LQSutra_sid']:
             #获得对象
             try:
-                lqsutra = LQSutra.objects.get(sid=sid) #需要命令行输入                
+                lqsutra = LQSutra.objects.get(sid=sid) # 需要命令行输入
             except:
                 print('龙泉经目中未查到此编号：'+sid)
                 continue
-            if not  lqsutra is None :                  
-                total_reels=lqsutra.total_reels#根据 sid从龙泉经目对象中获得                            
+            if not lqsutra is None:
+                total_reels=lqsutra.total_reels # 根据 sid从龙泉经目对象中获得
                 for reel_no in range(1, total_reels+1):
                     try:
                         lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)

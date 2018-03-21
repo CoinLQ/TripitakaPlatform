@@ -176,7 +176,7 @@ class ReelCorrectText(models.Model):
     body = SutraTextField('经文正文', blank=True, default='')
     tail = SutraTextField('经文正文后文本', blank=True, default='')
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True, default=None)
-    publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
+    publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, blank=True, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', default=timezone.now)
 
     class Meta:

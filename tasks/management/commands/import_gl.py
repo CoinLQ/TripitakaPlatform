@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
+from django.conf import settings
 from jwt_auth.models import Staff
 from tdata.models import *
 from tasks.models import *
@@ -13,8 +14,16 @@ import re, json
 class Command(BaseCommand):
     def handle(self, *args, **options):
         zip_file_url = 'https://s3.cn-north-1.amazonaws.com.cn/sutra-text/GL.zip'
-        r = requests.get(zip_file_url)
-        with zipfile.ZipFile(io.BytesIO(r.content)) as myzip:
+        local_file = '%s/logs/GL.zip' % settings.BASE_DIR
+        if os.path.exists(local_file):
+            with open(local_file, 'rb') as f:
+                data = f.read()
+        else:
+            r = requests.get(zip_file_url)
+            data = r.content
+            with open(local_file, 'wb') as fout:
+                fout.write(data)
+        with zipfile.ZipFile(io.BytesIO(data)) as myzip:
             for name in myzip.namelist():
                 if not name.endswith('/'):
                     filename = name[3:-4]

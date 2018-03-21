@@ -111,7 +111,19 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
             q = self.model.Config.filter_queryset(self.request, q)
         return q
 
+    def _exist_task_by_samepicker(self, task, picker):
+        if task.typ in [Task.TYPE_JUDGE, Task.TYPE_LQPUNCT]:
+            exist_task = Task.objects.filter(batchtask=task.batchtask, lqreel=task.lqreel, typ=task.typ, picker=picker).first()
+        elif task.typ in [Task.TYPE_CORRECT, Task.TYPE_PUNCT]:
+            exist_task = Task.objects.filter(batchtask=task.batchtask, reel=task.reel , typ=task.typ, picker=picker).first()
+        else:
+            return False
+        return exist_task
+        
     def obtain_task(self, request, pk):
+        task = Task.objects.get(pk=pk)
+        if self._exist_task_by_samepicker(task, request.user):
+            return Response({"status": -1, "task_id": pk, "msg": "同一用户不能同时领取校一较二."})
         count = Task.objects.filter(pk=pk, status=Task.STATUS_READY, picker=None)\
         .update(
             picker=request.user,

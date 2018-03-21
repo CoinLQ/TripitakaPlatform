@@ -608,6 +608,9 @@
         }
       },
       segInput: function(seg, e) {
+        if (e.inputType == 'insertCompositionText') {
+          return;
+        }
         let userSelection = this.userSelection();
         let startNode = userSelection.anchorNode,
             startOffset = userSelection.anchorOffset,

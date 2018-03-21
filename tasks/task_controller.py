@@ -234,6 +234,7 @@ def publish_correct_result(task):
         if len(punct_tasks) > 0:
             punct_task_ids = [task.id for task in punct_tasks]
             Task.objects.filter(id__in=punct_task_ids).update(reeltext=reel_correct_text, result=task_puncts, status=Task.STATUS_READY)
+        Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra
@@ -463,6 +464,7 @@ def publish_judge_result(task):
             .update(lqtext=reeltext, result=task_puncts, status=Task.STATUS_READY)
 
 def punct_submit_result(task):
+    print('punct_submit_result')
     verify_tasks = list(Task.objects.filter(batchtask=task.batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=task.reel))
     if len(verify_tasks) == 0:
         publish_punct_result(task)
@@ -475,11 +477,15 @@ def punct_submit_result(task):
         verify_task.save(update_fields=['status', 'result'])
 
 def publish_punct_result(task):
-    punct = Punct(reel=task.reel, reeltext=task.reeltext, \
-    punctuation=task.result, task=task, publisher=task.picker)
-    punct.save()
+    print('publish_punct_result')
+    count = Punct.objects.filter(task=task).count()
+    if count == 0:
+        punct = Punct(reel=task.reel, reeltext=task.reeltext, \
+        punctuation=task.result, task=task, publisher=task.picker)
+        punct.save()
 
 def lqpunct_submit_result(task):
+    print('lqpunct_submit_result')
     verify_tasks = list(Task.objects.filter(batchtask=task.batchtask, typ=Task.TYPE_LQPUNCT_VERIFY, lqreel=task.lqreel))
     if len(verify_tasks) == 0:
         publish_lqpunct_result(task)
@@ -492,9 +498,12 @@ def lqpunct_submit_result(task):
         verify_task.save(update_fields=['status', 'result'])
 
 def publish_lqpunct_result(task):
-    punct = LQPunct(reel=task.lqreel, reeltext=task.lqtext, \
-    punctuation=task.result, task=task, publisher=task.picker)
-    punct.save()
+    print('publish_lqpunct_result')
+    count = LQPunct.objects.filter(task=task).count()
+    if count == 0:
+        punct = LQPunct(reel=task.lqreel, reeltext=task.lqtext, \
+        punctuation=task.result, task=task, publisher=task.picker)
+        punct.save()
 
 @background(schedule=0)
 def correct_submit_async(task_id):

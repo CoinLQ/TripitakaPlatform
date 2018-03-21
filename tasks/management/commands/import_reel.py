@@ -65,5 +65,7 @@ class Command(BaseCommand):
                         elif tcode in tcode_lst2:
                             reel.path1 = str(int(sutra.code))
                             reel.path2 = str(reel.reel_no)
+                        if tcode == 'GL':
+                            reel.correct_ready = True
                         reel_lst.append(reel)
         Reel.objects.bulk_create(reel_lst)

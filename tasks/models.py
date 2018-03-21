@@ -213,6 +213,9 @@ class ReelCorrectText(models.Model):
 class LQReelText(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
     text = SutraTextField('经文', blank=True) # 校勘判取审定后得到的经文
+    head = SutraTextField('经文正文前文本', blank=True, default='')
+    body = SutraTextField('经文正文', blank=True, default='')
+    tail = SutraTextField('经文正文后文本', blank=True, default='')
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True, default=None)
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', default=timezone.now)
@@ -223,6 +226,12 @@ class LQReelText(models.Model):
 
     def __str__(self):
         return '%s (%s)' % (self.lqreel, self.created_at.strftime('%F %T'))
+
+    def set_text(self, text):
+        self.text = text
+        self.body = text
+        self.head = ''
+        self.tail = ''
 
 # 校勘判取相关
 class ReelDiff(models.Model):
@@ -380,7 +389,7 @@ class Punct(models.Model):
 
 class LQPunct(models.Model):
     lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
-    lqreeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
+    reeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
     punctuation = models.TextField('标点', blank=True, null=True) # [[5,'，'], [15,'。']]
     body_punctuation = models.TextField('文本标点', blank=True, null=True)
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始标点结果，不为null表示标点任务和标点审定任务的结果
@@ -392,8 +401,7 @@ class LQPunct(models.Model):
         verbose_name_plural = '定本标点结果'
 
     def __str__(self):
-        return '%s' % self.lqreeltext
-
+        return '%s' % self.reeltext
 
 # 格式标注相关
 class MarkUnitBase(models.Model):

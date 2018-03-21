@@ -11,6 +11,5 @@
 ./manage.py import_reel LQ003100
 
 ./manage.py import_cbeta_huayan60
-./manage.py import_gl
-
 ./manage.py import_ocr_ready_list
+./manage.py import_gl

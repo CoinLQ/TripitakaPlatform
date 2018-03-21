@@ -34,6 +34,13 @@ class Command(BaseCommand):
                             reel_correct_text = ReelCorrectText(reel=reel)
                             reel_correct_text.set_text(text)
                             reel_correct_text.save()
+
+                    # 得到精确的切分数据
+                    try:
+                        compute_accurate_cut(reel)
+                    except Exception:
+                        traceback.print_exc()
+
                     punct = Punct.objects.filter(reeltext=reel_correct_text).first()
                     if punct is None:
                         task_puncts = PunctProcess.create_new_for_correcttext(reel, reel_correct_text)

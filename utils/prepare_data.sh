@@ -1,4 +1,9 @@
 #!/bin/bash
+sid="LQ003100"
+if [ "$1" != '' ]; then
+    sid=$1
+fi
+echo prepare data for $sid
 ./utils/initdb.sh
 mkdir -p logs
 
@@ -8,9 +13,10 @@ mkdir -p logs
 ./manage.py loaddata ./data/initial_fixtures/demo_auth.json
 
 ./manage.py import_lqsutra
-./manage.py create_lqreel LQ003100
-./manage.py import_reel LQ003100
+./manage.py create_lqreel $sid
+./manage.py import_reel $sid
+ 
+./manage.py import_cbeta_text $sid
 
-./manage.py import_cbeta_huayan60
 ./manage.py import_ocr_ready_list
 ./manage.py import_gl

@@ -305,6 +305,7 @@ def correct_submit(task):
     '''
     文字校对提交结果
     '''
+    print('correct_submit')
     generate_correct_result(task)
     # 检查一组的几个文字校对任务是否都已完成
     correct_tasks = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_CORRECT).order_by('task_no')
@@ -338,7 +339,6 @@ def correct_submit(task):
                 correctseg.task = correct_verify_task
                 correctseg.id = None
             CorrectSeg.objects.bulk_create(correctsegs)
-            
 
             # 文字校对审定任务设为待领取
             correct_verify_task.status = Task.STATUS_READY
@@ -519,7 +519,7 @@ def publish_lqpunct_result(task):
     print('publish_lqpunct_result')
     count = LQPunct.objects.filter(task=task).count()
     if count == 0:
-        punct = LQPunct(reel=task.lqreel, reeltext=task.lqtext, \
+        punct = LQPunct(lqreel=task.lqreel, reeltext=task.lqtext, \
         punctuation=task.result, task=task, publisher=task.picker)
         punct.save()
 

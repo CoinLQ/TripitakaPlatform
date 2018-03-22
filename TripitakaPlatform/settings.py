@@ -27,7 +27,8 @@ if six.PY2 and sys.getdefaultencoding()=='ascii':
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '2dx3sbj0#=4k$xu=8h52to&a2zia%%lr(w2h4wf$zb(ux6v9az'
+SECRET_KEY = os.environ.get('SECRET_KEY', \
+'2dx3sbj0#=4k$xu=8h52to&a2zia%%lr(w2h4wf$zb(ux6v9az')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

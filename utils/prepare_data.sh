@@ -1,5 +1,6 @@
 #!/bin/bash
 ./utils/initdb.sh
+mkdir -p logs
 
 ./manage.py create_configuration
 ./manage.py import_tripitaka_list

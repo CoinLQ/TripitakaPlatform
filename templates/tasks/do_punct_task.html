@@ -102,6 +102,7 @@
           'finished': 1
         })
         .then(function(response) {
+          vm.sharedata.status = response.data.status;
           alert('提交成功！');
         })
         .catch(function (error) {

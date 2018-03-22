@@ -101,7 +101,7 @@ function merge_text_punct(text, puncts, punct_result) {
     return punctseg_lst;
 }
 
-var PUNCT_LIST = '：，。；、！？\n';
+var PUNCT_LIST = '：，。；、！？‘’”“\n';
 Vue.component('punct-show-seg', {
     props: ['punctseg', 'sharedata'],
     template: '\

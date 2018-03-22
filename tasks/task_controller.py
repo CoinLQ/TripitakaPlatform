@@ -82,25 +82,15 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
     if punct_times == 0:
         return
     reelcorrecttext = None
-    punctuation_json = '[]'
     status = Task.STATUS_NOT_READY
-    try:
-        reelcorrecttext = ReelCorrectText.objects.filter(reel=reel).order_by('-id')[0]
-        if reelcorrecttext:
-            status = Task.STATUS_READY
-    except:
-        pass
 
-    # 标点以CBETA的结果为起点
     task_puncts = '[]'
-    try:
-        CB = Tripitaka.objects.get(code='CB')
-        sutra_cb = Sutra.objects.get(lqsutra=reel.sutra.lqsutra, tripitaka=CB)
-        reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=reel.reel_no)
-        punct = Punct.objects.filter(reel=reel_cb)[0]
-        task_puncts = PunctProcess.create_new_for_correcttext(reel, reel_correct_text)
-    except:
-        pass
+    reelcorrecttext = ReelCorrectText.objects.filter(reel=reel).order_by('-id').first()
+    if reelcorrecttext:
+        status = Task.STATUS_READY
+        punct = Punct.objects.filter(reeltext=reelcorrecttext).order_by('-id').first()
+        if punct:
+            task_puncts = punct.punctuation
     for task_no in range(1, punct_times + 1):
         task = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT, reel=reel,
         reeltext=reelcorrecttext, result=task_puncts, task_no=task_no,

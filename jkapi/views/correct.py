@@ -84,6 +84,8 @@ class FinishCorrectTask(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
 
     def post(self, request, task_id, format=None):
+        if any([correctseg.selected_text is None for correctseg in CorrectSeg.objects.filter(task=self.task)]):
+            return Response({'msg': 'not all selected'}, status=status.HTTP_400_BAD_REQUEST)
         if self.task.status >= Task.STATUS_FINISHED:
             return Response({'task_id': task_id, 'status': self.task.status})
         update_fields=['status']

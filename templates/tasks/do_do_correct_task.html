@@ -299,16 +299,15 @@
         this.updateCorrectSeg(seg);
       },
       loadPopup: function (seg){
-        //this.$el.querySelector('div.diff-text-pane').scrollTop + 
         let diff_pane = this.$el.querySelector('div.diff-text-pane');
         
         let pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().bottom;
-        if (diff_pane.scrollHeight - diff_pane.scrollTop == diff_pane.clientHeight) {
+        //if (diff_pane.scrollHeight - diff_pane.scrollTop == diff_pane.clientHeight) {
           if (diff_pane.clientHeight - pos < 210) {
             pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().top - 210;
           }
-        }
-        //console.log(pos)
+        //}
+
         this.$refs['popover'].$el.style.position = 'absolute'
         this.$refs['popover'].$el.style.top = pos + 'px';
         this.$refs['popover'].doShow();

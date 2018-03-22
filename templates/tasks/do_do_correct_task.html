@@ -39,7 +39,7 @@
                         </el-row>
                         <el-row :gutter="20">
                           <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="danger">选择结果</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span id="pop-input" type="text" placehold="结果文" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)" ></span></div></el-col>
+                          <el-col :span="17"><div class="grid-content bg-purple"><span id="pop-input" type="text" placehold="结果文" placeholder="请选择或输入……" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)" ></span></div></el-col>
                         </el-row>
                 </el-popover>
             </div>
@@ -53,12 +53,12 @@
                 <el-switch
                   v-model="display_space"
                   active-text=""
-                  inactive-text="删除位显示">
+                  inactive-text="删除符">
                 </el-switch>
                 <el-switch
                   v-model="display_newline"
                   active-text=""
-                  inactive-text="换行显示">
+                  inactive-text="换行符">
                 </el-switch>
                 <el-button type="success" @click="openDoubtForm">存疑</el-button>
 
@@ -126,6 +126,7 @@
       page_no: 1,
       line_no: 1,
       char_no: 1,
+      isOnComposition: false,
       current_char_no: 1,
       sharedata: {task_id: {{ task.id }}, task_typ: {{task.typ}}, status: 0, correctsegs: []  },
       doubt:{ 
@@ -215,12 +216,36 @@
     mounted: function(){
       document.addEventListener('click', this.handleDocumentClick);
       document.addEventListener('keydown', this.handleDocumentTab);
+      document.addEventListener('compositionstart', this.handleComposition);
+      document.addEventListener('compositionend', this.handleComposition);
     },
     destroyed: function(){
       document.removeEventListener('click', this.handleDocumentClick);
-      document.addEventListener('keydown', this.handleDocumentTab);
+      document.removeEventListener('keydown', this.handleDocumentTab);
+      document.removeEventListener('compositionstart', this.handleComposition);
+      document.removeEventListener('compositionend', this.handleComposition);
     },
     methods: {
+      handleComposition: function (event) {
+        var isChrome = !!window.chrome && !!window.chrome.webstore;
+            if (event.type === 'compositionstart') {
+                this.isOnComposition = true;
+            } else if (event.type === 'compositionend') {
+                this.isOnComposition = false;
+                // fixed for Chrome v53+ and detect all Chrome
+                // https://chromium.googlesource.com/chromium/src/+/afce9d93e76f2ff81baaa088a4ea25f67d1a76b3%5E%21/
+                if (isChrome) {
+                    console.log(this.isOnComposition);
+                    if (event.target.attributes.placehold && event.target.attributes.placehold.value === "结果文") {
+                      this.segInput(this.current_seg, event);
+                    } else {
+                      id = event.target.parentElement.id.replace("segdiff-", "")
+                      let seg = _.find(this.sharedata.correctsegs, function(v) { return v.id == parseInt(id)});
+                      this.segInput(seg, event);
+                    }
+                }
+            }
+      },
       handleDocumentClick: function(e) {
         if (this.$el.querySelector('div.cmd-block').contains(e.target)) {
           return;
@@ -608,7 +633,7 @@
         }
       },
       segInput: function(seg, e) {
-        if (e.inputType == 'insertCompositionText') {
+        if (this.isOnComposition) {
           return;
         }
         let userSelection = this.userSelection();
@@ -708,7 +733,6 @@
           doubtable: seg.doubtable
         })
         .then(function(response) {
-          console.log(response);
           seg.selected_text = response.data.selected_text
           // 解决当前行为空，焦点丢失的问题，重新focus
           if (!seg.selected_text) {

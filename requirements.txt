@@ -35,6 +35,6 @@ SQLAlchemy==1.1.15
 django-jsonfield==1.0.1
 django-bulk-update==2.2.0
 pycurl==7.43.0 --global-option="--with-openssl"
+django-celery-beat==1.1.1
 # fix endless migrations issue
--e git+https://github.com/celery/django-celery-beat@feaf34e2c30e28273b03d754d50e#egg=django-celery-beat
 -e git+https://github.com/sshwsfc/xadmin@b655aa752ec7c1a9485b205617ba27ecdd6f3c3c#egg=xadmin

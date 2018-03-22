@@ -353,3 +353,8 @@ opacity: 0;
 #show_all {
     float: right;
 }
+#pop-input[placeholder]:empty:before {
+    content: attr(placeholder);
+    color: grey;
+    font-size: 14px;
+}

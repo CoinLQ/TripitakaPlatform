@@ -5,6 +5,7 @@ if [ "$1" != '' ]; then
 fi
 echo create task for $sid
 ./utils/initdb.sh
+mkdir -p logs
 
 ./manage.py create_configuration
 ./manage.py import_tripitaka_list

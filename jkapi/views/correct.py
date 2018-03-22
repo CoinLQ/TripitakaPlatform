@@ -84,8 +84,13 @@ class FinishCorrectTask(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
 
     def post(self, request, task_id, format=None):
+        if any([correctseg.selected_text is None for correctseg in CorrectSeg.objects.filter(task=self.task)]):
+            return Response({'msg': '请校对完成'}, status=status.HTTP_400_BAD_REQUEST)
         if self.task.status >= Task.STATUS_FINISHED:
-            return Response({'task_id': task_id, 'status': self.task.status})
+            correct_verify_task = Task.objects.filter(reel=self.task.reel, \
+            batchtask=self.task.batchtask, typ=Task.TYPE_CORRECT_VERIFY).first()
+            if correct_verify_task and correct_verify_task.status > Task.STATUS_READY:
+                return Response({'status': self.task.status, 'msg': '此卷的文字校对审定任务已被领取，不能再重新提交'}, status=status.HTTP_400_BAD_REQUEST)
         update_fields=['status']
         if not self.task.finished_at:
             update_fields.append('finished_at')

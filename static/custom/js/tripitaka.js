@@ -917,6 +917,9 @@ Vue.component('column-image', {
                 y = parseInt(vm.imageinfo.rect[1] * yratio);
                 x1 = parseInt(vm.imageinfo.rect[2] * xratio);
                 y1 = parseInt(vm.imageinfo.rect[3] * yratio);
+                if (vm.imageinfo.text == '') {
+                    y1 = y;
+                }
                 context.moveTo(x, y);
                 context.lineTo(x1, y);
                 context.lineTo(x1, y1);
@@ -986,6 +989,7 @@ Vue.component('judge-image-dialog', {
                 this.images.push({
                     tid: tid,
                     tname: tname,
+                    text: diffsegtexts[i].text,
                     url: diffsegtexts[i].column_url,
                     page_url: diffsegtexts[i].page_url,
                     rect: diffsegtexts[i].rect,

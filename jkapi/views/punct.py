@@ -129,7 +129,7 @@ class PunctTaskDetail(APIView):
             reeltext = self.task.lqtext
             text = SEPARATORS_PATTERN.sub('', reeltext.text)
             punct_tasks = list(Task.objects.filter(batchtask=self.task.batchtask,
-            typ=Task.TYPE_LQPUNCT, reel=self.task.lqreel))
+            typ=Task.TYPE_LQPUNCT, lqreel=self.task.lqreel))
             puncts = [json.loads(t.result) for t in punct_tasks]
         clean_linefeed(puncts)
         punct_result = json.loads(self.task.result)

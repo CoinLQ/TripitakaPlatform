@@ -258,7 +258,6 @@ def publish_correct_result(task):
     base_sutra = judge_tasks[0].base_reel.sutra
     judge_task_not_ready = (judge_tasks[0].status == Task.STATUS_NOT_READY)
     if is_sutra_ready_for_judge(lqsutra):
-        import pdb; pdb.set_trace()
         if judge_task_not_ready: # 第一次创建校勘判取任务的数据
             create_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
             return
@@ -287,10 +286,6 @@ def generate_correct_result(task):
         text_lst.append(correctseg.selected_text)
     result = ''.join(text_lst)
     # result = CORRECT_RESULT_FILTER.sub('', result)
-    # 清除空行
-    # text_lst = result.replace('p', '\np\n').replace('b', '\nb\n').split('\n')
-    # new_text_lst = [text for text in text_lst if text != '']
-    # task.result = '\n'.join(new_text_lst)
     task.result = result
     task.save(update_fields=['result'])
 

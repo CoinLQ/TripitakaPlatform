@@ -206,7 +206,8 @@ def publish_correct_result(task):
         with transaction.atomic():
             reeltext_count = ReelCorrectText.objects.filter(task_id=task.id).count()
             if reeltext_count == 0:
-                reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task, publisher=task.picker)
+                reel_correct_text = ReelCorrectText(reel=task.reel, task=task, publisher=task.picker)
+                reel_correct_text.set_text(task.result)
                 reel_correct_text.save()
                 task.reel.set_correct_ready()
     else: # 与最新的一份记录比较
@@ -216,7 +217,8 @@ def publish_correct_result(task):
             with transaction.atomic():
                 reeltext_count = ReelCorrectText.objects.filter(task_id=task.id).count()
                 if reeltext_count == 0:
-                    reel_correct_text = ReelCorrectText(reel=task.reel, text=task.result, task=task, publisher=task.picker)
+                    reel_correct_text = ReelCorrectText(reel=task.reel, task=task, publisher=task.picker)
+                    reel_correct_text.set_text(task.result)
                     reel_correct_text.save()
                     task.reel.set_correct_ready()
                     text_changed = True
@@ -256,6 +258,7 @@ def publish_correct_result(task):
     base_sutra = judge_tasks[0].base_reel.sutra
     judge_task_not_ready = (judge_tasks[0].status == Task.STATUS_NOT_READY)
     if is_sutra_ready_for_judge(lqsutra):
+        import pdb; pdb.set_trace()
         if judge_task_not_ready: # 第一次创建校勘判取任务的数据
             create_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
             return

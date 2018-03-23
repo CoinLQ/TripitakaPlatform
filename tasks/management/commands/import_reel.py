@@ -31,6 +31,24 @@ class Command(BaseCommand):
             filename = os.path.join(BASE_DIR, 'data/reel_info/%s.txt' % lqsutra_sid)
             with open(filename, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
+                sid_to_sutra = {}
+                for line in lines:
+                    line = line.strip()
+                    if (not line) or line.startswith('#'):
+                        continue
+                    sid, name, reel_no, start_vol, start_vol_page, end_vol_page = line.split('\t')
+                    if sid not in sid_to_sutra:
+                        try:
+                            sutra = Sutra.objects.get(sid=sid)
+                        except:
+                            tripitaka = Tripitaka.objects.get(code=sid[:2])
+                            sutra = Sutra(sid=sid, tripitaka=tripitaka, code=sid[2:7], \
+                            variant_code=sid[7], name=name, lqsutra=lqsutra, total_reels=reel_no)
+                        sid_to_sutra[sid] = sutra
+                    if sid_to_sutra[sid].total_reels < reel_no:
+                        sid_to_sutra[sid].total_reels = reel_no
+                for sid, sutra in sid_to_sutra.items():
+                    sutra.save()
                 for line in lines:
                     line = line.strip()
                     if (not line) or line.startswith('#'):
@@ -48,13 +66,7 @@ class Command(BaseCommand):
                         end_vol = 0
                         start_vol_page = 0
                         end_vol_page = 0
-                    try:
-                        sutra = Sutra.objects.get(sid=sid)
-                    except:
-                        tripitaka = Tripitaka.objects.get(code=sid[:2])
-                        sutra = Sutra(sid=sid, tripitaka=tripitaka, code=sid[2:7], \
-                        variant_code=sid[7], name=name, lqsutra=lqsutra, total_reels=60)
-                        sutra.save()
+                    sutra = sid_to_sutra[sid]
                     try:
                         reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
                     except:

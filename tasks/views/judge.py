@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from tdata.models import *
+from tdata.lib.image_name_encipher import get_image_url
 from tasks.models import *
 
 def do_judge_task(request, task_id):
@@ -22,7 +23,7 @@ def sutra_page_detail(request, pid):
     page = get_object_or_404(Page, pid=pid)
     reel = page.reel
     vol_page = reel.start_vol_page + page.reel_page_no - 1
-    image_url = '%s%s%s.jpg' % (settings.IMAGE_URL_PREFIX, reel.url_prefix(), vol_page)
+    image_url = get_image_url(reel, vol_page)
     char_pos = request.GET.get('char_pos', '')
     s = char_pos[-5:]
     try:

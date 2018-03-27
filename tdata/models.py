@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .lib.fields import JSONField
+from .lib.image_name_encipher import get_signed_path
 from PIL import Image, ImageFont, ImageDraw
 from io import BytesIO
 import json
@@ -156,6 +157,11 @@ class Reel(models.Model):
         s = '%s_%s_' % (tcode, filename_str)
         return s
 
+    def image_path(self):
+        prefix = self.image_prefix()
+        path = prefix.replace('_', '/')
+        return path
+
     def path_str(self):
         path_lst = []
         if self.path1:
@@ -245,7 +251,10 @@ class Page(models.Model):
 
     @property
     def s3_uri(self):
-        return '%s%s%s.jpg' % (settings.IMAGE_URL_PREFIX, self.reel.url_prefix(), self.page_no)
+        path = '%s%d.jpg' % (self.reel.url_prefix(), self.page_no)
+        signed_path = get_signed_path(path)
+        url = settings.PAGE_MAGE_URL_PREFIX + signed_path
+        return url
 
     def _remote_image_stream(self):
         opener = urllib.request.build_opener()

@@ -971,7 +971,6 @@ Vue.component('judge-image-dialog', {
     methods: {
         generateItems: function(diffseg) {
             this.images = [];
-            var image_url_prefix = this.sharedata.image_url_prefix;
             var tripitaka_info = this.sharedata.tripitaka_info;
             var diffsegtexts = diffseg.diffsegtexts;
             var length = diffsegtexts.length;
@@ -986,6 +985,9 @@ Vue.component('judge-image-dialog', {
                 }
                 var cross_line = (diffsegtexts[i].start_char_pos.substr(0, 20) !=
                 diffsegtexts[i].end_char_pos.substr(0, 20));
+                if (diffsegtexts[i].column_url == null) {
+                    continue;
+                }
                 this.images.push({
                     tid: tid,
                     tname: tname,

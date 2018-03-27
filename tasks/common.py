@@ -5,6 +5,7 @@ import urllib.request
 import traceback
 
 from tdata.models import *
+from tdata.lib.image_name_encipher import get_cut_url
 from tasks.models import *
 from rect.models import PageRect, Rect
 
@@ -363,7 +364,7 @@ def fetch_cut_file(reel, vol_page):
             data = f.read()
             if data:
                 return data
-    cut_url = '%s%s%s.cut' % (settings.IMAGE_URL_PREFIX, reel.url_prefix(), vol_page)
+    cut_url = get_cut_url(reel, vol_page)
     print('wget ', cut_url)
     try:
         with urllib.request.urlopen(cut_url) as f:
@@ -377,13 +378,6 @@ def fetch_cut_file(reel, vol_page):
         with open(cut_filename, 'wb') as fout:
             fout.write(data)
     return data
-
-def fetch_col_file(reel, vol_page):
-    url = '%s%s%s.col' % (settings.IMAGE_URL_PREFIX, reel.url_prefix(), vol_page)
-    with urllib.request.urlopen(url) as f:
-        print('fetch col file done: %s, page: %s' % (reel, vol_page))
-        data = f.read()
-        return data
 
 def compute_accurate_cut(reel, process_cut=True):
     sid = reel.sutra.sid
@@ -468,13 +462,14 @@ def compute_accurate_cut(reel, process_cut=True):
 
         # 得到分列信息
         image_name_prefix = reel.image_prefix() + str(vol_page)
-        img_path = reel.url_prefix() + str(vol_page) + '.jpg'
+        img_path = reel.image_path()
+        image_url = get_image_url(reel, vol_page)
         column_lst = gene_new_col(image_name_prefix, char_lst)
         page.bar_info = column_lst
         page.save()
 
         try:
-            crop_col_online(img_path, column_lst)
+            crop_col_online(img_path, image_url, column_lst)
         except:
            print('Crop image column failed: ', traceback.print_exc())
         columns = []

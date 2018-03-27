@@ -121,7 +121,6 @@
       selected_text:'',
       scrolled: false,
       segid: 1,
-      start_vol_page: 1,
       image_url_prefix: '',
       page_no: 1,
       line_no: 1,
@@ -206,9 +205,9 @@
       .then(function(response) {
         vm.result = response.data.result;
         vm.sharedata.status = response.data.status;
-        vm.start_vol_page = response.data.start_vol_page;
         vm.image_url_prefix = response.data.image_url_prefix;
         vm.segid = response.data.cur_focus;
+        vm.image_urls = response.data.image_urls;
         this.loadCorrectSegs();
       }.bind(this));
       
@@ -472,10 +471,8 @@
         image.src = img_url;
       },
       loadImage: function() {
-        var vol_page = this.start_vol_page + this.page_no - 1;
-        var url_prefix = 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image' + this.image_url_prefix + vol_page.toString();
-        this.img_url = url_prefix + '.jpg';
-        var cut_url = url_prefix + '.cut';
+        this.img_url = this.image_urls[this.page_no-1];
+        var cut_url = this.img_url.replace('.jpg', '.cut');
         var vm = this;
         axios.get(cut_url).then(function(response) {
           var char_data = response.data['char_data'];

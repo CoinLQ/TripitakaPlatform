@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 from jwt_auth.models import Staff
 from tdata.models import *
+from tdata.lib.image_name_encipher import get_image_url
 import re, json
 
 # # class SutraStatus(models.Model):
@@ -283,7 +284,7 @@ class DiffSegText(models.Model):
         try:
             pid = self.start_char_pos[0:17]
             page = Page.objects.get(pid=pid)
-            url = '%s%s%d.jpg' % (settings.IMAGE_URL_PREFIX, page.reel.url_prefix(), page.page_no)
+            url = get_image_url(page.reel, page.page_no)
             return url
         except:
             pass

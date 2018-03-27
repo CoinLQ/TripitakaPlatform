@@ -67,27 +67,23 @@ def gene_new_col(image_name_prefix, char_lst):
     #print('col_data: ', col_data)
     return col_data
 
-def crop_col_online(img_path, col_data):
+def crop_col_online(img_path, img_url, col_data):
     '''
     根据切列数据切图并直接上传到s3
-    :param img_path /QL/24/QL_24_111.jpg
+    :param img_prefix QL/24/
     :param col_data:
     :return:
     '''
     if not settings.UPLOAD_COLUMN_IMAGE:
         return
-    img_path = img_path.lstrip('/')
-    pos = img_path.rfind('/')
-    img_prefix = img_path[:pos+1]
     s3c = boto3.client('s3')
     my_bucket = 'lqdzj-col'
-    img_url = "%s/%s" % (settings.IMAGE_URL_PREFIX, img_path)
     img = Image.open(BytesIO(urllib.request.urlopen(img_url).read()))
     for col in col_data:
         image = img.crop((col['x'], col['y'], col['x1'], col['y1']))
         buffer = BytesIO()
         image.save(buffer, format="jpeg")
         b = BytesIO(buffer.getvalue())
-        key = "{}{}.jpg".format(img_prefix, col['col_id'])
+        key = "{}{}.jpg".format(img_path, col['col_id'])
         s3c.upload_fileobj(b, my_bucket, key)
 

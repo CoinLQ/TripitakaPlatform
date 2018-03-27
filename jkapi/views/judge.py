@@ -100,7 +100,6 @@ class JudgeTaskDetail(APIView):
             'punct_lst': punctuation,
             'orig_separators': orig_separators,
             'base_tripitaka_id': base_reel.sutra.tripitaka_id,
-            'image_url_prefix': settings.IMAGE_URL_PREFIX,
             'tripitaka_info': tripitaka_info,
             }
         return Response(response)

@@ -12,6 +12,7 @@ from tasks.models import *
 from jkapi.serializers import *
 from jkapi.permissions import *
 from tasks.task_controller import correct_submit_async, correct_verify_submit_async
+from tdata.lib.image_name_encipher import get_image_url
 from ccapi.pagination import StandardPagination
 import json, re
 from operator import attrgetter, itemgetter
@@ -20,13 +21,18 @@ class CorrectTaskDetail(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
     
     def get(self, request, task_id, format=None):
+        image_url_prefix = self.task.reel.url_prefix()
+        urls = []
+        for vol_page in range(self.task.reel.start_vol_page, self.task.reel.end_vol_page + 1):
+            url = get_image_url(self.task.reel, vol_page)
+            urls.append(url)
+
         response = {
             'task_id': task_id,
             'status': self.task.status,
             'result': self.task.result,
             'cur_focus': self.task.cur_focus,
-            'start_vol_page': self.task.reel.start_vol_page,
-            'image_url_prefix': self.task.reel.url_prefix(),
+            'image_urls': urls,
             }
         return Response(response)
 

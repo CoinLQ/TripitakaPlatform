@@ -31,10 +31,11 @@ class Command(BaseCommand):
     #LQ000010	佛說長阿含經	22	姚秦佛陀耶舍共竺佛念譯	
     def ImportLQSutra(self):       
         BASE_DIR = settings.BASE_DIR
-        mylist = []
+        lqsutra_lst = []
         filename = os.path.join(BASE_DIR, 'data/sutra_list/%s' % 'lqsutra_list.txt')
         exist_sids = set([lqsutra.sid for lqsutra in LQSutra.objects.all()])
         sid_set = set()
+        lqreels_lst = []
         with open(filename, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             for line in lines:
@@ -53,9 +54,19 @@ class Command(BaseCommand):
                 sid_set.add(sid)                        
                 lqsutra = LQSutra(sid=sid, variant_code=variant_code, name=name, author=author, 
                 total_reels = total_reels, remark='')
-                mylist.append(lqsutra)
-            LQSutra.objects.bulk_create(mylist)
-
+                lqsutra_lst.append(lqsutra)
+                lqreels = []
+                for reel_no in range(1, total_reels+1):
+                    lqreel = LQReel(reel_no=reel_no)
+                    lqreels.append(lqreel)
+                lqreels_lst.append(lqreels)
+            LQSutra.objects.bulk_create(lqsutra_lst)
+            all_lqreels = []
+            for i in range(len(lqsutra_lst)):
+                for lqreel in lqreels_lst[i]:
+                    lqreel.lqsutra = lqsutra_lst[i]
+                    all_lqreels.append(lqreel)
+            LQReel.objects.bulk_create(all_lqreels)
 
     #FUNC_2 ImportSutra 导入其他大藏经的经目 sutra_list.txt
     #sid		tripitaka	name			lqsutra	total_r	remark	

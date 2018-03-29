@@ -15,7 +15,7 @@ import re, json
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument('LQSutra_sid', nargs='+', type=str) #设置一个龙泉sid的参数，支持多个                
+        parser.add_argument('LQSutra_sid', nargs='+', type=str) #设置一个龙泉sid的参数，支持多个
 
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR

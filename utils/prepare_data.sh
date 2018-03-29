@@ -12,7 +12,7 @@ mkdir -p logs
 ./manage.py set_cut_ready
 ./manage.py loaddata ./data/initial_fixtures/demo_auth.json
 
-./manage.py import_lqsutra
+./manage.py import_lqsutra $sid
 ./manage.py create_lqreel $sid
 ./manage.py import_reel $sid
  

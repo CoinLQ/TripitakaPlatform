@@ -118,10 +118,14 @@ class PunctProcess(object):
         '''
         sutra_cb = Sutra.objects.get(lqsutra=reel.sutra.lqsutra, tripitaka=Tripitaka.objects.get(code='CB'))
         body_and_puncts = PunctProcess().get_sutra_body_text_and_puncts(sutra_cb)
-        body_text = clean_separators(body_and_puncts[0])
+        body_text = body_and_puncts[0]
         puncts = body_and_puncts[1]
         pos_pair = get_align_pos(body_text, newtext)
-        aligned_puncts = list(filter(lambda n: n[0] >= pos_pair[0] and n[0] <= pos_pair[1], puncts))
+        aligned_puncts = []
+        for punct in puncts:
+            if punct[0] > pos_pair[0] and punct[0] <= pos_pair[1]:
+                new_punct = [punct[0] - pos_pair[0], punct[1]]
+                aligned_puncts.append(new_punct)
         reel_align_text = body_text[pos_pair[0]:pos_pair[1]]
         #PunctProcess().output_punct_texts(aligned_puncts, reel_align_text)
         # 这里找的CBETA来源的标点
@@ -134,7 +138,7 @@ class PunctProcess(object):
 
     @staticmethod
     def create_new_for_correcttext(reel, reel_correct_text):
-        head_puncts = extract_line_separators(reel_correct_text.head)
+        head_puncts = list(filter(lambda p: p[0] > 0, extract_line_separators(reel_correct_text.head)))
         text = clean_separators(reel_correct_text.text)
         body_puncts = PunctProcess.create_new(reel, text)
         task_puncts = head_puncts + body_puncts

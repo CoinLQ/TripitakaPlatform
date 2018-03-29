@@ -56,15 +56,6 @@
       });
     },
     methods: {
-      cleanPunct: function (str) {
-        var ch_lst = [];
-        for (var i = 0; i < str.length; ++i) {
-          if (this.PUNCT_LIST.indexOf(str[i]) == -1) {
-            ch_lst.push(str[i]);
-          }
-        }
-        return ch_lst.join('');
-      },
       merge_punct_lst: function() {
         var orig_idx = 0;
         var orig_count = this.punct_result.length;

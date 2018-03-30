@@ -2,9 +2,9 @@ import xadmin
 from xadmin import views
 from xadmin.views import BaseAdminPlugin
 from xadmin.views import ListAdminView
-
 from tdata.models import *
 from rect.models import *
+from jwt_auth.models import *
 
 #龙泉经目 LQSutra
 class LQSutraAdmin(object):
@@ -234,17 +234,29 @@ class AbsentTaskAdmin(object):
     list_editable = ('owner', "status")
     date_hierarchy = 'update_date'  # 详细时间分层筛选
     relfield_style = "fk-select"
- 
-#暂时不用显示
-# @xadmin.sites.register(PageRect)
-# class PageRectAdmin(object):
-#     list_display = ("id", "page", "line_count", "column_count", "rect_set", "created_at")
-#     list_display_links = ("id",)
-#     list_filter = ("page", 'created_at')
-#     search_fields = ["id" ]
-#     date_hierarchy = 'created_at'  # 详细时间分层筛选
-#     relfield_style = "fk-select"
-#     reversion_enable = True
+
+# @xadmin.sites.register(Permission)
+# class PermissionAdmin(object):
+#     list_display = ('id', 'name', 'menu', 'get_roles', 'is_active')
+#     fields = ('is_active', 'roles', 'menu')
+
+#     def get_roles(self, obj):
+#         return ",".join([r.name for r in obj.roles.all()])
+
+# @xadmin.sites.register(Resource)
+# class ResourceAdmin(object):
+#     pass
+
+# @xadmin.sites.register(Role)
+# class RoleAdmin(object):
+#     list_display = ('id', 'name')
+
+
+# @xadmin.sites.register(Menu)
+# class MenuAdmin(object):
+#     list_display = ('id', 'name', 'menu_paths', 'is_active')
+#     fields = ('menu_paths', 'is_active' )
+
 
 #####################################################################################
 
@@ -279,12 +291,24 @@ class GlobalSetting(object):
                     {'title': u'实体册',  'url': self.get_model_url(Volume, 'changelist'),'icon':'fa fa-book',},
                     {'title': u'实体经',  'url': self.get_model_url(Sutra, 'changelist'),'icon':'fa fa-book',},
                     {'title': u'实体卷',  'url': self.get_model_url(Reel, 'changelist'),'icon':'fa fa-book',},                     
-                )},]                                 
+                )},]
+
+    def user_mana_menu(self):
+        return [{
+                'title': u'用户中心', #'perm': self.get_model_perm(LQSutra, 'view'),
+                'icon':'fa fa-book',
+                'menus':(
+                    {'title': u'用户维护', 'url': self.get_model_url(Staff, 'changelist'),'icon':'fa fa-book',}, 
+                    # {'title': u'角色维护', 'url': self.get_model_url(Role, 'changelist'),'icon':'fa fa-book',},
+                    # {'title': u'菜单管理', 'url': self.get_model_url(Menu, 'changelist'),'icon':'fa fa-book',},
+                    # {'title': u'权限管理', 'url': self.get_model_url(Permission, 'changelist'),'icon':'fa fa-book',},                
+                )},]                                   
 
     def get_site_menu(self):
         menus = []                
         menus.extend(self.rect_data_menu())
         menus.extend(self.data_mana_menu())
+        menus.extend(self.user_mana_menu())
         return menus
     
     global_models_icon = {LQSutra:'fa fa-book',Sutra:'fa fa-book',Reel:'fa fa-book',Tripitaka:'fa fa-book',

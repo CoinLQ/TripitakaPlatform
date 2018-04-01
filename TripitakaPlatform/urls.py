@@ -25,8 +25,8 @@ import xadmin
 
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
-    path('admin/', admin.site.urls),
-    path('xadmin/', xadmin.site.urls),
+    path('backend/', admin.site.urls),
+    path('manage/', xadmin.site.urls),
     url(r'^auth/', include("jwt_auth.urls", namespace="api-auth")),
     url(r'^api/', include('api.urls')),
     path('correct/<int:task_id>/', do_correct_task, name='do_correct_task'),

@@ -2,8 +2,11 @@ import xadmin
 from xadmin import views
 from xadmin.views import BaseAdminPlugin
 from xadmin.views import ListAdminView
+from xadmin.plugins.actions import BaseActionView
+from xadmin.views.base import filter_hook
 
 from tdata.models import *
+import tasks
 from rect.models import *
 
 #龙泉经目 LQSutra
@@ -107,6 +110,96 @@ xadmin.site.register(Tripitaka,TripitakaAdmin)
 xadmin.site.register(Volume,VolumeAdmin) 
 xadmin.site.register(Sutra,SutraAdmin)
 xadmin.site.register(Reel,ReelAdmin) 
+
+#####################################################################################
+# 校勘任务
+class PauseSelectedTasksAction(BaseActionView):
+
+    action_name = "pause_selected_tasks"
+    description = '暂停所选的 任务'
+    icon = 'fa fa-pause'
+
+    @filter_hook
+    def do_action(self, queryset):
+        Task = tasks.models.Task
+        allowed_status = [Task.STATUS_READY, Task.STATUS_PROCESSING]
+        n = queryset.filter(status__in=allowed_status).update(status=Task.STATUS_PAUSED)
+        if n:
+            self.message_user("成功暂停了%(count)d个任务。" % {
+                "count": n,
+            }, 'success')
+
+class ContinueSelectedTasksAction(BaseActionView):
+
+    action_name = "continue_selected_tasks"
+    description = '继续所选的 任务'
+    icon = 'fa fa-play'
+
+    @filter_hook
+    def do_action(self, queryset):
+        Task = tasks.models.Task
+        n1 = queryset.filter(status=Task.STATUS_PAUSED, picker=None).update(status=Task.STATUS_READY)
+        n2 = queryset.filter(status=Task.STATUS_PAUSED).exclude(picker=None).update(status=Task.STATUS_PROCESSING)
+        if n1 or n2:
+            msg = "成功将%d个任务的状态变为待领取，将%d个任务的状态变为进行中。" % (n1, n2)
+            self.message_user(msg, 'success')
+
+class ReclaimSelectedTasksAction(BaseActionView):
+
+    action_name = "reclaim_selected_tasks"
+    description = '回收所选的 任务'
+    icon = 'fa fa-unlink'
+
+    @filter_hook
+    def do_action(self, queryset):
+        Task = tasks.models.Task
+        n = queryset.filter(status=Task.STATUS_PROCESSING).update(status=Task.STATUS_READY, picker=None, picked_at=None)
+        if n:
+            msg = "成功将%d个任务的状态变为待领取。" % n
+            self.message_user(msg, 'success')
+
+class SetPriorityActionBase(BaseActionView):
+    icon = 'fa fa-tasks'
+
+    @filter_hook
+    def do_action(self, queryset):
+        n = queryset.update(priority=self.priority)
+        if n:
+            self.message_user("成功将%(count)d个任务%(description)s。" % {
+                "count": n,
+                "description": self.description,
+            }, 'success')
+
+class SetHighPriorityAction(SetPriorityActionBase):
+    action_name = "set_high_priority"
+    description = '设为高优先级'
+    priority = 3
+
+class SetMiddlePriorityAction(SetPriorityActionBase):
+    action_name = "set_middle_priority"
+    description = '设为中优先级'
+    priority = 2
+
+class SetLowPriorityAction(SetPriorityActionBase):
+    action_name = "set_low_priority"
+    description = '设为低优先级'
+    priority = 1
+
+@xadmin.sites.register(tasks.models.Task)
+class TaskAdmin(object):
+    def modify(self, instance):
+        return '修改'
+    modify.short_description = '操作'
+    list_display = ['batchtask', 'tripitaka_name', 'sutra_name', 'lqsutra_name', 'base_reel_name',
+    'reel_no', 'typ', 'priority', 'task_no', 'realtime_progress', 'status',
+    'publisher', 'created_at', 'picker', 'picked_at', 'finished_at', 'modify']
+    list_display_links = ("modify",)
+    list_filter = ['typ', 'batchtask', 'picker', 'status', 'task_no']
+    search_fields = ['reel__sutra__tripitaka__name', 'reel__sutra__name', 'reel__reel_no', 'lqreel__lqsutra__name']
+    fields = ['status', 'result', 'picked_at', 'picker', 'priority']
+    remove_permissions = ['add']
+    actions = [PauseSelectedTasksAction, ContinueSelectedTasksAction, ReclaimSelectedTasksAction,
+    SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction]
 
 #####################################################################################
 #切分数据配置
@@ -271,7 +364,7 @@ class GlobalSetting(object):
 
     def data_mana_menu(self):
         return [{
-                'title': u'藏经数据管理', #'perm': self.get_model_perm(LQSutra, 'view'),
+                'title': u'藏经数据管理',
                 'icon':'fa fa-book',
                 'menus':(
                     {'title': u'龙泉经目', 'url': self.get_model_url(LQSutra, 'changelist'),'icon':'fa fa-book',},
@@ -287,8 +380,6 @@ class GlobalSetting(object):
         menus.extend(self.data_mana_menu())
         return menus
     
-    global_models_icon = {LQSutra:'fa fa-book',Sutra:'fa fa-book',Reel:'fa fa-book',Tripitaka:'fa fa-book',
-                          Volume:'fa fa-book'}
     menu_style = 'accordion'    
 
 xadmin.site.register(views.CommAdminView, GlobalSetting)

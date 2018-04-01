@@ -537,7 +537,7 @@ def create_data_for_judge_tasks(batchtask, lqsutra, base_sutra, max_reel_no):
 
 def create_new_data_for_judge_tasks(batchtask, lqsutra, base_sutra, max_reel_no):
     Task.objects.filter(batchtask=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
-    status__in=[Task.STATUS_PROCESSING, Task.STATUS_FINISHED]).update(status=Task.STATUS_PAUSED)
+    status__in=[Task.STATUS_PROCESSING, Task.STATUS_FINISHED]).update(status=Task.STATUS_SYSTEM_PAUSED)
     Task.objects.filter(batchtask=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
     status=Task.STATUS_READY).update(status=Task.STATUS_NOT_READY)
     # 校勘判取审定任务的状态改为STATUS_NOT_READY
@@ -557,7 +557,7 @@ def create_new_data_for_judge_tasks(batchtask, lqsutra, base_sutra, max_reel_no)
     ReelDiff.objects.filter(id__in=old_reeldiff_ids).delete()
 
     Task.objects.filter(batchtask=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
-    status=Task.STATUS_PAUSED).update(status=Task.STATUS_PROCESSING)
+    status=Task.STATUS_SYSTEM_PAUSED).update(status=Task.STATUS_PROCESSING)
     Task.objects.filter(batchtask=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
     status=Task.STATUS_NOT_READY).update(status=Task.STATUS_READY)
 

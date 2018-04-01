@@ -37,6 +37,9 @@ class BatchTask(models.Model):
      self.created_at.month, self.created_at.day, self.created_at.hour,
      self.created_at.minute)
 
+    def __str__(self):
+        return self.batch_no
+
 class Task(models.Model):
     TYPE_CORRECT = 1
     TYPE_CORRECT_VERIFY = 2
@@ -48,8 +51,6 @@ class Task(models.Model):
     TYPE_LQPUNCT_VERIFY = 8
     TYPE_MARK = 9
     TYPE_MARK_VERIFY = 10
-    TYPE_LQMARK = 11
-    TYPE_LQMARK_VERIFY = 12
     TYPE_CHOICES = (
         (TYPE_CORRECT, '文字校对'),
         (TYPE_CORRECT_VERIFY, '文字校对审定'),
@@ -59,10 +60,8 @@ class Task(models.Model):
         (TYPE_PUNCT_VERIFY, '基础标点审定'),
         (TYPE_LQPUNCT, '定本标点'),
         (TYPE_LQPUNCT_VERIFY, '定本标点审定'),
-        (TYPE_MARK, '基础格式标注'),
-        (TYPE_MARK_VERIFY, '基础格式标注审定'),
-        (TYPE_LQMARK, '定本格式标注'),
-        (TYPE_LQMARK_VERIFY, '定本格式标注审定'),
+        (TYPE_MARK, '格式标注'),
+        (TYPE_MARK_VERIFY, '格式标注审定'),
     )
 
     TASK_NO_CHOICES = (
@@ -80,6 +79,7 @@ class Task(models.Model):
     STATUS_PAUSED = 5
     STATUS_REMINDED = 6
     STATUS_REVOKED = 7
+    STATUS_SYSTEM_PAUSED = 8
     STATUS_CHOICES = (
         (STATUS_NOT_READY, '未就绪'),
         (STATUS_READY, '待领取'),
@@ -88,9 +88,10 @@ class Task(models.Model):
         (STATUS_FINISHED, '已完成'),
         (STATUS_REMINDED, '已催单'),
         (STATUS_REVOKED, '已回收'),
+        (STATUS_SYSTEM_PAUSED, '系统内暂停'),
     )
 
-    batchtask = models.ForeignKey(BatchTask, on_delete=models.CASCADE)
+    batchtask = models.ForeignKey(BatchTask, on_delete=models.CASCADE, verbose_name='批次号')
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE, related_name='tasks',
     blank=True, null=True)
     lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE, blank=True, null=True)
@@ -137,6 +138,54 @@ class Task(models.Model):
         else:
             s = '%s - %s' % (self.lqreel, type_map.get(self.typ))
         return s
+
+    @property
+    def tripitaka_name(self):
+        return self.reel.sutra.tripitaka.name
+    tripitaka_name.fget.short_description = '藏'
+
+    @property
+    def sutra_name(self):
+        return self.reel.sutra.name
+    sutra_name.fget.short_description = '经'
+
+    @property
+    def lqsutra_name(self):
+        return self.lqreel.lqsutra.name
+    lqsutra_name.fget.short_description = '龙泉经名'
+
+    @property
+    def base_reel_name(self):
+        return self.base_reel.sutra.tripitaka.name
+    base_reel_name.fget.short_description = '底本'
+
+    @property
+    def reel_no(self):
+        if self.reel:
+            return self.reel.reel_no
+        if self.lqreel:
+            return self.lqreel.reel_no
+    reel_no.fget.short_description = '第几卷'
+
+    @property
+    def realtime_progress(self):
+        if self.status == Task.STATUS_FINISHED:
+            return '100%'
+        if self.status in [Task.STATUS_NOT_READY, Task.STATUS_READY]:
+            return '0%'
+        if self.typ in [Task.TYPE_CORRECT, Task.TYPE_CORRECT_VERIFY]:
+            total = CorrectSeg.objects.filter(task_id=self.id, tag=CorrectSeg.TAG_DIFF).count()
+            not_selected = CorrectSeg.objects.filter(task_id=self.id, tag=CorrectSeg.TAG_DIFF, selected_text=None).count()
+            selected = total - not_selected
+            ratio = '%.1f%%' % (selected * 100 / total)
+            return ratio
+        if self.typ in [Task.TYPE_JUDGE, Task.TYPE_JUDGE_VERIFY]:
+            total = DiffSegResult.objects.filter(task_id=self.id).count()
+            not_selected = DiffSegResult.objects.filter(task_id=self.id, selected_text=None).count()
+            selected = total - not_selected
+            ratio = '%.1f%%' % (selected * 100 / total)
+            return ratio
+    realtime_progress.fget.short_description = '进度'
 
 class CorrectSeg(models.Model):
     TAG_EQUAL = 1

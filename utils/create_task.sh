@@ -11,6 +11,7 @@ mkdir -p logs
 ./manage.py import_tripitaka_list
 ./manage.py set_cut_ready
 ./manage.py loaddata ./data/initial_fixtures/demo_auth.json
+./manage.py create_xadmin_bookmark
 
 ./manage.py import_lqsutra $sid
 ./manage.py create_lqreel $sid

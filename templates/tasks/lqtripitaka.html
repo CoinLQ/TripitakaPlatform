@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}龙泉藏经{% endblock %}
+{% block content %}
+<div id="lqtripitaka">
+  <div class="sutra-tree">
+    <el-tree :data="lqsutra_list" :props="tree_props" @node-click="clickLQSutraTreeNode"></el-tree>
+  </div>
+</div>
+{% endblock %}
+{% block foot_script %}
+<script>
+  var app = new Vue({
+    el: '#lqtripitaka',
+    data: {
+      lqsutra_list: [],
+      tree_props: {
+        children: 'lqreel_set',
+        label: 'label'
+      }
+    },
+    created: function() {
+      var vm = this;
+      axios.get('/api/lqsutra/').then(function(response) {
+        vm.lqsutra_list = response.data.results;
+      });
+    },
+    methods: {
+      clickLQSutraTreeNode: function(data) {
+        console.log(data);
+      }
+    }
+  });
+</script>
+{% endblock %}

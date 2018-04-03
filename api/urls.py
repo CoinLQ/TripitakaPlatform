@@ -14,6 +14,7 @@ FinishCorrectTask, DoubtSegViewSet
 from jkapi.views.judge import DiffSegResultList, DiffSegResultUpdate, \
 JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected, DiffSegDetail
 from jkapi.views.punct import PunctTaskDetail
+from jkapi.views.lqtripitaka import LQSutraViewSet
 
 router = routers.DefaultRouter()
 router.register(r'pagerect', PageRectViewSet)
@@ -27,6 +28,7 @@ router.register(r'deltask', DelTaskViewSet)
 
 router.register(r'page', PageViewSet)
 
+router.register(r'lqsutra', LQSutraViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),

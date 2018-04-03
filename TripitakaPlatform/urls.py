@@ -20,6 +20,7 @@ from django.conf.urls import url
 from tasks.views.correct import *
 from tasks.views.judge import *
 from tasks.views.punct import *
+from tasks.views import lqtripitaka
 from tools.views import *
 import xadmin
 
@@ -38,6 +39,7 @@ urlpatterns = [
     path('verify_punct/<int:task_id>/', do_punct_task, name='do_punct_task'),
     path('lqpunct/<int:task_id>/', do_punct_task, name='do_punct_task'),
     path('verify_lqpunct/<int:task_id>/', do_punct_task, name='do_punct_task'),
+    path('lqtripitaka/', lqtripitaka.index, name='lqtripitaka_index'),
 
     path('tools/cutfixed_pages/', cutfixed_pages, name='cutfixed_pages'),
     path('tools/cutfixed_pages/<pid>/', cutfixed_page_detail, name='cutfixed_page_detail'),

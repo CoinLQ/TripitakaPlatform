@@ -174,9 +174,9 @@ Vue.component('punct-show-seg', {
             var focusNode = selection.focusNode;
             var parentNode = focusNode.parentNode;
             var parentNodeIndex = this.getNodeIndex(parentNode);
-            console.log('cursor_offset: ', cursor_offset);
-            console.log('focusNode: ', focusNode);
-            console.log('parent: ', parentNode, parentNodeIndex, e.target);
+            // console.log('cursor_offset: ', cursor_offset);
+            // console.log('focusNode: ', focusNode);
+            // console.log('parent: ', parentNode, parentNodeIndex, e.target);
 
             var newtext = e.target.innerText;
             
@@ -219,7 +219,11 @@ Vue.component('punct-show-seg', {
                     focusNode = parentNode.firstChild;
                     var range = document.createRange();
                     range.selectNode(focusNode);
-                    range.setStart(focusNode, cursor_offset-1);
+                    var offset = cursor_offset - 1;
+                    if (e.isComposing) {
+                        offset = cursor_offset;
+                    }
+                    range.setStart(focusNode, offset);
                     range.collapse(true);
                     e.target.focus();
                     selection = window.getSelection();

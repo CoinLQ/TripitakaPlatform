@@ -62,7 +62,6 @@ def merge_text_punct(text, puncts, punct_result):
                     s = text_seg[t_idx : end_idx]
                     strs.append(s)
                     t_idx = cur_punct[0] - text_idx
-                strs.append(cur_punct[1])
                 user_puncts.append(cur_punct)
                 result_idx += 1
             if t_idx < len(text_seg):

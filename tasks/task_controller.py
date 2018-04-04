@@ -229,8 +229,20 @@ def publish_correct_result(task):
         if reel.reel_no > 1:
             try:
                 prev_reel = Reel.objects.get(sutra=reel.sutra, reel_no=reel.reel_no-1)
-                if Reel.is_overlapping(prev_reel, reel) and not prev_reel.correct_ready:
-                    generate_cut = False
+                if Reel.is_overlapping(prev_reel, reel):
+                    if prev_reel.correct_ready:
+                        prev_correct_text = ReelCorrectText.objects.filter(reel=prev_reel).order_by('-id').first()
+                        last_page = prev_correct_text.text.split('\np\n')[-1]
+                        line_count = 0
+                        for line in last_page.split('\n'):
+                            if line:
+                                line_count += 1
+                        if line_count:
+                            new_text = reel_correct_text.text[:2] + '\n' * line_count + reel_correct_text.text[2:]
+                            reel_correct_text.set_text(new_text)
+                            reel_correct_text.save()
+                    else:
+                        generate_cut = False
             except:
                 pass
         if generate_cut:
@@ -245,6 +257,17 @@ def publish_correct_result(task):
             try:
                 next_reel = Reel.objects.get(sutra=reel.sutra, reel_no=reel.reel_no+1)
                 if Reel.is_overlapping(reel, next_reel) and next_reel.correct_ready:
+                    next_correct_text = ReelCorrectText.objects.filter(reel=next_reel).order_by('-id').first()
+                    last_page = reel_correct_text.text.split('\np\n')[-1]
+                    line_count = 0
+                    for line in last_page.split('\n'):
+                        if line:
+                            line_count += 1
+                    if line_count:
+                        new_text = next_correct_text.text[:2] + '\n' * line_count + next_correct_text.text[2:]
+                        next_correct_text.set_text(new_text)
+                        next_correct_text.save()
+
                     # 得到精确的切分数据
                     try:
                         compute_accurate_cut(next_reel)

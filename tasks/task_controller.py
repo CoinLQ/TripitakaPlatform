@@ -280,12 +280,29 @@ def publish_correct_result(task):
                 create_new_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
 
 CORRECT_RESULT_FILTER = re.compile('[ 　ac-oq-zA-Z0-9.?\-",/，。、：]')
+MULTI_LINEFEED = re.compile('\n\n+')
 def generate_correct_result(task):
     text_lst = []
+    last_ch_linefeed = False
+    last_not_empty_correctseg = None
     for correctseg in CorrectSeg.objects.filter(task=task).order_by('id'):
-        text_lst.append(correctseg.selected_text)
+        selected_text = CORRECT_RESULT_FILTER.sub('', correctseg.selected_text)
+        selected_text = MULTI_LINEFEED.sub('\n', selected_text)
+        if last_ch_linefeed:
+            selected_text = selected_text.lstrip('\n')
+        if len(selected_text) != len(correctseg.selected_text):
+            correctseg.selected_text = selected_text
+            correctseg.save(update_fields=['selected_text'])
+        if selected_text:
+            last_not_empty_correctseg = correctseg
+            last_ch_linefeed = (selected_text[-1] == '\n')
+            text_lst.append(selected_text)
+    # 将最后一个换行符删除
+    if last_not_empty_correctseg and last_not_empty_correctseg.selected_text.endswith('\n'):
+        last_not_empty_correctseg.selected_text = last_not_empty_correctseg.selected_text.rstrip('\n')
+        last_not_empty_correctseg.save(update_fields=['selected_text'])
+        text_lst[-1] = last_not_empty_correctseg.selected_text
     result = ''.join(text_lst)
-    # result = CORRECT_RESULT_FILTER.sub('', result)
     task.result = result
     task.save(update_fields=['result'])
 
@@ -297,10 +314,7 @@ def correct_submit(task):
     generate_correct_result(task)
     # 检查一组的几个文字校对任务是否都已完成
     correct_tasks = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_CORRECT).order_by('task_no')
-    all_finished = True
-    for correct_task in correct_tasks:
-        if correct_task.status != Task.STATUS_FINISHED:
-            all_finished = False
+    all_finished = all([correct_task.status == Task.STATUS_FINISHED for correct_task in correct_tasks])
     task_count = len(correct_tasks)
     # 如果都已完成
     if all_finished:
@@ -310,10 +324,9 @@ def correct_submit(task):
             # publish_correct_result(task)
         elif task_count == 2:
             # 查到文字校对审定任务
-            correct_verify_tasks = list(Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_CORRECT_VERIFY))
-            if len(correct_verify_tasks) == 0:
+            correct_verify_task = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_CORRECT_VERIFY).first()
+            if correct_verify_task is None:
                 return 
-            correct_verify_task = correct_verify_tasks[0]
             if correct_verify_task.status > Task.STATUS_READY:
                 # 已被领取的任务，不再重新发布
                 return

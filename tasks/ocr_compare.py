@@ -277,65 +277,6 @@ class OCRCompare(object):
                     char_no += result_len
                 correctsegs.append(correctseg)
                 pos += result_len
-
-            # if tag == 'equal':
-            #     text_lst = separator_manager.merge_text_separator(text2[j1:j2], j1, j2, tag)
-            #     for text_seg in text_lst:
-            #         tag = text_seg['tag']
-            #         result = text_seg['text']
-            #         result_len = len(result)
-            #         correctseg = CorrectSeg(tag=tag, position=pos, \
-            #         text1='', text2=result, selected_text=None, \
-            #         page_no=page_no, line_no=line_no, char_no=char_no)
-            #         correctsegs.append(correctseg)
-            #         if result in 'pb\n':
-            #             correctseg.selected_text = result
-            #             page_no, line_no, char_no = cls.count_page_line(result, page_no, line_no, char_no)
-            #         else:
-            #             correctseg.selected_text = result
-            #             char_no += result_len
-            #         pos += result_len
-            # elif tag == 'insert':
-            #     text_lst = separator_manager.merge_text_separator(text2[j1:j2], j1, j2, tag)
-            #     for text_seg in text_lst:
-            #         tag = text_seg['tag']
-            #         result = text_seg['text']
-            #         result_len = len(result)
-            #         correctseg = CorrectSeg(tag=tag, position=pos, \
-            #         text1='', text2=result, selected_text=None, \
-            #         page_no=page_no, line_no=line_no, char_no=char_no)
-            #         if result in 'pb\n':
-            #             correctseg.selected_text = result
-            #             page_no, line_no, char_no = cls.count_page_line(result, page_no, line_no, char_no)
-            #         else:
-            #             char_no += result_len
-            #         correctsegs.append(correctseg)
-            #         pos += result_len
-            # elif tag == 'replace':
-            #     base_index = i1
-            #     text_lst = separator_manager.merge_text_separator(text2[j1:j2], j1, j2, tag)
-            #     consumed_text_len = 0
-            #     for text_seg in text_lst:
-            #         tag = text_seg['tag']
-            #         result = text_seg['text']
-            #         result_len = len(result)
-            #         correctseg = CorrectSeg(tag=tag, position=pos, \
-            #         text1='', text2=result, selected_text=None, \
-            #         page_no=page_no, line_no=line_no, char_no=char_no)
-            #         if result in 'pb\n':
-            #             correctseg.selected_text = result
-            #             page_no, line_no, char_no = cls.count_page_line(result, page_no, line_no, char_no)
-            #         else:
-            #             consumed_text_len += result_len
-            #             if consumed_text_len == (j2 - j1):
-            #                 end_index = i2
-            #             else:
-            #                 end_index = min(base_index + result_len, i2)
-            #             correctseg.text1 = text1[base_index : end_index]
-            #             base_index = end_index
-            #             char_no += result_len
-            #         correctsegs.append(correctseg)
-            #         pos += result_len
         return correctsegs
 
     @classmethod

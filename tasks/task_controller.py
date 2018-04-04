@@ -138,10 +138,6 @@ lqmark_times = 0, lqmark_verify_times = 0):
     '''
     reel_lst格式： [(lqsutra, reel_no), (lqsutra, reel_no)]
     '''
-    # 文字校对任务数最多只2个
-    if correct_times > 2:
-        correct_times = 2
-
     sutra_to_body = {}
     for lqsutra, reel_no in reel_lst:
         # 创建文字校对任务
@@ -226,12 +222,36 @@ def publish_correct_result(task):
             return
 
     task_puncts = '[]'
+    reel = task.reel
     if reel_correct_text:
-        # 得到精确的切分数据
-        try:
-            compute_accurate_cut(task.reel)
-        except Exception:
-            traceback.print_exc()
+        # 如果与前一卷有重叠，且前一卷未完成，不生成精确切分。
+        generate_cut = True
+        if reel.reel_no > 1:
+            try:
+                prev_reel = Reel.objects.get(sutra=reel.sutra, reel_no=reel.reel_no-1)
+                if Reel.is_overlapping(prev_reel, reel) and not prev_reel.correct_ready:
+                    generate_cut = False
+            except:
+                pass
+        if generate_cut:
+            # 得到精确的切分数据
+            try:
+                compute_accurate_cut(reel)
+            except Exception:
+                traceback.print_exc()
+
+        # 如果与下一卷有重叠，且下一卷已完成，生成下一卷的精确切分。
+        if reel.reel_no < reel.sutra.total_reels:
+            try:
+                next_reel = Reel.objects.get(sutra=reel.sutra, reel_no=reel.reel_no+1)
+                if Reel.is_overlapping(reel, next_reel) and next_reel.correct_ready:
+                    # 得到精确的切分数据
+                    try:
+                        compute_accurate_cut(next_reel)
+                    except Exception:
+                        traceback.print_exc()
+            except:
+                pass
 
         task_puncts = PunctProcess.create_new_for_correcttext(task.reel, reel_correct_text)
         punct = Punct(reel=task.reel, reeltext=reel_correct_text, punctuation=task_puncts)

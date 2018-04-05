@@ -234,7 +234,7 @@ def publish_correct_result(task):
                         prev_correct_text = ReelCorrectText.objects.filter(reel=prev_reel).order_by('-id').first()
                         last_page = prev_correct_text.text.split('\np\n')[-1]
                         line_count = 0
-                        for line in last_page.split('\n'):
+                        for line in last_page.replace('b', '').split('\n'):
                             if line:
                                 line_count += 1
                         if line_count:
@@ -260,7 +260,7 @@ def publish_correct_result(task):
                     next_correct_text = ReelCorrectText.objects.filter(reel=next_reel).order_by('-id').first()
                     last_page = reel_correct_text.text.split('\np\n')[-1]
                     line_count = 0
-                    for line in last_page.split('\n'):
+                    for line in last_page.replace('b', '').split('\n'):
                         if line:
                             line_count += 1
                     if line_count:

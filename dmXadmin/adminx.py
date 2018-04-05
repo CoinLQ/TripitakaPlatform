@@ -191,9 +191,17 @@ class TaskAdmin(object):
     def modify(self, instance):
         return '修改'
     modify.short_description = '操作'
+    def task_link(self, instance):
+        Task = tasks.models.Task
+        if instance.status in [Task.STATUS_PROCESSING, Task.STATUS_PAUSED, Task.STATUS_FINISHED]:
+            return '<a target="_blank" href="/correct/%d/">查看</a>' % (instance.id)
+        else:
+            return ''
+    task_link.allow_tags = True
+    task_link.short_description = '查看任务'
     list_display = ['batchtask', 'tripitaka_name', 'sutra_name', 'lqsutra_name', 'base_reel_name',
     'reel_no', 'typ', 'priority', 'task_no', 'realtime_progress', 'status',
-    'publisher', 'created_at', 'picker', 'picked_at', 'finished_at', 'modify']
+    'publisher', 'created_at', 'picker', 'picked_at', 'finished_at', 'task_link', 'modify']
     list_display_links = ("modify",)
     list_filter = ['typ', 'batchtask', 'picker', 'status', 'task_no']
     search_fields = ['reel__sutra__tripitaka__name', 'reel__sutra__name', 'reel__reel_no', 'lqreel__lqsutra__name']

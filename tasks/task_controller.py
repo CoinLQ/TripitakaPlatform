@@ -87,10 +87,7 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
     task_puncts = '[]'
     reelcorrecttext = ReelCorrectText.objects.filter(reel=reel).order_by('-id').first()
     if reelcorrecttext:
-        status = Task.STATUS_READY
-        punct = Punct.objects.filter(reeltext=reelcorrecttext).order_by('-id').first()
-        if punct:
-            task_puncts = punct.punctuation
+        status = Task.STATUS_READY                
     for task_no in range(1, punct_times + 1):
         task = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT, reel=reel,
         reeltext=reelcorrecttext, result=task_puncts, task_no=task_no,
@@ -240,7 +237,7 @@ def publish_correct_result(task):
         # 基础标点任务
         # 检查是否有未就绪的基础标点任务，如果有，状态设为READY
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY)\
-        .update(reeltext=reel_correct_text, result=task_puncts, status=Task.STATUS_READY)
+        .update(reeltext=reel_correct_text, result = '[]', status=Task.STATUS_READY)
         # 基础标点审定任务
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
 
@@ -479,7 +476,7 @@ def punct_submit_result(task):
     punct_tasks = Task.objects.filter(batchtask=task.batchtask, typ=Task.TYPE_PUNCT, reel=task.reel)
     if all([t.status == Task.STATUS_FINISHED for t in punct_tasks]):
         verify_task.status = Task.STATUS_READY
-        verify_task.result = punct_tasks[0].result
+        verify_task.result = '[]'
         verify_task.save(update_fields=['status', 'result'])
 
 def publish_punct_result(task):

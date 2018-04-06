@@ -9,6 +9,7 @@ from tdata.models import *
 import tasks
 from rect.models import *
 from jwt_auth.models import *
+from tasks.task_controller import correct_update_async
 
 #龙泉经目 LQSutra
 class LQSutraAdmin(object):
@@ -186,6 +187,24 @@ class SetLowPriorityAction(SetPriorityActionBase):
     description = '设为低优先级'
     priority = 1
 
+class UpdateTaskResultAction(BaseActionView):
+
+    action_name = "update_task_result"
+    description = '更新任务数据'
+    icon = 'fa fa-refresh'
+
+    @filter_hook
+    def do_action(self, queryset):
+        Task = tasks.models.Task
+        types = [Task.TYPE_CORRECT, Task.TYPE_CORRECT_VERIFY]
+        task_lst = list(queryset.filter(typ__in=types, status=Task.STATUS_FINISHED))
+        for task in task_lst:
+            correct_update_async(task.id)
+        if task_lst:
+            self.message_user("成功对%(count)d个任务做了数据更新。" % {
+                "count": len(task_lst),
+            }, 'success')
+
 @xadmin.sites.register(tasks.models.Task)
 class TaskAdmin(object):
     def modify(self, instance):
@@ -208,7 +227,8 @@ class TaskAdmin(object):
     fields = ['status', 'result', 'picked_at', 'picker', 'priority']
     remove_permissions = ['add']
     actions = [PauseSelectedTasksAction, ContinueSelectedTasksAction, ReclaimSelectedTasksAction,
-    SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction]
+    SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,
+    UpdateTaskResultAction]
 
 #####################################################################################
 #切分数据配置

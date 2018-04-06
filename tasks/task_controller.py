@@ -400,6 +400,18 @@ def correct_verify_submit(task):
     generate_correct_result(task)
     publish_correct_result(task)
 
+def correct_update(task):
+    if task.status != Task.STATUS_FINISHED:
+        return
+    if task.typ == Task.TYPE_CORRECT:
+        correct_submit(task)
+    elif task.typ == Task.TYPE_CORRECT_VERIFY:
+        generate_correct_result(task)
+        reel_correct_text = ReelCorrectText.objects.filter(task=task).first()
+        if reel_correct_text:
+            reel_correct_text.set_text(task.result)
+            reel_correct_text.save()
+
 def judge_submit_result(task):
     '''
     校勘判取提交结果
@@ -581,6 +593,11 @@ def correct_verify_submit_async(task_id):
 def publish_correct_result_async(task_id):
     task = Task.objects.get(pk=task_id)
     publish_correct_result(task)
+
+@background(schedule=0)
+def correct_update_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    correct_update(task)
 
 @background(schedule=0)
 def judge_submit_result_async(task_id):

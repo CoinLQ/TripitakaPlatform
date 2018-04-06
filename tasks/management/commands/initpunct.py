@@ -31,7 +31,7 @@ def create_punct_task(sid, reel_no, batchtask):
 
     for task_no in [1, 2]:
         task = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT, reel=reel,
-        reeltext=reel_correct_text,result = '[]',
+        reeltext=reel_correct_text, result = '[]',
         task_no=task_no, status=Task.STATUS_READY,
         publisher=batchtask.publisher)
         task.save()

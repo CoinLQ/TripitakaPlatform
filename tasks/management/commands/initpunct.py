@@ -22,17 +22,16 @@ def create_punct_task(sid, reel_no, batchtask):
     sutra = Sutra.objects.get(sid=sid)
     reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
     reel_correct_text = ReelCorrectText.objects.filter(reel=reel)[0]
-    # try:
-    #     punct = Punct.objects.get(reeltext=reel_correct_text)
-    #     task_puncts = punct.punctuation
-    # except:
-    task_puncts = PunctProcess.create_new_for_correcttext(reel, reel_correct_text)
-    punct = Punct(reel=reel, reeltext=reel_correct_text, punctuation=task_puncts)
-    punct.save()
+    try:
+        punct = Punct.objects.get(reeltext=reel_correct_text)
+    except :
+        task_puncts = PunctProcess.create_new_for_correcttext(reel, reel_correct_text)
+        punct = Punct(reel=reel, reeltext=reel_correct_text, punctuation=task_puncts)
+        punct.save()
 
     for task_no in [1, 2]:
         task = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT, reel=reel,
-        reeltext=reel_correct_text, result=task_puncts,
+        reeltext=reel_correct_text,result = '[]',
         task_no=task_no, status=Task.STATUS_READY,
         publisher=batchtask.publisher)
         task.save()
@@ -55,9 +54,8 @@ class Command(BaseCommand):
         huayan_cb = Sutra.objects.get(sid='CB002780')
         huayan_cb_1 = Reel.objects.get(sutra=huayan_cb, reel_no=1)
         reelcorrecttext = ReelCorrectText.objects.filter(reel=huayan_cb_1)[0]
-        punct = Punct.objects.filter(reel=huayan_cb_1)[0]
-        punctuation_json = punct.punctuation
-
+        #punct = Punct.objects.filter(reel=huayan_cb_1)[0]
+        punctuation_json = '[]'
         # create BatchTask
         batchtask = BatchTask(priority=2, publisher=admin)
         batchtask.save()

@@ -15,9 +15,9 @@ class Command(BaseCommand):
         for typ, title in list(Task.TYPE_CHOICES):
             query = '_p_typ__exact=%d' % typ
             if typ in [Task.TYPE_CORRECT, Task.TYPE_CORRECT_VERIFY, Task.TYPE_PUNCT, Task.TYPE_PUNCT_VERIFY]:
-                query += '&_cols=batchtask.tripitaka_name.sutra_name.reel_no.priority.task_no.realtime_progress.status.publisher.created_at.picker.picked_at.finished_at.modify'
+                query += '&_cols=batchtask.tripitaka_name.sutra_name.reel_no.priority.task_no.realtime_progress.status.publisher.created_at.picker.picked_at.finished_at.task_link.modify'
             else:
-                query += '&_cols=batchtask.lqsutra_name.base_reel_name.reel_no.priority.task_no.realtime_progress.status.publisher.created_at.picker.picked_at.finished_at.modify'
+                query += '&_cols=batchtask.lqsutra_name.base_reel_name.reel_no.priority.task_no.realtime_progress.status.publisher.created_at.picker.picked_at.finished_at.task_link.modify'
             bookmark = Bookmark(
                 content_type=task_content_type,
                 title=title, user=admin, query=query,

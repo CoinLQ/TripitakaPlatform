@@ -99,8 +99,8 @@ class ReelAdmin(object): #
 
     sutra_name.short_description = u'经名'
     tripitaka_name.short_description = u'藏名'
-    longquan_Name.short_description=u'龙泉经名'  
-    search_fields = ['sutra__sid','sutra__name','reel_no','edition_type','remark'] #可以搜索的字段
+    longquan_Name.short_description=u'龙泉经名'
+    search_fields = ['sutra__sid', 'sutra__name', 'sutra__tripitaka__name', 'reel_no', 'edition_type', 'remark'] #可以搜索的字段
     list_filter = ['sutra__sid','sutra__name']
     ordering = ['id','reel_no'] ##按照倒序排列    
     fields = ('sutra','reel_no','edition_type','remark','start_vol','start_vol_page','end_vol','end_vol_page')

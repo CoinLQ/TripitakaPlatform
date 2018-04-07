@@ -476,7 +476,10 @@ def compute_accurate_cut(reel, process_cut=True):
         for col in column_lst:
             column = Column(id = col['col_id'], page=page, x=col['x'], y=col['y'], x1=col['x1'], y1=col['y1'])
             columns.append(column)
-        Column.objects.bulk_create(columns)
+        try:
+            Column.objects.bulk_create(columns)
+        except:
+            print('save Column failed: ', traceback.print_exc())
 
         # cut related
         if process_cut:

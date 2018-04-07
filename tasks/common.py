@@ -11,6 +11,7 @@ from rect.models import PageRect, Rect
 
 from tasks.utils.cut_column import gene_new_col, crop_col_online
 
+from django.db import transaction
 from django.conf import settings
 
 SEPARATORS_PATTERN = re.compile('[pb\n]')
@@ -477,7 +478,8 @@ def compute_accurate_cut(reel, process_cut=True):
             column = Column(id = col['col_id'], page=page, x=col['x'], y=col['y'], x1=col['x1'], y1=col['y1'])
             columns.append(column)
         try:
-            Column.objects.bulk_create(columns)
+            with transaction.atomic():
+                Column.objects.bulk_create(columns)
         except:
             print('save Column failed: ', traceback.print_exc())
 

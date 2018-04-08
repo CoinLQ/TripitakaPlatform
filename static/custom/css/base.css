@@ -361,3 +361,10 @@ opacity: 0;
     color: grey;
     font-size: 14px;
 }
+
+.sutra-tree {
+    width: 300px;
+    height: 600px;
+    overflow-y: scroll;
+    border: 1px #ccc solid;
+}

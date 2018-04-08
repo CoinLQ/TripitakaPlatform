@@ -87,10 +87,7 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
     task_puncts = '[]'
     reelcorrecttext = ReelCorrectText.objects.filter(reel=reel).order_by('-id').first()
     if reelcorrecttext:
-        status = Task.STATUS_READY
-        punct = Punct.objects.filter(reeltext=reelcorrecttext).order_by('-id').first()
-        if punct:
-            task_puncts = punct.punctuation
+        status = Task.STATUS_READY                
     for task_no in range(1, punct_times + 1):
         task = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT, reel=reel,
         reeltext=reelcorrecttext, result=task_puncts, task_no=task_no,
@@ -138,10 +135,6 @@ lqmark_times = 0, lqmark_verify_times = 0):
     '''
     reel_lst格式： [(lqsutra, reel_no), (lqsutra, reel_no)]
     '''
-    # 文字校对任务数最多只2个
-    if correct_times > 2:
-        correct_times = 2
-
     sutra_to_body = {}
     for lqsutra, reel_no in reel_lst:
         # 创建文字校对任务
@@ -226,12 +219,59 @@ def publish_correct_result(task):
             return
 
     task_puncts = '[]'
+    reel = task.reel
     if reel_correct_text:
-        # 得到精确的切分数据
-        try:
-            compute_accurate_cut(task.reel)
-        except Exception:
-            traceback.print_exc()
+        # 如果与前一卷有重叠，且前一卷未完成，不生成精确切分。
+        generate_cut = True
+        if reel.reel_no > 1:
+            try:
+                prev_reel = Reel.objects.get(sutra=reel.sutra, reel_no=reel.reel_no-1)
+                if Reel.is_overlapping(prev_reel, reel):
+                    if prev_reel.correct_ready:
+                        prev_correct_text = ReelCorrectText.objects.filter(reel=prev_reel).order_by('-id').first()
+                        last_page = prev_correct_text.text.split('\np\n')[-1]
+                        line_count = 0
+                        for line in last_page.replace('b', '').split('\n'):
+                            if line:
+                                line_count += 1
+                        if line_count:
+                            new_text = reel_correct_text.text[:2] + '\n' * line_count + reel_correct_text.text[2:]
+                            reel_correct_text.set_text(new_text)
+                            reel_correct_text.save()
+                    else:
+                        generate_cut = False
+            except:
+                pass
+        if generate_cut:
+            # 得到精确的切分数据
+            try:
+                compute_accurate_cut(reel)
+            except Exception:
+                traceback.print_exc()
+
+        # 如果与下一卷有重叠，且下一卷已完成，生成下一卷的精确切分。
+        if reel.reel_no < reel.sutra.total_reels:
+            try:
+                next_reel = Reel.objects.get(sutra=reel.sutra, reel_no=reel.reel_no+1)
+                if Reel.is_overlapping(reel, next_reel) and next_reel.correct_ready:
+                    next_correct_text = ReelCorrectText.objects.filter(reel=next_reel).order_by('-id').first()
+                    last_page = reel_correct_text.text.split('\np\n')[-1]
+                    line_count = 0
+                    for line in last_page.replace('b', '').split('\n'):
+                        if line:
+                            line_count += 1
+                    if line_count:
+                        new_text = next_correct_text.text[:2] + '\n' * line_count + next_correct_text.text[2:]
+                        next_correct_text.set_text(new_text)
+                        next_correct_text.save()
+
+                    # 得到精确的切分数据
+                    try:
+                        compute_accurate_cut(next_reel)
+                    except Exception:
+                        traceback.print_exc()
+            except:
+                pass
 
         task_puncts = PunctProcess.create_new_for_correcttext(task.reel, reel_correct_text)
         punct = Punct(reel=task.reel, reeltext=reel_correct_text, punctuation=task_puncts)
@@ -240,7 +280,7 @@ def publish_correct_result(task):
         # 基础标点任务
         # 检查是否有未就绪的基础标点任务，如果有，状态设为READY
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY)\
-        .update(reeltext=reel_correct_text, result=task_puncts, status=Task.STATUS_READY)
+        .update(reeltext=reel_correct_text, result = '[]', status=Task.STATUS_READY)
         # 基础标点审定任务
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
 
@@ -280,12 +320,29 @@ def publish_correct_result(task):
                 create_new_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
 
 CORRECT_RESULT_FILTER = re.compile('[ 　ac-oq-zA-Z0-9.?\-",/，。、：]')
+MULTI_LINEFEED = re.compile('\n\n+')
 def generate_correct_result(task):
     text_lst = []
+    last_ch_linefeed = False
+    last_not_empty_correctseg = None
     for correctseg in CorrectSeg.objects.filter(task=task).order_by('id'):
-        text_lst.append(correctseg.selected_text)
+        selected_text = CORRECT_RESULT_FILTER.sub('', correctseg.selected_text)
+        selected_text = MULTI_LINEFEED.sub('\n', selected_text)
+        if last_ch_linefeed:
+            selected_text = selected_text.lstrip('\n')
+        if len(selected_text) != len(correctseg.selected_text):
+            correctseg.selected_text = selected_text
+            correctseg.save(update_fields=['selected_text'])
+        if selected_text:
+            last_not_empty_correctseg = correctseg
+            last_ch_linefeed = (selected_text[-1] == '\n')
+            text_lst.append(selected_text)
+    # 将最后一个换行符删除
+    if last_not_empty_correctseg and last_not_empty_correctseg.selected_text.endswith('\n'):
+        last_not_empty_correctseg.selected_text = last_not_empty_correctseg.selected_text.rstrip('\n')
+        last_not_empty_correctseg.save(update_fields=['selected_text'])
+        text_lst[-1] = last_not_empty_correctseg.selected_text
     result = ''.join(text_lst)
-    # result = CORRECT_RESULT_FILTER.sub('', result)
     task.result = result
     task.save(update_fields=['result'])
 
@@ -297,10 +354,7 @@ def correct_submit(task):
     generate_correct_result(task)
     # 检查一组的几个文字校对任务是否都已完成
     correct_tasks = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_CORRECT).order_by('task_no')
-    all_finished = True
-    for correct_task in correct_tasks:
-        if correct_task.status != Task.STATUS_FINISHED:
-            all_finished = False
+    all_finished = all([correct_task.status == Task.STATUS_FINISHED for correct_task in correct_tasks])
     task_count = len(correct_tasks)
     # 如果都已完成
     if all_finished:
@@ -310,10 +364,9 @@ def correct_submit(task):
             # publish_correct_result(task)
         elif task_count == 2:
             # 查到文字校对审定任务
-            correct_verify_tasks = list(Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_CORRECT_VERIFY))
-            if len(correct_verify_tasks) == 0:
+            correct_verify_task = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_CORRECT_VERIFY).first()
+            if correct_verify_task is None:
                 return 
-            correct_verify_task = correct_verify_tasks[0]
             if correct_verify_task.status > Task.STATUS_READY:
                 # 已被领取的任务，不再重新发布
                 return
@@ -343,6 +396,18 @@ def correct_submit(task):
 def correct_verify_submit(task):
     generate_correct_result(task)
     publish_correct_result(task)
+
+def correct_update(task):
+    if task.status != Task.STATUS_FINISHED:
+        return
+    if task.typ == Task.TYPE_CORRECT:
+        correct_submit(task)
+    elif task.typ == Task.TYPE_CORRECT_VERIFY:
+        generate_correct_result(task)
+        reel_correct_text = ReelCorrectText.objects.filter(task=task).first()
+        if reel_correct_text:
+            reel_correct_text.set_text(task.result)
+            reel_correct_text.save()
 
 def judge_submit_result(task):
     '''
@@ -479,7 +544,7 @@ def punct_submit_result(task):
     punct_tasks = Task.objects.filter(batchtask=task.batchtask, typ=Task.TYPE_PUNCT, reel=task.reel)
     if all([t.status == Task.STATUS_FINISHED for t in punct_tasks]):
         verify_task.status = Task.STATUS_READY
-        verify_task.result = punct_tasks[0].result
+        verify_task.result = '[]'
         verify_task.save(update_fields=['status', 'result'])
 
 def publish_punct_result(task):
@@ -525,6 +590,11 @@ def correct_verify_submit_async(task_id):
 def publish_correct_result_async(task_id):
     task = Task.objects.get(pk=task_id)
     publish_correct_result(task)
+
+@background(schedule=0)
+def correct_update_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    correct_update(task)
 
 @background(schedule=0)
 def judge_submit_result_async(task_id):

@@ -562,6 +562,7 @@
             if (newline.selected_text == '\n') {
               let idx = _.find(this.sharedata.correctsegs, function(v) { return v.position == newline.position});
               newline.selected_text = ''
+              this.updateCorrectSeg(newline);
               this.$set(this.sharedata.correctsegs, idx, newline)
             }
           }
@@ -571,8 +572,7 @@
             this.textSelection()
           }.bind(this))
           return
-        }else if (evt.keyCode == 37 || evt.keyCode == 39)
-        {
+        } else if (evt.keyCode == 37 || evt.keyCode == 39) {
           this.$nextTick(function () {
             // DOM is now updated
             // `this` is bound to the current instance

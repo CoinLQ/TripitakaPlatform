@@ -192,6 +192,9 @@ ul.diffseg-region {
 .punct3 {
     color: blue;
 }
+.punct4 {
+    color: orange;
+}
 .userpunct {
     color:red;
     font-size:18px;

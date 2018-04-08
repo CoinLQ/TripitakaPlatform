@@ -12,7 +12,7 @@ class IsTaskPickedByCurrentUser(permissions.BasePermission):
         task_id = view.kwargs['task_id']
         try:
             task = Task.objects.get(pk=task_id)
-            if task.picker == request.user:
+            if request.user.is_admin or task.picker == request.user:
                 view.task = task
                 return True
         except:

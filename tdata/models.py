@@ -186,6 +186,13 @@ class Reel(models.Model):
             self.correct_ready = True
             self.save(update_fields=['correct_ready'])
 
+    @classmethod
+    def is_overlapping(cls, reel1, reel2):
+        if reel1.start_vol == reel2.start_vol and \
+            reel1.end_vol_page >= reel2.start_vol_page:
+            return True
+        return False
+
 class ReelOCRText(models.Model):
     reel = models.OneToOneField(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, primary_key=True)
     text = SutraTextField('经文', blank=True, default='') #按实际行加了换行符，换页标记为p\n

@@ -62,7 +62,6 @@ def merge_text_punct(text, puncts, punct_result):
                     s = text_seg[t_idx : end_idx]
                     strs.append(s)
                     t_idx = cur_punct[0] - text_idx
-                strs.append(cur_punct[1])
                 user_puncts.append(cur_punct)
                 result_idx += 1
             if t_idx < len(text_seg):
@@ -132,7 +131,11 @@ class PunctTaskDetail(APIView):
             typ=Task.TYPE_LQPUNCT, lqreel=self.task.lqreel))
             puncts = [json.loads(t.result) for t in punct_tasks]
         clean_linefeed(puncts)
-        punct_result = json.loads(self.task.result)
+        punct_result = []
+        try:
+            punct_result = json.loads(self.task.result)#标点
+        except :
+            pass
         punctseg_lst = merge_text_punct(text, puncts, punct_result)
         response = {
             'task_id': task_id,

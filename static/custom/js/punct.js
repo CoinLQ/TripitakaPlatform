@@ -130,14 +130,32 @@ Vue.component('punct-show-seg', {
         createMergedHtml: function() {
             if (this.punctseg.type == 1) {
                 var html_lst = [];
-                for (var i = 0; i < this.punctseg.text.length; ++i) {
-                    var ch = this.punctseg.text[i];
-                    if (ch == '\n') {
-                        html_lst.push('<br />');
-                    } else if (PUNCT_LIST.indexOf(ch) != -1) {
-                        html_lst.push('<span class="userpunct">' + ch + '</span>');
-                    } else {
-                        html_lst.push(ch);
+                var punct_idx = 0;
+                var offset = 0;
+                while (true) {
+                    var offset_n = this.punctseg.text.length;
+                    if (punct_idx < this.punctseg.user_puncts.length) {
+                        offset_n = this.punctseg.user_puncts[punct_idx][0] - this.punctseg.position;
+                    }
+                    if (offset == offset_n) {
+                        break;
+                    }
+                    var text = this.punctseg.text.substr(offset, offset_n - offset);
+                    html_lst.push('<span class="puncttext">' + text + '</span>');
+                    offset = offset_n;
+                    var punct_seg = [];
+                    while (punct_idx < this.punctseg.user_puncts.length
+                        && offset == (this.punctseg.user_puncts[punct_idx][0] - this.punctseg.position)) {
+                        var punct_ch = this.punctseg.user_puncts[punct_idx][1];
+                        if (punct_ch == '\n') {
+                            punct_seg.push('<br />');
+                        } else {
+                            punct_seg.push(punct_ch);
+                        }
+                        punct_idx++;
+                    }
+                    if (punct_seg.length > 0) {
+                        html_lst.push('<span class="userpunct">' + punct_seg.join('') + '</span>');
                     }
                 }
                 this.merged_html = html_lst.join('');
@@ -155,8 +173,10 @@ Vue.component('punct-show-seg', {
             var cursor_offset = selection.focusOffset;
             var focusNode = selection.focusNode;
             var parentNode = focusNode.parentNode;
-            var focusNodeIndex = this.getNodeIndex(focusNode);
-            //console.log('focusNode: ', focusNode, focusNodeIndex, e.target )
+            var parentNodeIndex = this.getNodeIndex(parentNode);
+            // console.log('cursor_offset: ', cursor_offset);
+            // console.log('focusNode: ', focusNode);
+            // console.log('parent: ', parentNode, parentNodeIndex, e.target);
 
             var newtext = e.target.innerText;
             
@@ -172,46 +192,44 @@ Vue.component('punct-show-seg', {
                     }
                 }
                 this.punctseg.user_puncts = new_user_puncts;
-                this.punctseg.text = newtext;
                 this.createMergedHtml();
                 // set cursor position
-                setTimeout(function(){
-                    if (focusNodeIndex+1 < e.target.childNodes.length) {
-                        var textNode = e.target.childNodes[focusNodeIndex+1];
-                        var range = document.createRange();
-                        range.selectNode(textNode);
-                        range.setStart(textNode, 1);
-                        range.collapse(true);
-                        e.target.focus();
-                        selection = window.getSelection();
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    } else {
-                        //console.log(focusNode, parentNode)
-                        var textNode = focusNode;
-                        var range = document.createRange();
-                        range.selectNode(textNode);
-                        range.setStart(textNode, 1);
-                        range.collapse(true);
-                        e.target.focus();
-                        selection = window.getSelection();
-                        selection.removeAllRanges();
-                        selection.addRange(range);
+                this.$nextTick(function(){
+                    var offset = cursor_offset;
+                    parentNode = e.target.childNodes[parentNodeIndex];
+                    focusNode = parentNode.firstChild;
+                    while (focusNode.length < offset) {
+                        offset = offset - focusNode.length;
+                        parentNode = parentNode.nextSibling;
+                        focusNode = parentNode.firstChild;
                     }
-                }, 100);
-            } else {
-                e.target.innerHTML = this.merged_html;
-                setTimeout(function(){
-                    var focusNode = e.target.childNodes[focusNodeIndex];
                     var range = document.createRange();
                     range.selectNode(focusNode);
-                    range.setStart(focusNode, cursor_offset-1);
+                    range.setStart(focusNode, offset);
+                    range.collapse(true);
+                    e.target.focus();
+                    selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                 });
+            } else {
+                e.target.innerHTML = this.merged_html;
+                this.$nextTick(function(){
+                    parentNode = e.target.childNodes[parentNodeIndex];
+                    focusNode = parentNode.firstChild;
+                    var range = document.createRange();
+                    range.selectNode(focusNode);
+                    var offset = cursor_offset - 1;
+                    if (e.isComposing) {
+                        offset = cursor_offset;
+                    }
+                    range.setStart(focusNode, offset);
                     range.collapse(true);
                     e.target.focus();
                     selection = window.getSelection();
                     selection.removeAllRanges();
                     selection.addRange(range); 
-                }, 20);
+                });
             }
         }
     }

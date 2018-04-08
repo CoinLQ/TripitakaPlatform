@@ -9,6 +9,7 @@ from tdata.models import *
 import tasks
 from rect.models import *
 from jwt_auth.models import *
+from tasks.task_controller import correct_update_async
 
 #龙泉经目 LQSutra
 class LQSutraAdmin(object):
@@ -98,8 +99,8 @@ class ReelAdmin(object): #
 
     sutra_name.short_description = u'经名'
     tripitaka_name.short_description = u'藏名'
-    longquan_Name.short_description=u'龙泉经名'  
-    search_fields = ['sutra__sid','sutra__name','reel_no','edition_type','remark'] #可以搜索的字段
+    longquan_Name.short_description=u'龙泉经名'
+    search_fields = ['sutra__sid', 'sutra__name', 'sutra__tripitaka__name', 'reel_no', 'edition_type', 'remark'] #可以搜索的字段
     list_filter = ['sutra__sid','sutra__name']
     ordering = ['id','reel_no'] ##按照倒序排列    
     fields = ('sutra','reel_no','edition_type','remark','start_vol','start_vol_page','end_vol','end_vol_page')
@@ -186,21 +187,48 @@ class SetLowPriorityAction(SetPriorityActionBase):
     description = '设为低优先级'
     priority = 1
 
+class UpdateTaskResultAction(BaseActionView):
+
+    action_name = "update_task_result"
+    description = '更新任务数据'
+    icon = 'fa fa-refresh'
+
+    @filter_hook
+    def do_action(self, queryset):
+        Task = tasks.models.Task
+        types = [Task.TYPE_CORRECT, Task.TYPE_CORRECT_VERIFY]
+        task_lst = list(queryset.filter(typ__in=types, status=Task.STATUS_FINISHED))
+        for task in task_lst:
+            correct_update_async(task.id)
+        if task_lst:
+            self.message_user("成功对%(count)d个任务做了数据更新。" % {
+                "count": len(task_lst),
+            }, 'success')
+
 @xadmin.sites.register(tasks.models.Task)
 class TaskAdmin(object):
     def modify(self, instance):
         return '修改'
     modify.short_description = '操作'
+    def task_link(self, instance):
+        Task = tasks.models.Task
+        if instance.status in [Task.STATUS_PROCESSING, Task.STATUS_PAUSED, Task.STATUS_FINISHED]:
+            return '<a target="_blank" href="/correct/%d/">查看</a>' % (instance.id)
+        else:
+            return ''
+    task_link.allow_tags = True
+    task_link.short_description = '查看任务'
     list_display = ['batchtask', 'tripitaka_name', 'sutra_name', 'lqsutra_name', 'base_reel_name',
     'reel_no', 'typ', 'priority', 'task_no', 'realtime_progress', 'status',
-    'publisher', 'created_at', 'picker', 'picked_at', 'finished_at', 'modify']
+    'publisher', 'created_at', 'picker', 'picked_at', 'finished_at', 'task_link', 'modify']
     list_display_links = ("modify",)
     list_filter = ['typ', 'batchtask', 'picker', 'status', 'task_no']
     search_fields = ['reel__sutra__tripitaka__name', 'reel__sutra__name', 'reel__reel_no', 'lqreel__lqsutra__name']
     fields = ['status', 'result', 'picked_at', 'picker', 'priority']
     remove_permissions = ['add']
     actions = [PauseSelectedTasksAction, ContinueSelectedTasksAction, ReclaimSelectedTasksAction,
-    SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction]
+    SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,
+    UpdateTaskResultAction]
 
 #####################################################################################
 #切分数据配置

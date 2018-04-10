@@ -27,8 +27,14 @@ class CorrectTaskDetail(APIView):
             url = get_image_url(self.task.reel, vol_page)
             urls.append(url)
 
+        correct_task_count = 0
+        if self.task.typ == Task.TYPE_CORRECT_VERIFY:
+            correct_task_count = Task.objects.filter(reel=self.task.reel, \
+            batchtask=self.task.batchtask, typ=Task.TYPE_CORRECT).count()
+
         response = {
             'task_id': task_id,
+            'correct_task_count': correct_task_count,
             'status': self.task.status,
             'result': self.task.result,
             'cur_focus': self.task.cur_focus,

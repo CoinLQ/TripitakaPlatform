@@ -280,7 +280,7 @@ def publish_correct_result(task):
         # 基础标点任务
         # 检查是否有未就绪的基础标点任务，如果有，状态设为READY
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY)\
-        .update(reeltext=reel_correct_text, result = '[]', status=Task.STATUS_READY)
+        .update(reeltext=reel_correct_text, result='[]', status=Task.STATUS_READY)
         # 基础标点审定任务
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
 
@@ -362,7 +362,7 @@ def correct_submit(task):
             # 系统暂不支持单一校对，如果只有一个校对任务，不进行后续的任务任务。
             pass
             # publish_correct_result(task)
-        elif task_count == 2:
+        elif task_count >= 2:
             # 查到文字校对审定任务
             correct_verify_task = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_CORRECT_VERIFY).first()
             if correct_verify_task is None:
@@ -372,8 +372,16 @@ def correct_submit(task):
                 return
             # 比较一组的两个字校对任务的结果
             CorrectSeg.objects.filter(task=correct_verify_task).delete()
-            correctsegs = OCRCompare.generate_correct_diff(correct_tasks[0].result, correct_tasks[1].result)
-            from_correctsegs = list(CorrectSeg.objects.filter(task=correct_tasks[1]).order_by('id'))
+            if task_count >= 2:
+                correctsegs = OCRCompare.generate_correct_diff_for_verify(correct_tasks[0].result, correct_tasks[1].result)
+            if task_count >= 3:
+                correctsegs_add = OCRCompare.generate_correct_diff_for_verify(correct_tasks[0].result, correct_tasks[2].result)
+                correctsegs = OCRCompare.merge_correctseg_for_verify(correctsegs, correctsegs_add, 3)
+            #import pdb; pdb.set_trace()
+            if task_count == 4:
+                correctsegs_add = OCRCompare.generate_correct_diff_for_verify(correct_tasks[0].result, correct_tasks[3].result)
+                correctsegs = OCRCompare.merge_correctseg_for_verify(correctsegs, correctsegs_add, 4)
+            from_correctsegs = list(CorrectSeg.objects.filter(task=correct_tasks[0]).order_by('id'))
             OCRCompare.reset_segposition(from_correctsegs)
             OCRCompare.set_position(from_correctsegs, correctsegs)
             for correctseg in correctsegs:

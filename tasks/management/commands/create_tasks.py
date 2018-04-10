@@ -27,5 +27,5 @@ class Command(BaseCommand):
             reel_lst = [(lqsutra, reel_no) for reel_no in range(1, lqsutra.total_reels + 1) ]
             batchtask = BatchTask(priority=2, publisher=admin)
             batchtask.save()
-            create_tasks_for_batchtask(batchtask, reel_lst, 2, 1, 2, 1, 2, 1, 2, 1)
+            create_tasks_for_batchtask(batchtask, reel_lst, 3, 1, 2, 1, 2, 1, 2, 1)
             print('batchtask id: ', batchtask.id)

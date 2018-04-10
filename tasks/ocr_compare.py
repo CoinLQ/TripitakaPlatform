@@ -280,6 +280,129 @@ class OCRCompare(object):
         return correctsegs
 
     @classmethod
+    def generate_correct_diff_for_verify(cls, text1, text2):
+        """
+        用于文字校对审定前的文本比对
+        text1是校一；text2是校二、校三或校四。
+        """
+        SEPARATORS_PATTERN = re.compile('[pb\n]')
+        separator_manager = SeparatorManager(text1)
+        text1 = SEPARATORS_PATTERN.sub('', text1)
+        text2 = SEPARATORS_PATTERN.sub('', text2)
+        correctsegs = []
+        pos = 0
+        page_no = 0
+        line_no = 0
+        char_no = 0
+        opcodes = SequenceMatcher(lambda x: x in 'pb\n', text1, text2, False).get_opcodes()
+        for tag, i1, i2, j1, j2 in opcodes:
+            if tag == 'delete':
+                correctseg = CorrectSeg(tag=CorrectSeg.TAG_DIFF, position=pos, \
+                text1=text1[i1:i2], text2='', selected_text=None, \
+                page_no=page_no, line_no=line_no, char_no=char_no)
+                correctsegs.append(correctseg)
+                pos += len(correctseg.text1)
+                continue
+            base_index = j1
+            consumed_text_len = 0
+            text_lst = separator_manager.merge_text_separator(text1[i1:i2], i1, i2, tag)
+            for text_seg in text_lst:
+                text_tag = text_seg['tag']
+                result = text_seg['text']
+                result_len = len(result)
+                correctseg = CorrectSeg(tag=text_tag, position=pos, \
+                text1=result, text2=None, selected_text=None, \
+                page_no=page_no, line_no=line_no, char_no=char_no)
+                if result in 'pb\n':
+                    correctseg.selected_text = result
+                else:
+                    if tag == 'equal':
+                        correctseg.selected_text = result
+                    elif tag == 'replace':
+                        consumed_text_len += result_len
+                        if consumed_text_len == (i2 - i1):
+                            end_index = j2
+                        else:
+                            end_index = min(base_index + result_len, j2)
+                        correctseg.text2 = text2[base_index : end_index]
+                        base_index = end_index
+                correctsegs.append(correctseg)
+                pos += result_len
+        return correctsegs
+
+    @classmethod
+    def merge_correctseg_for_verify(cls, correctsegs, correctsegs_add, task_no):
+        sep_tags = [CorrectSeg.TAG_P, CorrectSeg.TAG_LINEFEED]
+        length = len(correctsegs)
+        length_add = len(correctsegs_add)
+        i = 0
+        j = 0
+        offset = 0
+        offset_add = 0
+        result_correctsegs = []
+        while i < length and j < length_add:
+            correctseg = correctsegs[i]
+            correctseg_add = correctsegs_add[j]
+            if correctseg.tag in sep_tags and correctseg_add.tag in sep_tags and \
+                correctseg.position == correctseg_add.position:
+                result_correctsegs.append(correctseg)
+                i += 1
+                j += 1
+                offset = 0
+                offset_add = 0
+                continue
+            remained = len(correctseg.text1) - offset
+            remained_add  = len(correctseg_add.text1) - offset_add
+            add_length = min(remained, remained_add)
+            r_correctseg = CorrectSeg()
+            r_correctseg.position = correctseg.position + offset
+            if correctseg.tag == CorrectSeg.TAG_EQUAL and correctseg_add.tag == CorrectSeg.TAG_EQUAL:
+                r_correctseg.tag = CorrectSeg.TAG_EQUAL
+                r_correctseg.text1 = correctseg.text1[offset:(offset+add_length)]
+                r_correctseg.selected_text = r_correctseg.text1
+            else:
+                r_correctseg.tag = CorrectSeg.TAG_DIFF
+                r_correctseg.text1 = correctseg.text1[offset:(offset+add_length)]
+                if correctseg.tag == CorrectSeg.TAG_EQUAL:
+                    r_correctseg.text2 = r_correctseg.text1
+                    if task_no == 4:
+                        r_correctseg.text3 = r_correctseg.text1
+                else:
+                    if offset + add_length == len(correctseg.text1):
+                        r_correctseg.text2 = correctseg.text2[offset:]
+                    else:
+                        r_correctseg.text2 = correctseg.text2[offset:(offset+add_length)]
+                    if task_no == 4:
+                        if offset + add_length == len(correctseg.text1):
+                            r_correctseg.text3 = correctseg.text3[offset:]
+                        else:
+                            r_correctseg.text3 = correctseg.text3[offset:(offset+add_length)]
+                text_add = ''
+                if correctseg_add.tag == CorrectSeg.TAG_EQUAL:
+                    text_add = r_correctseg.text1
+                else:
+                    if offset_add + add_length == len(correctseg_add.text1):
+                        text_add = correctseg_add.text2[offset:]
+                    else:
+                        text_add = correctseg_add.text2[offset:(offset+add_length)]
+                if task_no == 3:
+                    r_correctseg.text3 = text_add
+                elif task_no == 4:
+                    r_correctseg.text4 = text_add
+            if add_length == remained:
+                i += 1
+                offset = 0
+            else:
+                offset += add_length
+            if add_length == remained_add:
+                j += 1
+                offset_add = 0
+            else:
+                offset_add += add_length
+            result_correctsegs.append(r_correctseg)
+        return result_correctsegs
+
+    @classmethod
     def compare_reel(cls, text1, text2):
         """
         用于文字校对前的文本比对

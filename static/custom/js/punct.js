@@ -137,7 +137,7 @@ Vue.component('punct-show-seg', {
                     if (punct_idx < this.punctseg.user_puncts.length) {
                         offset_n = this.punctseg.user_puncts[punct_idx][0] - this.punctseg.position;
                     }
-                    if (offset == offset_n) {
+                    if (offset == offset_n && offset_n != 0 ) {
                         break;
                     }
                     var text = this.punctseg.text.substr(offset, offset_n - offset);

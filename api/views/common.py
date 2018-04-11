@@ -88,12 +88,10 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
     def get(self, request, *args, **kwargs):
         self.app_name, self.model_name = get_app_model_name(kwargs)
 
-        self.queryset = self.query_set(self.model_name)
-        self.queryset = self.queryset.order_by('-priority')
+        self.queryset = self.query_set(self.model_name).order_by('-priority', 'id')
         self.filter_fields = getattr(self.model.Config, 'filter_fields', ())
         self.search_fields = self._search_fields()
         self.serializer_class = self.get_serializer_class()
-
         return super(CommonListAPIView, self).get(request, *args, **kwargs)
 
 
@@ -182,7 +180,7 @@ class CommonHistoryAPIView(CommonListAPIView):
     def get(self, request, *args, **kwargs):
         self.app_name, self.model_name = get_app_model_name(kwargs)
 
-        self.queryset = self.query_set(self.model_name, request).order_by('-priority')
+        self.queryset = self.query_set(self.model_name, request).order_by('-priority', 'id')
         self.filter_fields = getattr(self.model.Config, 'filter_fields', ())
         self.search_fields = self._search_fields()
         self.serializer_class = self.get_serializer_class()

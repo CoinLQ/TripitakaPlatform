@@ -4,15 +4,15 @@
 <div id="correct">
   <div class="row content-container">
     {% raw %}
-    <div class="col-md-7 left-pane">
+    <div class="col-md-6 left-pane">
       <div class="canvas-pane">
         <canvas id="page-canvas"></canvas>
       </div>
       <div class='scale-op'>
         <el-button-group>
-          <el-button type="primary" size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
-          <el-button type="primary" size="mini" round>{{scale_rate}}</el-button>
-          <el-button type="primary" size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
+          <el-button plain size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
+          <el-button plain size="mini" round>{{scale_rate}}</el-button>
+          <el-button plain size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
         </el-button-group>
          <div class="block" style="display:none;width: 30%;margin-left: 50px;">
             <span class="demonstration">图片大小</span>
@@ -26,48 +26,63 @@
           </div>
       </div>
     </div>
-    <div class="col-md-5 right-pane">
+    <div class="col-md-6 right-pane">
       <div class="operation">
-                <el-popover ref='popover' width="300" style="position: absolute; top: -500;" placement="bottom" popper-class="elpopup" trigger="manual" >
+                <el-popover ref='popover' width="300" style="position: absolute; top: -500;transform-origin: left center 0px" placement="top" popper-class="elpopup" trigger="manual" >
                         <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag class='ll'>{{compare_text}}</el-tag></div></el-col>
+                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info" class='ll'>{{compare_text}}</el-tag></div></el-col>
                           <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text1, $event)" class='selection' v-html="spanContent(current_seg.text1)"></span></div></el-col>
                         </el-row>
                         <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag class='ll'>{{ocr_text}}</el-tag></div></el-col>
+                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info" class='ll'>{{ocr_text}}</el-tag></div></el-col>
                           <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text2, $event)" class='selection' v-html="spanContent(current_seg.text2)"></span></div></el-col>
                         </el-row>
+                        <el-row :gutter="20" v-if="correct_task_count >= 3">
+                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info" class='ll'>三校</el-tag></div></el-col>
+                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text3, $event)" class='selection' v-html="spanContent(current_seg.text3)"></span></div></el-col>
+                        </el-row>
+                        <el-row :gutter="20" v-if="correct_task_count >= 4">
+                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info" class='ll'>四校</el-tag></div></el-col>
+                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text4, $event)" class='selection' v-html="spanContent(current_seg.text4)"></span></div></el-col>
+                        </el-row>
                         <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="danger">选择结果</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span id="pop-input" type="text" placehold="结果文" placeholder="请选择或输入……" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)" ></span></div></el-col>
+                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info">选择结果</el-tag></div></el-col>
+                          <el-col :span="17"><div class="grid-content bg-purple"><span id="pop-input" type="text"  @keydown="blockthem" placeholder="请选择或输入……" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)" ></span></div></el-col>
                         </el-row>
                 </el-popover>
             </div>
-    {% endraw %}
-      <div class="diff-text-pane" @scroll="handleScroll">
-        <transition name="slide-fade" appear>
-            <div v-if="scrolled || (!scrolled)" style="position: inherit;"class='cmd-block'>
-                <el-button :disabled="premitSubmit" @click="finishTask()" type="primary" plain>完成</el-button>
-                <el-button @click="nextPopup({})" type="success" plain>后一个</el-button>
-                <el-button @click="nextPopup({shiftKey: true})" type="success" plain>前一个</el-button>
-                <el-switch
-                  v-model="display_space"
-                  active-text=""
-                  inactive-text="删除符">
-                </el-switch>
-                <el-switch
-                  v-model="display_newline"
-                  active-text=""
-                  inactive-text="换行符">
-                </el-switch>
-                <el-button type="success" @click="openDoubtForm">存疑</el-button>
-
+            <div class="diff-text-pane-top">
+              <transition name="slide-fade" appear>
+                <div v-if="scrolled || (!scrolled)" style="position: inherit;" class='cmd-block'>
+                  <el-row :gutter="10">
+                    <el-col :span="24">
+                      <label>差异文本</label>
+                      <el-button @click="nextPopup({shiftKey: true})" plain icon="el-icon-arrow-left" size="mini" circle></el-button>
+                      <span class="vprogress" plain round size="small">{{progress_text}}</span>
+                      <el-button @click="nextPopup({})" plain icon="el-icon-arrow-right" size="mini" circle></el-button>
+                      <label>换行符</label>
+                      <el-button :class="{'b-highlight': display_newline, 'new-line': true}" circle @click="display_newline =!display_newline"  size="mini">↵</el-button>
+                      <label>空位符</label>
+                      <el-button :class="{'b-highlight': display_space, 'deletion': true}" circle @click="display_space =!display_space"  size="mini"><span class="removed"></span></el-button>
+                      <div class='to-right'>
+                        <el-button icon="el-icon-back" plain round @click="RemoveLine">{{remove_btn_text}}</el-button>
+                    
+                        <el-button plain @click="openDoubtForm" round>存疑</el-button>
+                        <el-button plain :disabled="premitSubmit" @click="finishTask" round>完成</el-button>
+                      
+                        <span class="help-icon"><i class="el-icon-question"></i></span>
+                      </div>
+                  </el-col>
+                  </el-row>
+                </div>
+              </transition>
             </div>
-        </transition>
+        <div class="diff-text-pane" @scroll="handleScroll">
+        
         <div class="reel-text-region-o">
           
           <div id="reel-text-compare" class="reel-text-compare">
-            {% raw %}
+   
             
             <div class="spn" v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id">
               <span v-if="seg.tag == 1" v-html="getSegText(seg)" @click="textSelection(seg, $event)" @keydown="blockthem" :class="{ changed: (seg.text2 != seg.selected_text), current: (current_seg.id == seg.id) }" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @click="textSelection(seg, $event)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null), current: (current_seg.id == seg.id)}" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span class="newline" v-if="seg.tag == 4" contenteditable="true" @keydown="permitNewline" @click="segClick(seg, $event)" @input="segInput(seg, $event)" v-html="getSegText(seg)"></span>
@@ -95,7 +110,7 @@
         </div>
       </div>
       {% raw %}
-      <el-collapse v-model="activeNames" @change="handleChange">
+      <el-collapse v-model="activeNames" @change="handleChange" class="cunyi">
         <el-collapse-item name="1">
           <template slot="title">
           <span ><i class="el-icon-date"></i> 存疑列表</span>
@@ -117,6 +132,7 @@
       result: '',
       display_space: true,
       display_newline: false,
+      correct_task_count: 2,
       current_seg: {},
       selected_text:'',
       scrolled: false,
@@ -166,6 +182,16 @@
       ocr_text: function() {
         if (this.sharedata.task_typ == 2) { return "二校" }
         return "OCR"
+      },
+      progress_text: function() {
+        let done_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
+        return done_segs.length + " / " + this.sharedata.correctsegs.length
+      },
+      remove_btn_text: function() {
+        if (this.current_seg && this.current_seg.selected_text == '') {
+          return '整行恢复'
+        } 
+        return '整行删除'
       }
     },
     watch: {
@@ -206,6 +232,7 @@
         vm.result = response.data.result;
         vm.sharedata.status = response.data.status;
         vm.image_url_prefix = response.data.image_url_prefix;
+        vm.correct_task_count = response.data.correct_task_count;
         vm.segid = response.data.cur_focus;
         vm.image_urls = response.data.image_urls;
         this.loadCorrectSegs();
@@ -217,6 +244,7 @@
       document.addEventListener('keydown', this.handleDocumentTab);
       document.addEventListener('compositionstart', this.handleComposition);
       document.addEventListener('compositionend', this.handleComposition);
+      this.handleChange();
     },
     destroyed: function(){
       document.removeEventListener('click', this.handleDocumentClick);
@@ -278,11 +306,12 @@
           }
         });
       },
-      handleChange(val) {
+      handleChange() {
+        let totalHeight = this.$el.querySelector('.canvas-pane').clientHeight - this.$el.querySelector('div.diff-text-pane-top').clientHeight
         if (this.activeNames.length == 0) {
-          this.$el.querySelector('div.diff-text-pane').style.height =this.$el.querySelector('.canvas-pane').clientHeight;
+          this.$el.querySelector('div.diff-text-pane').style.height = totalHeight- 16;
         } else {
-          this.$el.querySelector('div.diff-text-pane').style.height =this.$el.querySelector('.canvas-pane').clientHeight - 250;
+          this.$el.querySelector('div.diff-text-pane').style.height = totalHeight - 253;
         }
       },
       spanContent: function(content) {
@@ -299,11 +328,14 @@
       },
       loadPopup: function (seg){
         let diff_pane = this.$el.querySelector('div.diff-text-pane');
-        
+        let offset = 210;
+        if (this.correct_task_count == 4) {
+          offset = 290;
+        }
         let pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().bottom;
         //if (diff_pane.scrollHeight - diff_pane.scrollTop == diff_pane.clientHeight) {
-          if (diff_pane.clientHeight - pos < 210) {
-            pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().top - 210;
+          if (diff_pane.clientHeight - pos < offset) {
+            pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().top - offset;
           }
         //}
 
@@ -372,15 +404,40 @@
         )
         //range.moveStart('character', 1);
       },
-      handleScroll: function(){
-        this.scrolled = this.$el.querySelector('div.diff-text-pane').scrollTop >20;
-        if (this.scrolled) {
-          this.$el.querySelector('.cmd-block').style.position='fixed';
-          this.$el.querySelector('.cmd-block').style.width="41%"
-        } else {
-          this.$el.querySelector('.cmd-block').style.position='inherit';
-          this.$el.querySelector('.cmd-block').style.width="110%"
+      RemoveLine: function(){
+        console.log(this.page_no,  this.line_no)
+        let recover_mode = false;
+        if (this.current_seg.selected_text == '') {
+          recover_mode = true;
         }
+        for(var i = 0; i < this.sharedata.correctsegs.length; ++i) {
+            var seg = this.sharedata.correctsegs[i];
+            if (seg.page_no == this.page_no && seg.line_no == this.line_no ) {
+              if (!recover_mode) {
+                seg.selected_text = '';
+              } else {
+                if (seg.tag != 2){
+                  seg.selected_text = seg.text2
+                } else {
+                  seg.selected_text = null;
+                }
+              }
+              
+              this.$set(this.sharedata.correctsegs, i, seg)
+              this.updateCorrectSeg(seg); 
+            }
+            
+        }
+      },
+      handleScroll: function(){
+        // this.scrolled = this.$el.querySelector('div.diff-text-pane').scrollTop >20;
+        // if (this.scrolled) {
+        //   this.$el.querySelector('.cmd-block').style.position='fixed';
+        //   this.$el.querySelector('.cmd-block').style.width="41%"
+        // } else {
+        //   this.$el.querySelector('.cmd-block').style.position='inherit';
+        //   this.$el.querySelector('.cmd-block').style.width="110%"
+        // }
         
       },
       nextPopup: function(evt) {
@@ -723,7 +780,7 @@
         });
       },
       updateCorrectSeg: function(seg, update_text = null) {
-        update_text = seg.selected_text.replace(/↵/g, '').replace(/\n\n$/, '\n')
+        update_text = seg.selected_text && seg.selected_text.replace(/↵/g, '').replace(/\n\n$/, '\n')
         axios.put('/api/correct/' + this.sharedata.task_id + '/correctsegs/' + seg.id + '/', {
           selected_text: update_text || seg.selected_text,
           doubtable: seg.doubtable

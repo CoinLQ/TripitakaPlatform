@@ -622,7 +622,7 @@ class Reel_Task_Statistical(models.Model):
                     stask.amount_of_cctasks = count
                     stask.save(update_fields=['amount_of_cctasks'])
 
-class Task(models.Model):
+class RTask(models.Model):
     '''
     切分校对计划的任务实例
     估计划激活后, 即后台自动据校对类型分配任务列表.
@@ -714,7 +714,7 @@ class Task(models.Model):
             models.Index(fields=['priority', 'status']),
         ]
 
-class CCTask(Task):
+class CCTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='cc_tasks', on_delete=models.SET_NULL,
                                  verbose_name=u'切分计划')
     count = models.IntegerField("任务字块数", default=20)
@@ -727,7 +727,7 @@ class CCTask(Task):
         verbose_name_plural = u"置信校对"
 
 
-class ClassifyTask(Task):
+class ClassifyTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='classify_tasks', on_delete=models.SET_NULL,
                                  verbose_name=u'切分计划')
     count = models.IntegerField("任务字块数", default=10)
@@ -740,7 +740,7 @@ class ClassifyTask(Task):
         verbose_name_plural = u"聚类校对"
 
 
-class PageTask(Task):
+class PageTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='page_tasks', on_delete=models.SET_NULL,
                                  verbose_name=u'切分计划')
     count = models.IntegerField("任务页的数量", default=1)
@@ -752,7 +752,7 @@ class PageTask(Task):
         verbose_name_plural = u"逐字校对"
 
 
-class AbsentTask(Task):
+class AbsentTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='absent_tasks', on_delete=models.SET_NULL,
                                  verbose_name=u'切分计划')
     count = models.IntegerField("任务页的数量", default=1)
@@ -764,7 +764,7 @@ class AbsentTask(Task):
         verbose_name_plural = u"查漏校对"
 
 
-class DelTask(Task):
+class DelTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='del_tasks', on_delete=models.SET_NULL,
                                  verbose_name=u'切分计划')
     count = models.IntegerField("任务字块数", default=10)
@@ -783,7 +783,7 @@ class DelTask(Task):
                 item.undo()
 
 
-class ReviewTask(Task):
+class ReviewTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='review_tasks', on_delete=models.SET_NULL,
                                  verbose_name=u'切分计划')
     count = models.IntegerField("任务字块数", default=10)

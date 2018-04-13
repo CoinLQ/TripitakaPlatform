@@ -30,11 +30,14 @@ class PunctProcess(object):
         offset = 0
         sparses = []
         filter_ranges = []
+        last_idx = -1
         for tag, i1, i2, j1, j2 in opcodes:
             # print('{:7}   base[{}:{}] --> compare[{}:{}] {!r:>8} --> {!r}'.format(
             #    tag, i1, i2, j1, j2, base[i1:i2], compare[j1:j2]))
             offset = offset - ((i2-i1)-(j2-j1))
-            sparses.append({"idx": j2, "offset": offset})
+            if i2 != last_idx:
+                sparses.append({"idx": i2, "offset": offset})
+                last_idx = i2
             if tag == 'delete':
                 # print('{:7}   base[{}:{}] --> compare[{}:{}] {!r:>8} --> {!r}'.format(
                 #     tag, i1, i2, j1, j2, base[i1:i2], compare[j1:j2]))
@@ -80,12 +83,11 @@ class PunctProcess(object):
         return result_text
 
     def body_punct(self, base_reel_text, head_text, tail_text, puncts):
-        _puncts = filter(lambda a: a[0]> len(head_text), puncts)
-        
-        tail_pos = len(base_reel_text)-len(tail_text)
-        new_puncts = list(filter(lambda a: a[0]<= tail_pos, _puncts))
+        head_text_len = len(head_text)
+        tail_pos = len(base_reel_text) - len(tail_text)
+        new_puncts = list(filter(lambda a: a[0] > head_text_len and a[0]<= tail_pos, puncts))
         for punct in new_puncts:
-            punct[0] = punct[0] - len(head_text)
+            punct[0] = punct[0] - head_text_len
         return new_puncts
 
     def get_sutra_body_text_and_puncts(self, sutra):

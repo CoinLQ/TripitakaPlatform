@@ -248,7 +248,8 @@ class TaskAdmin(object):
 
     def task_link(self, instance):
         if instance.status in [Task.STATUS_PROCESSING, Task.STATUS_PAUSED, Task.STATUS_FINISHED]:
-            return '<a target="_blank" href="/correct/%d/">查看</a>' % (instance.id)
+            return '<a target="_blank" href="/%s/%d/">查看</a>' % \
+            (Task.TYPE_TO_URL_PREFIX[instance.typ], instance.id)
         else:
             return ''
     task_link.allow_tags = True

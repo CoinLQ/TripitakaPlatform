@@ -263,10 +263,10 @@
                 // https://chromium.googlesource.com/chromium/src/+/afce9d93e76f2ff81baaa088a4ea25f67d1a76b3%5E%21/
                 if (isChrome) {
                     console.log(this.isOnComposition);
-                    if (event.target.attributes.placehold && event.target.attributes.placehold.value === "结果文") {
+                    if (event.target.attributes.id && event.target.attributes.id.value === "pop-input") {
                       this.segInput(this.current_seg, event);
                     } else {
-                      id = event.target.parentElement.id.replace("segdiff-", "")
+                      let id = event.target.parentElement.id.replace("segdiff-", "")
                       let seg = _.find(this.sharedata.correctsegs, function(v) { return v.id == parseInt(id)});
                       this.segInput(seg, event);
                     }

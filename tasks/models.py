@@ -300,7 +300,6 @@ class DiffSeg(models.Model):
     各版本比对结果的差异文本段
     """
     reeldiff = models.ForeignKey(ReelDiff, on_delete=models.CASCADE, null=True)
-    diffseg_no = models.SmallIntegerField('序号', default=0)
     base_pos = models.IntegerField('在基准文本中位置', default=0) # base_pos=0表示在第1个字前，base_pos>0表示在第base_pos个字后
     base_length = models.IntegerField('基准文本中对应文本段长度', default=0)
     recheck = models.BooleanField('待复查', default=False)

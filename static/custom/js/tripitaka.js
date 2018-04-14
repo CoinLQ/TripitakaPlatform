@@ -274,11 +274,11 @@ Vue.component('diffseg-box', {
     methods: {
         jumptodiffseg: function(diffseg_id) {
             try {
-              if (!$('a[diffsegno='+ diffseg_id + ']')) {
+              if (!$('a[diffsegid='+ diffseg_id + ']')) {
                 return
               }
-              $('a[diffsegno='+ diffseg_id + ']').focus()
-              var offset = $('#judge-base-text').scrollTop() + $('a[diffsegno='+ diffseg_id + ']')[0].getBoundingClientRect().top - 360;
+              $('a[diffsegid='+ diffseg_id + ']').focus()
+              var offset = $('#judge-base-text').scrollTop() + $('a[diffsegid='+ diffseg_id + ']')[0].getBoundingClientRect().top - 360;
               $('#judge-base-text').scrollTop = offset;
             } catch(err) {
               console.log('jumptodiffseg: ', err)
@@ -371,10 +371,10 @@ Vue.component('sutra-unit', {
     <span>
         <span v-if="data.type == 0">{{ data.text }}</span>
         <span v-else-if="data.type == 1" tag="br"><br /></span>
-        <span v-else-if="data.type == 2"><a href="#" :diffsegno="data.diffseg_id" :class="className" @click="choiceThis()"><span class="diffseg-tag-white"></span></a></span>
-        <span v-else-if="data.type == 3"><a href="#" :diffsegno="data.diffseg_id" :class="className" @click="choiceThis()">{{ data.text }}</a></span>
+        <span v-else-if="data.type == 2"><a href="#" :diffsegid="data.diffseg_id" :class="className" @click="choiceThis()"><span class="diffseg-tag-white"></span></a></span>
+        <span v-else-if="data.type == 3"><a href="#" :diffsegid="data.diffseg_id" :class="className" @click="choiceThis()">{{ data.text }}</a></span>
         <span v-else>
-            <a href="#" :diffsegno="data.diffseg_id" :class="className" @click="choiceThis()">
+            <a href="#" :diffsegid="data.diffseg_id" :class="className" @click="choiceThis()">
                 <span v-for="(line, index) in data.lines" tag="seg">{{ line }}<br v-if="index < data.lines.length-1" /></span>
             </a>
         </span>

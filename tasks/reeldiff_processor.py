@@ -223,7 +223,6 @@ def merge_diffseg(diffseg_lst, diffsegtexts_lst):
     # 将连接的DiffSeg合并
     new_diffseg_lst = []
     new_diffsegtexts_lst = []
-    diffseg_no = 1
     for i in range(diffseg_count):
         diffseg = diffseg_lst[i]
         diffsegtexts = diffsegtexts_lst[i]
@@ -247,10 +246,8 @@ def merge_diffseg(diffseg_lst, diffsegtexts_lst):
                                 prev_diffsegtext.text += text
                             break
                 continue
-        diffseg.diffseg_no = diffseg_no
         new_diffseg_lst.append(diffseg)
         new_diffsegtexts_lst.append(diffsegtexts)
-        diffseg_no += 1
     return (new_diffseg_lst, new_diffsegtexts_lst)
 
 def create_diffseg(diffseg_lst, diffsegtexts_lst, reeltext_lst):

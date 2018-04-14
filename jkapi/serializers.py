@@ -23,8 +23,8 @@ class DiffSegSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiffSeg
-        fields = ('id', 'diffseg_no', 'recheck', 'recheck_desc', 'diffsegtexts')
-        read_only_fields = ('id', 'diffseg_no', 'recheck', 'recheck_desc', 'diffsegtexts')
+        fields = ('id', 'recheck', 'recheck_desc', 'diffsegtexts')
+        read_only_fields = ('id', 'recheck', 'recheck_desc', 'diffsegtexts')
 
 class DiffSegResultSerializer(serializers.ModelSerializer):
     diffseg = DiffSegSerializer(read_only=True)

@@ -9,7 +9,7 @@ from tasks.models import *
 from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, \
 clean_separators, clean_jiazhu, compute_accurate_cut
 from tasks.ocr_compare import OCRCompare
-from tasks.utils.punct_process import PunctProcess
+from tasks.utils.auto_punct import AutoPunct
 from tasks.reeldiff_processor import is_sutra_ready_for_judge, create_data_for_judge_tasks, \
 create_new_data_for_judge_tasks
 import json, re, logging, traceback
@@ -272,7 +272,7 @@ def publish_correct_result(task):
             except:
                 pass
 
-        task_puncts = PunctProcess.create_new_for_correcttext(task.reel, reel_correct_text)
+        task_puncts = AutoPunct.get_puncts_str(clean_separators(reel_correct_text.text))
         punct = Punct(reel=task.reel, reeltext=reel_correct_text, punctuation=task_puncts)
         punct.save()
 
@@ -526,13 +526,7 @@ def publish_judge_result(task):
             reeltext.save()
             task.lqreel.set_text_ready()
 
-            sutra_cb = Sutra.objects.get(lqsutra=task.lqreel.lqsutra, tripitaka=Tripitaka.objects.get(code='CB'))
-            reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=task.lqreel.reel_no)
-            punct = Punct.objects.filter(reel=reel_cb).first()
-            base_reel_text = clean_separators(punct.reeltext.text)
-            _puncts = PunctProcess().new_puncts(base_reel_text, json.loads(punct.punctuation), reeltext.text)
-            task_puncts = json.dumps(_puncts, separators=(',', ':'))
-
+            task_puncts = AutoPunct.get_puncts_str(reeltext.text)
             punct = LQPunct(lqreel=task.lqreel, reeltext=reeltext, punctuation=task_puncts)
             punct.save()
 

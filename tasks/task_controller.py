@@ -130,8 +130,7 @@ correct_times = 2, correct_verify_times = 0,
 judge_times = 2, judge_verify_times = 0,
 punct_times = 2, punct_verify_times = 0,
 lqpunct_times = 0, lqpunct_verify_times = 0,
-mark_times = 0, mark_verify_times = 0,
-lqmark_times = 0, lqmark_verify_times = 0):
+mark_times = 0, mark_verify_times = 0):
     '''
     reel_lst格式： [(lqsutra, reel_no), (lqsutra, reel_no)]
     '''
@@ -525,6 +524,7 @@ def publish_judge_result(task):
             body = ''.join(text_lst)
             reeltext = LQReelText(lqreel=task.lqreel, text=body, body=body, task=task, publisher=task.picker)
             reeltext.save()
+            task.lqreel.set_text_ready()
 
             sutra_cb = Sutra.objects.get(lqsutra=task.lqreel.lqsutra, tripitaka=Tripitaka.objects.get(code='CB'))
             reel_cb = Reel.objects.get(sutra=sutra_cb, reel_no=task.lqreel.reel_no)

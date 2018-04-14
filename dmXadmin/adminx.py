@@ -104,7 +104,7 @@ class VolumeAdmin(object):
 
 
 class ReelAdmin(object):
-    list_display = ['tripitaka_name', 'sutra_name', 'reel_no', 'longquan_Name', 'edition_type', 'remark',
+    list_display = ['tripitaka_name', 'sutra_name', 'reel_no', 'longquan_Name', 'remark',
                     'start_vol', 'start_vol_page', 'end_vol', 'end_vol_page',
                     'image_ready', 'cut_ready', 'column_ready']  # 自定义显示这两个字段
 
@@ -123,10 +123,10 @@ class ReelAdmin(object):
     tripitaka_name.short_description = u'藏名'
     longquan_Name.short_description = u'龙泉经名'
     search_fields = ['sutra__sid', 'sutra__name', 'sutra__tripitaka__name',
-                     'reel_no', 'edition_type', 'remark']  # 可以搜索的字段
+                     'reel_no', 'remark']  # 可以搜索的字段
     list_filter = ['sutra__sid', 'sutra__name']
     ordering = ['id', 'reel_no']  # 按照倒序排列
-    fields = ('sutra', 'reel_no', 'edition_type', 'remark',
+    fields = ('sutra', 'reel_no', 'remark',
               'start_vol', 'start_vol_page', 'end_vol', 'end_vol_page')
     list_display_links = ('sutra_name')
 

@@ -40,8 +40,7 @@ def read_reel_info(huayan_cb, reel_no, lines):
             end_vol_page = vol_page
 
     reel = Reel(sutra=huayan_cb, reel_no=reel_no, start_vol=start_vol,
-    start_vol_page=start_vol_page, end_vol=end_vol, end_vol_page=end_vol_page,
-    edition_type=Reel.EDITION_TYPE_BASE)
+    start_vol_page=start_vol_page, end_vol=end_vol, end_vol_page=end_vol_page)
     reel.save()
 
 def process_cbeta_text(huayan_cb, reel_no, lines1, lines2):

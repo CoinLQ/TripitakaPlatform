@@ -99,6 +99,7 @@ class LQReel(models.Model):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', on_delete=models.CASCADE)
     reel_no = models.SmallIntegerField('卷序号')
     remark = models.TextField('备注', blank=True, default='')
+    text_ready = models.BooleanField(verbose_name='是否有龙泉藏经经文', default=False)
 
     class Meta:
         verbose_name = '龙泉藏经卷'
@@ -108,6 +109,11 @@ class LQReel(models.Model):
 
     def __str__(self):
         return '%s (第%s卷)' % (self.lqsutra, self.reel_no)
+
+    def set_text_ready(self):
+        if not self.text_ready:
+            self.text_ready = True
+            self.save(update_fields=['text_ready'])
 
     @property
     def label(self):
@@ -133,7 +139,6 @@ class Reel(models.Model):
     path1 = models.CharField('存储层次1', max_length=16, default='', blank=True)
     path2 = models.CharField('存储层次2', max_length=16, default='', blank=True)
     path3 = models.CharField('存储层次3', max_length=16, default='', blank=True)
-    edition_type = models.SmallIntegerField('版本类型', choices=EDITION_TYPE_CHOICES, default=0)
     remark = models.TextField('备注', blank=True, default='')
     image_ready = models.BooleanField(verbose_name='图片状态', default=False)
     cut_ready = models.BooleanField(verbose_name='文字校对生成的切分数据状态', default=False)

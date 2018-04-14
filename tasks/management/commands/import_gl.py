@@ -5,6 +5,7 @@ from tdata.models import *
 from tasks.models import *
 from tasks.common import *
 from tasks.task_controller import *
+from tasks.utils.auto_punct import AutoPunct
 
 import os, sys, requests, zipfile, io
 from os.path import isfile, join
@@ -52,6 +53,6 @@ class Command(BaseCommand):
 
                     punct = Punct.objects.filter(reeltext=reel_correct_text).first()
                     if punct is None:
-                        task_puncts = PunctProcess.create_new_for_correcttext(reel, reel_correct_text)
+                        task_puncts = AutoPunct.get_puncts_str(clean_separators(reel_correct_text.text))
                         punct = Punct(reel=reel, reeltext=reel_correct_text, punctuation=task_puncts)
                         punct.save()

@@ -4,7 +4,7 @@ from tdata.models import *
 from tasks.models import *
 from tasks.common import *
 from tasks.task_controller import *
-from tasks.utils.punct_process import PunctProcess
+from tasks.utils.auto_punct import AutoPunct
 from .init import get_or_create_admin
 from .initjudge import save_reel_with_correct_text
 
@@ -25,13 +25,13 @@ def create_punct_task(sid, reel_no, batchtask):
     try:
         punct = Punct.objects.get(reeltext=reel_correct_text)
     except :
-        task_puncts = PunctProcess.create_new_for_correcttext(reel, reel_correct_text)
+        task_puncts = AutoPunct.get_puncts_str(clean_separators(reel_correct_text.text))
         punct = Punct(reel=reel, reeltext=reel_correct_text, punctuation=task_puncts)
         punct.save()
 
     for task_no in [1, 2]:
         task = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT, reel=reel,
-        reeltext=reel_correct_text, result = '[]',
+        reeltext=reel_correct_text, result='[]',
         task_no=task_no, status=Task.STATUS_READY,
         publisher=batchtask.publisher)
         task.save()

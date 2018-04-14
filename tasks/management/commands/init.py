@@ -40,7 +40,7 @@ def save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
         reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
     except:
         reel = Reel(sutra=sutra, reel_no=reel_no, start_vol=start_vol,
-        start_vol_page=start_vol_page, end_vol=start_vol, end_vol_page=end_vol_page, edition_type=Reel.EDITION_TYPE_CHECKED,
+        start_vol_page=start_vol_page, end_vol=start_vol, end_vol_page=end_vol_page,
         path1=path1, path2=path2, path3=path3,
         ocr_ready=ocr_ready, correct_ready=correct_ready)
         reel.save()

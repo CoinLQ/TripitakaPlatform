@@ -72,10 +72,6 @@ class LQSutra(models.Model):
     def __str__(self):
         return '%s: %s' % (self.sid, self.name)
 
-    @property
-    def label(self):
-        return '%s(%s卷)' % (self.name, self.total_reels)
-
 class Sutra(models.Model):
     sid = models.CharField(verbose_name='实体藏经|唯一经号编码', editable=True, max_length=8, unique=True)
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE,verbose_name='藏')
@@ -114,10 +110,6 @@ class LQReel(models.Model):
         if not self.text_ready:
             self.text_ready = True
             self.save(update_fields=['text_ready'])
-
-    @property
-    def label(self):
-        return '第%s卷' % self.reel_no
 
 class Reel(models.Model):
     EDITION_TYPE_UNKNOWN = 0 # 未选择

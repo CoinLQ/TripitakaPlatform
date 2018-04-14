@@ -9,12 +9,12 @@ class PageSerializer(serializers.ModelSerializer):
 class LQReelSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = LQReel
-        fields = ('id', 'reel_no', 'label')
+        fields = ('id', 'reel_no', 'text_ready')
 
 class LQSutraSerializer(serializers.ModelSerializer):
     lqreel_set = LQReelSimpleSerializer(many=True)
 
     class Meta:
         model = LQSutra
-        fields = ('sid', 'name', 'total_reels', 'label', 'lqreel_set')
-        read_only_fields = ('sid', 'name', 'total_reels', 'label', 'lqreel_set')
+        fields = ('id', 'sid', 'name', 'total_reels', 'lqreel_set')
+        read_only_fields = ('id', 'sid', 'name', 'total_reels', 'lqreel_set')

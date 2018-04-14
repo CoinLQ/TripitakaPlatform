@@ -91,6 +91,19 @@ class Task(models.Model):
         (STATUS_SYSTEM_PAUSED, '系统内暂停'),
     )
 
+    TYPE_TO_URL_PREFIX = {
+        TYPE_CORRECT: 'correct',
+        TYPE_CORRECT_VERIFY: 'verify_correct',
+        TYPE_JUDGE: 'judge',
+        TYPE_JUDGE_VERIFY: 'verify_judge',
+        TYPE_PUNCT: 'punct',
+        TYPE_PUNCT_VERIFY: 'verify_punct',
+        TYPE_LQPUNCT: 'lqpunct',
+        TYPE_LQPUNCT_VERIFY: 'verify_lqpunct',
+        TYPE_MARK: 'mark',
+        TYPE_MARK_VERIFY: 'verify_mark',
+    }
+
     batchtask = models.ForeignKey(BatchTask, on_delete=models.CASCADE, verbose_name='批次号')
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE, related_name='tasks',
     blank=True, null=True)

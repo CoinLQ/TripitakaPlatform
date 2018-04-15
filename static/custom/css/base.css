@@ -376,13 +376,6 @@ opacity: 0;
     font-size: 14px;
 }
 
-.sutra-tree {
-    width: 300px;
-    height: 600px;
-    overflow-y: scroll;
-    border: 1px #ccc solid;
-}
-
 .el-button.is-circle {
     border-radius: 50%;
     padding: 10px;
@@ -447,4 +440,19 @@ span.vprogress {
 
 .el-button.is-round {
     padding: 12px 14px;
+}
+
+.sutra-tree {
+    height: 600px;
+    overflow-y: scroll;
+    border: 1px #ccc solid;
+}
+.sutra-searchbox {
+    width: 90%;
+}
+.sutra-page-input {
+    width: 15%;
+}
+.lqtripitaka-text {
+    font-size: 20px;
 }

@@ -4,6 +4,7 @@ from django.http import HttpResponse, JsonResponse
 from django.db import transaction
 from django.db.models import Q
 
+from jwt_auth.models import Staff
 from tdata.models import *
 from tasks.models import *
 from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, \
@@ -123,6 +124,37 @@ def get_sutra_body(sutra):
         if reel_correct_text:
             body_lst.append(clean_jiazhu(reel_correct_text.body))
     return '\n\n'.join(body_lst)
+
+def create_tasks_for_lqreels(lqreels_json,
+                             correct_times=2, correct_verify_times=0,
+                             judge_times=2, judge_verify_times=0,
+                             punct_times=2, punct_verify_times=0,
+                             lqpunct_times=0, lqpunct_verify_times=0,
+                             mark_times=0, mark_verify_times=0):
+    '''
+    lqreels_json格式: [{"lqsutra_id":1, "reel_no":1}, {"lqsutra_id":1, "reel_no":2}]
+    '''
+    lqreels = json.loads(lqreels_json)
+    lqreel_lst = []
+    id_to_lqsutra = {}
+    for lqreel in lqreels:
+        lqsutra_id = lqreel['lqsutra_id']
+        reel_no = lqreel['reel_no']
+        lqsutra = id_to_lqsutra.get(lqsutra_id, None)
+        if lqsutra is None:
+            try:
+                lqsutra = LQSutra.objects.get(id=lqsutra_id)
+            except:
+                continue
+            id_to_lqsutra[lqsutra_id] = lqsutra
+        lqreel_lst.append((lqsutra, reel_no))
+
+    admin = Staff.objects.get(username='admin')
+    batchtask = BatchTask(priority=2, publisher=admin)
+    batchtask.save()
+    create_tasks_for_batchtask(batchtask, lqreel_lst, correct_times, correct_verify_times,
+                               judge_times, judge_verify_times, punct_times, punct_verify_times,
+                               lqpunct_times, lqpunct_verify_times, mark_times, mark_verify_times)
 
 # 从龙泉大藏经来发布
 def create_tasks_for_batchtask(batchtask, reel_lst,
@@ -376,7 +408,6 @@ def correct_submit(task):
             if task_count >= 3:
                 correctsegs_add = OCRCompare.generate_correct_diff_for_verify(correct_tasks[0].result, correct_tasks[2].result)
                 correctsegs = OCRCompare.merge_correctseg_for_verify(correctsegs, correctsegs_add, 3)
-            #import pdb; pdb.set_trace()
             if task_count == 4:
                 correctsegs_add = OCRCompare.generate_correct_diff_for_verify(correct_tasks[0].result, correct_tasks[3].result)
                 correctsegs = OCRCompare.merge_correctseg_for_verify(correctsegs, correctsegs_add, 4)
@@ -627,3 +658,13 @@ def lqpunct_submit_result_async(task_id):
 def publish_lqpunct_result_async(task_id):
     task = Task.objects.get(pk=task_id)
     publish_lqpunct_result(task)
+
+@background(schedule=0)
+def create_tasks_for_lqreels_async(lqreels_json,
+                                   correct_times=2, correct_verify_times=0,
+                                   judge_times=2, judge_verify_times=0,
+                                   punct_times=2, punct_verify_times=0,
+                                   lqpunct_times=0, lqpunct_verify_times=0,
+                                   mark_times=0, mark_verify_times=0):
+    create_tasks_for_lqreels(lqreels_json, correct_times, correct_verify_times, judge_times, judge_verify_times,
+                             punct_times, punct_verify_times, lqpunct_times, lqpunct_verify_times, mark_times, mark_verify_times)

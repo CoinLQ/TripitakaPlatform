@@ -11,6 +11,8 @@ from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, \
 clean_separators, clean_jiazhu, compute_accurate_cut
 from tasks.ocr_compare import OCRCompare
 from tasks.utils.auto_punct import AutoPunct
+# 下一行不能删除，用来自动生成Punct.body_punctuation
+from tasks.utils.punct_process import PunctProcess
 from tasks.reeldiff_processor import is_sutra_ready_for_judge, create_data_for_judge_tasks, \
 create_new_data_for_judge_tasks
 import json, re, logging, traceback
@@ -558,7 +560,8 @@ def publish_judge_result(task):
             task.lqreel.set_text_ready()
 
             task_puncts = AutoPunct.get_puncts_str(reeltext.text)
-            punct = LQPunct(lqreel=task.lqreel, reeltext=reeltext, punctuation=task_puncts)
+            punct = LQPunct(lqreel=task.lqreel, reeltext=reeltext, punctuation=task_puncts,
+            body_punctuation=task_puncts)
             punct.save()
 
             # 检查是否有未就绪的定本标点任务，如果有，状态设为READY

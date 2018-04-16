@@ -147,7 +147,6 @@ class PunctProcess(object):
         return compact_json_dumps(task_puncts)
 
 @receiver(pre_save, sender=Punct)
-@receiver(pre_save, sender=LQPunct)
 def update_body_punctuation_fields(sender, instance, **kwargs):
     punctuation = json.loads(instance.punctuation)
     body_puncts = PunctProcess().body_punct(clean_separators(instance.reeltext.text), clean_separators(instance.reeltext.head), clean_separators(instance.reeltext.tail), punctuation)

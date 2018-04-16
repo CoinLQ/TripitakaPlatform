@@ -32,7 +32,9 @@ class AutoPunct:
     @classmethod
     def get_puncts(cls, text):
         punct_text = cls.get_punct_text(text)
-        return cls.extract_punct(punct_text)
+        if punct_text:
+            return cls.extract_punct(punct_text)
+        return []
 
     @classmethod
     def get_puncts_str(cls, text):

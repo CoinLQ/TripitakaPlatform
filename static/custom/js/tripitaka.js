@@ -69,146 +69,86 @@ function extract_separators(text) {
     return new_separators;
 };
 
-function judge_merge_text_punct(text, diffseg_pos_lst, punct_lst) {
-    var TEXT = 0;
-    var LINE_FEED = 1;
-    var SEG_NOTEXT = 2;
-    var SEG_TEXT = 3;
-    var SEG_LINES = 4;
-
-    var result = [];
+function judge_get_seg_list(text, diffseg_pos_lst, id_key) {
+    var seg_list = [];
     var i = 0;
     var diffseg_idx = 0;
-    var punct_idx = 0;
-    var diffseg_endpos = text.length + 1;
-    var obj = null;
     while (i < text.length) {
-        var pos = diffseg_endpos;
         if (diffseg_idx < diffseg_pos_lst.length) {
-            if (pos > diffseg_pos_lst[diffseg_idx].base_pos) {
-                pos = diffseg_pos_lst[diffseg_idx].base_pos;
+            var pos = diffseg_pos_lst[diffseg_idx].base_pos;
+            var length = diffseg_pos_lst[diffseg_idx].base_length;
+            if (i < pos) {
+                seg_list.push({
+                    'text': text.substr(i, pos-i)
+                })
+                i = pos;
             }
-        }
-        if (punct_idx < punct_lst.length) {
-            if (pos > punct_lst[punct_idx][0]) {
-                pos = punct_lst[punct_idx][0];
+            var obj = {
+                'text': text.substr(i, length)
             }
-        }
-        if (pos <= text.length && pos > i) {
-            if (obj != null) {
-                obj['text'].push(text.substr(i, pos-i));
-            } else {
-                obj = {
-                    'type': TEXT, // text
-                    'text': [ text.substr(i, pos-i) ]
-                };
-            }
-            i = pos;
-        } else if (pos > text.length) {
-            if (obj != null) {
-                obj['text'].push(text.substr(i));
-            } else {
-                obj = {
-                    'type': TEXT, // text
-                    'text': [ text.substr(i) ]
-                };
-            }
-            obj['text'] = obj['text'].join('');
-            result.push(obj);
-            obj = null;
+            obj[id_key] = diffseg_pos_lst[diffseg_idx][id_key];
+            seg_list.push(obj);
+            i = pos + length;
+            ++diffseg_idx;
+        } else {
+            seg_list.push({
+                'text': text.substr(i)
+            })
             i = text.length;
         }
+    }
+    return seg_list;
+}
 
-        if (i == diffseg_endpos) {
-            if (obj != null) {
-                obj['text'] = obj['text'].join('');
-                if ('lines' in obj) {
-                    obj['lines'].push(obj['text']);
-                    obj['text'] = [];
-                }
-                result.push(obj);
-            }
-            obj = null;
-            diffseg_endpos = text.length + 1;
+function merge_text_punct(text, puncts) {
+    var result = [];
+    var i = 0;
+    puncts.forEach(function(punct) {
+        if (i < punct[0]) {
+            result.push(text.substr(i, punct[0] - i));
         }
+        var p_text = punct[1];
+        if (p_text == '\n') {
+            p_text = '<br />';
+        }
+        result.push(p_text);
+        i = punct[0];
+    });
+    if (i < text.length) {
+        result.push(text.substr(i));
+    }
+    return result.join('');
+}
 
-        // 处理标点
+function judge_merge_text_punct(text, diffseg_pos_lst, id_key, punct_lst) {
+    var seg_list = judge_get_seg_list(text, diffseg_pos_lst, id_key);
+    var punct_idx = 0;
+    var start_pos = 0;
+    var end_pos = 0;
+    seg_list.forEach(function (seg) {
+        end_pos = start_pos + seg.text.length;
+        // 添加标点
+        var punct_end_pos = end_pos;
+        if (id_key in seg) {
+            punct_end_pos = end_pos - 1;
+        }
+        var puncts = [];
         while (punct_idx < punct_lst.length) {
-            if (punct_lst[punct_idx][0] == i) {
-                var punct_ch = punct_lst[punct_idx][1];
-                if (punct_ch == '\n') {
-                    if (obj != null) {
-                        if (obj['type'] == TEXT) {
-                            obj['text'] = obj['text'].join('');
-                            result.push(obj);
-                            obj = null;
-                            result.push({
-                                'type': LINE_FEED //'\n'
-                            });
-                        } else if (obj['type'] == SEG_TEXT) {
-                            obj['type'] = SEG_LINES;
-                            obj['lines'] = [obj['text'].join('')]
-                            obj['text'] = [];
-                        } else if (obj['type'] == SEG_LINES) {
-                            obj['lines'].push(obj['text'].join(''));
-                            obj['text'] = [];
-                        }
-                    } else {
-                        result.push({
-                            'type': LINE_FEED
-                        });
-                    }
-                } else {
-                    if (obj != null) {
-                        obj['text'].push(punct_ch);
-                    } else {
-                        obj = {
-                            'type': TEXT,
-                            'text': [ punct_ch ]
-                        }
-                    }
-                }
+            var punct_pos = punct_lst[punct_idx][0];
+            var punct_ch = punct_lst[punct_idx][1];
+            if (punct_pos <= punct_end_pos) {
+                puncts.push([punct_pos - start_pos, punct_ch]);
                 ++punct_idx;
             } else {
                 break;
             }
         }
-
-        if (diffseg_idx < diffseg_pos_lst.length) {
-            var pos = diffseg_pos_lst[diffseg_idx].base_pos;
-            if (pos == i) {
-                diffseg_endpos = pos + diffseg_pos_lst[diffseg_idx].base_length;
-                if (obj != null) {
-                    if (obj['type'] == TEXT || obj['type'] == SEG_TEXT) {
-                        obj['text'] = obj['text'].join('');
-                    } else if (obj['type'] == SEG_LINES) {
-                        obj['lines'].push(obj['text'].join(''));
-                        obj['text'] = [];
-                    }
-                    result.push(obj);
-                    obj = null;
-                }
-                if (pos == diffseg_endpos) {
-                    obj = {
-                        'diffseg_id': diffseg_pos_lst[diffseg_idx].diffseg_id,
-                        'type': SEG_NOTEXT
-                    };
-                    result.push(obj);
-                    obj = null;
-                    diffseg_endpos = text.length + 1;
-                } else {
-                    obj = {
-                        'diffseg_id': diffseg_pos_lst[diffseg_idx].diffseg_id,
-                        'type': SEG_TEXT,
-                        'text': []
-                    };
-                }
-                ++diffseg_idx;
-            }
-
+        if (puncts.length > 0) {
+            seg.text = merge_text_punct(seg.text, puncts);
         }
-    }
-    return result;
+        start_pos = end_pos;
+    });
+    return seg_list;
 }
 
 // judge
@@ -368,41 +308,33 @@ Vue.component('diffseg-box', {
 Vue.component('sutra-unit', {
     props: ['data', 'sharedata'],
     template: `
-    <span>
-        <span v-if="data.type == 0">{{ data.text }}</span>
-        <span v-else-if="data.type == 1" tag="br"><br /></span>
-        <span v-else-if="data.type == 2"><a href="#" :diffsegid="data.diffseg_id" :class="className" @click="choiceThis()"><span class="diffseg-tag-white"></span></a></span>
-        <span v-else-if="data.type == 3"><a href="#" :diffsegid="data.diffseg_id" :class="className" @click="choiceThis()">{{ data.text }}</a></span>
-        <span v-else>
-            <a href="#" :diffsegid="data.diffseg_id" :class="className" @click="choiceThis()">
-                <span v-for="(line, index) in data.lines" tag="seg">{{ line }}<br v-if="index < data.lines.length-1" /></span>
-            </a>
-        </span>
-    </span>
+    <span v-if="data.diffseg_id == undefined" v-html="data.text"></span>
+    <span v-else-if="data.text.length == 0"><a href="#" :diffsegid="data.diffseg_id" :class="className" @click="choiceThis()"><span class="diffseg-tag-white"></span></a></span>
+    <span v-else><a href="#" :diffsegid="data.diffseg_id" :class="className" @click="choiceThis()" v-html="data.text"></a></span>
     `,
     computed: {
         className: function() {
-            if (this.data.type == 2) {
-                if (this.sharedata.diffseg_id == this.data.diffseg_id) {
-                    return 'diffseg-tag-notext-selected';
-                } else {
-                    let elem = _.find(this.sharedata.diffsegresults, function(v) {return v.id == this.data.diffseg_id}.bind(this))
-                    if (elem && elem.selected_text) {
-                        return 'diffseg-tag-judged';
+            if (this.data.diffseg_id != undefined) {
+                if (this.data.text.length == 0) {
+                    if (this.sharedata.diffseg_id == this.data.diffseg_id) {
+                        return 'diffseg-tag-notext-selected';
                     } else {
-                        return 'diffseg-tag-notext';
+                        let elem = _.find(this.sharedata.diffsegresults, function(v) {return v.id == this.data.diffseg_id}.bind(this))
+                        if (elem && elem.selected_text) {
+                            return 'diffseg-tag-judged';
+                        } else {
+                            return 'diffseg-tag-notext';
+                        }
                     }
-
-                    
-                }
-            } else if (this.data.type == 3) {
-                if (this.sharedata.diffseg_id == this.data.diffseg_id) {
-                    return 'diffseg-tag-selected';
-                }else {
-                    let elem = _.find(this.sharedata.diffsegresults, function(v) {return v.id == this.data.diffseg_id}.bind(this))
-                    if (elem && elem.selected_text) {
-                        return 'diffseg-tag-judged';
-                    } 
+                } else {
+                    if (this.sharedata.diffseg_id == this.data.diffseg_id) {
+                        return 'diffseg-tag-selected';
+                    } else {
+                        let elem = _.find(this.sharedata.diffsegresults, function(v) {return v.id == this.data.diffseg_id}.bind(this))
+                        if (elem && elem.selected_text) {
+                            return 'diffseg-tag-judged';
+                        }
+                    }
                 }
             }
             return '';

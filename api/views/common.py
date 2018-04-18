@@ -193,3 +193,19 @@ class CommonHistoryAPIView(CommonListAPIView):
         if hasattr(self.model.Config, 'filter_queryset'):
             q = self.model.Config.filter_queryset(self.request, q)
         return q
+
+    def update(self, request, *args, **kwargs):
+        # self.app_name, self.model_name = get_app_model_name(kwargs)
+        # self.queryset = self.query_set(self.model_name)
+        # self.serializer_class = self.get_serializer_class()
+
+        return self.detail_task(request, kwargs.get('pk'))
+    
+    def detail_task(self, request, pk):
+        task = Task.objects.get(pk=pk)
+        if task.typ in [1, 2, 5, 6]:
+            desc = "%s-%s-第%d卷" % (task.reel.sutra.tripitaka.name, task.reel.sutra.name, task.reel.reel_no)
+        else:
+            desc = "%s-第%d卷" % (task.lqreel.lqsutra.name, task.lqreel.reel_no)
+
+        return Response({"status": 0, "task_id": pk, "title": desc})

@@ -174,9 +174,11 @@
       loadSutraText: function() {
         // 加载底本经文
         if (this.show_punct) {
-          this.merged_base_text = judge_merge_text_punct(this.base_text, this.sharedata.diffseg_pos_lst, this.punct_lst);
+          this.merged_base_text = judge_merge_text_punct(this.base_text, this.sharedata.diffseg_pos_lst,
+          'diffseg_id', this.punct_lst);
         } else {
-          this.merged_base_text = judge_merge_text_punct(this.base_text, this.sharedata.diffseg_pos_lst, this.orig_separators);
+          this.merged_base_text = judge_merge_text_punct(this.base_text, this.sharedata.diffseg_pos_lst,
+          'diffseg_id', this.orig_separators);
         }
       },
       loadVerifySutraText: function() {
@@ -185,9 +187,11 @@
         diffseg_pos_lst = _.filter(this.sharedata.diffseg_pos_lst, function(v) { return diffseg_ids.indexOf(v.diffseg_id) != -1 })
 
         if (this.show_punct) {
-          this.merged_base_text = judge_merge_text_punct(this.base_text, diffseg_pos_lst, this.punct_lst);
+          this.merged_base_text = judge_merge_text_punct(this.base_text, diffseg_pos_lst,
+          'diffseg_id', this.punct_lst);
         } else {
-          this.merged_base_text = judge_merge_text_punct(this.base_text, diffseg_pos_lst, this.orig_separators);
+          this.merged_base_text = judge_merge_text_punct(this.base_text, diffseg_pos_lst,
+          'diffseg_id', this.orig_separators);
         }
       },
       prevPage: function() {

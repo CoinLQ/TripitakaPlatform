@@ -13,7 +13,7 @@ from tasks.common import clean_separators, extract_line_separators
 import json, re
 
 class SutraResultsSetPagination(pagination.PageNumberPagination):
-    page_size = 3
+    page_size = 30
 
 class SutraViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Sutra.objects.all()

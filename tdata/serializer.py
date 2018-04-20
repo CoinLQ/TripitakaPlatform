@@ -26,4 +26,8 @@ class ReelSimpleSerializer(serializers.ModelSerializer):
 
 class SutraSerializer(serializers.ModelSerializer):
     reel_set = ReelSimpleSerializer(many=True)
-        read_only_fields = ('id', 'sid', 'name', 'total_reels', 'lqreel_set')
+
+    class Meta:
+        model = Sutra
+        fields = ('sid', 'name', 'total_reels','reel_set')
+        read_only_fields = ('sid', 'name', 'total_reels', 'reel_set')        

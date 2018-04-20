@@ -142,6 +142,8 @@ class Reel(models.Model):
         verbose_name = '实体卷'
         verbose_name_plural = '实体卷'
         unique_together = (('sutra', 'reel_no'),)
+        #new code 0411
+        ordering = ('id',)
 
     @property
     def name(self):

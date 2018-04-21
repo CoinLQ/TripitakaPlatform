@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from tdata.models import Page, LQSutra, LQReel, Sutra,Reel
+from tdata.models import Page, LQSutra, LQReel, Sutra,Reel,Tripitaka
 
 class PageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,5 +28,11 @@ class SutraSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Sutra
-        fields = ('sid', 'name', 'total_reels','reel_set')
-        read_only_fields = ('sid', 'name', 'total_reels', 'reel_set')        
+        fields = ('id','sid', 'name', 'total_reels','reel_set')
+        read_only_fields = ('id','sid', 'name', 'total_reels', 'reel_set')        
+
+class TripitakaSerializer(serializers.ModelSerializer):    
+    class Meta:
+        model = Tripitaka
+        fields = ('code', 'name')
+        read_only_fields =('code', 'name')

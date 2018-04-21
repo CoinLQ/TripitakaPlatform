@@ -107,3 +107,26 @@ class DoubtSegSerializer(serializers.ModelSerializer):
     class Meta:
         model = DoubtSeg
         fields = ('id', 'task', 'doubt_comment', 'doubt_char_no', 'doubt_text', 'page_no', 'line_no', 'char_no', 'created_at')
+
+class JudgeFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JudgeFeedback
+        fields = ('id', 'original_text', 'fb_text', 'fb_comment', 'fb_user',
+                  'created_at', 'processor', 'processed_at', 'response', 'diffsegresult')
+        read_only_fields = ('id', 'created_at', 'processor', 'processed_at', 'response')
+        extra_kwargs = {
+            'fb_text': {'required': 'True'},
+            'fb_comment': {'required': 'True'},
+            'diffsegresult': {'required': 'True'},
+        }
+
+class JudgeFeedbackUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JudgeFeedback
+        fields = ('id', 'original_text', 'fb_text', 'fb_comment', 'fb_user',
+                  'created_at', 'processor', 'processed_at', 'response', 'diffsegresult')
+        read_only_fields = ('id', 'original_text', 'fb_text', 'fb_comment', 'fb_user',
+                  'created_at', 'diffsegresult')
+        extra_kwargs = {
+            'response': {'required': 'True'},
+        }

@@ -40,6 +40,7 @@ urlpatterns = [
     path('lqpunct/<int:task_id>/', do_punct_task, name='do_punct_task'),
     path('verify_lqpunct/<int:task_id>/', do_punct_task, name='do_punct_task'),
     path('lqtripitaka/', lqtripitaka.index, name='lqtripitaka_index'),
+    path('judgefeedback/<int:judgefeedback_id>/', process_judgefeedback, name='process_judgefeedback'),
 
     path('tools/cutfixed_pages/', cutfixed_pages, name='cutfixed_pages'),
     path('tools/cutfixed_pages/<pid>/', cutfixed_page_detail, name='cutfixed_page_detail'),

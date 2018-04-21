@@ -15,4 +15,7 @@ admin.site.register(ReelCorrectText)
 admin.site.register(LQReelText)
 admin.site.register(Punct)
 admin.site.register(LQPunct)
-admin.site.register(JudgeFeedback)
+
+class JudgeFeedbackAdmin(admin.ModelAdmin):
+    list_display = ['lqsutra_name', 'reel_no']
+admin.site.register(JudgeFeedback, JudgeFeedbackAdmin)

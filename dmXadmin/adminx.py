@@ -285,9 +285,8 @@ class Reel_Task_StatisticalAdmin(object):
     resume_pptask.allow_tags = True
     resume_pptask.is_column = True
 
-    list_display = ('schedule', 'reel', 'amount_of_cctasks', 'completed_cctasks',
-                    'amount_of_absenttasks', 'completed_absenttasks', 'amount_of_pptasks',
-                    'completed_pptasks', 'updated_at', 'resume_pptask')
+    list_display = ('schedule', 'reel', 'amount_of_pptasks',
+                    'completed_pptasks', 'updated_at', )
     list_display_links = ('completed_cctasks', 'reel')
     search_fields = ('amount_of_cctasks', 'completed_cctasks')
     list_filter = ('completed_cctasks',)

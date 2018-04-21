@@ -1,11 +1,11 @@
-
+from django.shortcuts import get_list_or_404
 from rest_framework import viewsets, generics, filters
 from rest_framework import pagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from tdata.models import Sutra,ReelOCRText,Reel
+from tdata.models import Sutra,ReelOCRText,Reel,Tripitaka
 from tasks.models import ReelCorrectText,Punct,Page
-from tdata.serializer import SutraSerializer 
+from tdata.serializer import SutraSerializer ,TripitakaSerializer
 from tdata.lib.image_name_encipher import get_image_url
 from tasks.common import clean_separators, extract_line_separators
 
@@ -16,12 +16,28 @@ class SutraResultsSetPagination(pagination.PageNumberPagination):
     page_size = 30
 
 class SutraViewSet(viewsets.ReadOnlyModelViewSet):
+    #http://api.lqdzj.cn/api/sutra/?page=1&search=大方廣佛華嚴經&tcode=YB
     queryset = Sutra.objects.all()
     serializer_class = SutraSerializer
     pagination_class = SutraResultsSetPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name', )
 
+    def get_queryset(self):
+        queryset = Sutra.objects.all()
+        tcode = self.request.query_params.get('tcode', None)
+        if tcode is not None:
+            queryset =queryset.filter(tripitaka__code=tcode)
+        return queryset
+
+class TripitakaResultsSetPagination(pagination.PageNumberPagination):
+    page_size = 30
+
+class TripitakaViewSet(viewsets.ReadOnlyModelViewSet):
+    #http://api.lqdzj.cn/api/tripitaka/
+    queryset = Tripitaka.objects.all()
+    serializer_class = TripitakaSerializer
+    pagination_class = TripitakaResultsSetPagination        
 
 #TODO 下面的函数需要优化返回值  page 
 class SutraText(APIView):

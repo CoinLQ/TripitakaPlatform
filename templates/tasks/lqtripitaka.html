@@ -22,6 +22,7 @@
       </span>
     </div>
   </div>
+  <div is="judge-result-dialog" :sharedata="sharedata"></div>
 </div>
 {% endblock %}
 {% block foot_script %}
@@ -44,7 +45,6 @@
           }
         },
         disabled: function(data, node) {
-          console.log(data, node)
           if (data.text_ready != undefined) {
             return !data.text_ready;
           }
@@ -56,7 +56,8 @@
       diffsegresult_pos_lst: [],
       merged_text: [],
       sharedata: {
-
+        task_id: null,
+        judgeResultDialogVisible: false
       }
     },
     watch: {
@@ -88,6 +89,7 @@
         axios.get(url).then(function(response) {
           vm.lqsutra_list = response.data.results;
           vm.page_count = Math.ceil(response.data.count / 30);
+          vm.page = 1;
         });
       },
       clickLQSutraTreeNode: function(data) {
@@ -96,6 +98,7 @@
           var url = 'http://api.lqdzj.cn/api/lqreeltext/?lqreel_id=' + lqreel_id;
           var vm = this;
           axios.get(url).then(function(response) {
+            vm.sharedata.task_id = response.data.task_id;
             vm.text = response.data.text;
             vm.punct_lst = response.data.punct_lst;
             vm.diffsegresult_pos_lst = response.data.diffsegresult_pos_lst;
@@ -104,9 +107,8 @@
         }
       },
       loadSutraText: function() {
-        this.merged_text = lqtripitaka_merge_text_punct(this.text,
-        this.diffsegresult_pos_lst, this.punct_lst);
-        console.log(this.merged_text);
+        this.merged_text = judge_merge_text_punct(this.text,
+        this.diffsegresult_pos_lst, 'diffsegresult_id', this.punct_lst);
       }
     }
   });

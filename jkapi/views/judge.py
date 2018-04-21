@@ -41,15 +41,20 @@ class DiffSegResultList(generics.ListAPIView):
             return queryset.filter(diffseg_id__in=diffseg_id_lst).order_by('diffseg__base_pos')
         return queryset.order_by('id')
 
-class DiffSegResultUpdate(generics.UpdateAPIView):
+class DiffSegResultDetail(APIView):
     serializer_class = DiffSegResultSimpleSerializer
-    permission_classes = (IsTaskPickedByCurrentUser, )
+    permission_classes = (IsTaskPickedByCurrentUserOrReadOnly, )
 
     def get_object(self, pk):
         try:
             return DiffSegResult.objects.get(pk=pk)
         except DiffSegResult.DoesNotExist:
             raise Http404
+
+    def get(self, request, task_id, pk, format=None):
+        diffsegresult = self.get_object(pk)
+        serializer = DiffSegResultSerializer(diffsegresult)
+        return Response(serializer.data)
 
     def put(self, request, task_id, pk, format=None):
         diffsegresult = self.get_object(pk)

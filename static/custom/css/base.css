@@ -455,4 +455,10 @@ span.vprogress {
 }
 .lqtripitaka-text {
     font-size: 20px;
+    height: 800px;
+    overflow: scroll;
+}
+
+a.lqtripitaka-diffseg {
+    background: greenyellow;
 }

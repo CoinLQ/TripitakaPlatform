@@ -487,81 +487,34 @@ class Mark(models.Model):
 class MarkUnit(MarkUnitBase):
     mark = models.ForeignKey(Mark, on_delete=models.CASCADE)
 
-class LQMark(models.Model):
-    lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
-    reeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
-    task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始格式标注结果，不为null表示格式标注任务和格式标注审定任务的结果
-    publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
-    created_at = models.DateTimeField('创建时间', blank=True, null=True)
-
-class LQMarkUnit(MarkUnitBase):
-    lqmark = models.ForeignKey(LQMark, on_delete=models.CASCADE)
-
 ####
-class DoubtBase(models.Model):
-    STATUS_UNPROCESSED = 1
-    STATUS_APPROVED = 2
-    STATUS_DISAPPROVED = 3
-    STATUS_CHOICES = (
-        (STATUS_UNPROCESSED, '未处理'),
-        (STATUS_APPROVED, '同意'),
-        (STATUS_DISAPPROVED, '不同意'),
+class FeedbackBase(models.Model):
+    RESPONSE_UNPROCESSED = 1
+    RESPONSE_APPROVED = 2
+    RESPONSE_DISAPPROVED = 3
+    RESPONSE_CHOICES = (
+        (RESPONSE_UNPROCESSED, '未处理'),
+        (RESPONSE_APPROVED, '同意'),
+        (RESPONSE_DISAPPROVED, '不同意'),
     )
 
-    comment = models.TextField('意见')
-    user = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True,
-    verbose_name='用户')
-    created_at = models.DateTimeField('创建时间', default=timezone.now)
+    original_text = models.TextField('原始文本', blank=True, null=True, default='')
+    fb_text = models.TextField('反馈文本', blank=True, null=True, default='')
+    fb_comment = models.TextField('反馈说明')
+    fb_user = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True,
+    verbose_name='反馈用户')
+    created_at = models.DateTimeField('反馈时间', default=timezone.now)
     processor = models.ForeignKey(Staff, related_name='processed_%(class)s', on_delete=models.SET_NULL, null=True,
-    verbose_name='处理用户')
-    processed_at = models.DateTimeField('处理时间', null=True)
-    status = models.SmallIntegerField('状态', choices=STATUS_CHOICES)
+    verbose_name='审查用户')
+    processed_at = models.DateTimeField('审查时间', null=True)
+    response = models.SmallIntegerField('审查意见', choices=RESPONSE_CHOICES, default=RESPONSE_UNPROCESSED)
 
     class Meta:
         abstract = True
 
-class CorrectDoubt(DoubtBase):
-    correct_seg = models.ForeignKey(CorrectSeg, on_delete=models.CASCADE)
+class CorrectFeedback(FeedbackBase):
+    correct_text = models.ForeignKey(ReelCorrectText, on_delete=models.CASCADE)
+    position = models.IntegerField('在卷文本中的位置（前有几个字）', default=0)
 
-    class Meta:
-        verbose_name = '文字校对存疑'
-        verbose_name_plural = '文字校对存疑'
-
-class JudgeDoubt(DoubtBase):
-    diffseg = models.ForeignKey(DiffSeg, on_delete=models.CASCADE)
-
-    class Meta:
-        verbose_name = '校勘判取存疑'
-        verbose_name_plural = '校勘判取存疑'
-
-class PunctDoubt(DoubtBase):
-    reel = models.ForeignKey(Reel, on_delete=models.CASCADE)
-    start_cid = models.CharField('起始经字号', max_length=23)
-    end_cid = models.CharField('结束经字号', max_length=23)
-
-    class Meta:
-        verbose_name = '基础标点存疑'
-        verbose_name_plural = '基础标点存疑'
-
-class LQPunctDoubt(DoubtBase):
-    lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE)
-    start_cid = models.CharField('起始经字号', max_length=23) # 底本的cid
-    end_cid = models.CharField('结束经字号', max_length=23)
-
-    class Meta:
-        verbose_name = '定本标点存疑'
-        verbose_name_plural = '定本标点存疑'
-
-class MarkDoubt(DoubtBase):
-    markunit = models.ForeignKey(MarkUnit, on_delete=models.CASCADE)
-
-    class Meta:
-        verbose_name = '基础格式标注存疑'
-        verbose_name_plural = '基础格式标注存疑'
-
-class LQMarkDoubt(DoubtBase):
-    lqmarkunit = models.ForeignKey(LQMarkUnit, on_delete=models.CASCADE)
-
-    class Meta:
-        verbose_name = '定本格式标注存疑'
-        verbose_name_plural = '定本格式标注存疑'
+class JudgeFeedback(FeedbackBase):
+    diffsegresult = models.ForeignKey(DiffSegResult, on_delete=models.CASCADE, related_name='feedbacks')

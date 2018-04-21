@@ -38,3 +38,6 @@ def sutra_page_detail(request, pid):
         'char_no': char_no,
     }
     return render(request, 'tasks/sutra_page_detail.html', context)
+
+def process_judgefeedback(request, judgefeedback_id):
+    return render(request, 'tasks/judge_feedback.html', {'judgefeedback_id': judgefeedback_id})

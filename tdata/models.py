@@ -141,7 +141,8 @@ class Reel(models.Model):
     class Meta:
         verbose_name = '实体卷'
         verbose_name_plural = '实体卷'
-        unique_together = (('sutra', 'reel_no'),)
+        unique_together = (('sutra', 'reel_no'),)        
+        ordering = ('id',)
 
     @property
     def name(self):

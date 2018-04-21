@@ -16,6 +16,7 @@ JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected, DiffSegDe
 from jkapi.views.punct import PunctTaskDetail
 from jkapi.views.lqtripitaka import LQSutraViewSet, LQReelTextDetail
 from jkapi.views.judge_feedback import JudgeFeedbackList, JudgeFeedbackDetail, JudgeFeedbackTask
+from jkapi.views.tripitaka import SutraViewSet, SutraText
 
 router = routers.DefaultRouter()
 router.register(r'pagerect', PageRectViewSet)
@@ -31,6 +32,7 @@ router.register(r'page', PageViewSet)
 
 router.register(r'lqsutra', LQSutraViewSet)
 
+router.register(r'sutra', SutraViewSet) 
 urlpatterns = [
     url(r'^', include(router.urls)),
     
@@ -54,4 +56,5 @@ urlpatterns = [
     url(r'^judgefeedback/$', JudgeFeedbackList.as_view()),
     url(r'^judgefeedback/(?P<pk>[0-9]+)/$', JudgeFeedbackDetail.as_view()),
     url(r'^judgefeedback/(?P<pk>[0-9]+)/process/$', JudgeFeedbackTask.as_view()),
+    url(r'^sutra_text/(?P<s_id>[0-9]+)/$', SutraText.as_view()),
 ]

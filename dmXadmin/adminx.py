@@ -4,6 +4,7 @@ from xadmin.views import BaseAdminPlugin
 from xadmin.views import ListAdminView
 from xadmin.plugins.actions import BaseActionView
 from xadmin.views.base import filter_hook
+from django.template.response import TemplateResponse
 
 from tdata.models import *
 from tasks.models import Task
@@ -240,6 +241,22 @@ class UpdateTaskResultAction(BaseActionView):
             }, 'success')
 
 
+class GenerateTaskAction(BaseActionView):
+
+    action_name = "generate_task"
+    description = '发布任务'
+    icon = 'fa fa-refresh'
+
+    @filter_hook
+    def do_action(self, queryset):
+        context = self.get_context()
+        context.update({
+            "title": '生成任务',
+        })
+        #return TemplateResponse(self.request, 'xadmin/views/form.html', context)
+        return TemplateResponse(self.request, 'tasks/gene_task.html', context)
+
+
 @xadmin.sites.register(Task)
 class TaskAdmin(object):
     def modify(self, instance):
@@ -265,7 +282,7 @@ class TaskAdmin(object):
     remove_permissions = ['add']
     actions = [PauseSelectedTasksAction, ContinueSelectedTasksAction, ReclaimSelectedTasksAction,
                SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,
-               UpdateTaskResultAction]
+               UpdateTaskResultAction, GenerateTaskAction]
 
 #####################################################################################
 # 切分数据配置

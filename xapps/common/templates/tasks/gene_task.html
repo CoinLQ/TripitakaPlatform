@@ -453,9 +453,7 @@
           {#            sutra_map[l['name']] = l.id;#}
           {#          });#}
           vm.lq_task_para.reel_lst = [];
-          _.map(app.selected_reels, function (r) {
-            app.lq_task_para.reel_lst.push({"lqsutra_id": r.sutra.id, "reel_no": r.reel_no})
-          });
+
           var paras = vm.lq_task_para;
           if (!vm.is_lqdzj) {
             delete paras.judge_times;
@@ -464,7 +462,15 @@
             delete paras.punct_verify_times;
             delete paras.lqpunct_times;
             delete paras.lqpunct_verify_times;
+            _.map(app.selected_reels, function (r) {
+              app.lq_task_para.reel_lst.push({"sutra_id": r.sutra.id, "reel_no": r.reel_no})
+            });
             paras['lqdzj'] = false;
+          }
+          else {
+            _.map(app.selected_reels, function (r) {
+              app.lq_task_para.reel_lst.push({"lqsutra_id": r.sutra.id, "reel_no": r.reel_no})
+            });
           }
           axios.post('/do_generate_task/', {
             paras: vm.lq_task_para,

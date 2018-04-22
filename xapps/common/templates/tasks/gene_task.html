@@ -3,10 +3,11 @@
 
 {% load xadmin_tags %}
 {% block extrastyle %}
-<title>生成任务</title>
-<link rel="stylesheet" href="/static/css/bootstrap.min.css">
-<link rel="stylesheet" href="/static/css/element-ui.css">
-<link rel="stylesheet" href="/static/css/bootstrap-theme.min.css">
+  <title>生成任务</title>
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/static/css/element-ui.css">
+  <link rel="stylesheet" href="/static/css/bootstrap-theme.min.css">
+  <link rel="stylesheet" href="/static/css/base.css">
 {% endblock %}
 {% block breadcrumbs %}
   <ul class="breadcrumb">
@@ -40,9 +41,10 @@
           <el-container style="border:1px solid;width:1000px;">
             <el-aside width="300px">
               <div class="row">
-                  <div class="text-center"><input type="text" class="sutra-searchbox" v-model="searchword" placeholder="搜索经名"/></div>
-                </div>
-              <div class="sutra-tree">
+                <div class="text-center"><input type="text" class="sutra-searchbox" v-model="searchword"
+                                                placeholder="搜索经名"/></div>
+              </div>
+              <div class="task-sutra-tree">
 
                 <el-tree class="filter-tree" :data="lqsutra_list" :props="tree_props"
                          @node-click="clickLQSutraTreeNode"
@@ -50,10 +52,10 @@
 
               </div>
               <div class="row">
-                  <div class="text-center">
-                    <input type="number" class="sutra-page-input" v-model="page"/> / {[ page_count ]
-                  </div>
+                <div class="text-center">
+                  <input type="number" class="sutra-page-input" v-model="page"/> / {[ page_count ]
                 </div>
+              </div>
             </el-aside>
             <el-main>
               <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="handleCheckAllChange">全选/反选
@@ -92,10 +94,10 @@
                 <el-collapse v-model="collapseActiveName" accordion>
                   <el-collapse-item v-for="(value,key) in selected_sutras" :title="key" :name="key">
                     <el-checkbox-group v-model="selected_reels">
-                    <el-checkbox v-for="reel in value" :label="reel" :key="reel.id" border
-                                 @change="handleCheckChange">第{[reel.reel_no]卷
-                    </el-checkbox>
-                  </el-checkbox-group>
+                      <el-checkbox v-for="reel in value" :label="reel" :key="reel.id" border
+                                   @change="handleCheckChange">第{[reel.reel_no]卷
+                      </el-checkbox>
+                    </el-checkbox-group>
                   </el-collapse-item>
                 </el-collapse>
               </el-popover>
@@ -229,7 +231,7 @@
       </el-dialog>
     </template>
 
- </div>
+  </div>
 {% endblock %}
 {% block extrabody %}
   <script src="/static/js/jquery-latest.js" charset="utf-8"></script>
@@ -238,7 +240,7 @@
   <script src="/static/js/axios.min.js"></script>
   <script src="/static/js/element-ui.js"></script>
   <script src="/static/js/lodash.min.js"></script>
-   <script>
+  <script>
     var app = new Vue({
       el: '#lqtripitaka',
       delimiters: ['{[', ']'],
@@ -309,7 +311,7 @@
           this.reelChange();
         },
         selected_reels(val){
-          this.selected_sutras = _.groupBy(val, 'sid');
+          this.selected_sutras = _.groupBy(val, 'sname');
           this.is_selection_empty = val.length == 0;
         }
       },
@@ -324,15 +326,14 @@
           });
         });
       },
-      computed: {
-      },
+      computed: {},
       methods: {
         fetchSutraList: function (tp) {
-          if (tp=='search' || tp=='tripitaka'){
+          if (tp == 'search' || tp == 'tripitaka') {
             this.page = 1;
           }
           var url = '/api/lqsutra/?page=' + this.page;
-          if(this.tripitaka != 'lqdzj'){
+          if (this.tripitaka != 'lqdzj') {
             this.is_lqdzj = false;
             url = '/api/sutra/?tcode=' + this.tripitaka + '&page=' + this.page;
           }
@@ -363,7 +364,7 @@
         },
         add_sutra(reel){
           reel['sutra'] = app.current_sutra;
-          reel['sid'] = app.current_sutra.sid;
+          reel['sname'] = app.current_sutra.name;
           return reel;
         },
         reelChange: function () {
@@ -472,7 +473,7 @@
           }).catch(function (error) {
             console.log(error);
           });
-          this.dialogParasVisible = false;
+          this.dialogParaVisible = false;
         },
         backReel(){
           this.dialogParaVisible = false;
@@ -483,5 +484,5 @@
         },
       }
     });
-    </script>
+  </script>
 {% endblock %}

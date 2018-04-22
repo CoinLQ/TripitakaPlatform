@@ -1,5 +1,8 @@
 from django.shortcuts import get_object_or_404, render, redirect
+import json
+from django.http import JsonResponse
 from ..task_controller import create_tasks_for_lqreels_async, create_tasks_for_reels_async, create_tasks_for_reels
+
 
 def index(request):
     return render(request, 'tasks/lqtripitaka.html')
@@ -31,3 +34,4 @@ def do_generate_task(request):
             mark_times=task_para['mark_times'],
             mark_verify_times=task_para['mark_verify_times']
         )
+    return JsonResponse({}, status=200)

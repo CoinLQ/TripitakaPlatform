@@ -217,17 +217,17 @@ mark_times = 0, mark_verify_times = 0):
         if lqreel:
             create_lqpunct_tasks(batchtask, lqreel, lqpunct_times, lqpunct_verify_times)
 
-def create_tasks_for_reels(lqreels_json,
+def create_tasks_for_reels(reels_json,
                              correct_times=2, correct_verify_times=0,
                              mark_times=0, mark_verify_times=0):
     '''
-    lqreels_json格式: [{"lqsutra_id":1, "reel_no":1}, {"lqsutra_id":1, "reel_no":2}]
+    lqreels_json格式: [{"sutra_id":1, "reel_no":1}, {"sutra_id":1, "reel_no":2}]
     '''
-    reels = json.loads(lqreels_json)
+    reels = json.loads(reels_json)
     reel_lst = []
     id_to_sutra = {}
     for reel in reels:
-        sutra_id = reel['lqsutra_id']
+        sutra_id = reel['sutra_id']
         reel_no = reel['reel_no']
         sutra = id_to_sutra.get(sutra_id, None)
         if sutra is None:
@@ -246,7 +246,7 @@ def create_reeltasks_for_batchtask(batchtask, reel_lst,
 correct_times = 2, correct_verify_times = 0,
 mark_times = 0, mark_verify_times = 0):
     '''
-    reel_lst格式： [(lqsutra, reel_no), (lqsutra, reel_no)]
+    reel_lst格式： [(sutra, reel_no), (sutra, reel_no)]
     '''
     for sutra, reel_no in reel_lst:
         # 创建文字校对任务
@@ -278,7 +278,6 @@ mark_times = 0, mark_verify_times = 0):
                 pass
         try:
             reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
-            print('a')
         except:
             # TODO: 记录错误
             continue
@@ -761,7 +760,7 @@ def create_tasks_for_lqreels_async(lqreels_json,
                              punct_times, punct_verify_times, lqpunct_times, lqpunct_verify_times, mark_times, mark_verify_times)
 
 @background(schedule=0)
-def create_tasks_for_reels_async(lqreels_json,
+def create_tasks_for_reels_async(reels_json,
                              correct_times=2, correct_verify_times=0,
                              mark_times=0, mark_verify_times=0):
-    create_tasks_for_reels(lqreels_json, correct_times, correct_verify_times, mark_times, mark_verify_times)
+    create_tasks_for_reels(reels_json, correct_times, correct_verify_times, mark_times, mark_verify_times)

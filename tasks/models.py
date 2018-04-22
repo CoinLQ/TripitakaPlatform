@@ -51,6 +51,8 @@ class Task(models.Model):
     TYPE_LQPUNCT_VERIFY = 8
     TYPE_MARK = 9
     TYPE_MARK_VERIFY = 10
+    TYPE_CORRECT_DIFFCULT = 11
+    TYPE_JUDGE_DIFFCULT = 12
     TYPE_CHOICES = (
         (TYPE_CORRECT, '文字校对'),
         (TYPE_CORRECT_VERIFY, '文字校对审定'),
@@ -62,6 +64,8 @@ class Task(models.Model):
         (TYPE_LQPUNCT_VERIFY, '定本标点审定'),
         (TYPE_MARK, '格式标注'),
         (TYPE_MARK_VERIFY, '格式标注审定'),
+        (TYPE_CORRECT_DIFFCULT, '文字校对难字处理'),
+        (TYPE_JUDGE_DIFFCULT, '校勘判取难字处理'),
     )
 
     TASK_NO_CHOICES = (
@@ -110,7 +114,7 @@ class Task(models.Model):
     lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE, blank=True, null=True)
     typ = models.SmallIntegerField('任务类型', choices=TYPE_CHOICES, db_index=True)
     base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本', blank=True, null=True)
-    task_no = models.SmallIntegerField('组合任务序号', choices=TASK_NO_CHOICES)
+    task_no = models.SmallIntegerField('组合任务序号', choices=TASK_NO_CHOICES, default=0)
     status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1, db_index=True)
 
     # 用于记录当前工作的条目，下次用户进入任务时直接到此。
@@ -229,6 +233,7 @@ class DoubtSeg(models.Model):
     doubt_char_no = models.SmallIntegerField('存疑行中字序号', default=-1)
     doubt_comment = models.TextField('存疑意见', default='', blank=True)
     created_at = models.DateTimeField('创建时间', default=timezone.now)
+    processed = models.BooleanField('是否处理', default=False)
 
 class ReelCorrectText(models.Model):
     BODY_START_PATTERN = re.compile('品(第[一二三四五六七八九十百]*(之[一二三四五六七八九十百]*)*)|(品之[一二三四五六七八九十百]*)$')

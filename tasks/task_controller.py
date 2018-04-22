@@ -500,8 +500,30 @@ def correct_submit(task):
             correct_verify_task.save(update_fields=['status'])
 
 def correct_verify_submit(task):
-    generate_correct_result(task)
-    publish_correct_result(task)
+    doubtseg = DoubtSeg.objects.filter(task=task).first()
+    if doubtseg: # 有存疑，生成文字校对难字任务
+        diffcult_task = Task(batchtask=task.batchtask,
+        reel=task.reel, typ=Task.TYPE_CORRECT_DIFFCULT, status=Task.STATUS_NOT_READY,
+        publisher=batchtask.publisher)
+        diffcult_task.save()
+        # 将task的CorrectSeg复制到新的diffcult_task
+        correctsegs = CorrectSeg.objects.filter(task=task).all()
+        for correctseg in correctsegs:
+            correctseg.task = diffcult_task
+            correctseg.id = None
+        CorrectSeg.objects.bulk_create(correctsegs)
+        # 将task的DoubtSeg复制到新的diffcult_task
+        doubtsegs = DoubtSeg.objects.filter(task=task).all()
+        for doubtseg in doubtsegs:
+            doubtseg.task = diffcult_task
+            doubtseg.id = None
+        DoubtSeg.objects.bulk_create(doubtsegs)
+        # 改为可领取状态
+        diffcult_task.status = Task.STATUS_READY
+        diffcult_task.save(update_fields=['status'])
+    else: # 没有存疑
+        generate_correct_result(task)
+        publish_correct_result(task)
 
 def correct_update(task):
     if task.status != Task.STATUS_FINISHED:

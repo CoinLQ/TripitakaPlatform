@@ -208,7 +208,6 @@ mark_times = 0, mark_verify_times = 0):
             if reel.ocr_ready:
                 create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
                 create_punct_tasks(batchtask, reel, punct_times, punct_verify_times)
-
         try:
             lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
             base_reel = base_reel_lst[0]
@@ -217,6 +216,73 @@ mark_times = 0, mark_verify_times = 0):
             print('create judge task failed: ', lqsutra, reel_no)
         if lqreel:
             create_lqpunct_tasks(batchtask, lqreel, lqpunct_times, lqpunct_verify_times)
+
+def create_tasks_for_reels(lqreels_json,
+                             correct_times=2, correct_verify_times=0,
+                             mark_times=0, mark_verify_times=0):
+    '''
+    lqreels_json格式: [{"lqsutra_id":1, "reel_no":1}, {"lqsutra_id":1, "reel_no":2}]
+    '''
+    reels = json.loads(lqreels_json)
+    reel_lst = []
+    id_to_sutra = {}
+    for reel in reels:
+        sutra_id = reel['lqsutra_id']
+        reel_no = reel['reel_no']
+        sutra = id_to_sutra.get(sutra_id, None)
+        if sutra is None:
+            try:
+                sutra = Sutra.objects.get(id=sutra_id)
+            except:
+                continue
+            id_to_sutra[sutra_id] = sutra
+        reel_lst.append((sutra, reel_no))
+    admin = Staff.objects.get(username='admin')
+    batchtask = BatchTask(priority=2, publisher=admin)
+    batchtask.save()
+    create_reeltasks_for_batchtask(batchtask, reel_lst, correct_times, correct_verify_times, mark_times, mark_verify_times)
+
+def create_reeltasks_for_batchtask(batchtask, reel_lst,
+correct_times = 2, correct_verify_times = 0,
+mark_times = 0, mark_verify_times = 0):
+    '''
+    reel_lst格式： [(lqsutra, reel_no), (lqsutra, reel_no)]
+    '''
+    for sutra, reel_no in reel_lst:
+        # 创建文字校对任务
+        # 将未准备好数据的藏经版本过滤掉
+        if sutra.tripitaka.cut_ready:
+            pass
+        else:
+            print("切分未准备好！")
+        base_sutra_lst = []
+        sutra_to_body = {}
+        # 先得到两个base_reel，CBETA和高丽藏
+        for s in sutra.lqsutra.sutra_set.all():
+            if s.sid.startswith('CB') or s.sid.startswith('GL'):
+                base_sutra_lst.append(s)
+                if s.id not in sutra_to_body.keys():
+                    sutra_to_body[s.id] = get_sutra_body(s)
+        if not base_sutra_lst:
+            # 记录错误
+            print(sutra.sid + 'no base sutra')
+            continue
+        if not base_sutra_lst[0].sid.startswith('CB'):
+            base_sutra_lst[0], base_sutra_lst[1] = base_sutra_lst[1], base_sutra_lst[0]
+        base_reel_lst = []
+        for base_sutra in base_sutra_lst:
+            try:
+                base_reel = Reel.objects.get(sutra=base_sutra, reel_no=reel_no)
+                base_reel_lst.append(base_reel)
+            except:
+                pass
+        try:
+            reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
+            print('a')
+        except:
+            # TODO: 记录错误
+            continue
+        create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
 
 def publish_correct_result(task):
     '''
@@ -671,3 +737,9 @@ def create_tasks_for_lqreels_async(lqreels_json,
                                    mark_times=0, mark_verify_times=0):
     create_tasks_for_lqreels(lqreels_json, correct_times, correct_verify_times, judge_times, judge_verify_times,
                              punct_times, punct_verify_times, lqpunct_times, lqpunct_verify_times, mark_times, mark_verify_times)
+
+@background(schedule=0)
+def create_tasks_for_reels_async(lqreels_json,
+                             correct_times=2, correct_verify_times=0,
+                             mark_times=0, mark_verify_times=0):
+    create_tasks_for_reels(lqreels_json, correct_times, correct_verify_times, mark_times, mark_verify_times)

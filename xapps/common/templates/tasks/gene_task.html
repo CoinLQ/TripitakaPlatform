@@ -1,0 +1,488 @@
+{% extends base_template %}
+{% load i18n l10n %}
+
+{% load xadmin_tags %}
+{% block extrastyle %}
+  <title>生成任务</title>
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/static/css/element-ui.css">
+  <link rel="stylesheet" href="/static/css/bootstrap-theme.min.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+{% endblock %}
+{% block breadcrumbs %}
+  <ul class="breadcrumb">
+    <li><a href="{% url 'xadmin:index' %}">{% trans 'Home' %}</a></li>
+    <li><a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a></li>
+    <li>生成任务</li>
+  </ul>
+{% endblock %}
+{% block nav_title %}{{ title }}{% endblock %}
+{% block content %}
+  <div id="lqtripitaka">
+    <template>
+      <el-tabs v-model="activeTab" @tab-click="tabClick">
+        <el-tab-pane label="第一步：选择藏经" name="lqsutra">
+          <el-row width="500px">
+            <el-button v-for="(value,key) in tripitaka_lst" @click="choseTripitaka(value.code)">{[value.name]
+            </el-button>
+          </el-row>
+        </el-tab-pane>
+      </el-tabs>
+
+
+      <el-dialog title="第一步：选择藏经">
+        <div style="width:50%">
+          <el-button v-for="(value,key) in tripitaka_lst" @click="choseTripitaka(value.code)">{[key]</el-button>
+        </div>
+      </el-dialog>
+
+      <el-dialog title="第二步：选择经卷数据" :visible.sync="dialogReelVisible" width="80%">
+        <el-container>
+          <el-container style="border:1px solid;width:1000px;">
+            <el-aside width="300px">
+              <div class="row">
+                <div class="text-center"><input type="text" class="sutra-searchbox" v-model="searchword"
+                                                placeholder="搜索经名"/></div>
+              </div>
+              <div class="task-sutra-tree">
+
+                <el-tree class="filter-tree" :data="lqsutra_list" :props="tree_props"
+                         @node-click="clickLQSutraTreeNode"
+                ></el-tree>
+
+              </div>
+              <div class="row">
+                <div class="text-center">
+                  <input type="number" class="sutra-page-input" v-model="page"/> / {[ page_count ]
+                </div>
+              </div>
+            </el-aside>
+            <el-main>
+              <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="handleCheckAllChange">全选/反选
+              </el-checkbox>
+              <div class="block">
+                <div style="display:inline-block; width:600px;height:500px;border:1px solid;">
+                  <el-checkbox-group v-model="checkList" @change="handleCheckedReelsChange">
+                    <el-checkbox v-for="reel in current_reels" :label="reel" :key="reel.id" border
+                                 @change="handleCheckChange" v-if="reel.text_ready || reel.ocr_ready">第{[reel.reel_no]卷
+                    </el-checkbox>
+                    {#                    <el-checkbox v-for="reel in current_reels" :label="reel" :key="reel.id" border#}
+                    {#                                 @change="handleCheckChange">第{[reel.reel_no]卷#}
+                    {#                    </el-checkbox>#}
+                    <el-checkbox border disabled v-else>第{[reel.reel_no]卷
+                    </el-checkbox>
+                  </el-checkbox-group>
+                </div>
+                <el-pagination
+                    :current-page.sync="currentPage"
+                    :page-size="pagesize"
+                    layout="total, prev, pager, next"
+                    :total="whole_reels.length">
+                </el-pagination>
+              </div>
+              <div style="float:right; position:relative; top:-20px">
+                <el-button v-popover:popover4>查看已选</el-button>
+              </div>
+              <el-popover
+                  ref="popover4"
+                  placement="top"
+                  width="600"
+                  trigger="click"
+                  @hide="popHide"
+                  title="已选择经卷"
+              >
+                <el-collapse v-model="collapseActiveName" accordion>
+                  <el-collapse-item v-for="(value,key) in selected_sutras" :title="key" :name="key">
+                    <el-checkbox-group v-model="selected_reels">
+                      <el-checkbox v-for="reel in value" :label="reel" :key="reel.id" border
+                                   @change="handleCheckChange">第{[reel.reel_no]卷
+                      </el-checkbox>
+                    </el-checkbox-group>
+                  </el-collapse-item>
+                </el-collapse>
+              </el-popover>
+            </el-main>
+          </el-container>
+          <el-footer>
+            <el-button type="button" @click="chooseParas">下一步</el-button>
+          </el-footer>
+        </el-container>
+      </el-dialog>
+
+      <!--对话框-->
+      <el-dialog title="第三步：填写任务信息" :visible.sync="dialogParaVisible">
+        <table>
+          <tbody>
+          <tr>
+            <td>优先级：</td>
+            <td>
+              <el-radio-group v-model="lq_task_para.task_prio">
+                <el-radio :label=1>高</el-radio>
+                <el-radio :label=2>中</el-radio>
+                <el-radio :label=3>低</el-radio>
+              </el-radio-group>
+            </td>
+          </tr>
+          <tr>
+            <td>文字校对：</td>
+            <td>
+              <el-radio-group v-model="lq_task_para.correct_times">
+                <el-radio :label=2>2次</el-radio>
+                <el-radio :label=3>3次</el-radio>
+                <el-radio :label=4>4次</el-radio>
+              </el-radio-group>
+            </td>
+          </tr>
+          <tr>
+            <td>校对审定：</td>
+            <td>
+              <el-radio-group v-model="lq_task_para.correct_verify_times">
+                <el-radio :label=1>1次</el-radio>
+              </el-radio-group>
+            </td>
+          </tr>
+          <tr v-if="is_lqdzj">
+            <td>校勘判取：</td>
+            <td>
+              <el-radio-group v-model="lq_task_para.judge_times">
+                <el-radio :label=2>2次</el-radio>
+                <el-radio :label=3>3次</el-radio>
+                <el-radio :label=4>4次</el-radio>
+              </el-radio-group>
+            </td>
+          </tr>
+          <tr v-if="is_lqdzj">
+            <td>校勘审定：</td>
+            <td>
+              <el-radio-group v-model="lq_task_para.judge_verify_times">
+                <el-radio :label=1>1次</el-radio>
+              </el-radio-group>
+            </td>
+          </tr>
+          <tr v-if="is_lqdzj">
+            <td>基础标点：</td>
+            <td>
+              <el-radio-group v-model="lq_task_para.punct_times">
+                <el-radio :label=2>2次</el-radio>
+                <el-radio :label=3>3次</el-radio>
+                <el-radio :label=4>4次</el-radio>
+              </el-radio-group>
+            </td>
+          </tr>
+          <tr v-if="is_lqdzj">
+            <td>基础标点审定：</td>
+            <td>
+              <el-radio-group v-model="lq_task_para.punct_verify_times">
+                <el-radio :label=1>1次</el-radio>
+              </el-radio-group>
+            </td>
+          </tr>
+          <tr v-if="is_lqdzj">
+            <td>定本标点：</td>
+            <td>
+              <el-radio-group v-model="lq_task_para.lqpunct_times">
+                <el-radio :label=2>2次</el-radio>
+                <el-radio :label=3>3次</el-radio>
+                <el-radio :label=4>4次</el-radio>
+              </el-radio-group>
+            </td>
+          </tr>
+          <tr v-if="is_lqdzj">
+            <td>定本标点审定：</td>
+            <td>
+              <el-radio-group v-model="lq_task_para.lqpunct_verify_times">
+                <el-radio :label=1>1次</el-radio>
+              </el-radio-group>
+            </td>
+          </tr>
+          <tr>
+            <td>基础格式标注：</td>
+            <td>
+              <el-radio-group v-model="lq_task_para.mark_times">
+                <el-radio :label=2>2次</el-radio>
+                <el-radio :label=3>3次</el-radio>
+                <el-radio :label=4>4次</el-radio>
+              </el-radio-group>
+            </td>
+          </tr>
+          <tr>
+            <td>基础格式标注审定：</td>
+            <td>
+              <el-radio-group v-model="lq_task_para.mark_verify_times">
+                <el-radio :label=1>1次</el-radio>
+              </el-radio-group>
+            </td>
+          </tr>
+          <tr>
+            <td>任务描述：</td>
+            <td>
+              <el-input
+                  type="textarea"
+                  :rows="6"
+                  placeholder="请输入任务描述"
+                  v-model="lq_task_para.task_des">
+              </el-input>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+        <el-button type="button" @click="generateTask">生成任务</el-button>
+        <el-button type="button" @click="backReel">返回选择经卷</el-button>
+      </el-dialog>
+    </template>
+
+  </div>
+{% endblock %}
+{% block extrabody %}
+  <script src="/static/js/jquery-latest.js" charset="utf-8"></script>
+  <script src="/static/js/bootstrap-slider.js"></script>
+  <script src="/static/js/vue.js"></script>
+  <script src="/static/js/axios.min.js"></script>
+  <script src="/static/js/element-ui.js"></script>
+  <script src="/static/js/lodash.min.js"></script>
+  <script>
+    var app = new Vue({
+      el: '#lqtripitaka',
+      delimiters: ['{[', ']'],
+      data: {
+        tripitaka_lst: [],
+        tripitaka: '',
+        searchword: '',
+        page_count: 0,
+        page: 1,
+        is_lqdzj: true,
+        activeTab: 'lqsutra',
+        collapseActiveName: '1',
+        lqsutra_list: [],
+        tree_props: {
+          //children: 'lqreel_set',
+          label: 'name'
+        },
+        sutra_list: {},
+        current_sutra: '',
+        selected_reels: [],
+        selected_sutras: {},
+        is_selection_empty: true,
+        whole_reels: [],
+        current_reels: [],
+        checkList: [],
+        checkAll: false,
+        isIndeterminate: true,
+        currentPage: 1,
+        pagesize: 50,
+        dialogReelVisible: false,
+        dialogParaVisible: false,
+        lq_task_para: {
+          lqdzj: true,
+          reel_lst: [],
+          task_prio: 2,
+          correct_times: 2,
+          correct_verify_times: 1,
+          judge_times: 2,
+          judge_verify_times: 1,
+          punct_times: 2,
+          punct_verify_times: 1,
+          lqpunct_times: 2,
+          lqpunct_verify_times: 1,
+          mark_times: 2,
+          mark_verify_times: 1,
+          //lqmark_times: 2,
+          //lqmark_verify_times: 1,
+          //task_des: " "
+        }
+      },
+      watch: {
+        searchword: _.debounce(function (value, oldValue) {
+          this.fetchSutraList('search');
+        }, 500),
+        page: function (value, oldValue) {
+          if (this.page <= 0) {
+            this.page = 1;
+            return;
+          }
+          if (this.page > this.page_count) {
+            this.page = this.page_count;
+            return;
+          }
+          this.fetchSutraList('page');
+        },
+        currentPage(val) {
+          this.current_reels = this.whole_reels.slice((val - 1) * this.pagesize, val * this.pagesize);
+          this.reelChange();
+        },
+        selected_reels(val){
+          this.selected_sutras = _.groupBy(val, 'sname');
+          this.is_selection_empty = val.length == 0;
+        }
+      },
+      created: function () {
+        var vm = this;
+        axios.get('/api/tripitaka/').then(function (response) {
+          vm.tripitaka_lst = response.data.results;
+          vm.tripitaka_lst.splice(0, 0, {
+            "id": 0,
+            "code": "lqdzj",
+            "name": "龙泉大藏经"
+          });
+        });
+      },
+      computed: {},
+      methods: {
+        fetchSutraList: function (tp) {
+          if (tp == 'search' || tp == 'tripitaka') {
+            this.page = 1;
+          }
+          var url = '/api/lqsutra/?page=' + this.page;
+          if (this.tripitaka != 'lqdzj') {
+            this.is_lqdzj = false;
+            url = '/api/sutra/?tcode=' + this.tripitaka + '&page=' + this.page;
+          }
+          if (this.searchword.length > 0) {
+            url += '&search=' + this.searchword;
+          }
+          var vm = this;
+          axios.get(url).then(function (response) {
+            vm.lqsutra_list = response.data.results;
+            vm.page_count = Math.ceil(response.data.count / 30);
+          });
+        },
+        choseTripitaka(t){
+          this.dialogReelVisible = true;
+          this.checkList = [];
+          this.whole_reels = [];
+          this.current_reels = [];
+          this.selected_reels = [];
+          this.tripitaka = t;
+          this.searchword = '';
+          this.fetchSutraList('tripitaka');
+          _.map(app.lqsutra_list, function (s) {
+            app.sutra_list[s.sid] = s.name;
+          });
+        },
+        tabClick: function (tab, event) {
+          console.log(tab, event);
+        },
+        add_sutra(reel){
+          reel['sutra'] = app.current_sutra;
+          reel['sname'] = app.current_sutra.name;
+          return reel;
+        },
+        reelChange: function () {
+          this.checkList = [];
+          _.map(app.current_reels, function (r) {
+            if (app.selected_reels.indexOf(r) >= 0 && app.checkList.indexOf(r) == -1) {
+              app.checkList.push(r);
+            }
+          });
+          let checkedCount = this.checkList.length;
+          this.checkAll = checkedCount === this.current_reels.length;
+          this.isIndeterminate = checkedCount > 0 && checkedCount < this.current_reels.length;
+        },
+        clickLQSutraTreeNode: function (data) {
+          if (data.lqreel_set) {
+            this.whole_reels = data.lqreel_set;
+          }
+          else {
+            this.whole_reels = data.reel_set;
+          }
+          this.current_sutra = data;
+          this.current_reels = this.whole_reels.slice(0, this.pagesize);
+          this.currentPage = 1;
+        },
+        handleCheckAllChange(val) {
+          if (app.checkList.length < app.current_reels.length) {
+            _.map(app.current_reels, function (r) {
+              if (app.checkList.indexOf(r) == -1) {
+                app.checkList.push(r);
+                app.selected_reels.push(app.add_sutra(r));
+              }
+            });
+            this.checkAll = true;
+          }
+          else {
+            _.map(app.current_reels, function (r) {
+              app.checkList.splice(app.checkList.indexOf(r), 1);
+              app.selected_reels.splice(app.selected_reels.indexOf(app.add_sutra(r), 1));
+            });
+            this.checkAll = false;
+          }
+        },
+        handleCheckedReelsChange(value) {
+          let checkedCount = value.length;
+          this.checkAll = checkedCount === this.current_reels.length;
+          this.isIndeterminate = checkedCount > 0 && checkedCount < this.current_reels.length;
+        },
+        handleCheckChange(val) {
+          if (val) {
+            _.map(app.checkList, function (c) {
+              if (app.selected_reels.indexOf(c) == -1) {
+                app.selected_reels.push(app.add_sutra(c));
+              }
+            })
+          }
+          else {
+            _.map(app.current_reels, function (r) {
+              if (app.selected_reels.indexOf(r) >= 0 && app.checkList.indexOf(r) == -1) {
+                app.selected_reels.splice(app.selected_reels.indexOf(app.add_sutra(r)), 1);
+              }
+            });
+          }
+        },
+        alertNoSelection() {
+          this.$confirm('请选择经卷数据', '提示', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+            center: true
+          });
+        },
+        chooseParas(){
+          //进入选择参数界面，若未选择经卷数据，则弹框提示
+          if (app.is_selection_empty) {
+            app.alertNoSelection();
+          }
+          else {
+            this.dialogParaVisible = true;
+            this.dialogReelVisible = false;
+          }
+        },
+        generateTask(){
+          var vm = this;
+          var sutra_map = {};
+          {#          _.map(app.lqsutra_list, function (l) {#}
+          {#            sutra_map[l['name']] = l.id;#}
+          {#          });#}
+          vm.lq_task_para.reel_lst = [];
+          _.map(app.selected_reels, function (r) {
+            app.lq_task_para.reel_lst.push({"lqsutra_id": r.sutra.id, "reel_no": r.reel_no})
+          });
+          var paras = vm.lq_task_para;
+          if (!vm.is_lqdzj) {
+            delete paras.judge_times;
+            delete paras.judge_verify_times;
+            delete paras.punct_times;
+            delete paras.punct_verify_times;
+            delete paras.lqpunct_times;
+            delete paras.lqpunct_verify_times;
+            paras['lqdzj'] = false;
+          }
+          axios.post('/do_generate_task/', {
+            paras: vm.lq_task_para,
+          }).then(function (response) {
+            console.log(response);
+          }).catch(function (error) {
+            console.log(error);
+          });
+          this.dialogParaVisible = false;
+        },
+        backReel(){
+          this.dialogParaVisible = false;
+          this.dialogReelVisible = true;
+        },
+        popHide(){
+          this.reelChange();
+        },
+      }
+    });
+  </script>
+{% endblock %}

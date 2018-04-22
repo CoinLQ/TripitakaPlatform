@@ -6,7 +6,7 @@ from xadmin.plugins.actions import BaseActionView
 from xadmin.views.base import filter_hook
 
 from tdata.models import *
-from tasks.models import Task
+from tasks.models import Task, CorrectFeedback, JudgeFeedback
 from rect.models import *
 from jwt_auth.models import Staff
 from tasks.task_controller import correct_update_async
@@ -266,6 +266,17 @@ class TaskAdmin(object):
     actions = [PauseSelectedTasksAction, ContinueSelectedTasksAction, ReclaimSelectedTasksAction,
                SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,
                UpdateTaskResultAction]
+
+@xadmin.sites.register(JudgeFeedback)
+class JudgeFeedbackAdmin:
+    def task_link(self, instance):
+        return '<a target="_blank" href="/judgefeedback/%d/">查看</a>' % instance.id
+    task_link.allow_tags = True
+    task_link.short_description = '查看'
+    list_display = ['lqsutra_name', 'reel_no', 'fb_user', 'created_at',
+                    'fb_comment', 'processor', 'processed_at', 'response', 'task_link']
+    list_display_links = [''] # 不显示修改的链接
+    remove_permissions = ['add']
 
 #####################################################################################
 # 切分数据配置

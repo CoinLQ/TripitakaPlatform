@@ -518,3 +518,19 @@ class CorrectFeedback(FeedbackBase):
 
 class JudgeFeedback(FeedbackBase):
     diffsegresult = models.ForeignKey(DiffSegResult, on_delete=models.CASCADE, related_name='feedbacks')
+
+    @property
+    def lqsutra_name(self):
+        return self.diffsegresult.task.lqreel.lqsutra.name
+    lqsutra_name.fget.short_description = '龙泉经名'
+
+    @property
+    def reel_no(self):
+        lqreel = self.diffsegresult.task.lqreel
+        if lqreel:
+            return lqreel.reel_no
+    reel_no.fget.short_description = '第几卷'
+
+    class Meta:
+        verbose_name = '校勘反馈'
+        verbose_name_plural = '校勘反馈'

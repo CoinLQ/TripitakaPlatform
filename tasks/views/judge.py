@@ -7,15 +7,24 @@ def do_judge_task(request, task_id):
     task = get_object_or_404(Task, pk=task_id)
     if task.typ == Task.TYPE_JUDGE:
         judge_task_ids = []
-    elif task.typ == Task.TYPE_JUDGE_VERIFY:
+    elif task.typ in [Task.TYPE_JUDGE_VERIFY, Task.TYPE_JUDGE_DIFFICULT]:
         judge_task_ids = [ judge_task.id for judge_task in \
         Task.objects.filter(batchtask_id=task.batchtask_id, \
         lqreel_id=task.lqreel.id, typ=Task.TYPE_JUDGE).order_by('task_no') ]
     else:
         return redirect('/')
+    judge_verify_task_id = 0
+    if task.typ == Task.TYPE_JUDGE_DIFFICULT:
+        try:
+            judge_verify_task = Task.objects.get(batchtask_id=task.batchtask_id, \
+            lqreel_id=task.lqreel.id, typ=Task.TYPE_JUDGE_VERIFY)
+            judge_verify_task_id = judge_verify_task.id
+        except:
+            pass
     context = {
         'task': task,
-        'judge_task_ids': judge_task_ids
+        'judge_task_ids': judge_task_ids,
+        'judge_verify_task_id': judge_verify_task_id,
         }
     return render(request, 'tasks/do_judge_task.html', context)
 

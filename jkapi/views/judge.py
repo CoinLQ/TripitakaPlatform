@@ -17,7 +17,7 @@ from tdata.models import *
 from tasks.models import *
 from jkapi.serializers import *
 from jkapi.permissions import *
-from tasks.task_controller import judge_submit_result_async, publish_judge_result_async
+from tasks.task_controller import judge_submit_async, judge_verify_submit_async, judge_difficult_submit_async
 from tasks.common import clean_separators, extract_line_separators
 
 import json, re
@@ -99,7 +99,6 @@ class JudgeTaskDetail(APIView):
         response = {
             'task_id': task_id,
             'status': self.task.status,
-            'is_verify': (self.task.typ == Task.TYPE_JUDGE_VERIFY),
             'base_text': base_text,
             'diffseg_pos_lst': json.loads(diffseg_pos_lst),
             'punct_lst': punctuation,
@@ -122,9 +121,11 @@ class FinishJudgeTask(APIView):
             self.task.status = Task.STATUS_FINISHED
             self.task.save(update_fields=['status', 'finished_at'])
             if self.task.typ == Task.TYPE_JUDGE:
-                judge_submit_result_async(task_id)
+                judge_submit_async(task_id)
             elif self.task.typ == Task.TYPE_JUDGE_VERIFY:
-                publish_judge_result_async(task_id)
+                judge_verify_submit_async(task_id)
+            elif self.task.typ == Task.TYPE_JUDGE_DIFFICULT:
+                judge_difficult_submit_async(task_id)
             return Response({'task_id': task_id, 'status': self.task.status})
         return Response({'msg': 'not all selected'}, status=status.HTTP_400_BAD_REQUEST)
 

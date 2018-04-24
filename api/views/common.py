@@ -12,7 +12,7 @@ from tasks.serializers import TaskSerializer
 from tasks.models import Task
 from ccapi.utils.task import redis_lock
 from django.utils import timezone
-TASK_MODELS = ('correct', 'verify_correct', 'judge', 'verify_judge', 'punct', 'verify_punct', 'lqpunct', 'verify_lqpunct')
+TASK_MODELS = ('correct', 'verify_correct', 'judge', 'verify_judge', 'punct', 'verify_punct', 'lqpunct', 'verify_lqpunct', 'correct_difficult', 'judge_difficult')
 
 
 
@@ -61,6 +61,10 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
                 return model.objects.filter(typ=model.TYPE_LQPUNCT, status=Task.STATUS_READY)
             elif model_name =='verify_lqpunct':
                 return model.objects.filter(typ=model.TYPE_LQPUNCT_VERIFY, status=Task.STATUS_READY)
+            elif model_name =='correct_difficult':
+                return model.objects.filter(typ=model.TYPE_CORRECT_DIFFICULT, status=Task.STATUS_READY)
+            elif model_name =='judge_difficult':
+                return model.objects.filter(typ=model.TYPE_JUDGE_DIFFICULT, status=Task.STATUS_READY)
         else:
             return model.objects.all()
 
@@ -78,9 +82,9 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
     def _search_fields(self):
         model_name = self.model_name
         if (model_name in TASK_MODELS):
-            if model_name in ['correct', 'verify_correct', 'punct', 'verify_punct']:
+            if model_name in ['correct', 'verify_correct', 'punct', 'verify_punct', 'correct_difficult']:
                 return ('reel__sutra__name', 'reel__sutra__tripitaka__name', 'reel__sutra__sid', 'reel__reel_no')
-            elif model_name in ['judge', 'verify_judge', 'lqpunct', 'verify_lqpunct']:
+            elif model_name in ['judge', 'verify_judge', 'lqpunct', 'verify_lqpunct', 'judge_difficult']:
                 return ('lqreel__lqsutra__name', 'lqreel__lqsutra__sid', 'lqreel__reel_no')
         else:
             return getattr(self.model.Config, 'search_fields', ())
@@ -162,6 +166,10 @@ class CommonHistoryAPIView(CommonListAPIView):
                 return model.objects.filter(typ=model.TYPE_LQPUNCT, picker=request.user)
             elif model_name =='verify_lqpunct':
                 return model.objects.filter(typ=model.TYPE_LQPUNCT_VERIFY, picker=request.user)
+            elif model_name =='correct_difficult':
+                return model.objects.filter(typ=model.TYPE_CORRECT_DIFFICULT, picker=request.user)
+            elif model_name =='judge_difficult':
+                return model.objects.filter(typ=model.TYPE_JUDGE_DIFFICULT, picker=request.user)
         else:
             return model.objects.all()
 

@@ -51,8 +51,8 @@ class Task(models.Model):
     TYPE_LQPUNCT_VERIFY = 8
     TYPE_MARK = 9
     TYPE_MARK_VERIFY = 10
-    TYPE_CORRECT_DIFFCULT = 11
-    TYPE_JUDGE_DIFFCULT = 12
+    TYPE_CORRECT_DIFFICULT = 11
+    TYPE_JUDGE_DIFFICULT = 12
     TYPE_CHOICES = (
         (TYPE_CORRECT, '文字校对'),
         (TYPE_CORRECT_VERIFY, '文字校对审定'),
@@ -64,8 +64,8 @@ class Task(models.Model):
         (TYPE_LQPUNCT_VERIFY, '定本标点审定'),
         (TYPE_MARK, '格式标注'),
         (TYPE_MARK_VERIFY, '格式标注审定'),
-        (TYPE_CORRECT_DIFFCULT, '文字校对难字处理'),
-        (TYPE_JUDGE_DIFFCULT, '校勘判取难字处理'),
+        (TYPE_CORRECT_DIFFICULT, '文字校对难字处理'),
+        (TYPE_JUDGE_DIFFICULT, '校勘判取难字处理'),
     )
 
     TASK_NO_CHOICES = (
@@ -98,8 +98,10 @@ class Task(models.Model):
     TYPE_TO_URL_PREFIX = {
         TYPE_CORRECT: 'correct',
         TYPE_CORRECT_VERIFY: 'verify_correct',
+        TYPE_CORRECT_DIFFICULT: 'correct_difficult',
         TYPE_JUDGE: 'judge',
         TYPE_JUDGE_VERIFY: 'verify_judge',
+        TYPE_JUDGE_DIFFICULT: 'judge_difficult',
         TYPE_PUNCT: 'punct',
         TYPE_PUNCT_VERIFY: 'verify_punct',
         TYPE_LQPUNCT: 'lqpunct',

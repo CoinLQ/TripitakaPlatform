@@ -7,6 +7,7 @@ import traceback
 from tdata.models import *
 from tdata.lib.image_name_encipher import get_cut_url
 from tasks.models import *
+from rect.models import Schedule
 from rect.models import PageRect, Rect
 
 from tasks.utils.cut_column import gene_new_col, crop_col_online
@@ -380,6 +381,22 @@ def fetch_cut_file(reel, vol_page):
             fout.write(data)
     return data
 
+def rebuild_reel_pagerects(reel):
+    for page in reel.page_set.all():
+        Rect.objects.filter(page_pid=page.pk).all().delete()
+        page.pagerects.all().delete()
+
+        cut_info_dict = json.loads(page.cut_info)
+        pagerect = PageRect(page=page, reel=page.reel, rect_set=cut_info_dict['char_data'])
+        pagerect.save()
+        try:
+            pagerect.rebuild_rect()
+        except:
+            traceback.print_exc()
+    reel.image_ready = True
+    reel.save(update_fields=['image_ready'])
+    Schedule.create_reels_pptasks(reel)
+
 def compute_accurate_cut(reel, process_cut=True):
     sid = reel.sutra.sid
     try:
@@ -483,17 +500,9 @@ def compute_accurate_cut(reel, process_cut=True):
         except:
             print('save Column failed: ', traceback.print_exc())
 
-        # cut related
-        if process_cut:
-            page.pagerects.all().delete()
-            pagerect = PageRect(page=page, reel=page.reel, line_count=line_count, column_count=column_count, rect_set=cut_info['char_data'])
-            pagerect.save()
-            try:
-                pagerect.rebuild_rect()
-            except:
-                traceback.print_exc()
-            reel.cut_ready = True
-            reel.save(update_fields=['cut_ready'])
+    # cut related
+    if process_cut and not reel.cut_ready:
+        rebuild_reel_pagerects(reel)
 
 SUTRA_CLEAN_PATTERN = re.compile('[「」　 \r]')
 def clean_sutra_text(text):

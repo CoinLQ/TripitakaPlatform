@@ -58,6 +58,9 @@ class CorrectTaskSerializer(TaskSerializer):
 class VerifyCorrectTaskSerializer(CorrectTaskSerializer):
     pass
 
+class CorrectDifficultTaskSerializer(CorrectTaskSerializer):
+    pass
+
 
 class JudgeTaskSerializer(TaskSerializer):
     batchtask = serializers.SerializerMethodField()
@@ -104,6 +107,8 @@ class JudgeTaskSerializer(TaskSerializer):
 class VerifyJudgeTaskSerializer(JudgeTaskSerializer):
     pass
 
+class JudgeDifficultTaskSerializer(JudgeTaskSerializer):
+    pass
 
 class PunctTaskSerializer(CorrectTaskSerializer):
     task_no = serializers.SerializerMethodField()

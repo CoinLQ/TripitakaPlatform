@@ -65,7 +65,7 @@ class DiffSegResultSimpleSerializer(serializers.ModelSerializer):
         for diffsegtext in self.instance.diffseg.diffsegtexts.all():
             tripitaka_id_to_oldtext[diffsegtext.tripitaka_id] = diffsegtext.text
         try:
-            split_info = json.loads(data['split_info'])
+            split_info = loads(data['split_info'])
         except:
             raise serializers.ValidationError('not json string')
         try:

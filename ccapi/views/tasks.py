@@ -20,10 +20,12 @@ def ilen(iterable):
 
 class RectBulkOpMixin(object):
     def task_done(self, rects, task):
-        rectset = RectWriterSerializer(data=rects, many=True)
+        # 直接過濾掉被刪除的框
+        DeletionCheckItem.direct_delete_rects(rects, task)
+        _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]
+        rectset = RectWriterSerializer(data=_rects, many=True)
         rectset.is_valid()
         Rect.bulk_insert_or_replace(rectset.data)
-        DeletionCheckItem.create_from_rect(rects, task)
         task.done()
 
     """
@@ -171,9 +173,11 @@ class ClassifyTaskViewSet(RectBulkOpMixin,
                         "task_id": task.pk})
 
 
+
 class PageTaskViewSet(RectBulkOpMixin,
                       mixins.RetrieveModelMixin,
                       viewsets.GenericViewSet):
+    PPTASK_MAX_REDO_COUNT = 2
     queryset = PageTask.objects.all()
     serializer_class = PageTaskSerializer
 
@@ -220,6 +224,8 @@ class PageTaskViewSet(RectBulkOpMixin,
                              "msg": "No Permission!"})
         rects = request.data['rects']
         self.task_done(rects, task)
+        if task.redo_count < PageTaskViewSet.PPTASK_MAX_REDO_COUNT:
+            task.roll_new_task()
         return Response({"status": 0,
                             "task_id": pk })
 

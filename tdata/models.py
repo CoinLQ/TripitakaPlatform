@@ -112,16 +112,6 @@ class LQReel(models.Model):
             self.save(update_fields=['text_ready'])
 
 class Reel(models.Model):
-    EDITION_TYPE_UNKNOWN = 0 # 未选择
-    EDITION_TYPE_BASE = 1 # 底本
-    EDITION_TYPE_CHECKED = 2 # 对校本
-    EDITION_TYPE_PROOF = 3 # 参校本
-    EDITION_TYPE_CHOICES = (
-        (EDITION_TYPE_UNKNOWN, '未选择'),
-        (EDITION_TYPE_BASE, '底本'),
-        (EDITION_TYPE_CHECKED, '对校本'),
-        (EDITION_TYPE_PROOF, '参校本'),
-    )
     sutra = models.ForeignKey(Sutra, verbose_name='实体藏经', on_delete=models.CASCADE)
     reel_no = models.SmallIntegerField('卷序号')
     start_vol = models.SmallIntegerField('起始册')
@@ -194,14 +184,6 @@ class Reel(models.Model):
 class ReelOCRText(models.Model):
     reel = models.OneToOneField(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, primary_key=True)
     text = SutraTextField('经文', blank=True, default='') #按实际行加了换行符，换页标记为p\n
-    fixed = models.BooleanField('是否有调整', default=False)
-    f_start_page = models.CharField('起始页ID', max_length=18, default='', blank=True, null=True)
-    f_start_line_no = models.IntegerField('起始页行序号', default=-1)
-    f_start_char_no = models.IntegerField('起始页的行中字序号', default=-1)
-    f_end_page = models.CharField('终止页ID', max_length=18, default='', blank=True, null=True)
-    f_end_line_no = models.IntegerField('终止页行序号', default=-1)
-    f_end_char_no = models.IntegerField('终止页的行中字序号', default=-1)
-    f_text = SutraTextField('调整经文', blank=True, default='')
 
     class Meta:
         verbose_name = '实体藏经卷OCR经文'

@@ -37,6 +37,7 @@ class Command(BaseCommand):
                     if (not line) or line.startswith('#'):
                         continue
                     sid, name, reel_no, start_vol, start_vol_page, end_vol_page = line.split('\t')
+                    reel_no = int(reel_no)
                     if sid not in sid_to_sutra:
                         try:
                             sutra = Sutra.objects.get(sid=sid)

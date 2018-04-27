@@ -506,13 +506,13 @@ def correct_verify_submit(task):
         publisher=task.batchtask.publisher)
         difficult_task.save()
         # 将task的CorrectSeg复制到新的difficult_task
-        correctsegs = CorrectSeg.objects.filter(task=task).all()
+        correctsegs = list(CorrectSeg.objects.filter(task=task).order_by('id'))
         for correctseg in correctsegs:
             correctseg.task = difficult_task
             correctseg.id = None
         CorrectSeg.objects.bulk_create(correctsegs)
         # 将task的DoubtSeg复制到新的difficult_task
-        doubtsegs = DoubtSeg.objects.filter(task=task).all()
+        doubtsegs = list(DoubtSeg.objects.filter(task=task).order_by('id'))
         for doubtseg in doubtsegs:
             doubtseg.task = difficult_task
             doubtseg.id = None
@@ -614,7 +614,7 @@ def judge_verify_submit(task):
         publisher=task.batchtask.publisher)
         difficult_task.save()
         # 将task的DiffSegResult复制到新的difficult_task
-        diffsegresults = DiffSegResult.objects.filter(task=task).all()
+        diffsegresults = list(DiffSegResult.objects.filter(task=task).order_by('id'))
         for diffsegresult in diffsegresults:
             if diffsegresult.doubt:
                 diffsegresult.selected = False

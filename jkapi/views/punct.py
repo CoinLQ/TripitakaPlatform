@@ -30,9 +30,9 @@ def merge_text_punct(text, puncts, punct_result):
     result_idx = 0
     result_len = len(punct_result)
     punctseg_lst = []
-    indexs = []
+    indexes = []
     for i in range(len(puncts)):
-        indexs.append(0)
+        indexes.append(0)
 
     text_idx = 0
     text_len = len(text)
@@ -40,7 +40,7 @@ def merge_text_punct(text, puncts, punct_result):
         min_pos = text_len
         min_punct_index = -1
         for i in range(len(puncts)):
-            index = indexs[i]
+            index = indexes[i]
             if index < len(puncts[i]):
                 punct_obj = puncts[i][index]
                 if punct_obj[0] < min_pos:
@@ -78,7 +78,7 @@ def merge_text_punct(text, puncts, punct_result):
             punctseg_lst.append(punctseg)
             text_idx = min_pos
         if min_punct_index != -1:
-            index = indexs[min_punct_index]
+            index = indexes[min_punct_index]
             css_class = 'punct%d' % (min_punct_index + 1)
             punct_obj = puncts[min_punct_index][index]
             punct_ch = punct_obj[1]
@@ -90,7 +90,7 @@ def merge_text_punct(text, puncts, punct_result):
                 'user_puncts': [],
             }
             punctseg_lst.append(punctseg)
-            indexs[min_punct_index] += 1
+            indexes[min_punct_index] += 1
         else:
             if text_idx == text_len:
                 break

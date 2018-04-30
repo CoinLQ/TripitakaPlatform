@@ -523,6 +523,10 @@ class CorrectFeedback(FeedbackBase):
     correct_text = models.ForeignKey(ReelCorrectText, on_delete=models.CASCADE)
     position = models.IntegerField('在卷文本中的位置（前有几个字）', default=0)
 
+    class Meta:
+        verbose_name = '文字校对反馈'
+        verbose_name_plural = '文字校对反馈'
+
 class JudgeFeedback(FeedbackBase):
     diffsegresult = models.ForeignKey(DiffSegResult, on_delete=models.CASCADE, related_name='feedbacks')
 
@@ -541,3 +545,30 @@ class JudgeFeedback(FeedbackBase):
     class Meta:
         verbose_name = '校勘反馈'
         verbose_name_plural = '校勘反馈'
+
+class LQPunctFeedback(models.Model):
+    STATUS_READY = 2
+    STATUS_PROCESSING = 3
+    STATUS_FINISHED = 4
+    STATUS_CHOICES = (
+        (STATUS_READY, '待领取'),
+        (STATUS_PROCESSING, '进行中'),
+        (STATUS_FINISHED, '已完成'),
+    )
+
+    lqpunct = models.ForeignKey(LQPunct, verbose_name='定本标点', on_delete=models.CASCADE)
+    start = models.IntegerField('起始字index', default=0)
+    end = models.IntegerField('结束字下一个index', default=0)
+    fb_punctuation = models.TextField('反馈标点', blank=True, null=True) # 包含整卷文本段的标点，格式：[[5,'，'], [15,'。']]
+    fb_user = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True,
+    verbose_name='反馈用户')
+    created_at = models.DateTimeField('反馈时间', default=timezone.now)
+    status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=2, db_index=True)
+    punctuation = models.TextField('审查标点', blank=True, null=True) # 包含整卷文本段的标点，格式：[[5,'，'], [15,'。']]
+    processor = models.ForeignKey(Staff, related_name='processed_%(class)s', on_delete=models.SET_NULL, blank=True, null=True,
+    verbose_name='审查用户')
+    processed_at = models.DateTimeField('审查时间', blank=True, null=True)
+
+    class Meta:
+        verbose_name = '定本标点反馈'
+        verbose_name_plural = '定本标点反馈'

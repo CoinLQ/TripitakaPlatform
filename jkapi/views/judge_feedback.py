@@ -1,25 +1,22 @@
 import json
-from django.utils import timezone
 
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from tasks.models import DiffSegResult, JudgeFeedback, LQReelText, LQPunct
 from tasks.common import extract_line_separators
 
 from jkapi.serializers import JudgeFeedbackSerializer, JudgeFeedbackUpdateSerializer, DiffSegResultSerializer
-from jkapi.permissions import CanProcessJudgeFeedback
+from jkapi.permissions import CanProcessJudgeFeedback, CanSubmitFeedbackOrReadOnly
 
 class JudgeFeedbackList(generics.ListAPIView):
     queryset = JudgeFeedback.objects.all()
     serializer_class = JudgeFeedbackSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly, )
+    permission_classes = (CanSubmitFeedbackOrReadOnly, )
 
     def post(self, request, format=None):
-        request.data['fb_user'] = request.user.id
         diffsegresult_id = request.data['diffsegresult']
         try:
             diffsegresult = DiffSegResult.objects.get(id=diffsegresult_id)
@@ -37,11 +34,6 @@ class JudgeFeedbackDetail(generics.RetrieveUpdateAPIView):
     queryset = JudgeFeedback.objects
     serializer_class = JudgeFeedbackUpdateSerializer
     permission_classes = (CanProcessJudgeFeedback, )
-
-    def put(self, request, *args, **kwargs):
-        request.data['processor'] = request.user.id
-        request.data['processed_at'] = timezone.now()
-        return self.update(request, *args, **kwargs)
 
 class JudgeFeedbackTask(APIView):
     def get(self, request, pk, format=None):

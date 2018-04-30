@@ -470,3 +470,18 @@ span.vprogress {
 a.lqtripitaka-diffseg {
     background: greenyellow;
 }
+
+.popup-menu {
+    position: fixed;
+    padding: 0px;
+}
+
+.punct-feedback-region {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px #ccc solid;
+}
+
+.punct-fb-range {
+    font-weight: bold;
+}

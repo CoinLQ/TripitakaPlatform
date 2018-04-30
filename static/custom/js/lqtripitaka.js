@@ -2,9 +2,9 @@
 Vue.component('lqtripitaka-sutra-unit', {
     props: ['data', 'sharedata'],
     template: `
-    <span v-if="data.diffsegresult_id == undefined" v-html="data.text"></span>
-    <span v-else-if="data.text.length == 0"><a href="#" class="lqtripitaka-diffseg" :diffsegresult_id="data.diffsegresult_id" @click="clickDiffSegResult()"><span class="diffseg-tag-white"></span></a></span>
-    <span v-else><a href="#" class="lqtripitaka-diffseg" :diffsegresult_id="data.diffsegresult_id" @click="clickDiffSegResult()" v-html="data.text"></a></span>
+    <span v-if="data.diffsegresult_id == undefined" :position="data.position" v-html="data.text"></span>
+    <span v-else-if="data.text.length == 0" :position="data.position"><a href="#" class="lqtripitaka-diffseg" :diffsegresult_id="data.diffsegresult_id" @click="clickDiffSegResult()"><span class="diffseg-tag-white"></span></a></span>
+    <span v-else :position="data.position"><a href="#" class="lqtripitaka-diffseg" :diffsegresult_id="data.diffsegresult_id" @click="clickDiffSegResult()" v-html="data.text"></a></span>
     `,
     methods: {
         clickDiffSegResult: function () {
@@ -33,8 +33,8 @@ Vue.component('judge-result-dialog', {
             </tbody>
         </table>
         <div class="row">
-            <div class="col-md-3">反馈判取：</div>
-            <div class="col-md-3">
+            <div class="col-md-4">反馈判取：</div>
+            <div class="col-md-4">
                 <select class="form-control" v-model="fb_text">
                     <option disabled value="">请选择文本</option>
                     <option v-for="(diffsegtexts, text) in text_to_diffsegtexts" :value="text">
@@ -160,6 +160,148 @@ Vue.component('judge-fb-show', {
                 tnames.push(diffsegtext.tripitaka.shortname);
             });
             return tnames.join(' / ');
+        }
+    }
+})
+
+function punct_merge_text_punct(text, puncts, punct_result) {
+    //clean_linefeed(puncts);
+    var TYPE_TEXT = 1;
+    var TYPE_SEP = 2;
+    var TYPE_BR = 3;
+
+    var result_idx = 0;
+    var result_len = punct_result.length;
+
+    var punctseg_lst = [];
+    var indexs = [];
+    for (var i = 0; i < puncts.length; ++i) {
+        indexs.push(0);
+    }
+    var text_idx = 0;
+    while (1) {
+        // 找到当前最小的punct位置
+        var min_pos = text.length;
+        var min_punct_index = -1;
+        for (var i = 0; i < puncts.length; ++i) {
+            var index = indexs[i];
+            if (index < puncts[i].length) {
+                var punct_obj = puncts[i][index];
+                if (punct_obj[0] < min_pos) {
+                    min_pos = punct_obj[0];
+                    min_punct_index = i;
+                }
+            }
+        }
+
+        if (text_idx < min_pos) {
+            var text_seg = text.substr(text_idx, min_pos - text_idx);
+            var user_puncts = [];
+            var strs = [];
+            var t_idx = 0;
+            while (result_idx < result_len &&
+                (punct_result[result_idx][0] < min_pos ||
+                    (punct_result[result_idx][0] == min_pos && punct_result[result_idx][1] != '\n'))) {
+                if (punct_result[result_idx][0] - text_idx > t_idx) {
+                    var s = text_seg.substr(t_idx, punct_result[result_idx][0] - text_idx - t_idx);
+                    strs.push(s);
+                    t_idx = punct_result[result_idx][0] - text_idx;
+                }
+
+                strs.push(punct_result[result_idx][1]);
+                user_puncts.push(punct_result[result_idx]);
+                ++result_idx;
+            }
+            if (t_idx < text_seg.length) {
+                var s = text_seg.substr(t_idx, text_seg.length - t_idx);
+                strs.push(s);
+            }
+            text_seg = strs.join('');
+            var punctseg = {
+                type: TYPE_TEXT,
+                position: text_idx,
+                text: text_seg, // 经文或合并的标点
+                cls: '', // 显示标点的样式
+                user_puncts: user_puncts
+            };
+            punctseg_lst.push(punctseg);
+            text_idx = min_pos;
+        }
+
+        // 插入标点
+        if (min_punct_index != -1) {
+            var index = indexs[min_punct_index];
+            var cls = 'punct' + (min_punct_index + 1).toString();
+            var punct_obj = puncts[min_punct_index][index];
+            var punct_str = punct_obj[1];
+            var punctseg = {
+                type: TYPE_SEP,
+                position: text_idx,
+                text: punct_obj[1], // 经文或合并的标点
+                cls: cls, // 显示标点
+                user_puncts: []
+            };
+            punctseg_lst.push(punctseg);
+            indexs[min_punct_index] += 1;
+        } else {
+            if (text_idx == text.length) {
+                break;
+            }
+        }
+    }
+
+    return punctseg_lst;
+}
+
+Vue.component('punct-feedback-dialog', {
+    props: ['sharedata'],
+    template: `
+    <el-dialog title="标点反馈" :visible.sync="sharedata.punctFeedbackDialogVisible" width="50%" @open="handleOpen" :before-close="handleCancel">
+        <div class="row">
+            <div class="punct-feedback-region">
+                <span v-for="punctseg in sharedata.punctseg_lst">
+                    <span is="punct-show-seg" :punctseg="punctseg" :sharedata="sharedata"></span>
+                </span>
+            </div>
+        </div>
+        <div class="row">
+            <span slot="footer" class="dialog-footer">
+                <span class="alert alert-danger" v-if="error">{{ error }}</span>
+                <el-button type="primary" @click="handleOK">确定</el-button>
+                <el-button @click="handleCancel">取消</el-button>
+            </span>
+        </div>
+    </el-dialog>
+    `,
+    data: function () {
+        return {
+            error: null
+        }
+    },
+    methods: {
+        handleOpen: function () {
+        },
+        handleOK: function () {
+            var punct_result = [];
+            this.sharedata.punctseg_lst.forEach(function(punctseg) {
+                punctseg.user_puncts.forEach(function(punct_unit) {
+                    punct_result.push([punct_unit[0], punct_unit[1]]);
+                });
+            });
+            var vm = this;
+            axios.post('/api/lqpunctfeedback/', {
+                'lqpunct': this.sharedata.lqpunct_id,
+                'start': this.sharedata.selection_start,
+                'end': this.sharedata.selection_end,
+                'fb_punctuation': JSON.stringify(punct_result)
+            }).then(function(response) {
+                alert('提交成功！');
+                vm.sharedata.punctFeedbackDialogVisible = false;
+            });
+        },
+        handleCancel: function () {
+            this.sharedata.punctFeedbackDialogVisible = false;
+            this.error = null;
         }
     }
 })

@@ -43,6 +43,7 @@ urlpatterns = [
     path('lqtripitaka/', lqtripitaka.index, name='lqtripitaka_index'),
     path('do_generate_task/', lqtripitaka.do_generate_task, name='lqtripitaka_index'),
     path('judgefeedback/<int:judgefeedback_id>/', process_judgefeedback, name='process_judgefeedback'),
+    path('lqpunctfeedback/<int:lqpunctfeedback_id>/', process_lqpunctfeedback, name='process_lqpunctfeedback'),
 
     path('tools/cutfixed_pages/', cutfixed_pages, name='cutfixed_pages'),
     path('tools/cutfixed_pages/<pid>/', cutfixed_page_detail, name='cutfixed_page_detail'),

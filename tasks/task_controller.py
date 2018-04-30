@@ -420,6 +420,7 @@ def publish_correct_result(task):
 CORRECT_RESULT_FILTER = re.compile('[ 　ac-oq-zA-Z0-9.?\-",/，。、：]')
 MULTI_LINEFEED = re.compile('\n\n+')
 def generate_correct_result(task):
+    print('generate_correct_result')
     text_lst = []
     last_ch_linefeed = False
     last_not_empty_correctseg = None

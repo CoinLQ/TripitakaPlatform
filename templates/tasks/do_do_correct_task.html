@@ -116,12 +116,13 @@
           <span ><i class="el-icon-date"></i> 存疑列表</span>
           <el-button v-if="doubt_count!=0" type="danger" size="mini" round>{{doubt_count}}</el-button>
           </template>
-          <div is="doubt-list" :doubts.sync="doubts" :task_id="sharedata.task_id" :current_doubt.sync="current_doubt"></div>
+          <div is="doubt-list" :doubts.sync="doubts" :task_id="sharedata.task_id" :task_typ="sharedata.task_typ" :current_doubt.sync="current_doubt"></div>
         </el-collapse-item>
       </el-collapse>
       {% endraw %}
     </div>
   </div>
+</div>
 </form>
 {% endblock %}
 {% block foot_script %}
@@ -167,7 +168,7 @@
       premitSubmit: function (){
         let empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
         // 对于文字校对审查，已经完成的，禁止再提交
-        return (empty_segs.length != 0 || (this.sharedata.status >= 4 && this.sharedata.task_typ == 2) ) 
+        return (this.sharedata.task_typ != 11 && (empty_segs.length != 0 || (this.sharedata.status >= 4 && this.sharedata.task_typ == 2))) || (this.sharedata.task_typ == 11 && (_.filter(this.doubts, {'processed':false}).length > 0 || this.sharedata.status >= 4))
       },
       doubt_count: function(){
         return this.doubts.length;
@@ -816,6 +817,7 @@
           doubt_text: this.doubt.doubt_text,
           doubt_char_no: this.doubt.doubt_char_no,
           doubt_comment: this.doubt.doubt_comment,
+          processed: this.doubt.processed,
         }).then(function(response) {
           console.log(response)
           this.doubts.unshift(response.data)

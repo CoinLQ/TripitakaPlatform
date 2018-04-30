@@ -106,7 +106,7 @@ class CorrectSegSerializer(serializers.ModelSerializer):
 class DoubtSegSerializer(serializers.ModelSerializer):
     class Meta:
         model = DoubtSeg
-        fields = ('id', 'task', 'doubt_comment', 'doubt_char_no', 'doubt_text', 'page_no', 'line_no', 'char_no', 'created_at')
+        fields = ('id', 'task', 'doubt_comment', 'doubt_char_no', 'doubt_text', 'page_no', 'line_no', 'char_no', 'created_at', 'processed')
 
 class JudgeFeedbackSerializer(serializers.ModelSerializer):
     class Meta:

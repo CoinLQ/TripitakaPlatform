@@ -42,9 +42,15 @@ class ClassifyTaskSerializer(TaskSerializer):
 
 
 class PageTaskSerializer(TaskSerializer):
+    page_info = serializers.SerializerMethodField()
+    
+    def get_page_info(self, obj):
+        page_id = obj.page_set[0]['page_id']
+        return str(Page.objects.get(pk=page_id))
+    
     class Meta:
         model = PageTask
-        fields = ("tid", "schedule_no", "number", "desc", "status", "priority", "obtain_date", "update_date", "count")
+        fields = ("tid", "schedule_no", "page_info", "number", "desc", "status", "priority", "obtain_date", "update_date", "count")
 
 class DelTaskSerializer(TaskSerializer):
     class Meta:

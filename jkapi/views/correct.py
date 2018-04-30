@@ -11,7 +11,8 @@ from tdata.models import *
 from tasks.models import *
 from jkapi.serializers import *
 from jkapi.permissions import *
-from tasks.task_controller import correct_submit_async, correct_verify_submit_async
+from tasks.task_controller import correct_submit_async, correct_verify_submit_async, correct_difficult_submit_async
+
 from tdata.lib.image_name_encipher import get_image_url
 from ccapi.pagination import StandardPagination
 import json, re
@@ -92,6 +93,13 @@ class DoubtSegViewSet(viewsets.ModelViewSet):
         task = task or self.request.parser_context['kwargs']['task_id']
         return DoubtSeg.objects.filter(task_id=task)
 
+    def put(self, request, task_id, pk, format=None):
+        doubtseg = DoubtSeg.objects.get(pk)
+        serializer = DoubtSegSerializer(doubtseg, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class FinishCorrectTask(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
@@ -114,5 +122,7 @@ class FinishCorrectTask(APIView):
             correct_submit_async(task_id)
         elif self.task.typ == Task.TYPE_CORRECT_VERIFY:
             correct_verify_submit_async(task_id)
+        elif self.task.typ == Task.TYPE_CORRECT_DIFFICULT:
+            correct_difficult_submit_async(task_id)
         return Response({'task_id': task_id, 'status': self.task.status})
 

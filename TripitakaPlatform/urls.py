@@ -32,6 +32,7 @@ urlpatterns = [
     url(r'^api/', include('api.urls')),
     path('correct/<int:task_id>/', do_correct_task, name='do_correct_task'),
     path('verify_correct/<int:task_id>/', do_correct_task, name='do_correct_verify_task'),
+    path('correct_difficult/<int:task_id>/', do_correct_task, name='do_correct_task'),
     path('sutra_pages/<pid>/view', sutra_page_detail, name='sutra_page_detail'),
     path('judge/<int:task_id>/', do_judge_task, name='do_judge_task'),
     path('verify_judge/<int:task_id>/', do_judge_task, name='do_judge_verify_task'),

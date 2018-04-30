@@ -34,11 +34,13 @@ class LQReelTextDetail(APIView):
         lqpunct = LQPunct.objects.filter(reeltext=lqreeltext).order_by('-id').first()
         if lqpunct:
             punct_lst = json.loads(lqpunct.punctuation)
+            lqpunct_id = lqpunct.id
         else:
             punct_lst = []
+            lqpunct_id = 0
         diffsegresult_pos_lst = []
         diffsegresults = list(DiffSegResult.objects.filter(
-            task_id=lqreeltext.task.id).order_by('id'))
+            task_id=lqreeltext.task.id).order_by('diffseg__base_pos'))
         base_pos = 0
         pos = 0
         for diffsegresult in diffsegresults:
@@ -56,6 +58,7 @@ class LQReelTextDetail(APIView):
             pos += selected_length
         response = {
             'task_id': lqreeltext.task_id,
+            'lqpunct_id': lqpunct_id,
             'text': lqreeltext.text,
             'punct_lst': punct_lst,
             'diffsegresult_pos_lst': diffsegresult_pos_lst,

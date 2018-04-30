@@ -17,6 +17,7 @@ from jkapi.views.punct import PunctTaskDetail
 from jkapi.views.lqtripitaka import LQSutraViewSet, LQReelTextDetail
 from jkapi.views.judge_feedback import JudgeFeedbackList, JudgeFeedbackDetail, JudgeFeedbackTask
 from jkapi.views.tripitaka import SutraViewSet,SutraText,TripitakaViewSet
+from jkapi.views.punct_feedback import LQPunctFeedbackList, LQPunctFeedbackDetail, LQPunctFeedbackTask
 
 router = routers.DefaultRouter()
 router.register(r'pagerect', PageRectViewSet)
@@ -58,4 +59,7 @@ urlpatterns = [
     url(r'^judgefeedback/(?P<pk>[0-9]+)/$', JudgeFeedbackDetail.as_view()),
     url(r'^judgefeedback/(?P<pk>[0-9]+)/process/$', JudgeFeedbackTask.as_view()),
     url(r'^sutra_text/(?P<s_id>[0-9]+)/$', SutraText.as_view()),
+    url(r'^lqpunctfeedback/$', LQPunctFeedbackList.as_view()),
+    url(r'^lqpunctfeedback/(?P<pk>[0-9]+)/$', LQPunctFeedbackDetail.as_view()),
+    url(r'^lqpunctfeedback/(?P<pk>[0-9]+)/process/$', LQPunctFeedbackTask.as_view()),
 ]

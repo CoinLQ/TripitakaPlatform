@@ -79,12 +79,14 @@ function judge_get_seg_list(text, diffseg_pos_lst, id_key) {
             var length = diffseg_pos_lst[diffseg_idx].base_length;
             if (i < pos) {
                 seg_list.push({
-                    'text': text.substr(i, pos-i)
+                    'text': text.substr(i, pos-i),
+                    'position': i
                 })
                 i = pos;
             }
             var obj = {
-                'text': text.substr(i, length)
+                'text': text.substr(i, length),
+                'position': i
             }
             obj[id_key] = diffseg_pos_lst[diffseg_idx][id_key];
             seg_list.push(obj);
@@ -92,7 +94,8 @@ function judge_get_seg_list(text, diffseg_pos_lst, id_key) {
             ++diffseg_idx;
         } else {
             seg_list.push({
-                'text': text.substr(i)
+                'text': text.substr(i),
+                'position': i
             })
             i = text.length;
         }

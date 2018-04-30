@@ -130,3 +130,16 @@ class JudgeFeedbackUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'response': {'required': 'True'},
         }
+
+class LQPunctFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LQPunctFeedback
+        fields = ('id', 'lqpunct', 'start', 'end', 'fb_punctuation', 'fb_user',
+                  'created_at', 'processor', 'processed_at', 'punctuation')
+        read_only_fields = ('id', 'created_at', 'processor', 'processed_at', 'punctuation')
+        extra_kwargs = {
+            'lqpunct': {'required': 'True'},
+            'start': {'required': 'True'},
+            'end': {'required': 'True'},
+            'fb_punctuation': {'required': 'True'},
+        }

@@ -1,5 +1,6 @@
 from rest_framework import permissions
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from tasks.models import Task
 
@@ -46,8 +47,35 @@ class IsRoleOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         role_ids = [role.id for role in request.user.roles.all()]
-        return self.role_id in role_ids
+        if self.role_id in role_ids:
+            return True
+        return False
 
-class CanProcessJudgeFeedback(IsRoleOrReadOnly):
+class CanProcessFeedback(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        role_ids = [role.id for role in request.user.roles.all()]
+        if self.role_id in role_ids:
+            request.data['processor'] = request.user.id
+            request.data['processed_at'] = timezone.now()
+            return True
+        return False
+
+class CanProcessJudgeFeedback(CanProcessFeedback):
     role_id = 3
 
+class CanProcessLQPunctFeedback(CanProcessFeedback):
+    role_id = 17
+
+class CanSubmitFeedbackOrReadOnly(permissions.BasePermission):
+    """
+    类似IsAuthenticatedOrReadOnly，对于通过用户认证的请求，增加fb_user参数
+    """
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        if request.user and request.user.is_authenticated:
+            request.data['fb_user'] = request.user.id
+            return True
+        return False

@@ -148,7 +148,8 @@
             vm.popupMenuShown = false;
           } else {
             var seg_position = parseInt(selection.anchorNode.parentElement.getAttribute('position'));
-            var pre_text = selection.anchorNode.data.substr(0, selection.anchorOffset);
+            var selection_offset = Math.min(selection.focusOffset, selection.anchorOffset);
+            var pre_text = selection.anchorNode.data.substr(0, selection_offset);
             var offset = vm.cleanPunct(pre_text).length;
             vm.sharedata.punct_text = vm.cleanPunct(text);
             vm.sharedata.punctseg_lst = punct_merge_text_punct(vm.sharedata.punct_text,

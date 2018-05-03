@@ -55,7 +55,7 @@ class RectBulkOpMixin(object):
             rects = RectSerializer(data=_rects, many=True)
             rects.is_valid()
             page= rectpages[0].page
-            return Response({"status": 0,
+            return Response({"status": instance.status,
                             "rects": rects.data,
                             "page_code": page.page_code,
                             "page_info": str(page),
@@ -200,7 +200,7 @@ class PageTaskViewSet(RectBulkOpMixin,
         rects = RectSerializer(data=_rects, many=True)
         rects.is_valid()
         page = rectpages[0].page
-        return Response({"status": 0,
+        return Response({"status": task.status,
                         "rects": rects.data,
                         "page_code": page.page_code,
                         "page_info": str(page),

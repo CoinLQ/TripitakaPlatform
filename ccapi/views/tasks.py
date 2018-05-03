@@ -23,9 +23,14 @@ class RectBulkOpMixin(object):
         # 直接過濾掉被刪除的框
         DeletionCheckItem.direct_delete_rects(rects, task)
         _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]
+        for r in _rects:
+            r['page_pid'] = task.page_set[0]['page_id']
+            r['line_no'] =  0
+            r['char_no'] = 0
         rectset = RectWriterSerializer(data=_rects, many=True)
         rectset.is_valid()
         Rect.bulk_insert_or_replace(rectset.data)
+        PageRect.reformat_rects(task.page_set[0]['page_id'])
         task.done()
 
     """
@@ -50,15 +55,16 @@ class RectBulkOpMixin(object):
             rects = RectSerializer(data=_rects, many=True)
             rects.is_valid()
             page= rectpages[0].page
-            return Response({"status": 0,
+            return Response({"status": instance.status,
                             "rects": rects.data,
                             "page_code": page.page_code,
+                            "page_info": str(page),
                             "task_id": instance.pk})
         return Response(serializer.data)
 
     @list_route( methods=['get'], url_path='history')
     def history(self, request):
-        queryset = self.queryset.filter(owner=request.user, status=TaskStatus.COMPLETED)
+        queryset = self.queryset.filter(owner=request.user).order_by('status', '-update_date')
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -177,7 +183,6 @@ class ClassifyTaskViewSet(RectBulkOpMixin,
 class PageTaskViewSet(RectBulkOpMixin,
                       mixins.RetrieveModelMixin,
                       viewsets.GenericViewSet):
-    PPTASK_MAX_REDO_COUNT = 2
     queryset = PageTask.objects.all()
     serializer_class = PageTaskSerializer
 
@@ -195,10 +200,10 @@ class PageTaskViewSet(RectBulkOpMixin,
         rects = RectSerializer(data=_rects, many=True)
         rects.is_valid()
         page = rectpages[0].page
-        # TODO: test, check
-        return Response({"status": 0,
+        return Response({"status": task.status,
                         "rects": rects.data,
                         "page_code": page.page_code,
+                        "page_info": str(page),
                         "task_id": task.pk})
 
 
@@ -224,11 +229,30 @@ class PageTaskViewSet(RectBulkOpMixin,
                              "msg": "No Permission!"})
         rects = request.data['rects']
         self.task_done(rects, task)
-        if task.redo_count < PageTaskViewSet.PPTASK_MAX_REDO_COUNT:
-            task.roll_new_task()
+        task.roll_new_task()
         return Response({"status": 0,
                             "task_id": pk })
 
+    @detail_route(methods=['post'], url_path='save')
+    @transaction.atomic
+    def temp_save(self, request, pk):
+        task = PageTask.objects.get(pk=pk)
+        if (task.owner != request.user):
+            return Response({"status": -1,
+                             "msg": "No Permission!"})
+        rects = request.data['rects']
+        DeletionCheckItem.direct_delete_rects(rects, task)
+        _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]
+        for r in _rects:
+            r['page_pid'] = task.page_set[0]['page_id']
+            r['line_no'] =  0
+            r['char_no'] = 0
+        rectset = RectWriterSerializer(data=_rects, many=True)
+        rectset.is_valid()
+        Rect.bulk_insert_or_replace(rectset.data)
+        PageRect.reformat_rects(task.page_set[0]['page_id'])
+        return Response({"status": 0,
+                            "task_id": pk })
 
 
 class DelTaskViewSet(RectBulkOpMixin,

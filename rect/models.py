@@ -192,6 +192,7 @@ class TripiMixin(object):
         return self.name
 
 class PageRect(models.Model):
+    PPTASK_MAX_TASK_COUNT = 2
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) # TODO: confirm
     page = models.ForeignKey(Page, null=True, blank=True, related_name='pagerects', on_delete=models.SET_NULL,
                              verbose_name=u'关联源页信息')
@@ -202,6 +203,7 @@ class PageRect(models.Model):
     rect_set = JSONField(default=list, verbose_name=u'切字块JSON切分数据集')
     created_at = models.DateTimeField(null=True, blank=True, verbose_name=u'创建时间', auto_now_add=True)
     primary = models.BooleanField(verbose_name="主切分方案", default=True)
+    pptask_count =  models.PositiveSmallIntegerField(default=1, verbose_name=u'当前任务数')
 
     def __str__(self):
         return str(self.id)
@@ -232,11 +234,19 @@ class PageRect(models.Model):
         return PageRect.align_rects_bypage(pagerect, rects)
 
     @classmethod
+    def hans_by_page_text(cls, texts, line_no, char_no):
+        try:
+            return texts[line_no-1][char_no-1]
+        except:
+            return ''
+
+    @classmethod
     def align_rects_bypage(cls, pagerect, rects):
-        tp = str(pagerect.reel)[0:2]
+        tp = pagerect.reel.sutra.sid[0:2]
         ret = True
         columns = ArrangeRect.resort_rects_from_qs(rects, tp)
         page = pagerect.page
+        texts = page.text.replace("b\n","").split("\n")
         image_name_prefix = page.reel.image_prefix() + str(page.page_no)
         flat_list = [item for sublist in columns for item in sublist]
         rect_list = list()
@@ -247,6 +257,7 @@ class PageRect(models.Model):
                 _rect['char_no'] = col_n
                 _rect['page_pid'] = pagerect.page_id
                 _rect['reel_id'] = pagerect.reel_id
+                _rect['char'] = PageRect.hans_by_page_text(texts, lin_n, col_n)
                 try :
                     # 这里以左上角坐标，落在哪个列数据为准
                     if not page.bar_info:
@@ -281,7 +292,7 @@ class PageRect(models.Model):
             myfont = ImageFont.truetype(settings.BASE_DIR + "/static/fonts/SourceHanSerifTC-Bold.otf", 11)
         elif sys.platform == 'darwin':
             myfont = ImageFont.truetype("/Library/Fonts/Songti.ttc", 12)
-        tp = str(self.reel)[0:2]
+        tp = str(self.reel.sutra.sid)[0:2]
         columns = ArrangeRect.resort_rects_from_qs(self.rect_set, tp)
         for lin_n, line in enumerate(columns, start=1):
             for col_n, _r in enumerate(line, start=1):
@@ -769,12 +780,16 @@ class PageTask(RTask):
         return result[0]
 
     def roll_new_task(self):
-        task_no = "%s_%d_%05X" % (self.schedule.schedule_no, self.task_no.split('_')[1], self.task_id())
-        task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1,
-                                  status=TaskStatus.NOT_GOT,
-                                  page_set=self.page_set, redo_count=task.redo_count + 1)
-        task.save()
-        return task
+        page_pid = self.page_set[0]['page_id']
+        pagerect = PageRect.objects.filter(page_id=page_pid).first()
+        if pagerect.pptask_count <= PageRect.PPTASK_MAX_TASK_COUNT:
+            pagerect.pptask_count = pagerect.pptask_count + 1
+            task_no = "%s_%s_%05X" % (self.number.split('_')[0], self.number.split('_')[1], self.task_id())
+            task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1,
+                                    status=TaskStatus.NOT_GOT,
+                                    page_set=self.page_set, redo_count=pagerect.pptask_count)
+            task.save()
+            pagerect.save(update_fields=['pptask_count'])
 
 #暂不使用
 class AbsentTask(RTask):
@@ -1053,7 +1068,8 @@ class PerpageAllocateTask(AllocateTask):
 
     def allocate(self):
         reel = self.reel
-        query_set = filter(lambda x: x.primary, PageRect.objects.filter(reel=reel))
+        # query_set = filter(lambda x: x.primary, PageRect.objects.filter(reel=reel).order_by('page_id'))
+        query_set = PageRect.objects.filter(reel=reel).order_by('page_id')
 
         page_set = []
         task_set = []

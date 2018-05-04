@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Task
+from rest_framework.fields import ChoiceField
+from .models import Task, JudgeFeedback, LQPunctFeedback
 from django.conf import settings
 from django.utils.timezone import localtime
 
@@ -146,3 +147,29 @@ class LqpunctTaskSerializer(JudgeTaskSerializer):
 
 class VerifyLqpunctTaskSerializer(LqpunctTaskSerializer):
     pass
+
+class JudgeFeedbackSerializer(serializers.ModelSerializer):
+    created_at = DateTimeTzAwareField(format=settings.DATETIME_FORMAT)
+    processed_at = DateTimeTzAwareField(format=settings.DATETIME_FORMAT)
+    response = serializers.SerializerMethodField()
+
+    def get_response(self, obj):
+        return obj.get_response_display()
+
+    class Meta:
+        model = JudgeFeedback
+        fields = ('id', 'lqsutra_name', 'reel_no', 'original_text', 'fb_text', 'fb_comment', 'fb_user_display', 'created_at', 'processor', 'processed_at', 'response')
+        read_only_fields = ('id', 'lqsutra_name', 'reel_no', 'original_text', 'fb_text', 'fb_comment', 'fb_user_display', 'created_at', 'processor', 'processed_at', 'response')
+
+class LQPunctFeedbackSerializer(serializers.ModelSerializer):
+    created_at = DateTimeTzAwareField(format=settings.DATETIME_FORMAT)
+    status = serializers.SerializerMethodField()
+    processed_at = DateTimeTzAwareField(format=settings.DATETIME_FORMAT)
+
+    def get_status(self, obj):
+        return obj.get_status_display()
+
+    class Meta:
+        model = LQPunctFeedback
+        fields = ('id', 'lqsutra_name', 'reel_no', 'status', 'fb_user_display', 'created_at', 'processor', 'processed_at')
+        read_only_fields = ('id', 'lqsutra_name', 'reel_no', 'status', 'fb_user_display', 'created_at', 'processor', 'processed_at')

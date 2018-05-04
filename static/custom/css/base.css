@@ -183,7 +183,7 @@ ul.diffseg-region {
 }
 .punct-region {
     padding: 10px;
-    height: 700px;
+    height: 600px;
     margin: 20px;
     overflow: scroll;
     border: 1px #ccc solid;

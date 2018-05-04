@@ -519,6 +519,11 @@ class FeedbackBase(models.Model):
     class Meta:
         abstract = True
 
+    @property
+    def fb_user_display(self):
+        return self.fb_user.username
+    fb_user_display.fget.short_description = '反馈用户'
+
 class CorrectFeedback(FeedbackBase):
     correct_text = models.ForeignKey(ReelCorrectText, on_delete=models.CASCADE)
     position = models.IntegerField('在卷文本中的位置（前有几个字）', default=0)
@@ -546,6 +551,9 @@ class JudgeFeedback(FeedbackBase):
         verbose_name = '校勘反馈'
         verbose_name_plural = '校勘反馈'
 
+    class Config:
+        search_fields = ('original_text', 'fb_text', 'fb_user__username')
+
 class LQPunctFeedback(models.Model):
     STATUS_READY = 2
     STATUS_PROCESSING = 3
@@ -569,6 +577,26 @@ class LQPunctFeedback(models.Model):
     verbose_name='审查用户')
     processed_at = models.DateTimeField('审查时间', blank=True, null=True)
 
+    @property
+    def lqsutra_name(self):
+        return self.lqpunct.lqreel.lqsutra.name
+    lqsutra_name.fget.short_description = '龙泉经名'
+
+    @property
+    def reel_no(self):
+        lqreel = self.lqpunct.lqreel
+        if lqreel:
+            return lqreel.reel_no
+    reel_no.fget.short_description = '第几卷'
+
+    @property
+    def fb_user_display(self):
+        return self.fb_user.username
+    fb_user_display.fget.short_description = '反馈用户'
+
     class Meta:
         verbose_name = '定本标点反馈'
         verbose_name_plural = '定本标点反馈'
+
+    class Config:
+        search_fields = ('fb_user__username',)

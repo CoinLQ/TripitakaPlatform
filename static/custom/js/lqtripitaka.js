@@ -96,6 +96,7 @@ Vue.component('judge-result-dialog', {
                 alert('选择结果与原结果相同，不需要提交反馈。');
                 return ;
             }
+            var vm = this;
             axios.post('/api/judgefeedback/', {
                 'fb_text': this.fb_text,
                 'fb_comment': this.fb_comment,
@@ -103,6 +104,8 @@ Vue.component('judge-result-dialog', {
                 'processor': 1
             }).then(function(response) {
                 alert('提交成功！');
+                vm.sharedata.judgeResultDialogVisible = false;
+                vm.error = null;
             });
         },
         handleCancel: function () {

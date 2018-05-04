@@ -361,8 +361,8 @@
     "fields": {
         "name": "\u6587\u5b57\u6821\u5bf9\u53cd\u9988\u5ba1\u67e5\u5458",
         "menu_paths": [
-            "/collate_tasks/correct_feedback",
-            "/collate_history/correct_feedback"
+            "/collate_tasks/correctfeedback",
+            "/collate_history/correctfeedback"
         ],
         "is_active": true
     }
@@ -373,8 +373,8 @@
     "fields": {
         "name": "\u6821\u52d8\u53cd\u9988\u5ba1\u67e5\u5458",
         "menu_paths": [
-            "/collate_tasks/judge_feedback",
-            "/collate_history/judge_feedback"
+            "/collate_tasks/judgefeedback",
+            "/collate_history/judgefeedback"
         ],
         "is_active": true
     }
@@ -385,8 +385,8 @@
     "fields": {
         "name": "\u5b9a\u672c\u6807\u70b9\u53cd\u9988\u5ba1\u67e5\u5458",
         "menu_paths": [
-            "/collate_tasks/lqpunct_feedback",
-            "/collate_history/lqpunct_feedback"
+            "/collate_tasks/lqpunctfeedback",
+            "/collate_history/lqpunctfeedback"
         ],
         "is_active": true
     }

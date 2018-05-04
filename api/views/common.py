@@ -9,11 +9,11 @@ from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 from django.contrib.contenttypes.models import ContentType
 from tasks.serializers import TaskSerializer
-from tasks.models import Task
+from tasks.models import Task, FeedbackBase, JudgeFeedback, LQPunctFeedback
 from ccapi.utils.task import redis_lock
 from django.utils import timezone
-TASK_MODELS = ('correct', 'verify_correct', 'judge', 'verify_judge', 'punct', 'verify_punct', 'lqpunct', 'verify_lqpunct', 'correct_difficult', 'judge_difficult')
-
+TASK_MODELS = ('correct', 'verify_correct', 'judge', 'verify_judge', 'punct', 'verify_punct', 'lqpunct',
+               'verify_lqpunct', 'correct_difficult', 'judge_difficult')
 
 
 def underscore_to_camelcase(word, lower_first=False):
@@ -65,8 +65,10 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
                 return model.objects.filter(typ=model.TYPE_CORRECT_DIFFICULT, status=Task.STATUS_READY)
             elif model_name =='judge_difficult':
                 return model.objects.filter(typ=model.TYPE_JUDGE_DIFFICULT, status=Task.STATUS_READY)
-        else:
-            return model.objects.all()
+        elif model_name == 'judgefeedback':
+            return model.objects.filter(response=FeedbackBase.RESPONSE_UNPROCESSED)
+        elif model_name == 'lqpunctfeedback':
+            return model.objects.filter(status=Task.STATUS_READY)
 
     def get_serializer_class(self):
         model_type = get_model_content_type(self.app_name, self.model_name)
@@ -92,7 +94,10 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
     def get(self, request, *args, **kwargs):
         self.app_name, self.model_name = get_app_model_name(kwargs)
 
-        self.queryset = self.query_set(self.model_name).order_by('-priority', 'id')
+        if self.model_name in TASK_MODELS:
+            self.queryset = self.query_set(self.model_name).order_by('-priority', 'id')
+        else:
+            self.queryset = self.query_set(self.model_name).order_by('id')
         self.filter_fields = getattr(self.model.Config, 'filter_fields', ())
         self.search_fields = self._search_fields()
         self.serializer_class = self.get_serializer_class()
@@ -123,18 +128,25 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
         return exist_task
         
     def obtain_task(self, request, pk):
-        task = Task.objects.get(pk=pk)
-        if self._exist_task_by_samepicker(task, request.user):
-            if task.typ in [Task.TYPE_CORRECT, Task.TYPE_JUDGE]:
-                msg = "同一用户不能同时领取校一、校二"
-            elif task.typ in [Task.TYPE_PUNCT, Task.TYPE_LQPUNCT]:
-                msg = "同一用户不能同时领取标一、标二"
-            return Response({"status": -1, "task_id": pk, "msg": msg})
-        count = Task.objects.filter(pk=pk, status=Task.STATUS_READY, picker=None)\
-        .update(
-            picker=request.user,
-            picked_at=timezone.now(),
-            status=Task.STATUS_PROCESSING)
+        if self.model_name in TASK_MODELS:
+            task = Task.objects.get(pk=pk)
+            if self._exist_task_by_samepicker(task, request.user):
+                if task.typ in [Task.TYPE_CORRECT, Task.TYPE_JUDGE]:
+                    msg = "同一用户不能同时领取校一、校二"
+                elif task.typ in [Task.TYPE_PUNCT, Task.TYPE_LQPUNCT]:
+                    msg = "同一用户不能同时领取标一、标二"
+                return Response({"status": -1, "task_id": pk, "msg": msg})
+            count = Task.objects.filter(pk=pk, status=Task.STATUS_READY, picker=None)\
+            .update(
+                picker=request.user,
+                picked_at=timezone.now(),
+                status=Task.STATUS_PROCESSING)
+        elif self.model_name == 'judgefeedback':
+            count = JudgeFeedback.objects.filter(pk=pk, processor=None)\
+            .update(processor=request.user, processed_at=timezone.now())
+        elif self.model_name == 'lqpunctfeedback':
+            count = LQPunctFeedback.objects.filter(pk=pk, status=LQPunctFeedback.STATUS_READY, processor=None)\
+            .update(processor=request.user, processed_at=timezone.now(), status=LQPunctFeedback.STATUS_PROCESSING)
         if count == 1:
             return Response({"status": 0, "task_id": pk})
         else:
@@ -171,7 +183,7 @@ class CommonHistoryAPIView(CommonListAPIView):
             elif model_name =='judge_difficult':
                 return model.objects.filter(typ=model.TYPE_JUDGE_DIFFICULT, picker=request.user)
         else:
-            return model.objects.all()
+            return model.objects.filter(processor=request.user)
 
     def get_serializer_class(self):
         model_type = get_model_content_type(self.app_name, self.model_name)
@@ -188,7 +200,10 @@ class CommonHistoryAPIView(CommonListAPIView):
     def get(self, request, *args, **kwargs):
         self.app_name, self.model_name = get_app_model_name(kwargs)
 
-        self.queryset = self.query_set(self.model_name, request).order_by('-priority', 'id')
+        if self.model_name in TASK_MODELS:
+            self.queryset = self.query_set(self.model_name, request).order_by('-priority', 'id')
+        else:
+            self.queryset = self.query_set(self.model_name, request).order_by('id')
         self.filter_fields = getattr(self.model.Config, 'filter_fields', ())
         self.search_fields = self._search_fields()
         self.serializer_class = self.get_serializer_class()

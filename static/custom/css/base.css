@@ -467,6 +467,11 @@ span.vprogress {
     overflow: scroll;
 }
 
+.disabledtreenode {
+    color: #999;
+    pointer-events: none;
+}
+
 a.lqtripitaka-diffseg {
     background: greenyellow;
 }

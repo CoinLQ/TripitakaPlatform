@@ -8,7 +8,11 @@
         <div class="text-center"><input type="text" class="sutra-searchbox" v-model="searchword" placeholder="搜索经名" /></div>
       </div>
       <div class="sutra-tree">
-        <el-tree :data="lqsutra_list" :props="tree_props" @node-click="clickLQSutraTreeNode"></el-tree>
+        <el-tree :data="lqsutra_list" :props="tree_props" @node-click="clickLQSutraTreeNode">
+          <span class="el-tree-node__label" slot-scope="{ node, data }" v-bind:class="{disabledtreenode: data.reel_no && !data.text_ready}">
+            <span v-text="node.label"></span>
+          </span>
+        </el-tree>
       </div>
       <div class="row">
         <div class="text-center">
@@ -112,7 +116,7 @@
         });
       },
       clickLQSutraTreeNode: function(data) {
-        if (data.reel_no != undefined) {
+        if (data.reel_no != undefined && data.text_ready) {
           var lqreel_id = data.id;
           var url = 'http://api.lqdzj.cn/api/lqreeltext/?lqreel_id=' + lqreel_id;
           var vm = this;

@@ -118,7 +118,7 @@
       clickLQSutraTreeNode: function(data) {
         if (data.reel_no != undefined && data.text_ready) {
           var lqreel_id = data.id;
-          var url = 'http://api.lqdzj.cn/api/lqreeltext/?lqreel_id=' + lqreel_id;
+          var url = '/api/lqreeltext/?lqreel_id=' + lqreel_id;
           var vm = this;
           axios.get(url).then(function(response) {
             vm.sharedata.task_id = response.data.task_id;

@@ -70,7 +70,7 @@ Vue.component('judge-result-dialog', {
             this.fb_text = null;
             this.fb_comment = '';
             this.error = null;
-            var url = 'http://api.lqdzj.cn/api/judge/' + this.sharedata.task_id
+            var url = '/api/judge/' + this.sharedata.task_id
                 + '/diffsegresults/' + this.sharedata.diffsegresult_id + '/';
             var vm = this;
             axios.get(url).then(function (response) {

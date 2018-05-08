@@ -159,12 +159,14 @@ Vue.component('diffseg-box', {
     props: ['diffsegresult', 'segindex', 'sharedata'],
     template: `
     <div :class="currentKls" @click.stop.prevent="click">
-        <div><span>{{ base_text }}</span>
-        <span><a href="#" @click.stop.prevent="showImage(diffsegresult)">查看列图</a></span>
+        <div>
+        <span v-if="diffsegresult.selected_text == null" ><font style="background:white;color:red;font-size:20px;">{{ base_text }}</font></span>
+        <span v-else ><font style="background:white;color:green;font-size:20px;">{{ base_text }}</font></span>
+        <span><a href="#" @click.stop.prevent="showImage(diffsegresult)" style="text-decoration:underline;">查看列图</a></span>
         </div>
         <span v-for="(diffsegtexts, text, index) in diffsegresult.text_to_diffsegtexts">
             <span v-for="(diffsegtext, idx) in diffsegtexts">
-                <span v-if="idx != 0">/</span><a href="#" @click="openPageDialog(diffsegtext)">{{ diffsegtext.tripitaka.shortname }}</a>
+                <span v-if="idx != 0">/</span><a href="#" @click="openPageDialog(diffsegtext)" style="text-decoration:underline;">{{ diffsegtext.tripitaka.shortname }}</a>
             </span>
             <span v-if="text">：{{ text }}</span>
             <span v-else>：为空</span>
@@ -177,12 +179,13 @@ Vue.component('diffseg-box', {
                 <a href="#" v-if="judge_result.typ == 2" @click.stop.prevent="showSplit(judge_result)">显示拆分方案</a>
             </div>
         </div>
-        <div>
+        <div style="line-height:50px!important;">
             <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>
             <a href="#" class="diffseg-btn" @click.stop.prevent="doMerge(segindex)" :disabled="diffsegresult.typ == 2">合并</a>
             <a href="#" class="diffseg-btn" v-if="diffsegresult.merged_diffsegresults.length == 0" @click.stop.prevent="doSplit(segindex)">拆分</a>
         </div>
-        <div>处理结果：{{ getResult(diffsegresult) }}
+        <div>
+        <span v-if="diffsegresult.selected_text != null" style="background:#eee;width:800px;">处理结果：{{ getResult(diffsegresult) }}</span>
         </div>
     </div>`,
     computed: {
@@ -309,33 +312,74 @@ Vue.component('sutra-unit', {
     props: ['data', 'sharedata'],
     template: `
     <span v-if="data.diffseg_id == undefined" v-html="data.text"></span>
-    <span v-else-if="data.text.length == 0"><a href="#" :diffsegid="data.diffseg_id" :class="className" @click="choiceThis()"><span class="diffseg-tag-white"></span></a></span>
-    <span v-else><a href="#" :diffsegid="data.diffseg_id" :class="className" @click="choiceThis()" v-html="data.text"></a></span>
+    <span v-else-if="data.text.length == 0"><a href="#" :diffsegid="data.diffseg_id" :class="className" :tabindex="data.diffseg_id" style="text-decoration:none;" @click="choiceThis()" v-html="data.text"  @keydown="keyDown($event)"></a></span>
+    <span v-else><a href="#" :diffsegid="data.diffseg_id" :class="className" :tabindex="data.diffseg_id" style="text-decoration:none;" @click="choiceThis()" v-html="data.text"  @keydown="keyDown($event)"></a></span>
     `,
     computed: {
         className: function() {
+
             if (this.data.diffseg_id != undefined) {
                 if (this.data.text.length == 0) {
                     if (this.sharedata.diffseg_id == this.data.diffseg_id) {
-                        return 'diffseg-tag-notext-selected';
-                    } else {
-                        let elem = _.find(this.sharedata.diffsegresults, function(v) {return v.id == this.data.diffseg_id}.bind(this))
-                        if (elem && elem.selected_text) {
-                            return 'diffseg-tag-judged';
-                        } else {
-                            return 'diffseg-tag-notext';
+                        
+                        for (var diffseg in this.sharedata.result_marked_list){
+                            if (this.data.diffseg_id == this.sharedata.result_marked_list[diffseg].diffseg_id){
+                                if (this.sharedata.result_marked_list[diffseg].marked == true){
+                                    return 'diffseg-tag-selected-judged';
+                                }else {
+                                    return 'diffseg-tag-selected-notext';
+                                }
+                                break;
+                            }
+                            
                         }
+                        return 'diffseg-tag-notext-selected';
+                        
+                    } else {
+                        for (var diffseg in this.sharedata.result_marked_list){
+                            if (this.data.diffseg_id == this.sharedata.result_marked_list[diffseg].diffseg_id){
+                                if (this.sharedata.result_marked_list[diffseg].marked == true){
+                                    return 'diffseg-tag-judged-none';
+                                }else { 
+                                    return 'diffseg-tag-notext';
+                                }
+                                break;
+                            }
+                            
+                        }
+                        return 'diffseg-tag-notext';
+                                
                     }
                 } else {
                     if (this.sharedata.diffseg_id == this.data.diffseg_id) {
-                        return 'diffseg-tag-selected';
-                    } else {
-                        let elem = _.find(this.sharedata.diffsegresults, function(v) {return v.id == this.data.diffseg_id}.bind(this))
-                        if (elem && elem.selected_text) {
-                            return 'diffseg-tag-judged';
+                        for (var diffseg in this.sharedata.result_marked_list){
+                            if (this.data.diffseg_id == this.sharedata.result_marked_list[diffseg].diffseg_id){
+                                if (this.sharedata.result_marked_list[diffseg].marked == true){
+                                    return 'diffseg-tag-selected-judged';
+                                }else {
+                                    return 'diffseg-tag-selected-notext';
+                                }
+                                break;
+                            }
+                            
                         }
+                    } else {
+                        for (var diffseg in this.sharedata.result_marked_list){
+                            if (this.data.diffseg_id == this.sharedata.result_marked_list[diffseg].diffseg_id){
+                                if (this.sharedata.result_marked_list[diffseg].marked == true){
+                                    return 'diffseg-tag-judged';
+                                }else {
+                                    break;
+                                }
+                                break;
+                            }
+                            
+                        }
+                        
                     }
+                    
                 }
+                
             }
             return '';
         }
@@ -345,11 +389,40 @@ Vue.component('sutra-unit', {
             this.sharedata.diffseg_id = this.data.diffseg_id;
             this.sharedata.image_diffseg_id = this.data.diffseg_id;
             let idx = _.findIndex(this.sharedata.diffseg_pos_lst, function(v) {return v.diffseg_id == this.data.diffseg_id}.bind(this))
-            console.log(parseInt(idx/5)+1);
             this.$emit('diffpage', parseInt(idx/5)+1)
             
             //this.sharedata.judgeImageDialogVisible = true;
-        }
+        },
+        keyDown(e) {
+            if(e && e.keyCode==27){ // 按 Esc 
+                //要做的事情
+            }
+            if(e && e.keyCode==113){ // 按 F2 
+                //要做的事情
+            }            
+            if(e && e.keyCode==13){ // enter 键
+                //要做的事情
+            }
+            if(e && e.keyCode==9){ // tab 键
+                diffseg_id = this.data.diffseg_id + 1;
+                this.sharedata.diffseg_id = diffseg_id;
+                this.sharedata.image_diffseg_id = diffseg_id;
+                let idx = _.findIndex(this.sharedata.diffseg_pos_lst, function(v) {return v.diffseg_id == diffseg_id}.bind(this))
+                this.$emit('diffpage', parseInt(idx/5)+1)
+            }
+        },
+        noNumbers: function(e)
+        {
+            var keynum;
+            var keychar;
+
+            keynum = window.event ? e.keyCode : e.which;
+            keychar = String.fromCharCode(keynum);
+            alert(keynum+':'+keychar);
+        },
+        mounted() {
+            document.body.onkeydown = this.keyDown;
+        },   
     }
 })
 
@@ -496,7 +569,6 @@ Vue.component('merge-dialog', {
             axios.get('/api/judge/' + this.sharedata.task_id +
             '/diffsegresults/' + this.diffsegresult_id + '/mergelist/')
             .then(function(response) {
-                console.log(response.data)
                 vm.diffsegresults = response.data;
             })
         },
@@ -838,7 +910,7 @@ Vue.component('column-image', {
             image.onload = function () {
                 var width = 40;
                 var height = width / image.width * image.height;
-                console.log(image.width, image.height, width, height)
+                // console.log(image.width, image.height, width, height)
                 canvas.width = width;
                 canvas.height = height;
                 context.clearRect(0, 0, width, height);
@@ -879,8 +951,8 @@ Vue.component('column-image', {
 Vue.component('judge-image-dialog', {
     props: ['sharedata'],
     template: `
-    <el-dialog title="" :visible.sync="sharedata.judgeImageDialogVisible" width="100%" @open="handleOpen" :before-close="handleOK">
-        <table class="table table-condensed">
+    <el-dialog title="" :visible.sync="sharedata.judgeImageDialogVisible" :width="images_width" @open="handleOpen" :before-close="handleOK">
+    <table class="table table-condensed">
             <tbody>
             <tr>
             <td v-for="(image, index) in images">{{ image.tname }}</td>
@@ -898,6 +970,17 @@ Vue.component('judge-image-dialog', {
     data: function () {
         return {
             images: []
+        }
+    },
+    computed: {
+        images_width: function() {
+            return this.images.length *60 + 20 + "px";
+        },
+        images_height: function() {
+            return "100%";
+        },
+        images_border_radius: function() {
+            return "20%";
         }
     },
     methods: {
@@ -999,7 +1082,7 @@ Vue.component('judge-page-dialog', {
                 }
                 canvas.width = canvas.width;
                 canvas.height = canvas.width / sw * sh;
-                console.log(canvas.width, canvas.height)
+                // console.log(canvas.width, canvas.height)
                 context.clearRect(0, 0, canvas.width, canvas.height);
                 context.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
                 var xratio = canvas.width / sw;

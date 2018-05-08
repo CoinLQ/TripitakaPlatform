@@ -30,17 +30,36 @@ class DiffSegResultList(generics.ListAPIView):
     serializer_class = DiffSegResultSerializer
     pagination_class = JudgePagination
     permission_classes = (IsTaskPickedByCurrentUser, )
-
+    
     def get_queryset(self):
         queryset = DiffSegResult.objects.filter(task_id=self.task.id)
         if 'all_equal' in self.request.GET:
             all_equal = self.request.GET.get('all_equal')
             return queryset.filter(all_equal=all_equal).order_by('diffseg__base_pos')
+        
         if 'diffseg_id' in self.request.GET:
             diffseg_id_lst = self.request.GET.get('diffseg_id').split(',')
             return queryset.filter(diffseg_id__in=diffseg_id_lst).order_by('diffseg__base_pos')
+
         return queryset.order_by('id')
 
+
+def get_judge_result_marked(request, task_id):
+    if 'result_marked_list' in request.GET:
+        queryset = DiffSegResult.objects.filter(task_id=task_id)
+        result_marked_list = []
+        for diffsegResult in queryset:
+            if diffsegResult.selected_text != None:
+                result_marked = {'diffseg_id':diffsegResult.diffseg_id,'marked':True}
+            else:
+                result_marked = {'diffseg_id':diffsegResult.diffseg_id,'marked':False}
+            result_marked_list.append(result_marked)
+        context = json.dumps(result_marked_list)
+        return HttpResponse(context)
+    else:
+        raise Http404
+        
+            
 class DiffSegResultUpdate(generics.UpdateAPIView):
     serializer_class = DiffSegResultSimpleSerializer
     permission_classes = (IsTaskPickedByCurrentUser, )

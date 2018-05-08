@@ -11,7 +11,7 @@ from ccapi.views.tasks import CCTaskViewSet, ClassifyTaskViewSet, \
 from jkapi.views.correct import CorrectTaskDetail, \
 CorrectSegList, CorrectSegUpdate, \
 FinishCorrectTask, DoubtSegViewSet
-from jkapi.views.judge import DiffSegResultList, DiffSegResultUpdate, \
+from jkapi.views.judge import DiffSegResultList, DiffSegResultUpdate,get_judge_result_marked, \
 JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected, DiffSegDetail
 from jkapi.views.punct import PunctTaskDetail
 from jkapi.views.lqtripitaka import LQSutraViewSet
@@ -45,6 +45,7 @@ urlpatterns = [
     url(r'^judge/(?P<task_id>[0-9]+)/finish/$', FinishJudgeTask.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/allselected/$', DiffSegResultAllSelected.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegresults/$', DiffSegResultList.as_view()),
+    url(r'^get_judge/(?P<task_id>[0-9]+)/diffsegresults/$', get_judge_result_marked, name='get_judge_result_marked'),
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegresults/(?P<pk>[0-9]+)/$', DiffSegResultUpdate.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegresults/(?P<diffsegresult_id>[0-9]+)/mergelist/$', MergeList.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegs/(?P<pk>[0-9]+)/$$', DiffSegDetail.as_view()),

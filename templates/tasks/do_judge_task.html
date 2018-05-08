@@ -37,7 +37,7 @@
       </div>
     </div>
     <div class="row">
-      <div class='jk-list' >校勘列表
+      <div class='jk-list'><b>校勘列表</b>
       {% if judge_task_ids %}
           <label for="show_all" style="float:right">显示所有</label><input type="checkbox" v-model="show_all" id="show_all" />
       {% endif %}
@@ -50,20 +50,24 @@
     </div>
     <div class="row">
       <div class="col-md-8 col-xs-8">
-        <div class="el-pagination">
-          <div class="el-pagination__rightwrapper"></div><button type="button" class="btn-prev" :class="{ disabled: (diffseg_curpage == 1) }"><i class="el-icon el-icon-arrow-left" @click.stop.prevent="prevPage"></i>
-          </button>
-          <ul class="el-pager"></ul>
-          <button type="button" class="btn-next" :class="{ disabled: (diffseg_curpage == diffseg_page_count) }"><i class="el-icon el-icon-arrow-right" @click.stop.prevent="nextPage"></i></button>
-          <span class="el-pagination__jump">前往
-            <div class="el-input el-pagination__editor is-in-pagination">
-              <input v-model="diffseg_curpage" autocomplete="off" type="number" rows="2" min="1" validateevent="true" class="el-input__inner"></div>/ {{ diffseg_page_count }}页</span>
+        <div class="el-pagination el-pagination--small" style="text-align: center">
+          <el-pagination
+            class="pull-right clearfix"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page.sync="pageNo"
+            :page-sizes="pageSizesList"
+            :page-size="pageSize"
+            layout=" prev, pager, next, total"
+            :total="totalDataNumber">
+          </el-pagination>
         </div>
       </div>
-      <div class="col-md-4 col-xs-4">
-        <div class="text-center">
-          <button class="btn btn-primary" :disabled="premitSubmit" :title="submit_title" @click.stop.prevent="finishJudgeTask">提交</button>
-        </div>
+    </div>
+    <div style="text-align: center">
+      <div style="text-align: center">
+        <!-- <button class="btn btn-primary" :disabled="premitSubmit" :title="submit_title" @click.stop.prevent="finishJudgeTask" style="background: green;">提交</button> -->
+        <el-button class="btn btn-primary" :disabled="premitSubmit" :title="submit_title" @click.stop.prevent="finishJudgeTask" type="success" size="small">提交</el-button>
       </div>
     </div>
     <div class="row">
@@ -85,6 +89,11 @@
   var app = new Vue({
     el: '#judge',
     data: {
+      pageNo: 1,
+      pageSize: 5,
+      pageSizesList: [5, 10, 15, 20, 30, 50],
+      tableData: [],//返回的结果集合
+      totalDataNumber: 0,//数据的总数,
       show_all: false,
       base_text: '',
       punct_lst: [],
@@ -94,7 +103,9 @@
       diffseg_curpage: 1,
       merged_base_text: [],
       submit_title: '',
+      
       sharedata: {
+        result_marked_list:[],
         diffseg_pos_lst: [],
         task_id: {{ task.id }},
         task_typ: {{task.typ}},
@@ -128,6 +139,9 @@
         vm.sharedata.status = response.data.status;
         vm.sharedata.is_verify = response.data.is_verify;
         vm.sharedata.tripitaka_info = response.data.tripitaka_info;
+        // 获取文字是否已经处理的信息
+        vm.reloadAllDiffsegs();
+
         vm.reloadDiffsegs(1); 
   
         if (vm.sharedata.status == 4) {
@@ -160,7 +174,8 @@
         } else {
           this.loadVerifySutraText();
         }
-      }
+      },
+      
     },
     computed: {
       premitSubmit: function () {
@@ -200,10 +215,23 @@
         }
         return false;
       },
-      nextPage: function() {
-        if (this.diffseg_curpage < this.diffseg_page_count) {
-          ++this.diffseg_curpage;
-        }
+      //改变每页显示数量
+      handleSizeChange(val){
+        var likeThis = this;
+        var pageSizewidth = `${val}`;
+        this.pageNo = 1;
+        this.pageSize = parseInt(pageSize);
+        this.$nextTick(() =>
+          this.getAndDraw(1,pageSize,function (resp) {
+            likeThis.totalDataNumber = resp.data.Data.Total;
+          })
+        )
+      },
+      //改变页码
+      handleCurrentChange(val){
+        var pageSize = this.pageSize;
+        this.diffseg_curpage = val;
+        this.pageNo = val;
       },
       reloadDiffsegs: function(newPage) {
         var vm = this;
@@ -221,6 +249,7 @@
           }
           var diffseg_ids = [];
           var diffsegresults = response.data.results;
+          var result_marked_list = vm.sharedata.result_marked_list;
           for (var i = 0; i < diffsegresults.length; ++i) {
             var diffsegtexts = diffsegresults[i].diffseg.diffsegtexts;
             var text_to_diffsegtexts = {};
@@ -240,7 +269,24 @@
             diffsegresults[i].text_to_diffsegtexts = text_to_diffsegtexts;
             diffsegresults[i].text_count = text_count;
             diffseg_ids.push(diffsegresults[i].diffseg.id);
+            // console.log('-a-'+diffsegresults[i].diffseg.id)
           }
+          //更新result_marked_list
+          for (var i = 0; i < diffsegresults.length; ++i){
+              var diffseg_id = result_marked_list[i].diffseg_id;
+              if (diffsegresults[i].diffseg.id == diffseg_id){
+                if (diffsegresults[i].selected_text == null){
+                  result_marked_list[i].marked = false;
+                }else{
+                  result_marked_list[i].marked = true;
+                }
+                break;
+              }
+          }
+          vm.sharedata.result_marked_list = result_marked_list;
+          //触发换页
+          vm.handleCurrentChange(newPage);
+          //
           if (!vm.sharedata.is_verify) {
             vm.sharedata.diffsegresults = diffsegresults;
             vm.sharedata.segindex = 0;
@@ -281,6 +327,19 @@
         });
        
       },
+      //加载每个文字是否已经处理的信息
+      reloadAllDiffsegs: function() {
+        var vm = this;
+        var url = '/api/get_judge/' + vm.sharedata.task_id + '/diffsegresults/?result_marked_list=1';
+        
+        axios.get(url)
+        .then(function(response) {
+          vm.sharedata.result_marked_list = response.data;
+          vm.tableData = response.data;
+          vm.totalDataNumber = response.data.length;
+        });
+       
+      },
       checkAllSelected: function() {
         var vm = this
         axios.get('/api/judge/' + vm.sharedata.task_id + '/allselected/')
@@ -301,6 +360,16 @@
       },
       finishJudgeTask: function() {
         var vm = this;
+        //判断是否全部修改
+        for (var i in vm.sharedata.result_marked_list){
+          marked = vm.sharedata.result_marked_list[i].marked;
+          if (marked == false){
+            alert('请判取完再提交！');
+            vm.submit_title = '请判取完再提交';
+            return;
+          }
+        }
+        
         axios.post('/api/judge/' + this.sharedata.task_id + '/finish/')
         .then(function(response) {
           vm.sharedata.status = response.data.status;
@@ -315,6 +384,53 @@
         });
       }
     }
-  });
+  }); 
+//重写alert  
+window.alert = function(msg, callback) {  
+        var div = document.createElement("div");  
+        div.innerHTML = "<style type=\"text/css\">"  
+                + ".nbaMask { position: fixed; z-index: 1000; top: 0; right: 0; left: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); }                                                                                                                                                                       "  
+                + ".nbaMaskTransparent { position: fixed; z-index: 1000; top: 0; right: 0; left: 0; bottom: 0; }                                                                                                                                                                                            "  
+                + ".nbaDialog { position: fixed; z-index: 5000; width: 80%; max-width: 300px; top: 50%; left: 50%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); background-color: #fff; text-align: center; border-radius: 8px; overflow: hidden; opacity: 1; color: white; }"  
+                + ".nbaDialog .nbaDialogHd { padding: .2rem .27rem .08rem .27rem; }                                                                                                                                                                                                                         "  
+                + ".nbaDialog .nbaDialogHd .nbaDialogTitle { font-size: 17px; font-weight: 400; }                                                                                                                                                                                                           "  
+                + ".nbaDialog .nbaDialogBd { padding: 0 .27rem; font-size: 15px; line-height: 6; word-wrap: break-word; word-break: break-all; color: #000000; }                                                                                                                                          "  
+                + ".nbaDialog .nbaDialogFt { position: relative; line-height: 48px; font-size: 17px; display: -webkit-box; display: -webkit-flex; display: flex; }                                                                                                                                          "  
+                + ".nbaDialog .nbaDialogFt:after { content: \" \"; position: absolute; left: 0; top: 0; right: 0; height: 1px; border-top: 1px solid #e6e6e6; color: #e6e6e6; -webkit-transform-origin: 0 0; transform-origin: 0 0; -webkit-transform: scaleY(0.5); transform: scaleY(0.5); }               "  
+                + ".nbaDialog .nbaDialogBtn { display: block; -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; color: #09BB07; text-decoration: none; -webkit-tap-highlight-color: transparent; position: relative; margin-bottom: 0; }                                                                       "  
+                + ".nbaDialog .nbaDialogBtn:after { content: \" \"; position: absolute; left: 0; top: 0; width: 1px; bottom: 0; border-left: 1px solid #e6e6e6; color: #e6e6e6; -webkit-transform-origin: 0 0; transform-origin: 0 0; -webkit-transform: scaleX(0.5); transform: scaleX(0.5); }             "  
+                + ".nbaDialog a { text-decoration: none; -webkit-tap-highlight-color: transparent; }"  
+                + "</style>"  
+                + "<div id=\"dialogs2\" style=\"display: none\">"  
+                + "<div class=\"nbaMask\"></div>"  
+                + "<div class=\"nbaDialog\">"  
+                + " <div class=\"nbaDialogHd\">"  
+                + "     <strong class=\"nbaDialogTitle\"></strong>"  
+                + " </div>"  
+                + " <div class=\"nbaDialogBd\" id=\"dialog_msg2\">弹窗内容，告知当前状态、信息和解决方法，描述文字尽量控制在三行内</div>"  
+                + " <div class=\"nbaDialogHd\">"  
+                + "     <strong class=\"nbaDialogTitle\"></strong>"  
+                + " </div>"  
+                + " <div class=\"nbaDialogFt\">"  
+                + "     <a href=\"javascript:;\" class=\"nbaDialogBtn nbaDialogBtnPrimary\" id=\"dialog_ok2\">确定</a>"  
+                + " </div></div></div>";  
+        document.body.appendChild(div);  
+      
+        var dialogs2 = document.getElementById("dialogs2");  
+        dialogs2.style.display = 'block';  
+      
+        var dialog_msg2 = document.getElementById("dialog_msg2");  
+        dialog_msg2.innerHTML = msg;  
+      
+        // var dialog_cancel = document.getElementById("dialog_cancel");  
+        // dialog_cancel.onclick = function() {  
+        // dialogs2.style.display = 'none';  
+        // };  
+        var dialog_ok2 = document.getElementById("dialog_ok2");  
+        dialog_ok2.onclick = function() {  
+            dialogs2.style.display = 'none';  
+            callback();  
+        };  
+    };  
 </script>
 {% endblock %}

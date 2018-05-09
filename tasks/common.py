@@ -357,11 +357,11 @@ def get_char_region_cord(char_lst):
                 max_y = y + h
     return min_x, min_y, max_x, max_y
 
-def fetch_cut_file(reel, vol_page):
+def fetch_cut_file(reel, vol_page, force_download=False):
     if reel.reel_no <= 0 or vol_page == 0:
         return ''
     cut_filename = "%s/logs/%s%s.cut" % (settings.BASE_DIR, reel.image_prefix(), vol_page)
-    if os.path.exists( cut_filename ):
+    if not force_download and os.path.exists( cut_filename ):
         with open(cut_filename, 'r') as f:
             data = f.read()
             if data:
@@ -568,10 +568,10 @@ def extract_line_separators(text):
             pos += 1
     return separators
 
-def get_reel_text(reel):
+def get_reel_text(reel, force_download=False):
     pages = []
     for vol_page in range(reel.start_vol_page, reel.end_vol_page+1):
-        data = fetch_cut_file(reel, vol_page)
+        data = fetch_cut_file(reel, vol_page, force_download)
         if not data:
             pages.append( 'p\n' )
             continue

@@ -4,9 +4,10 @@ from xadmin.views import BaseAdminPlugin
 from xadmin.views import ListAdminView
 from xadmin.plugins.actions import BaseActionView
 from xadmin.views.base import filter_hook
+from django.template.response import TemplateResponse
 
 from tdata.models import *
-from tasks.models import Task
+from tasks.models import Task, CorrectFeedback, JudgeFeedback, LQPunctFeedback
 from rect.models import *
 from jwt_auth.models import Staff
 from tasks.task_controller import correct_update_async
@@ -240,6 +241,22 @@ class UpdateTaskResultAction(BaseActionView):
             }, 'success')
 
 
+class GenerateTaskAction(BaseActionView):
+
+    action_name = "generate_task"
+    description = '发布任务'
+    icon = 'fa fa-refresh'
+
+    @filter_hook
+    def do_action(self, queryset):
+        context = self.get_context()
+        context.update({
+            "title": '生成任务',
+        })
+        #return TemplateResponse(self.request, 'xadmin/views/form.html', context)
+        return TemplateResponse(self.request, 'tasks/gene_task.html', context)
+
+
 @xadmin.sites.register(Task)
 class TaskAdmin(object):
     def modify(self, instance):
@@ -265,7 +282,30 @@ class TaskAdmin(object):
     remove_permissions = ['add']
     actions = [PauseSelectedTasksAction, ContinueSelectedTasksAction, ReclaimSelectedTasksAction,
                SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,
-               UpdateTaskResultAction]
+               UpdateTaskResultAction, GenerateTaskAction]
+
+@xadmin.sites.register(JudgeFeedback)
+class JudgeFeedbackAdmin:
+    def task_link(self, instance):
+        return '<a target="_blank" href="/judgefeedback/%d/">查看</a>' % instance.id
+    task_link.allow_tags = True
+    task_link.short_description = '查看'
+    list_display = ['lqsutra_name', 'reel_no', 'fb_user', 'created_at',
+                    'fb_comment', 'processor', 'processed_at', 'response', 'task_link']
+    list_display_links = [''] # 不显示修改的链接
+    remove_permissions = ['add']
+
+@xadmin.sites.register(LQPunctFeedback)
+class LQPunctFeedbackAdmin:
+    def task_link(self, instance):
+        return '<a target="_blank" href="/lqpunctfeedback/%d/">查看</a>' % instance.id
+    task_link.allow_tags = True
+    task_link.short_description = '查看'
+    list_display = ['lqpunct', 'start', 'end', 'fb_punctuation',
+                    'fb_user', 'created_at', 'processor', 'processed_at',
+                    'status', 'task_link']
+    list_display_links = ['']  # 不显示修改的链接
+    remove_permissions = ['add']
 
 #####################################################################################
 # 切分数据配置
@@ -285,9 +325,8 @@ class Reel_Task_StatisticalAdmin(object):
     resume_pptask.allow_tags = True
     resume_pptask.is_column = True
 
-    list_display = ('schedule', 'reel', 'amount_of_cctasks', 'completed_cctasks',
-                    'amount_of_absenttasks', 'completed_absenttasks', 'amount_of_pptasks',
-                    'completed_pptasks', 'updated_at', 'resume_pptask')
+    list_display = ('schedule', 'reel', 'amount_of_pptasks',
+                    'completed_pptasks', 'updated_at', )
     list_display_links = ('completed_cctasks', 'reel')
     search_fields = ('amount_of_cctasks', 'completed_cctasks')
     list_filter = ('completed_cctasks',)

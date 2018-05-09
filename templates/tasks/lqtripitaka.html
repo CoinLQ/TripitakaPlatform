@@ -2,31 +2,174 @@
 {% block title %}龙泉藏经{% endblock %}
 {% block content %}
 <div id="lqtripitaka">
-  <div class="sutra-tree">
-    <el-tree :data="lqsutra_list" :props="tree_props" @node-click="clickLQSutraTreeNode"></el-tree>
+  <div class="row">
+    <div class="col-md-3">
+      <div class="row">
+        <div class="text-center"><input type="text" class="sutra-searchbox" v-model="searchword" placeholder="搜索经名" /></div>
+      </div>
+      <div class="sutra-tree">
+        <el-tree :data="lqsutra_list" :props="tree_props" @node-click="clickLQSutraTreeNode">
+          <span class="el-tree-node__label" slot-scope="{ node, data }" v-bind:class="{disabledtreenode: data.reel_no && !data.text_ready}">
+            <span v-text="node.label"></span>
+          </span>
+        </el-tree>
+      </div>
+      <div class="row">
+        <div class="text-center">
+          <input type="number" class="sutra-page-input" v-model="page" /> / {{ page_count }}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-8 lqtripitaka-text" id="lqtripitaka-text" @mouseup="userSelectionChanged">
+      <span v-for="e in merged_text" is="lqtripitaka-sutra-unit" :data="e" :sharedata="sharedata">
+      </span>
+    </div>
+    <ul class="popup-menu" v-show="popupMenuShown" :style="popupMenuStyle">
+      <li><button @click="punctFeedback()">反馈标点</button></li>
+    </ul>
   </div>
+  <div is="judge-result-dialog" :sharedata="sharedata"></div>
+  <div is="punct-feedback-dialog" :sharedata="sharedata" v-if="sharedata.punctFeedbackDialogVisible"></div>
 </div>
 {% endblock %}
 {% block foot_script %}
+<script src="{{ static('custom/js/punct.js') }}"></script>
+<script src="{{ static('custom/js/lqtripitaka.js') }}"></script>
 <script>
   var app = new Vue({
     el: '#lqtripitaka',
     data: {
+      PUNCT_LIST: '：，。；、！？‘’”“\n',
       lqsutra_list: [],
+      searchword: '',
+      page_count: 0,
+      page: 1,
       tree_props: {
         children: 'lqreel_set',
-        label: 'label'
+        label: function(data, node) {
+          if (data.reel_no == undefined) {
+            return data.name + '(' + data.total_reels + ')';
+          } else {
+            return '第' + data.reel_no + '卷';
+          }
+        },
+        disabled: function(data, node) {
+          if (data.text_ready != undefined) {
+            return !data.text_ready;
+          }
+          return false;
+        }
+      },
+      text: '',
+      punct_lst: [],
+      diffsegresult_pos_lst: [],
+      merged_text: [],
+      popupMenuShown: false,
+      popupMenuStyle: {
+        left: 1,
+        top: 1
+      },
+      sharedata: {
+        task_id: null,
+        lqpunct_id: null,
+        judgeResultDialogVisible: false,
+        punctFeedbackDialogVisible: false,
+        selection_start: 0,
+        selection_end: 0,
+        punct_text: '',
+        puncts: [],
+        punct_result: [],
+        punctseg_lst: [],
+        show_refpunct: false
+      }
+    },
+    watch: {
+      searchword: function(value, oldValue) {
+        this.fetchSutraList();
+      },
+      page: function(value, oldValue) {
+        if (this.page <= 0) {
+          this.page = 1;
+          return ;
+        }
+        if (this.page > this.page_count) {
+          this.page = this.page_count;
+          return ;
+        }
+        this.fetchSutraList();
       }
     },
     created: function() {
-      var vm = this;
-      axios.get('/api/lqsutra/').then(function(response) {
-        vm.lqsutra_list = response.data.results;
-      });
+      this.fetchSutraList();
     },
     methods: {
+      fetchSutraList: function() {
+        var url = '/api/lqsutra/?page=' + this.page;
+        if (this.searchword.length > 0) {
+          url += '&search=' + this.searchword;
+        }
+        var vm = this;
+        axios.get(url).then(function(response) {
+          vm.lqsutra_list = response.data.results;
+          vm.page_count = Math.ceil(response.data.count / 30);
+          vm.page = 1;
+        });
+      },
       clickLQSutraTreeNode: function(data) {
-        console.log(data);
+        if (data.reel_no != undefined && data.text_ready) {
+          var lqreel_id = data.id;
+          var url = '/api/lqreeltext/?lqreel_id=' + lqreel_id;
+          var vm = this;
+          axios.get(url).then(function(response) {
+            vm.sharedata.task_id = response.data.task_id;
+            vm.sharedata.lqpunct_id = response.data.lqpunct_id;
+            vm.text = response.data.text;
+            vm.punct_lst = response.data.punct_lst;
+            vm.diffsegresult_pos_lst = response.data.diffsegresult_pos_lst;
+            vm.loadSutraText();
+          });
+        }
+      },
+      loadSutraText: function() {
+        this.merged_text = judge_merge_text_punct(this.text,
+        this.diffsegresult_pos_lst, 'diffsegresult_id', this.punct_lst);
+      },
+      cleanPunct: function(str) {
+        var ch_lst = [];
+        for (var i = 0; i < str.length; ++i) {
+          if (this.PUNCT_LIST.indexOf(str[i]) == -1) {
+            ch_lst.push(str[i]);
+          }
+        }
+        return ch_lst.join('');
+      },
+      userSelectionChanged: function() {
+        var vm = this;
+        setTimeout(function() {
+          var selection = window.getSelection();
+          var text = window.getSelection().toString();
+          if (text.length == 0) {
+            vm.popupMenuShown = false;
+          } else {
+            var seg_position = parseInt(selection.anchorNode.parentElement.getAttribute('position'));
+            var selection_offset = Math.min(selection.focusOffset, selection.anchorOffset);
+            var pre_text = selection.anchorNode.data.substr(0, selection_offset);
+            var offset = vm.cleanPunct(pre_text).length;
+            vm.sharedata.punct_text = vm.cleanPunct(text);
+            vm.sharedata.punctseg_lst = punct_merge_text_punct(vm.sharedata.punct_text,
+            vm.sharedata.puncts, vm.sharedata.punct_result);
+            vm.sharedata.selection_start = seg_position + offset;
+            vm.sharedata.selection_end = vm.sharedata.punct_text.length + vm.sharedata.selection_start;
+            vm.popupMenuShown = true;
+            var range = selection.getRangeAt(0);
+            var rect = range.getBoundingClientRect();
+            vm.popupMenuStyle.left = rect.left;
+            vm.popupMenuStyle.top = rect.bottom;
+          }
+        }, 10);
+      },
+      punctFeedback: function() {
+        this.sharedata.punctFeedbackDialogVisible = true;
       }
     }
   });

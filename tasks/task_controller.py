@@ -208,7 +208,6 @@ mark_times = 0, mark_verify_times = 0):
             if reel.ocr_ready:
                 create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
                 create_punct_tasks(batchtask, reel, punct_times, punct_verify_times)
-
         try:
             lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
             base_reel = base_reel_lst[0]
@@ -217,6 +216,72 @@ mark_times = 0, mark_verify_times = 0):
             print('create judge task failed: ', lqsutra, reel_no)
         if lqreel:
             create_lqpunct_tasks(batchtask, lqreel, lqpunct_times, lqpunct_verify_times)
+
+def create_tasks_for_reels(reels_json,
+                             correct_times=2, correct_verify_times=0,
+                             mark_times=0, mark_verify_times=0):
+    '''
+    lqreels_json格式: [{"sutra_id":1, "reel_no":1}, {"sutra_id":1, "reel_no":2}]
+    '''
+    reels = json.loads(reels_json)
+    reel_lst = []
+    id_to_sutra = {}
+    for reel in reels:
+        sutra_id = reel['sutra_id']
+        reel_no = reel['reel_no']
+        sutra = id_to_sutra.get(sutra_id, None)
+        if sutra is None:
+            try:
+                sutra = Sutra.objects.get(id=sutra_id)
+            except:
+                continue
+            id_to_sutra[sutra_id] = sutra
+        reel_lst.append((sutra, reel_no))
+    admin = Staff.objects.get(username='admin')
+    batchtask = BatchTask(priority=2, publisher=admin)
+    batchtask.save()
+    create_reeltasks_for_batchtask(batchtask, reel_lst, correct_times, correct_verify_times, mark_times, mark_verify_times)
+
+def create_reeltasks_for_batchtask(batchtask, reel_lst,
+correct_times = 2, correct_verify_times = 0,
+mark_times = 0, mark_verify_times = 0):
+    '''
+    reel_lst格式： [(sutra, reel_no), (sutra, reel_no)]
+    '''
+    for sutra, reel_no in reel_lst:
+        # 创建文字校对任务
+        # 将未准备好数据的藏经版本过滤掉
+        if sutra.tripitaka.cut_ready:
+            pass
+        else:
+            print("切分未准备好！")
+        base_sutra_lst = []
+        sutra_to_body = {}
+        # 先得到两个base_reel，CBETA和高丽藏
+        for s in sutra.lqsutra.sutra_set.all():
+            if s.sid.startswith('CB') or s.sid.startswith('GL'):
+                base_sutra_lst.append(s)
+                if s.id not in sutra_to_body.keys():
+                    sutra_to_body[s.id] = get_sutra_body(s)
+        if not base_sutra_lst:
+            # 记录错误
+            print(sutra.sid + 'no base sutra')
+            continue
+        if not base_sutra_lst[0].sid.startswith('CB'):
+            base_sutra_lst[0], base_sutra_lst[1] = base_sutra_lst[1], base_sutra_lst[0]
+        base_reel_lst = []
+        for base_sutra in base_sutra_lst:
+            try:
+                base_reel = Reel.objects.get(sutra=base_sutra, reel_no=reel_no)
+                base_reel_lst.append(base_reel)
+            except:
+                pass
+        try:
+            reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
+        except:
+            # TODO: 记录错误
+            continue
+        create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
 
 def publish_correct_result(task):
     '''
@@ -355,6 +420,7 @@ def publish_correct_result(task):
 CORRECT_RESULT_FILTER = re.compile('[ 　ac-oq-zA-Z0-9.?\-",/，。、：]')
 MULTI_LINEFEED = re.compile('\n\n+')
 def generate_correct_result(task):
+    print('generate_correct_result')
     text_lst = []
     last_ch_linefeed = False
     last_not_empty_correctseg = None
@@ -434,8 +500,39 @@ def correct_submit(task):
             correct_verify_task.save(update_fields=['status'])
 
 def correct_verify_submit(task):
-    generate_correct_result(task)
-    publish_correct_result(task)
+    doubtseg = DoubtSeg.objects.filter(task=task).first()
+    if doubtseg: # 有存疑，生成文字校对难字任务
+        difficult_task = Task(batchtask=task.batchtask,
+        reel=task.reel, typ=Task.TYPE_CORRECT_DIFFICULT, status=Task.STATUS_NOT_READY,
+        publisher=task.batchtask.publisher)
+        difficult_task.save()
+        # 将task的CorrectSeg复制到新的difficult_task
+        correctsegs = list(CorrectSeg.objects.filter(task=task).order_by('id'))
+        for correctseg in correctsegs:
+            correctseg.task = difficult_task
+            correctseg.id = None
+        CorrectSeg.objects.bulk_create(correctsegs)
+        # 将task的DoubtSeg复制到新的difficult_task
+        doubtsegs = list(DoubtSeg.objects.filter(task=task).order_by('id'))
+        for doubtseg in doubtsegs:
+            doubtseg.task = difficult_task
+            doubtseg.id = None
+        DoubtSeg.objects.bulk_create(doubtsegs)
+        # 改为可领取状态
+        difficult_task.status = Task.STATUS_READY
+        difficult_task.save(update_fields=['status'])
+    else: # 没有存疑
+        generate_correct_result(task)
+        publish_correct_result(task)
+
+def correct_difficult_submit(task):
+    print('correct_difficult_submit')
+    doubtseg = DoubtSeg.objects.filter(task=task).filter(processed=False)
+    if doubtseg:
+        return
+    else:
+        generate_correct_result(task)
+        publish_correct_result(task)
 
 def correct_update(task):
     if task.status != Task.STATUS_FINISHED:
@@ -449,11 +546,11 @@ def correct_update(task):
             reel_correct_text.set_text(task.result)
             reel_correct_text.save()
 
-def judge_submit_result(task):
+def judge_submit(task):
     '''
     校勘判取提交结果
     '''
-    print('judge_submit_result')
+    print('judge_submit')
     lqreel = task.lqreel
     judge_tasks = list(Task.objects.filter(batchtask_id=task.batchtask_id, lqreel_id=lqreel.id, typ=Task.TYPE_JUDGE).all())
     task_count = len(judge_tasks)
@@ -514,6 +611,41 @@ def judge_submit_result(task):
     # 设定校勘判取审定任务状态
     Task.objects.filter(id=judge_verify_task.id).update(status=Task.STATUS_READY)
 
+def judge_verify_submit(task):
+    '''
+    校勘判取审定任务提交结果
+    '''
+    print('judge_verify_submit')
+    doubt_diffsegresult = DiffSegResult.objects.filter(task=task, doubt=True).first()
+    if doubt_diffsegresult: # 有存疑，则生成校勘判取难字任务
+        difficult_task = Task(batchtask=task.batchtask,
+        lqreel=task.lqreel, typ=Task.TYPE_JUDGE_DIFFICULT, status=Task.STATUS_NOT_READY,
+        base_reel=task.base_reel, reeldiff=task.reeldiff, priority=task.priority,
+        publisher=task.batchtask.publisher)
+        difficult_task.save()
+        # 将task的DiffSegResult复制到新的difficult_task
+        diffsegresults = list(DiffSegResult.objects.filter(task=task).order_by('id'))
+        for diffsegresult in diffsegresults:
+            if diffsegresult.doubt:
+                diffsegresult.selected = False
+            diffsegresult.task = difficult_task
+            diffsegresult.id = None
+        DiffSegResult.objects.bulk_create(diffsegresults)
+        # 改为可领取状态
+        difficult_task.status = Task.STATUS_READY
+        difficult_task.save(update_fields=['status'])
+    else: # 没有存疑，直接发布校勘判取结果
+        publish_judge_result(task)
+
+def judge_difficult_submit(task):
+    '''
+    校勘判取难字任务提交结果
+    '''
+    print('judge_difficult_submit')
+    not_selected_diffsegresult = DiffSegResult.objects.filter(task=task, selected=False).first()
+    if not_selected_diffsegresult is None:
+        publish_judge_result(task)
+
 def publish_judge_result(task):
     '''
     发布校勘判取结果
@@ -531,7 +663,7 @@ def publish_judge_result(task):
     text_lst = []
     base_index = 0
     base_text_length = len(base_text)
-    diffsegresults = list(DiffSegResult.objects.filter(task_id=task.id).order_by('id'))
+    diffsegresults = list(DiffSegResult.objects.filter(task_id=task.id).order_by('diffseg__base_pos'))
     for diffsegresult in diffsegresults:
         if not diffsegresult.selected:
             print('not selected')
@@ -623,6 +755,11 @@ def correct_verify_submit_async(task_id):
     correct_verify_submit(task)
 
 @background(schedule=0)
+def correct_difficult_submit_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    correct_difficult_submit(task)
+
+@background(schedule=0)
 def publish_correct_result_async(task_id):
     task = Task.objects.get(pk=task_id)
     publish_correct_result(task)
@@ -633,14 +770,19 @@ def correct_update_async(task_id):
     correct_update(task)
 
 @background(schedule=0)
-def judge_submit_result_async(task_id):
+def judge_submit_async(task_id):
     task = Task.objects.get(pk=task_id)
-    judge_submit_result(task)
+    judge_submit(task)
 
 @background(schedule=0)
-def publish_judge_result_async(task_id):
+def judge_verify_submit_async(task_id):
     task = Task.objects.get(pk=task_id)
-    publish_judge_result(task)
+    judge_verify_submit(task)
+
+@background(schedule=0)
+def judge_difficult_submit_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    judge_difficult_submit(task)
 
 @background(schedule=0)
 def punct_submit_result_async(task_id):
@@ -671,3 +813,9 @@ def create_tasks_for_lqreels_async(lqreels_json,
                                    mark_times=0, mark_verify_times=0):
     create_tasks_for_lqreels(lqreels_json, correct_times, correct_verify_times, judge_times, judge_verify_times,
                              punct_times, punct_verify_times, lqpunct_times, lqpunct_verify_times, mark_times, mark_verify_times)
+
+@background(schedule=0)
+def create_tasks_for_reels_async(reels_json,
+                             correct_times=2, correct_verify_times=0,
+                             mark_times=0, mark_verify_times=0):
+    create_tasks_for_reels(reels_json, correct_times, correct_verify_times, mark_times, mark_verify_times)

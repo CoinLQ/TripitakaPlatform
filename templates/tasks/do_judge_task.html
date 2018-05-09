@@ -37,8 +37,8 @@
       </div>
     </div>
     <div class="row">
-      <div class='jk-list'><b>校勘列表</b>
-      {% if judge_task_ids %}
+      <div class='jk-list' ><b>校勘列表</b>>
+      {% if task.typ != 3 %}
           <label for="show_all" style="float:right">显示所有</label><input type="checkbox" v-model="show_all" id="show_all" />
       {% endif %}
       </div>
@@ -103,13 +103,14 @@
       diffseg_curpage: 1,
       merged_base_text: [],
       submit_title: '',
-      
+      task_result_loaded: {},
       sharedata: {
         result_marked_list:[],
         diffseg_pos_lst: [],
         task_id: {{ task.id }},
         task_typ: {{task.typ}},
         judge_task_ids: {{ judge_task_ids }},
+        judge_verify_task_id: {{ judge_verify_task_id }},
         status: 0,
         submit_disabled: true,
         permit_modify: false,
@@ -137,7 +138,6 @@
         vm.orig_separators = response.data.orig_separators;
         vm.sharedata.base_tripitaka_id = response.data.base_tripitaka_id;
         vm.sharedata.status = response.data.status;
-        vm.sharedata.is_verify = response.data.is_verify;
         vm.sharedata.tripitaka_info = response.data.tripitaka_info;
         // 获取文字是否已经处理的信息
         vm.reloadAllDiffsegs();
@@ -149,7 +149,7 @@
         } else {
           vm.submit_title = '请判取完再提交';
         }
-        if (!vm.sharedata.is_verify) {
+        if (vm.sharedata.task_typ == 3) {
           vm.show_all = true;
         }
         // 包括被Pause的情况
@@ -164,12 +164,12 @@
         this.reloadDiffsegs(newPage);
       },
       show_all: function(newValue, oldValue) {
-        if (this.sharedata.is_verify) {
+        if (this.sharedata.task_typ != 3) {
           this.reloadDiffsegs(1);
         }
       },
       show_punct: function(newValue, oldValue) {
-        if (!this.sharedata.is_verify) {
+        if (this.sharedata.task_typ == 3) {
           this.loadSutraText();
         } else {
           this.loadVerifySutraText();
@@ -209,6 +209,20 @@
           'diffseg_id', this.orig_separators);
         }
       },
+      tryLoadVerifySutraText: function(diffsegresults) {
+        var vm = this;
+        this.sharedata.judge_task_ids.forEach(function(judge_task_id) {
+          if (!(judge_task_id in vm.task_result_loaded)) {
+            return ;
+          }
+        });
+        var judge_verify_task_id = this.sharedata.judge_verify_task_id;
+        if (judge_verify_task_id != 0 && !(judge_verify_task_id in this.task_result_loaded)) {
+          return ;
+        }
+        vm.sharedata.diffsegresults = diffsegresults;
+        this.loadVerifySutraText();
+      },
       prevPage: function() {
         if (this.diffseg_curpage > 1) {
           --this.diffseg_curpage;
@@ -234,12 +248,16 @@
         this.pageNo = val;
       },
       reloadDiffsegs: function(newPage) {
+        this.task_result_loaded = {};
         var vm = this;
-        var url = '';
+        var url = '/api/judge/' + vm.sharedata.task_id + '/diffsegresults/?';
+        if (this.task_typ == 12) { // 校勘判取难字处理
+          url += 'doubt=1&';
+        }
         if (this.show_all) {
-          url = '/api/judge/' + vm.sharedata.task_id + '/diffsegresults/?page=' + newPage;
+          url += 'page=' + newPage;
         } else {
-          url = '/api/judge/' + vm.sharedata.task_id + '/diffsegresults/?all_equal=0&page=' + newPage;
+          url += 'all_equal=0&page=' + newPage;
         }
         axios.get(url)
         .then(function(response) {
@@ -287,13 +305,12 @@
           //触发换页
           vm.handleCurrentChange(newPage);
           //
-          if (!vm.sharedata.is_verify) {
+          if (vm.sharedata.task_typ == 3) {
             vm.sharedata.diffsegresults = diffsegresults;
             vm.sharedata.segindex = 0;
             vm.loadSutraText();
             return ;
           }
-          vm.sharedata.diffsegresults = diffsegresults;
           if (diffseg_ids.length > 0) {
             var diffseg_id_to_judge_results = {};
             for (var i = 0; i < vm.sharedata.judge_task_ids.length; ++i) {
@@ -316,12 +333,37 @@
                   diffsegresults[i].judge_results = diffseg_id_to_judge_results[diffseg_id];
                 }
 
+                vm.task_result_loaded[task_id] = true;
+                if (vm.sharedata.judge_verify_task_id == 0) {
+                  vm.tryLoadVerifySutraText(diffsegresults);
+                }
+              });
+            }
+            if (vm.sharedata.judge_verify_task_id != 0) {
+              var diffseg_id_to_judge_verify_result = {};
+              var task_id = vm.sharedata.judge_verify_task_id;
+              url = '/api/judge/' + task_id + '/diffsegresults/?diffseg_id=' + diffseg_ids.join(',');
+              axios.get(url).then(function(response) {
+                var results = response.data.results;
+                for (var j = 0; j < results.length; ++j) {
+                  var diffseg_id = results[j].diffseg.id;
+                  var diffsegresult = results[j];
+                  diffseg_id_to_judge_verify_result[diffseg_id] = diffsegresult;
+                }
+
+                for (var i = 0; i < diffsegresults.length; ++i) {
+                  var diffseg_id = diffsegresults[i].diffseg.id;
+                  diffsegresults[i].judge_verify_result = diffseg_id_to_judge_verify_result[diffseg_id];
+                }
+
                 vm.sharedata.diffsegresults = diffsegresults;
                 vm.sharedata.segindex = 0;
-                vm.loadVerifySutraText();
+                vm.task_result_loaded[task_id] = true;
+                vm.tryLoadVerifySutraText(diffsegresults);
               });
             }
           } else {
+            vm.sharedata.diffsegresults = diffsegresults;
             vm.loadVerifySutraText();
           }
         });
@@ -386,7 +428,7 @@
     }
   }); 
 //重写alert  
-window.alert = function(msg, callback) {  
+  window.alert = function(msg, callback) {  
         var div = document.createElement("div");  
         div.innerHTML = "<style type=\"text/css\">"  
                 + ".nbaMask { position: fixed; z-index: 1000; top: 0; right: 0; left: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); }                                                                                                                                                                       "  

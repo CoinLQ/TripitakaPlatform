@@ -9,7 +9,7 @@ class AutoPunct:
     def get_punct_text(cls, text):
         payload = [{'src': text}]
         try:
-            r = requests.post(cls.AUTO_PUNCT_URL, json=payload)
+            r = requests.post(cls.AUTO_PUNCT_URL, json=payload, timeout=60)
             response = r.json()
             return response[0][0]
         except RequestException:

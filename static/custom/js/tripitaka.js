@@ -79,12 +79,14 @@ function judge_get_seg_list(text, diffseg_pos_lst, id_key) {
             var length = diffseg_pos_lst[diffseg_idx].base_length;
             if (i < pos) {
                 seg_list.push({
-                    'text': text.substr(i, pos-i)
+                    'text': text.substr(i, pos-i),
+                    'position': i
                 })
                 i = pos;
             }
             var obj = {
-                'text': text.substr(i, length)
+                'text': text.substr(i, length),
+                'position': i
             }
             obj[id_key] = diffseg_pos_lst[diffseg_idx][id_key];
             seg_list.push(obj);
@@ -92,7 +94,8 @@ function judge_get_seg_list(text, diffseg_pos_lst, id_key) {
             ++diffseg_idx;
         } else {
             seg_list.push({
-                'text': text.substr(i)
+                'text': text.substr(i),
+                'position': i
             })
             i = text.length;
         }
@@ -173,19 +176,26 @@ Vue.component('diffseg-box', {
             <span v-if="index < (diffsegresult.text_count - 1)">；</span>
             <span v-else>。</span>
         </span>
-        <div v-if="sharedata.is_verify" v-for="(judge_result, index) in diffsegresult.judge_results">
+        <div v-if="sharedata.task_typ != 3" v-for="(judge_result, index) in diffsegresult.judge_results">
             <div>
                 <span>判取{{ index + 1 }}：{{ getResult(judge_result) }}</span>
                 <a href="#" v-if="judge_result.typ == 2" @click.stop.prevent="showSplit(judge_result)">显示拆分方案</a>
             </div>
         </div>
         <div style="line-height:50px!important;">
+        <div v-if="sharedata.judge_verify_task_id != 0">
+            <div>
+                <sstyle="line-height:50px!important;"pan>判取审定：{{ getResult(diffsegresult.judge_verify_result) }}</span>
+                <a href="#" v-if="diffsegresult.judge_verify_result.typ == 2" @click.stop.prevent="showSplit(diffsegresult.judge_verify_result)">显示拆分方案</a>
+            </div>
+        </div>
+        <div>
             <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>
             <a href="#" class="diffseg-btn" @click.stop.prevent="doMerge(segindex)" :disabled="diffsegresult.typ == 2">合并</a>
             <a href="#" class="diffseg-btn" v-if="diffsegresult.merged_diffsegresults.length == 0" @click.stop.prevent="doSplit(segindex)">拆分</a>
         </div>
         <div>
-        <span v-if="diffsegresult.selected_text != null" style="background:#eee;width:800px;">处理结果：{{ getResult(diffsegresult) }}</span>
+        <span v-if="diffsegresult.selected_text != null" style="background:#eee;">处理结果：{{ getResult(diffsegresult, (sharedata.task_typ != 12)) }}</span>
         </div>
     </div>`,
     computed: {
@@ -260,11 +270,11 @@ Vue.component('diffseg-box', {
             this.sharedata.segindex = segindex;
             this.sharedata.splitDialogVisible = true;
         },
-        getResult: function(diffsegresult) {
+        getResult: function(diffsegresult, enable_doubt=true) {
             var s = '';
             if (diffsegresult.selected == 0) {
                 s += '未判取。';
-            } else if (diffsegresult.doubt == 0) {
+            } else if (!enable_doubt || diffsegresult.doubt == 0) {
                 s += diffsegresult.selected_text + '。';
             } else if (diffsegresult.doubt == 1) {
                 s += diffsegresult.selected_text + '。存疑理由：' + diffsegresult.doubt_comment + '。';
@@ -444,16 +454,18 @@ Vue.component('judge-dialog', {
             </tr>
             </tbody>
         </table>
-        <span>是否存疑：</span>
-        <div class="radio"><label>
-            <input type="radio" v-model="doubt" value="0" />否
-        </label></div>
-        <div class="radio"><label>
-            <input type="radio" v-model="doubt" value="1" />是
-        </label></div>
-        <div v-show="doubt == 1">
-            <div>存疑说明：</div>
-            <textarea class="form-control" rows="3" v-model="doubt_comment"></textarea>
+        <div v-if="sharedata.task_typ != 12">
+            <span>是否存疑：</span>
+            <div class="radio"><label>
+                <input type="radio" v-model="doubt" value="0" />否
+            </label></div>
+            <div class="radio"><label>
+                <input type="radio" v-model="doubt" value="1" />是
+            </label></div>
+            <div v-show="doubt == 1">
+                <div>存疑说明：</div>
+                <textarea class="form-control" rows="3" v-model="doubt_comment"></textarea>
+            </div>
         </div>
         <span slot="footer" class="dialog-footer">
             <span class="alert alert-danger" v-if="error">{{ error }}</span>
@@ -475,20 +487,25 @@ Vue.component('judge-dialog', {
         handleOpen: function() {
             this.diffsegresult_id = this.sharedata.diffsegresults[this.sharedata.segindex].id;
             this.selected_text = this.sharedata.diffsegresults[this.sharedata.segindex].selected_text;
-            this.doubt = this.sharedata.diffsegresults[this.sharedata.segindex].doubt;
-            this.doubt_comment = this.sharedata.diffsegresults[this.sharedata.segindex].doubt_comment;
+            if (this.sharedata.task_typ != 12) {
+                this.doubt = this.sharedata.diffsegresults[this.sharedata.segindex].doubt;
+                this.doubt_comment = this.sharedata.diffsegresults[this.sharedata.segindex].doubt_comment;
+            }
         },
         handleOK: function() {
             var vm = this;
             var url = '/api/judge/' + this.sharedata.task_id + '/diffsegresults/' + this.diffsegresult_id + '/';
-            axios.put(url, {
+            var data = {
                 typ: 1,
-                selected_text: vm.selected_text,
-                selected: 1, 
-                doubt: vm.doubt,
-                doubt_comment: vm.doubt_comment,
+                selected_text: this.selected_text,
+                selected: 1,
                 split_info: '{}'
-            })
+            }
+            if (this.sharedata.task_typ != 12) {
+                data.doubt = this.doubt;
+                data.doubt_comment = this.doubt_comment;
+            }
+            axios.put(url, data)
             .then(function(response) {
                 vm.sharedata.diffsegresults[vm.sharedata.segindex].selected_text = vm.selected_text;
                 vm.sharedata.diffsegresults[vm.sharedata.segindex].selected = vm.selected;

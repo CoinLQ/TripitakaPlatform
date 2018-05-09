@@ -65,7 +65,7 @@ class DiffSegResultSimpleSerializer(serializers.ModelSerializer):
         for diffsegtext in self.instance.diffseg.diffsegtexts.all():
             tripitaka_id_to_oldtext[diffsegtext.tripitaka_id] = diffsegtext.text
         try:
-            split_info = json.loads(data['split_info'])
+            split_info = loads(data['split_info'])
         except:
             raise serializers.ValidationError('not json string')
         try:
@@ -106,4 +106,40 @@ class CorrectSegSerializer(serializers.ModelSerializer):
 class DoubtSegSerializer(serializers.ModelSerializer):
     class Meta:
         model = DoubtSeg
-        fields = ('id', 'task', 'doubt_comment', 'doubt_char_no', 'doubt_text', 'page_no', 'line_no', 'char_no', 'created_at')
+        fields = ('id', 'task', 'doubt_comment', 'doubt_char_no', 'doubt_text', 'page_no', 'line_no', 'char_no', 'created_at', 'processed')
+
+class JudgeFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JudgeFeedback
+        fields = ('id', 'original_text', 'fb_text', 'fb_comment', 'fb_user',
+                  'created_at', 'processor', 'processed_at', 'response', 'diffsegresult')
+        read_only_fields = ('id', 'created_at', 'processor', 'processed_at', 'response')
+        extra_kwargs = {
+            'fb_text': {'required': 'True'},
+            'fb_comment': {'required': 'True'},
+            'diffsegresult': {'required': 'True'},
+        }
+
+class JudgeFeedbackUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JudgeFeedback
+        fields = ('id', 'original_text', 'fb_text', 'fb_comment', 'fb_user',
+                  'created_at', 'processor', 'processed_at', 'response', 'diffsegresult')
+        read_only_fields = ('id', 'original_text', 'fb_text', 'fb_comment', 'fb_user',
+                  'created_at', 'diffsegresult')
+        extra_kwargs = {
+            'response': {'required': 'True'},
+        }
+
+class LQPunctFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LQPunctFeedback
+        fields = ('id', 'lqpunct', 'start', 'end', 'fb_punctuation', 'fb_user',
+                  'created_at', 'processor', 'processed_at', 'punctuation')
+        read_only_fields = ('id', 'created_at', 'processor', 'processed_at', 'punctuation')
+        extra_kwargs = {
+            'lqpunct': {'required': 'True'},
+            'start': {'required': 'True'},
+            'end': {'required': 'True'},
+            'fb_punctuation': {'required': 'True'},
+        }

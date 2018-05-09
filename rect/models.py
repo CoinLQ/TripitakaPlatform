@@ -13,6 +13,7 @@ from django_bulk_update.manager import BulkUpdateManager
 from .lib.arrange_rect import ArrangeRect
 from django.forms.models import model_to_dict
 from django.conf import settings
+from background_task import background
 
 from dotmap import DotMap
 from PIL import Image, ImageFont, ImageDraw
@@ -191,6 +192,7 @@ class TripiMixin(object):
         return self.name
 
 class PageRect(models.Model):
+    PPTASK_MAX_TASK_COUNT = 2
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) # TODO: confirm
     page = models.ForeignKey(Page, null=True, blank=True, related_name='pagerects', on_delete=models.SET_NULL,
                              verbose_name=u'关联源页信息')
@@ -201,6 +203,7 @@ class PageRect(models.Model):
     rect_set = JSONField(default=list, verbose_name=u'切字块JSON切分数据集')
     created_at = models.DateTimeField(null=True, blank=True, verbose_name=u'创建时间', auto_now_add=True)
     primary = models.BooleanField(verbose_name="主切分方案", default=True)
+    pptask_count =  models.PositiveSmallIntegerField(default=1, verbose_name=u'当前任务数')
 
     def __str__(self):
         return str(self.id)
@@ -231,11 +234,19 @@ class PageRect(models.Model):
         return PageRect.align_rects_bypage(pagerect, rects)
 
     @classmethod
+    def hans_by_page_text(cls, texts, line_no, char_no):
+        try:
+            return texts[line_no-1][char_no-1]
+        except:
+            return ''
+
+    @classmethod
     def align_rects_bypage(cls, pagerect, rects):
-        tp = str(pagerect.reel)[0:2]
+        tp = pagerect.reel.sutra.sid[0:2]
         ret = True
         columns = ArrangeRect.resort_rects_from_qs(rects, tp)
         page = pagerect.page
+        texts = page.text.replace("b\n","").split("\n")
         image_name_prefix = page.reel.image_prefix() + str(page.page_no)
         flat_list = [item for sublist in columns for item in sublist]
         rect_list = list()
@@ -246,6 +257,7 @@ class PageRect(models.Model):
                 _rect['char_no'] = col_n
                 _rect['page_pid'] = pagerect.page_id
                 _rect['reel_id'] = pagerect.reel_id
+                _rect['char'] = PageRect.hans_by_page_text(texts, lin_n, col_n)
                 try :
                     # 这里以左上角坐标，落在哪个列数据为准
                     if not page.bar_info:
@@ -280,7 +292,7 @@ class PageRect(models.Model):
             myfont = ImageFont.truetype(settings.BASE_DIR + "/static/fonts/SourceHanSerifTC-Bold.otf", 11)
         elif sys.platform == 'darwin':
             myfont = ImageFont.truetype("/Library/Fonts/Songti.ttc", 12)
-        tp = str(self.reel)[0:2]
+        tp = str(self.reel.sutra.sid)[0:2]
         columns = ArrangeRect.resort_rects_from_qs(self.rect_set, tp)
         for lin_n, line in enumerate(columns, start=1):
             for col_n, _r in enumerate(line, start=1):
@@ -479,7 +491,7 @@ class Patch(models.Model):
 
 class Schedule(models.Model, ModelDiffMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    reels = models.ManyToManyField(Reel, limit_choices_to={'cut_ready': True}, blank=True )
+    reels = models.ManyToManyField(Reel, limit_choices_to={'image_ready': True,'cut_ready': False}, blank=True )
     name = models.CharField(verbose_name='计划名称', max_length=64)
 
     cc_threshold = models.FloatField("切分置信度阈值", default=0.65, blank=True)
@@ -505,9 +517,15 @@ class Schedule(models.Model, ModelDiffMixin):
 
     def __str__(self):
         return self.name
+    
+    @classmethod
+    def create_reels_pptasks(cls, reel):
+        schedule_name = "计划任务: %s" % ( str(reel), )
+        schedule = Schedule.objects.create(name=schedule_name, status=ScheduleStatus.ACTIVE, schedule_no="schedule1", cc_threshold=0)
+        schedule.refresh_from_db()
+        schedule.reels.add(reel)
+        schedule.reels.update(cut_ready=True)
 
-    def create_reels_task(self):
-        pass
         # NOTICE: 实际这里不必执行，多重关联这时并未创建成功。
         # 在数据库层用存储过程在关联表记录创建后，创建卷任务。
         # 为逻辑必要，留此函数
@@ -576,7 +594,8 @@ class Reel_Task_Statistical(models.Model):
         verbose_name_plural = u"总体进度"
         ordering = ('schedule', '-updated_at')
 
-    @shared_task
+    #@shared_task
+    @background(schedule=60)
     @email_if_fails
     def gen_pptask_by_plan():
         with transaction.atomic():
@@ -586,15 +605,15 @@ class Reel_Task_Statistical(models.Model):
                     if rtask.amount_of_pptasks != -1:
                         continue
                     count = allocateTasks(stask.schedule, rtask.reel, SliceType.PPAGE)
-                    rtask.amount_of_pptasks = count
+                    rtask.amount_of_pptasks = count * 2
                     rtask.save(update_fields=['amount_of_pptasks'])
                 # 检查每卷大于-1，开启总计划，更新任务数。
                 quertset = Reel_Task_Statistical.objects.filter(schedule=stask.schedule)
                 result = quertset.aggregate(Min('amount_of_pptasks'))
                 # 只有所有卷都开启任务，计划表的总任务数才更新。
-                if result['amount_of_pptasks__min'] != -1:
+                if result['amount_of_pptasks__min'] and result['amount_of_pptasks__min'] != -1:
                     count = quertset.aggregate(Sum('amount_of_pptasks'))['amount_of_pptasks__sum']
-                    stask.amount_of_pptasks = count
+                    stask.amount_of_pptasks = count * 2
                     stask.save(update_fields=['amount_of_pptasks'])
 
 
@@ -714,6 +733,7 @@ class RTask(models.Model):
             models.Index(fields=['priority', 'status']),
         ]
 
+# 暂不使用
 class CCTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='cc_tasks', on_delete=models.SET_NULL,
                                  verbose_name=u'切分计划')
@@ -726,7 +746,7 @@ class CCTask(RTask):
         verbose_name = u"置信校对"
         verbose_name_plural = u"置信校对"
 
-
+# 暂不使用
 class ClassifyTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='classify_tasks', on_delete=models.SET_NULL,
                                  verbose_name=u'切分计划')
@@ -746,12 +766,32 @@ class PageTask(RTask):
     count = models.IntegerField("任务页的数量", default=1)
     owner = models.ForeignKey(Staff, null=True, blank=True, related_name='page_tasks', on_delete=models.SET_NULL)
     page_set = JSONField(default=list, verbose_name=u'页的集合') # [page_json]
+    redo_count =  models.PositiveSmallIntegerField(default=1, verbose_name=u'任务重作数')
 
     class Meta:
         verbose_name = u"逐字校对"
         verbose_name_plural = u"逐字校对"
 
 
+    def task_id(self):
+        cursor = connection.cursor()
+        cursor.execute("select nextval('task_seq')")
+        result = cursor.fetchone()
+        return result[0]
+
+    def roll_new_task(self):
+        page_pid = self.page_set[0]['page_id']
+        pagerect = PageRect.objects.filter(page_id=page_pid).first()
+        if pagerect.pptask_count <= PageRect.PPTASK_MAX_TASK_COUNT:
+            pagerect.pptask_count = pagerect.pptask_count + 1
+            task_no = "%s_%s_%05X" % (self.number.split('_')[0], self.number.split('_')[1], self.task_id())
+            task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1,
+                                    status=TaskStatus.NOT_GOT,
+                                    page_set=self.page_set, redo_count=pagerect.pptask_count)
+            task.save()
+            pagerect.save(update_fields=['pptask_count'])
+
+#暂不使用
 class AbsentTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='absent_tasks', on_delete=models.SET_NULL,
                                  verbose_name=u'切分计划')
@@ -763,7 +803,7 @@ class AbsentTask(RTask):
         verbose_name = u"查漏校对"
         verbose_name_plural = u"查漏校对"
 
-
+#暂不使用
 class DelTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='del_tasks', on_delete=models.SET_NULL,
                                  verbose_name=u'切分计划')
@@ -782,7 +822,7 @@ class DelTask(RTask):
             else:
                 item.undo()
 
-
+#暂不使用
 class ReviewTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='review_tasks', on_delete=models.SET_NULL,
                                  verbose_name=u'切分计划')
@@ -794,7 +834,7 @@ class ReviewTask(RTask):
         verbose_name = u"审定任务"
         verbose_name_plural = u"审定任务管理"
 
-
+#暂不使用
 class DeletionCheckItem(models.Model):
     objects = BulkUpdateManager()
 
@@ -821,16 +861,21 @@ class DeletionCheckItem(models.Model):
     @classmethod
     def create_from_rect(cls, rects, t):
         rect_ids = [rect ['id'] for rect in filter(lambda x: x['op'] == 3, rects)]
-        for r in Rect.objects.filter(id__in=rect_ids):
-            # 对于空列添加框的删除，column_uri异常要忽略
-            try:
-                DeletionCheckItem(x=r.x, y=r.y, w=r.w, h=r.h, ocolumn_uri=r.column_uri(),
-                                ocolumn_x=r.column_set['x'], ocolumn_y=r.column_set['y'], ch=r.ch,
-                                rect_id=r.id, modifier=t.owner).save()
-            except:
-                r.delete()
+        # 不再創建該任務，直接刪框
+        Rect.objects.filter(id__in=rect_ids).delete()
+        # for r in Rect.objects.filter(id__in=rect_ids):
+        #     # 对于空列添加框的删除，column_uri异常要忽略
+        #     try:
+        #         DeletionCheckItem(x=r.x, y=r.y, w=r.w, h=r.h, ocolumn_uri=r.column_uri(),
+        #                         ocolumn_x=r.column_set['x'], ocolumn_y=r.column_set['y'], ch=r.ch,
+        #                         rect_id=r.id, modifier=t.owner).save()
+        #     except:
+        #         r.delete()
                 
-
+    @classmethod
+    def direct_delete_rects(cls, rects, t):
+        rect_ids = [rect ['id'] for rect in filter(lambda x: x['op'] == 3, rects)]
+        Rect.objects.filter(id__in=rect_ids).delete()
 
     def undo(self):
         Rect.objects.filter(pk=self.rect_id).update(op=2)
@@ -843,7 +888,7 @@ class DeletionCheckItem(models.Model):
         verbose_name = u"删框记录"
         verbose_name_plural = u"删框记录管理"
 
-
+#暂不使用
 class ActivityLog(models.Model):
     user = models.ForeignKey(Staff, related_name='activities', on_delete=models.SET_NULL, null=True)
     log = models.CharField(verbose_name=u'记录', max_length=128, default='')
@@ -858,7 +903,7 @@ class ActivityLog(models.Model):
                                                self.action, self.object_type,
                                                self.object_pk, self.created_at)
 
-
+#暂不使用
 class CharClassifyPlan(models.Model):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='char_clsfy_plan',
                                  on_delete=models.SET_NULL, verbose_name=u'切分计划')
@@ -1023,7 +1068,8 @@ class PerpageAllocateTask(AllocateTask):
 
     def allocate(self):
         reel = self.reel
-        query_set = filter(lambda x: x.primary, PageRect.objects.filter(reel=reel))
+        # query_set = filter(lambda x: x.primary, PageRect.objects.filter(reel=reel).order_by('page_id'))
+        query_set = PageRect.objects.filter(reel=reel).order_by('page_id')
 
         page_set = []
         task_set = []
@@ -1034,7 +1080,7 @@ class PerpageAllocateTask(AllocateTask):
             if len(page_set) == count:
                 task_no = "%s_%d_%05X" % (self.schedule.schedule_no, reel.id, self.task_id())
                 task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1,
-                                  status=TaskStatus.NOT_READY,
+                                  status=TaskStatus.NOT_GOT,
                                   page_set=list(page_set))
                 page_set.clear()
                 task_set.append(task)
@@ -1129,13 +1175,15 @@ def post_schedule_create_pretables(sender, instance, created, **kwargs):
     if created:
         Schedule_Task_Statistical(schedule=instance).save()
         # Schedule刚被创建，就建立聚类字符准备表，创建逐字校对的任务，任务为未就绪状态
-        CharClassifyPlan.create_charplan.s(instance.pk.hex).apply_async(countdown=20)
-        Reel_Task_Statistical.gen_pptask_by_plan.apply_async(countdown=60)
+        # CharClassifyPlan.create_charplan.s(instance.pk.hex).apply_async(countdown=20)
+        Reel_Task_Statistical.gen_pptask_by_plan()
     else:
         # update
         if (instance.has_changed) and ( 'status' in instance.changed_fields):
             before, now = instance.get_field_diff('status')
             if now == ScheduleStatus.ACTIVE and before == ScheduleStatus.NOT_ACTIVE:
                 # Schedule被激活，创建置信校对的任务
-                Reel_Task_Statistical.gen_cctask_by_plan.delay()
+                # Reel_Task_Statistical.gen_cctask_by_plan.delay()
+                # 暂不生成置信校对任务
+                pass
 

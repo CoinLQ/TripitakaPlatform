@@ -15,6 +15,6 @@ from operator import attrgetter, itemgetter
 #@login_required
 def do_correct_task(request, task_id):
     task = get_object_or_404(Task, pk=task_id)
-    if task.typ != Task.TYPE_CORRECT and task.typ != Task.TYPE_CORRECT_VERIFY:
+    if task.typ not in [Task.TYPE_CORRECT, Task.TYPE_CORRECT_VERIFY, Task.TYPE_CORRECT_DIFFICULT]:
         return redirect('/')
     return render(request, 'tasks/do_do_correct_task.html', {'task': task})

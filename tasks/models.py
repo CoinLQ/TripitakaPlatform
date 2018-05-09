@@ -51,6 +51,8 @@ class Task(models.Model):
     TYPE_LQPUNCT_VERIFY = 8
     TYPE_MARK = 9
     TYPE_MARK_VERIFY = 10
+    TYPE_CORRECT_DIFFICULT = 11
+    TYPE_JUDGE_DIFFICULT = 12
     TYPE_CHOICES = (
         (TYPE_CORRECT, '文字校对'),
         (TYPE_CORRECT_VERIFY, '文字校对审定'),
@@ -62,6 +64,8 @@ class Task(models.Model):
         (TYPE_LQPUNCT_VERIFY, '定本标点审定'),
         (TYPE_MARK, '格式标注'),
         (TYPE_MARK_VERIFY, '格式标注审定'),
+        (TYPE_CORRECT_DIFFICULT, '文字校对难字处理'),
+        (TYPE_JUDGE_DIFFICULT, '校勘判取难字处理'),
     )
 
     TASK_NO_CHOICES = (
@@ -94,8 +98,10 @@ class Task(models.Model):
     TYPE_TO_URL_PREFIX = {
         TYPE_CORRECT: 'correct',
         TYPE_CORRECT_VERIFY: 'verify_correct',
+        TYPE_CORRECT_DIFFICULT: 'correct_difficult',
         TYPE_JUDGE: 'judge',
         TYPE_JUDGE_VERIFY: 'verify_judge',
+        TYPE_JUDGE_DIFFICULT: 'judge_difficult',
         TYPE_PUNCT: 'punct',
         TYPE_PUNCT_VERIFY: 'verify_punct',
         TYPE_LQPUNCT: 'lqpunct',
@@ -110,7 +116,7 @@ class Task(models.Model):
     lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE, blank=True, null=True)
     typ = models.SmallIntegerField('任务类型', choices=TYPE_CHOICES, db_index=True)
     base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本', blank=True, null=True)
-    task_no = models.SmallIntegerField('组合任务序号', choices=TASK_NO_CHOICES)
+    task_no = models.SmallIntegerField('组合任务序号', choices=TASK_NO_CHOICES, default=0)
     status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1, db_index=True)
 
     # 用于记录当前工作的条目，下次用户进入任务时直接到此。
@@ -229,6 +235,7 @@ class DoubtSeg(models.Model):
     doubt_char_no = models.SmallIntegerField('存疑行中字序号', default=-1)
     doubt_comment = models.TextField('存疑意见', default='', blank=True)
     created_at = models.DateTimeField('创建时间', default=timezone.now)
+    processed = models.BooleanField('是否处理', default=False)
 
 class ReelCorrectText(models.Model):
     BODY_START_PATTERN = re.compile('品(第[一二三四五六七八九十百]*(之[一二三四五六七八九十百]*)*)|(品之[一二三四五六七八九十百]*)$')
@@ -487,81 +494,109 @@ class Mark(models.Model):
 class MarkUnit(MarkUnitBase):
     mark = models.ForeignKey(Mark, on_delete=models.CASCADE)
 
-class LQMark(models.Model):
-    lqreel = models.ForeignKey(LQReel, verbose_name='龙泉藏经卷', on_delete=models.CASCADE)
-    reeltext = models.ForeignKey(LQReelText, verbose_name='龙泉藏经卷经文', on_delete=models.CASCADE)
-    task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始格式标注结果，不为null表示格式标注任务和格式标注审定任务的结果
-    publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
-    created_at = models.DateTimeField('创建时间', blank=True, null=True)
-
-class LQMarkUnit(MarkUnitBase):
-    lqmark = models.ForeignKey(LQMark, on_delete=models.CASCADE)
-
 ####
-class DoubtBase(models.Model):
-    STATUS_UNPROCESSED = 1
-    STATUS_APPROVED = 2
-    STATUS_DISAPPROVED = 3
-    STATUS_CHOICES = (
-        (STATUS_UNPROCESSED, '未处理'),
-        (STATUS_APPROVED, '同意'),
-        (STATUS_DISAPPROVED, '不同意'),
+class FeedbackBase(models.Model):
+    RESPONSE_UNPROCESSED = 1
+    RESPONSE_APPROVED = 2
+    RESPONSE_DISAPPROVED = 3
+    RESPONSE_CHOICES = (
+        (RESPONSE_UNPROCESSED, '未处理'),
+        (RESPONSE_APPROVED, '同意'),
+        (RESPONSE_DISAPPROVED, '不同意'),
     )
 
-    comment = models.TextField('意见')
-    user = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True,
-    verbose_name='用户')
-    created_at = models.DateTimeField('创建时间', default=timezone.now)
+    original_text = models.TextField('原始文本', blank=True, null=True, default='')
+    fb_text = models.TextField('反馈文本', blank=True, null=True, default='')
+    fb_comment = models.TextField('反馈说明')
+    fb_user = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True,
+    verbose_name='反馈用户')
+    created_at = models.DateTimeField('反馈时间', default=timezone.now)
     processor = models.ForeignKey(Staff, related_name='processed_%(class)s', on_delete=models.SET_NULL, null=True,
-    verbose_name='处理用户')
-    processed_at = models.DateTimeField('处理时间', null=True)
-    status = models.SmallIntegerField('状态', choices=STATUS_CHOICES)
+    verbose_name='审查用户')
+    processed_at = models.DateTimeField('审查时间', null=True)
+    response = models.SmallIntegerField('审查意见', choices=RESPONSE_CHOICES, default=RESPONSE_UNPROCESSED)
 
     class Meta:
         abstract = True
 
-class CorrectDoubt(DoubtBase):
-    correct_seg = models.ForeignKey(CorrectSeg, on_delete=models.CASCADE)
+    @property
+    def fb_user_display(self):
+        return self.fb_user.username
+    fb_user_display.fget.short_description = '反馈用户'
+
+class CorrectFeedback(FeedbackBase):
+    correct_text = models.ForeignKey(ReelCorrectText, on_delete=models.CASCADE)
+    position = models.IntegerField('在卷文本中的位置（前有几个字）', default=0)
 
     class Meta:
-        verbose_name = '文字校对存疑'
-        verbose_name_plural = '文字校对存疑'
+        verbose_name = '文字校对反馈'
+        verbose_name_plural = '文字校对反馈'
 
-class JudgeDoubt(DoubtBase):
-    diffseg = models.ForeignKey(DiffSeg, on_delete=models.CASCADE)
+class JudgeFeedback(FeedbackBase):
+    diffsegresult = models.ForeignKey(DiffSegResult, on_delete=models.CASCADE, related_name='feedbacks')
 
-    class Meta:
-        verbose_name = '校勘判取存疑'
-        verbose_name_plural = '校勘判取存疑'
+    @property
+    def lqsutra_name(self):
+        return self.diffsegresult.task.lqreel.lqsutra.name
+    lqsutra_name.fget.short_description = '龙泉经名'
 
-class PunctDoubt(DoubtBase):
-    reel = models.ForeignKey(Reel, on_delete=models.CASCADE)
-    start_cid = models.CharField('起始经字号', max_length=23)
-    end_cid = models.CharField('结束经字号', max_length=23)
-
-    class Meta:
-        verbose_name = '基础标点存疑'
-        verbose_name_plural = '基础标点存疑'
-
-class LQPunctDoubt(DoubtBase):
-    lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE)
-    start_cid = models.CharField('起始经字号', max_length=23) # 底本的cid
-    end_cid = models.CharField('结束经字号', max_length=23)
+    @property
+    def reel_no(self):
+        lqreel = self.diffsegresult.task.lqreel
+        if lqreel:
+            return lqreel.reel_no
+    reel_no.fget.short_description = '第几卷'
 
     class Meta:
-        verbose_name = '定本标点存疑'
-        verbose_name_plural = '定本标点存疑'
+        verbose_name = '校勘反馈'
+        verbose_name_plural = '校勘反馈'
 
-class MarkDoubt(DoubtBase):
-    markunit = models.ForeignKey(MarkUnit, on_delete=models.CASCADE)
+    class Config:
+        search_fields = ('original_text', 'fb_text', 'fb_user__username')
+
+class LQPunctFeedback(models.Model):
+    STATUS_READY = 2
+    STATUS_PROCESSING = 3
+    STATUS_FINISHED = 4
+    STATUS_CHOICES = (
+        (STATUS_READY, '待领取'),
+        (STATUS_PROCESSING, '进行中'),
+        (STATUS_FINISHED, '已完成'),
+    )
+
+    lqpunct = models.ForeignKey(LQPunct, verbose_name='定本标点', on_delete=models.CASCADE)
+    start = models.IntegerField('起始字index', default=0)
+    end = models.IntegerField('结束字下一个index', default=0)
+    fb_punctuation = models.TextField('反馈标点', blank=True, null=True) # 包含整卷文本段的标点，格式：[[5,'，'], [15,'。']]
+    fb_user = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True,
+    verbose_name='反馈用户')
+    created_at = models.DateTimeField('反馈时间', default=timezone.now)
+    status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=2, db_index=True)
+    punctuation = models.TextField('审查标点', blank=True, null=True) # 包含整卷文本段的标点，格式：[[5,'，'], [15,'。']]
+    processor = models.ForeignKey(Staff, related_name='processed_%(class)s', on_delete=models.SET_NULL, blank=True, null=True,
+    verbose_name='审查用户')
+    processed_at = models.DateTimeField('审查时间', blank=True, null=True)
+
+    @property
+    def lqsutra_name(self):
+        return self.lqpunct.lqreel.lqsutra.name
+    lqsutra_name.fget.short_description = '龙泉经名'
+
+    @property
+    def reel_no(self):
+        lqreel = self.lqpunct.lqreel
+        if lqreel:
+            return lqreel.reel_no
+    reel_no.fget.short_description = '第几卷'
+
+    @property
+    def fb_user_display(self):
+        return self.fb_user.username
+    fb_user_display.fget.short_description = '反馈用户'
 
     class Meta:
-        verbose_name = '基础格式标注存疑'
-        verbose_name_plural = '基础格式标注存疑'
+        verbose_name = '定本标点反馈'
+        verbose_name_plural = '定本标点反馈'
 
-class LQMarkDoubt(DoubtBase):
-    lqmarkunit = models.ForeignKey(LQMarkUnit, on_delete=models.CASCADE)
-
-    class Meta:
-        verbose_name = '定本格式标注存疑'
-        verbose_name_plural = '定本格式标注存疑'
+    class Config:
+        search_fields = ('fb_user__username',)

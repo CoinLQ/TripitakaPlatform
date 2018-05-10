@@ -21,9 +21,10 @@ from tasks.views.correct import *
 from tasks.views.judge import *
 from tasks.views.punct import *
 from tasks.views import lqtripitaka
+from tasks.views import tripitaka
 from tools.views import *
 import xadmin
-
+ 
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('backend/', admin.site.urls),
@@ -42,6 +43,7 @@ urlpatterns = [
     path('lqpunct/<int:task_id>/', do_punct_task, name='do_lqpunct_task'),
     path('verify_lqpunct/<int:task_id>/', do_punct_task, name='do_lqpunct_verify_task'),
     path('lqtripitaka/', lqtripitaka.index, name='lqtripitaka_index'),
+    path('tripitaka/', tripitaka.index, name='tripitaka_index'),
     path('do_generate_task/', lqtripitaka.do_generate_task, name='lqtripitaka_index'),
     path('judgefeedback/<int:judgefeedback_id>/', process_judgefeedback, name='process_judgefeedback'),
     path('lqpunctfeedback/<int:lqpunctfeedback_id>/', process_lqpunctfeedback, name='process_lqpunctfeedback'),

@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+{% block title %}格式標注{% endblock %}
+{% block style %}
+<style type="text/css">
+.clearfix:after{content:".";display:block;height:0;clear:both;visibility:hidden}
+.clearfix{*+height:1%;}
+.v-cmd-block {
+    border: 1px solid #ebebeb;
+    border-radius: 3px;
+    background-color: whitesmoke;
+    position: relative;
+    top: 4px;
+    height: 80%;
+    float: left;
+    width: 10%;
+    padding: 10px;
+    z-index: 2001;
+    box-shadow: 1px 1px 4px -1px #363E4E;
+}
+.reel-text-pane {
+    float: left;
+    width: 90%;
+    padding: 0 15px;
+    height: 80%;
+    overflow: scroll;
+    box-shadow: 1px 1px 4px -1px #363E4E;
+}
+</style>
+{% endblock %}
+{% block content %}
+<div id='mark' class="row content-container">
+        {% raw %}
+        <div class="col-md-6 left-pane">
+          <div class="canvas-pane">
+            <canvas id="page-canvas"></canvas>
+          </div>
+        </div>
+        <div class="col-md-6 right-pane">
+                <div class="reel-text-pane">
+                        <div class="reel-text-region-o">
+                    
+                            <div id="reel-text-compare" class="reel-text-compare">
+                        
+                                <p ref='textArea'  @mouseup="mouseMark" v-html="content_html"><font style="font-size:20px;">{{base_text}}</font><font>真是好啊</font><font>真是好啊</font></p>
+                            </div>
+                            {% endraw %}    
+                        </div>
+                    </div>
+            <div class="diff-text-pane-right ">
+            
+                <div style="position: inherit;" class='v-cmd-block'>
+                    
+                    
+                        <el-button click="markTitle()" plain  size="mini" round>标题</el-button>
+                        <el-button click="markAuthor()" plain  size="mini" round>作译者</el-button>
+                        <el-button click="markPreface()" plain  size="mini" round>序</el-button>
+                        <el-button click="markContent()" plain  size="mini" round>正文</el-button>
+                        <el-button click="markJi()" plain  size="mini" round>偈颂</el-button>
+                        <el-button click="markJiazhu()" plain  size="mini" round>夹注小字</el-button>
+                        <el-button click="markFan()" plain  size="mini" round>梵文</el-button>
+                        <el-button click="markZhou()" plain  size="mini" round>咒语</el-button>
+                        <el-button click="markBa()" plain  size="mini" round>跋</el-button>
+
+                       
+                    
+                        <el-button plain click="openDoubtForm" round>存疑</el-button>
+                        
+                        
+                      
+                </div>
+                    
+                
+    
+          {% raw %}
+          <div class='clearfix'></div>
+          <el-collapse class="biaoji">
+
+          </el-collapse>
+          {% endraw %}
+        </div>
+      </div>
+</div>
+{% endblock %}
+{% block foot_script %}
+<script>
+var app = new Vue({
+    el: '#mark',
+    data: {
+        base_text: "",
+        content_html: "",
+        marksegs: [{start:0, end: 30, typ: 1, mark_typ: 1},
+                            {start:90, end: 100, typ: 1, mark_typ: 1},
+                         ],
+        sharedata: {
+            task_id: {{ task.id }},
+            task_typ: {{task.typ}},
+            status: 0
+        }
+    },
+    created: function() {
+      var vm = this
+      axios.get('/api/mark/' + vm.sharedata.task_id + '/')
+      .then(function(response) {
+        vm.base_text = response.data.base_text;
+        vm.marksegs.push({start:230, end: 280, typ: 1, mark_typ: 2})
+      });
+    },
+    watch: {
+        marksegs: function(val, oldVal) {
+            this.compiledBaseText();
+        }
+    },
+    computed: {
+        pos_list() {
+            let pos_segs = {};
+            _.forEach(this.marksegs, function(markseg){
+                pos_segs[markseg.start] = pos_segs[markseg.start] || []
+                pos_segs[markseg.start].push({start: true, mark_typ: markseg.mark_typ})
+                pos_segs[markseg.start].sort(function(a,b){ return a.start - b.start})
+                pos_segs[markseg.end] = pos_segs[markseg.end] || []
+                pos_segs[markseg.end].push({start: false, mark_typ: markseg.mark_typ})
+                pos_segs[markseg.end].sort(function(a,b){ return a.start - b.start})
+            });
+            return pos_segs
+        },
+        
+    },
+    mounted: function() {
+        
+    },
+    methods: {
+        segFontDiv(mark_typ) {
+            switch (mark_typ) {
+                case 1:
+                    return '<font style="background-color: red">';
+                case 2: 
+                    return '<font style="background-color: green">';
+                case 3:
+                    return '<font style="background-color: grey">';
+                case 4: 
+                    return '<font style="background-color: blue">';
+            }
+        },
+        userSelection() {
+            var userSelection, rangeObject;
+            if (window.getSelection) { 
+                //现代浏览器
+                userSelection = window.getSelection();
+            } else if (document.selection) { 
+                //IE浏览器 考虑到Opera，应该放在后面
+                userSelection = document.selection.createRange();
+            }
+
+            return userSelection;
+        },
+        getParentPTag(node) {
+            if (node.nodeName.toString() != 'P')
+            {
+                return this.getParentPTag(node.parentElement)
+            }    
+            return node;
+        },
+        headerOffset(pnode, currentNode) {
+            let nodes = pnode.childNodes;
+            let offset = 0;
+            for (var i=0; i < nodes.length; i++){
+                if (currentNode == nodes[i] || nodes[i].contains(currentNode)){
+                        break;
+                }
+                offset += nodes[i].textContent.length;
+            }
+            return offset;
+        },
+        markedTextContent() {
+
+        },
+        getChoicePosition(startNode, startOffset, focusNode, focusOffset) {
+            var contentPs = this.$refs.textArea.getElementsByTagName("p");
+            var startPos = 0;
+            var endPos = 0;
+            var start = startOffset;
+            var end = focusOffset;
+            if (startNode == focusNode && startOffset == focusOffset) {
+                return;
+            }
+            for (var i=0; i < contentPs.length; i++){
+                _.forEach(contentPs[i].childNodes, function(childNode) {
+                    if (startNode == childNode || childNode.contains(startNode.parentElement)){
+                        debugger;
+                        startPos = i;
+                    }
+
+                    if (focusNode == childNode || childNode.contains(focusNode.parentElement)){
+                        endPos = i;
+                    }
+                })
+            }
+            if (endPos ==0 && focusNode.className.includes('biaoji')) {
+                endPos = contentPs.length - 1;
+                focusNode = contentPs[endPos].lastChild;
+                end = focusNode.textContent.length;
+            }
+            
+            console.log(startPos, endPos);
+            if (startPos > endPos) { 
+                let tmpNode = startNode;
+                let tmpPos = startPos;
+                let _tmp = start;
+                startNode = focusNode;
+                startPos = endPos;
+                focusNode = tmpNode;
+                endPos = tmpPos;
+                start = end;
+                end = _tmp;
+            }
+            
+           
+            if (startNode == focusNode)
+            {
+                if(start > end) {
+                    start += end;
+                    end = start - end;
+                    start -= end;
+                }
+                var content_text = startNode.data.substr(start, end-start);
+                //console.log(content_text)
+                
+                let offset = this.headerOffset(contentPs[startPos], startNode);
+                var mark_start = parseInt(this.getParentPTag(startNode).getAttribute("data-position")) + offset;
+                var mark_end = mark_start + end;
+                mark_start += start;
+                //console.log(mark_start, mark_end);
+                this.marksegs.push({start:mark_start, end: mark_end, typ: 1, mark_typ: 1})
+            } else if (startPos == endPos) {
+                let nodes = contentPs[startPos].childNodes;
+                let _start = 0, _end = 0
+                for (var i=0; i < nodes.length; i++){
+                    if (startNode == nodes[i] || nodes[i].contains(startNode)){
+                        _start = i;
+                    }
+
+                    if (focusNode == nodes[i] || nodes[i].contains(focusNode)){
+                        _end = i;
+                    }
+                }
+                if (_start > _end) { 
+                    let tmpNode = startNode;
+                    let tmpPos = _start;
+                    let _tmp = start;
+                    startNode = focusNode;
+                    _start = _end;
+                    focusNode = tmpNode;
+                    _end = tmpPos;
+                    start = end;
+                    end = _tmp;
+                }
+                var head_text =  startNode.data.substr(start, startNode.data.length-start);
+                var content_text = '';
+                for (var i= _start+1; i < _end; i++){
+                    content_text += nodes[i].textContent;
+                }
+                var tail_text = focusNode.data.substr(0, end);
+                console.log(head_text, content_text, tail_text);
+                let offset = this.headerOffset(contentPs[startPos], startNode);
+                var mark_start = parseInt(this.getParentPTag(startNode).getAttribute("data-position")) + offset + start;
+                offset = this.headerOffset(contentPs[endPos], focusNode);
+                var mark_end = parseInt(this.getParentPTag(focusNode).getAttribute("data-position")) + offset + end;
+                console.log(mark_start, mark_end);
+                this.marksegs.push({start:mark_start, end: mark_end, typ: 1, mark_typ: 1})
+            } 
+            else{
+                debugger;
+              var head_text =  startNode.data.substr(start, startNode.data.length-start);
+              var content_text = '';
+              var startMatch = false;
+              console.log(head_text);
+              for (var i= startPos; i < endPos + 1; i++){
+                let nodes = contentPs[i].childNodes;
+                for (var j=0; j < nodes.length; j++){
+                    if (startNode == nodes[j] || nodes[j].contains(startNode)){
+                        startMatch = true
+                    }
+
+                    if (focusNode == nodes[j] || nodes[j].contains(focusNode)){
+                        break
+                    }
+                    if (startMatch) {
+                        content_text += nodes[j].textContent;
+                    }
+                    
+                }
+                
+              }
+              var tail_text =  focusNode.data.substr(0, end);
+              console.log(head_text, content_text, tail_text);
+              let offset = this.headerOffset(contentPs[startPos], startNode);
+              var mark_start = parseInt(this.getParentPTag(startNode).getAttribute("data-position")) + offset + start;
+              offset = this.headerOffset(contentPs[endPos], focusNode);
+              var mark_end = parseInt(this.getParentPTag(focusNode).getAttribute("data-position")) + offset + end;
+              console.log(mark_start, mark_end);
+              this.marksegs.push({start:mark_start, end: mark_end, typ: 1, mark_typ: 1})
+            }
+            
+        },
+        mouseMark() {
+            console.log('mouse up');
+            let userSelection = this.userSelection();
+            let startNode = userSelection.anchorNode,
+            startOffset = userSelection.anchorOffset,
+            focusNode = userSelection.focusNode,
+            focusOffset = userSelection.focusOffset;
+            this.getChoicePosition(startNode, startOffset, focusNode, focusOffset)
+        },
+        compiledBaseText() {
+            console.log(this.pos_list)
+            let content = '<p data-position="0">';
+            for(var i=0; i< this.base_text.length; i++){
+                 
+                if (this.pos_list[i]){
+                    _.forEach(this.pos_list[i], function(seg) {
+                        if (!seg.start) {
+                            content += '</font>';
+                        } else {
+                            content += this.segFontDiv(seg.mark_typ);
+                        }
+                    }.bind(this));
+                }
+                if (this.base_text[i] != "\n") {
+                    content += this.base_text[i];
+                } else {
+                    content +='<br></p><p data-position="' + (i+1) + '">'
+                }
+                
+            }
+            this.content_html = content;
+        }
+    }
+});
+</script>
+{% endblock %}

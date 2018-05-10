@@ -20,6 +20,7 @@ from django.conf.urls import url
 from tasks.views.correct import *
 from tasks.views.judge import *
 from tasks.views.punct import *
+from tasks.views.mark import *
 from tasks.views import lqtripitaka
 from tools.views import *
 import xadmin
@@ -45,6 +46,8 @@ urlpatterns = [
     path('do_generate_task/', lqtripitaka.do_generate_task, name='lqtripitaka_index'),
     path('judgefeedback/<int:judgefeedback_id>/', process_judgefeedback, name='process_judgefeedback'),
     path('lqpunctfeedback/<int:lqpunctfeedback_id>/', process_lqpunctfeedback, name='process_lqpunctfeedback'),
+    path('mark/<int:task_id>/', do_mark_task, name='do_mark_task'),
+    path('verify_mark/<int:task_id>/', do_mark_task, name='do_mark_verify_task'),
 
     path('tools/cutfixed_pages/', cutfixed_pages, name='cutfixed_pages'),
     path('tools/cutfixed_pages/<pid>/', cutfixed_page_detail, name='cutfixed_page_detail'),

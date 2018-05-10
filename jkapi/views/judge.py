@@ -50,9 +50,9 @@ def get_judge_result_marked(request, task_id):
         result_marked_list = []
         for diffsegResult in queryset:
             if diffsegResult.selected_text != None:
-                result_marked = {'diffseg_id':diffsegResult.diffseg_id,'marked':True}
+                result_marked = {'diffseg_id':diffsegResult.diffseg_id,'marked':True,'selected_text':diffsegResult.selected_text}
             else:
-                result_marked = {'diffseg_id':diffsegResult.diffseg_id,'marked':False}
+                result_marked = {'diffseg_id':diffsegResult.diffseg_id,'marked':False,'selected_text':''}
             result_marked_list.append(result_marked)
         context = json.dumps(result_marked_list)
         return HttpResponse(context)

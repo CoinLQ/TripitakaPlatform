@@ -182,7 +182,7 @@ Vue.component('diffseg-box', {
                 <a href="#" v-if="judge_result.typ == 2" @click.stop.prevent="showSplit(judge_result)">显示拆分方案</a>
             </div>
         </div>
-        <div style="line-height:50px!important;">
+        <div style="line-height:50px!important;"></div>
         <div v-if="sharedata.judge_verify_task_id != 0">
             <div>
                 <sstyle="line-height:50px!important;"pan>判取审定：{{ getResult(diffsegresult.judge_verify_result) }}</span>
@@ -237,6 +237,7 @@ Vue.component('diffseg-box', {
               console.log('jumptodiffseg: ', err)
             }
         },
+        
         click: function() {
             this.sharedata.diffseg_id = this.diffsegresult.diffseg.id;
             this.jumptodiffseg(this.sharedata.diffseg_id)
@@ -322,10 +323,11 @@ Vue.component('sutra-unit', {
     props: ['data', 'sharedata'],
     template: `
     <span v-if="data.diffseg_id == undefined" v-html="data.text"></span>
-    <span v-else-if="data.text.length == 0"><a href="#" :diffsegid="data.diffseg_id" :class="className" :tabindex="data.diffseg_id" style="text-decoration:none;" @click="choiceThis()" v-html="data.text"  @keydown="keyDown($event)"></a></span>
-    <span v-else><a href="#" :diffsegid="data.diffseg_id" :class="className" :tabindex="data.diffseg_id" style="text-decoration:none;" @click="choiceThis()" v-html="data.text"  @keydown="keyDown($event)"></a></span>
+    <span v-else-if="data.text.length == 0"><a href="#" :diffsegid="data.diffseg_id" :class="className" :tabindex="data.diffseg_id" style="text-decoration:none;" @click="choiceThis()" v-html="selected_text" @keydown="keyDown($event)"></a></span>
+    <span v-else><a href="#" :diffsegid="data.diffseg_id" :class="className" :tabindex="data.diffseg_id" style="text-decoration:none;" @click="choiceThis()" v-html="selected_text"  @keydown="keyDown($event)"></a></span>
     `,
     computed: {
+        
         className: function() {
 
             if (this.data.diffseg_id != undefined) {
@@ -392,6 +394,22 @@ Vue.component('sutra-unit', {
                 
             }
             return '';
+        },
+        selected_text: function(){
+            var s = '';
+            for (var diffseg in this.sharedata.result_marked_list){
+                if (this.data.diffseg_id == this.sharedata.result_marked_list[diffseg].diffseg_id){
+                    if (this.sharedata.result_marked_list[diffseg].selected_text.length == 0){
+                        s += this.data.text;
+                    }else{
+                        s += this.sharedata.result_marked_list[diffseg].selected_text;
+                    }
+                    break;
+                }
+                
+            }
+            console.log(this.data.diffseg_id+s)
+            return s;
         }
     },
     methods: {
@@ -492,6 +510,18 @@ Vue.component('judge-dialog', {
                 this.doubt_comment = this.sharedata.diffsegresults[this.sharedata.segindex].doubt_comment;
             }
         },
+        // reloaddiffseg: function(diffseg_id) {
+        //     try {
+        //       console.log('ss'+diffseg_id+this.sharedata.result_marked_list[diffseg].selected_text);
+        //         this.sharedata.diffseg_id = diffseg_id;
+        //         this.sharedata.image_diffseg_id = diffseg_id;
+        //         let idx = _.findIndex(this.sharedata.diffseg_pos_lst, function(v) {return v.diffseg_id == diffseg_id}.bind(this))
+        //         this.$emit('diffpage', parseInt(idx/5)+1)
+             
+        //     } catch(err) {
+        //       console.log('reloaddiffseg: ', err)
+        //     }
+        // },
         handleOK: function() {
             var vm = this;
             var url = '/api/judge/' + this.sharedata.task_id + '/diffsegresults/' + this.diffsegresult_id + '/';
@@ -505,18 +535,35 @@ Vue.component('judge-dialog', {
                 data.doubt = this.doubt;
                 data.doubt_comment = this.doubt_comment;
             }
+            
+            // this.reloaddiffseg(this.diffsegresult_id);
+            //
             axios.put(url, data)
             .then(function(response) {
                 vm.sharedata.diffsegresults[vm.sharedata.segindex].selected_text = vm.selected_text;
                 vm.sharedata.diffsegresults[vm.sharedata.segindex].selected = vm.selected;
                 vm.sharedata.diffsegresults[vm.sharedata.segindex].doubt = vm.doubt;
                 vm.sharedata.diffsegresults[vm.sharedata.segindex].doubt_comment = vm.doubt_comment;
+                //更新判取数据
+                for (var diffseg in vm.sharedata.result_marked_list){
+                    if (vm.sharedata.diffsegresults[vm.sharedata.segindex].diffseg.id == vm.sharedata.result_marked_list[diffseg].diffseg_id){
+                        if (vm.selected_text.length == 0){
+                            vm.sharedata.result_marked_list[diffseg].selected_text = '';
+                            vm.sharedata.result_marked_list[diffseg].marked = true;
+                        }else {
+                            vm.sharedata.result_marked_list[diffseg].selected_text = vm.selected_text;
+                            vm.sharedata.result_marked_list[diffseg].marked = true;
+                        }
+                        break;
+                    }
+                }
                 vm.$emit('reload');
                 vm.sharedata.judgeDialogVisible = false;
             })
             .catch(function(error) {
                 vm.error = '提交出错！';
             });
+            
         },
         handleCancel: function() {
             this.sharedata.judgeDialogVisible = false;

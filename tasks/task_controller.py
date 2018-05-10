@@ -8,7 +8,7 @@ from jwt_auth.models import Staff
 from tdata.models import *
 from tasks.models import *
 from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, \
-clean_separators, clean_jiazhu, compute_accurate_cut
+clean_separators, clean_jiazhu, compute_accurate_cut, get_reel_text
 from tasks.ocr_compare import OCRCompare
 from tasks.utils.auto_punct import AutoPunct
 # 下一行不能删除，用来自动生成Punct.body_punctuation
@@ -126,6 +126,30 @@ def get_sutra_body(sutra):
         if reel_correct_text:
             body_lst.append(clean_jiazhu(reel_correct_text.body))
     return '\n\n'.join(body_lst)
+
+def get_correct_base_reel_lst(lqsutra, reel_no):
+    base_sutra_lst = []
+    sutra_to_body = {}
+    base_reel_lst = []
+    # 先得到两个base_reel，CBETA和高丽藏
+    for s in lqsutra.sutra_set.all():
+        if s.sid.startswith('CB') or s.sid.startswith('GL'):
+            base_sutra_lst.append(s)
+            if s.id not in sutra_to_body.keys():
+                sutra_to_body[s.id] = get_sutra_body(s)
+    if not base_sutra_lst:
+        # 记录错误
+        print(sutra.sid + 'no base sutra')
+        return base_reel_lst, sutra_to_body
+    if not base_sutra_lst[0].sid.startswith('CB'):
+        base_sutra_lst[0], base_sutra_lst[1] = base_sutra_lst[1], base_sutra_lst[0]
+    for base_sutra in base_sutra_lst:
+        try:
+            base_reel = Reel.objects.get(sutra=base_sutra, reel_no=reel_no)
+            base_reel_lst.append(base_reel)
+        except:
+            pass
+    return base_reel_lst, sutra_to_body
 
 def create_tasks_for_lqreels(lqreels_json,
                              correct_times=2, correct_verify_times=0,
@@ -546,6 +570,103 @@ def correct_update(task):
             reel_correct_text.set_text(task.result)
             reel_correct_text.save()
 
+def new_base_pos(pos, correctseg):
+    if correctseg.tag == CorrectSeg.TAG_DIFF:
+        pos += len(correctseg.text1)
+    elif correctseg.tag == CorrectSeg.TAG_EQUAL:
+        pos += len(correctseg.text2)
+    return pos
+
+def regenerate_correctseg(reel):
+    '''
+    由于卷中某些页有增加或更新等原因，需要重新生成此卷的文字校对任务的CorrectSeg数据
+    '''
+    print('regenerate_correctseg: %s' % reel)
+    if reel.sutra.sid.startswith('CB') or reel.sutra.sid.startswith('GL'): # 不对CBETA, GL生成任务
+        return
+    # 更新ReelOCRText
+    try:
+        reel_ocr_text = ReelOCRText.objects.get(reel_id = reel.id)
+    except:
+        print('no ocr text for reel: ', reel)
+        return
+    text = get_reel_text(reel) #, force_download=True) # test
+    if not text:
+        return
+    reel_ocr_text.text = text
+    reel_ocr_text.save(update_fields=['text'])
+    #　生成CorrectSeg
+    ocr_text = OCRCompare.preprocess_ocr_text(reel_ocr_text.text)
+    base_reel_lst, sutra_to_body = get_correct_base_reel_lst(reel.sutra.lqsutra, reel.reel_no)
+    correctsegs_lst = []
+    for base_reel in base_reel_lst:
+        base_reel_correct_text = ReelCorrectText.objects.filter(reel=base_reel).order_by('-id').first()
+        if not base_reel_correct_text:
+            print('no base text.')
+            return None
+        base_text_lst = [base_reel_correct_text.head]
+        base_text_lst.append(sutra_to_body[base_reel.sutra_id])
+        base_text_lst.append(base_reel_correct_text.tail)
+        base_text = OCRCompare.get_base_text(base_text_lst, ocr_text)
+        correctsegs = OCRCompare.generate_correct_diff(base_text, ocr_text)
+        correctsegs_lst.append(correctsegs)
+    Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT).update(status=Task.STATUS_NOT_READY)
+    # 处理文字校对审定任务
+    for verify_task in Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT_VERIFY):
+        verify_task.status = Task.STATUS_NOT_READY
+        verify_task.picker = None
+        verify_task.picked_at = None
+        verify_task.finished_at = None
+        verify_task.result = ''
+        verify_task.save(
+            update_fields=['status', 'picker', 'picked_at', 'finished_at', 'result'])
+        CorrectSeg.objects.filter(task=verify_task).delete()
+    # 处理文字校对任务
+    tasks = list(Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT))
+    for task in tasks:
+        task_no = task.task_no
+        index = (task_no - 1) % len(correctsegs_lst)
+        correctsegs_old = list(task.correctseg_set.order_by('id'))
+        correctsegs = correctsegs_lst[index]
+        for correctseg in correctsegs:
+            if correctseg.tag == CorrectSeg.TAG_DIFF:
+                correctseg.selected_text = None
+        # 将已做的结果复制到新生成的CorrectSeg中
+        i_old = 0
+        i = 0
+        length_old = len(correctsegs_old)
+        length = len(correctsegs)
+        pos_old = 0
+        pos = 0
+        while i_old < length_old and i < length:
+            correctseg_old = correctsegs_old[i_old]
+            correctseg = correctsegs[i]
+            if pos_old == pos:
+                if correctseg_old.tag == CorrectSeg.TAG_DIFF:
+                    if correctseg_old.text1 == correctseg.text1:
+                        correctseg.selected_text = correctseg_old.selected_text
+                elif correctseg_old.tag == CorrectSeg.TAG_EQUAL:
+                    if correctseg_old.text2 != correctseg_old.selected_text:
+                        correctseg.selected_text = correctseg_old.selected_text
+                pos_old = new_base_pos(pos_old, correctseg_old)
+                pos = new_base_pos(pos, correctseg)
+                i_old += 1
+                i += 1
+            elif pos_old < pos:
+                pos_old = new_base_pos(pos_old, correctseg_old)
+                i_old += 1
+            else:
+                pos = new_base_pos(pos, correctseg)
+                i += 1
+        CorrectSeg.objects.filter(task=task).delete()
+        for correctseg in correctsegs:
+            correctseg.task = task
+            correctseg.id = None
+        CorrectSeg.objects.bulk_create(correctsegs)
+    Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT, picker=None).update(status=Task.STATUS_READY)
+    Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT).exclude(picker=None).update(status=Task.STATUS_PROCESSING)
+    print('regenerate_correctseg done: %s' % reel)
+
 def judge_submit(task):
     '''
     校勘判取提交结果
@@ -819,3 +940,13 @@ def create_tasks_for_reels_async(reels_json,
                              correct_times=2, correct_verify_times=0,
                              mark_times=0, mark_verify_times=0):
     create_tasks_for_reels(reels_json, correct_times, correct_verify_times, mark_times, mark_verify_times)
+
+@background(schedule=0)
+def regenerate_correctseg_async(reel_id_lst_json):
+    reel_id_lst = json.loads(reel_id_lst_json)
+    for reel_id in reel_id_lst:
+        try:
+            reel = Reel.objects.get(id=reel_id)
+            regenerate_correctseg(reel)
+        except:
+            pass

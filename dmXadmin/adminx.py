@@ -10,7 +10,7 @@ from tdata.models import *
 from tasks.models import Task, CorrectFeedback, JudgeFeedback, LQPunctFeedback
 from rect.models import *
 from jwt_auth.models import Staff
-from tasks.task_controller import correct_update_async
+from tasks.task_controller import correct_update_async, regenerate_correctseg_async
 
 # 龙泉经目 LQSutra
 
@@ -103,11 +103,28 @@ class VolumeAdmin(object):
         return t
     tripitaka_name.short_description = u'藏名'
 
+class RegenerateCorrectSegAction(BaseActionView):
+
+    action_name = "regenerate_correctseg"
+    description = '重新生成文字校对任务的数据'
+    icon = 'fa fa-refresh'
+
+    @filter_hook
+    def do_action(self, queryset):
+        reel_id_lst = []
+        for reel in queryset:
+            reel_id_lst.append(reel.id)
+        reel_id_lst_json = json.dumps(reel_id_lst)
+        regenerate_correctseg_async(reel_id_lst_json)
+        if reel_id_lst:
+            self.message_user("成功对%(count)d卷重新生成了文字校对任务的数据。" % {
+                "count": len(reel_id_lst),
+            }, 'success')
 
 class ReelAdmin(object):
     list_display = ['tripitaka_name', 'sutra_name', 'reel_no', 'longquan_Name', 'remark',
                     'start_vol', 'start_vol_page', 'end_vol', 'end_vol_page',
-                    'image_ready', 'cut_ready', 'column_ready']  # 自定义显示这两个字段
+                    'image_ready', 'cut_ready', 'column_ready', 'ocr_ready', 'correct_ready']  # 自定义显示这两个字段
 
     def tripitaka_name(self, obj):  # 藏名
         t = Tripitaka.objects.get(code=obj.sutra.tripitaka.code)
@@ -125,12 +142,12 @@ class ReelAdmin(object):
     longquan_Name.short_description = u'龙泉经名'
     search_fields = ['sutra__sid', 'sutra__name', 'sutra__tripitaka__name',
                      'reel_no', 'remark']  # 可以搜索的字段
-    list_filter = ['sutra__sid', 'sutra__name']
+    list_filter = ['sutra__sid', 'sutra__name', 'ocr_ready', 'correct_ready']
     ordering = ['id', 'reel_no']  # 按照倒序排列
     fields = ('sutra', 'reel_no', 'remark',
               'start_vol', 'start_vol_page', 'end_vol', 'end_vol_page')
     list_display_links = ('sutra_name')
-
+    actions = [RegenerateCorrectSegAction]
 
 xadmin.site.register(LQSutra, LQSutraAdmin)
 xadmin.site.register(Tripitaka, TripitakaAdmin)

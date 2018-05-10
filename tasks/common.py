@@ -357,11 +357,11 @@ def get_char_region_cord(char_lst):
                 max_y = y + h
     return min_x, min_y, max_x, max_y
 
-def fetch_cut_file(reel, vol_page):
+def fetch_cut_file(reel, vol_page, force_download=False):
     if reel.reel_no <= 0 or vol_page == 0:
         return ''
     cut_filename = "%s/logs/%s%s.cut" % (settings.BASE_DIR, reel.image_prefix(), vol_page)
-    if os.path.exists( cut_filename ):
+    if not force_download and os.path.exists( cut_filename ):
         with open(cut_filename, 'r') as f:
             data = f.read()
             if data:
@@ -422,13 +422,39 @@ def compute_accurate_cut(reel, process_cut=True):
         # 如果有分栏，最后一位是栏号，需用a/b；无分栏，为空
         page_code = '%s_%s_%s%s' % (sid[0:2], reel.path_str(), vol_page, '') # YB_1_1
         if i < correct_page_count and cut_file:
-            try:
-                #print('vol_page: ', vol_page)
-                #print('%s\n----------\n%s\n----------' % (correct_pagetexts[i], pagetexts[i]))
-                char_lst, line_count, column_count, char_count_lst, cut_add_count, cut_wrong_count, cut_confirm_count = \
-                get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
+            ## 新版本切分直接使用OCR切分结果，不计算
+            # try:
+            #     #print('vol_page: ', vol_page)
+            #     #print('%s\n----------\n%s\n----------' % (correct_pagetexts[i], pagetexts[i]))
+            #     char_lst, line_count, column_count, char_count_lst, cut_add_count, cut_wrong_count, cut_confirm_count = \
+            #     get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
+            #     min_x, min_y, max_x, max_y = get_char_region_cord(char_lst)
+            #     cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
+            #     cut_info = {
+            #         'page_code': page_code,
+            #         'min_x': min_x,
+            #         'min_y': min_y,
+            #         'max_x': max_x,
+            #         'max_y': max_y,
+            #         'char_data': char_lst,
+            #     }
+            #     cut_info_json = json.dumps(cut_info, indent=None)
+            #     page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
+            #     text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
+            #     cut_add_count=cut_add_count, cut_wrong_count=cut_wrong_count, cut_confirm_count=cut_confirm_count,
+            #     cut_verify_count=cut_verify_count,
+            #     page_code = page_code)
+            # except:
+            #     print('get_accurate_cut failed: %s\n' % pid, traceback.print_exc())
+            cut_info_json = cut_file
+            char_count_lst = []
+            line_count = 0
+            column_count = 0
+            if cut_file:
+                cut_info = json.loads(cut_file)
+                cut_info_json = cut_file
+                char_lst = cut_info['char_data']
                 min_x, min_y, max_x, max_y = get_char_region_cord(char_lst)
-                cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
                 cut_info = {
                     'page_code': page_code,
                     'min_x': min_x,
@@ -437,31 +463,16 @@ def compute_accurate_cut(reel, process_cut=True):
                     'max_y': max_y,
                     'char_data': char_lst,
                 }
+            else:
+                cut_info = {
+                    'page_code': page_code,
+                    'char_data': [],
+                }
                 cut_info_json = json.dumps(cut_info, indent=None)
-                page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
-                text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
-                cut_add_count=cut_add_count, cut_wrong_count=cut_wrong_count, cut_confirm_count=cut_confirm_count,
-                cut_verify_count=cut_verify_count,
-                page_code = page_code)
-            except:
-                print('get_accurate_cut failed: %s\n' % pid, traceback.print_exc())
-                cut_info_json = cut_file
-                char_count_lst = []
-                line_count = 0
-                column_count = 0
-                if cut_file:
-                    cut_info = json.loads(cut_file)
-                    cut_info_json = cut_file
-                else:
-                    cut_info = {
-                        'page_code': page_code,
-                        'char_data': [],
-                    }
-                    cut_info_json = json.dumps(cut_info, indent=None)
-                char_lst = cut_info['char_data']
-                page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
-                text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
-                page_code = page_code)
+                char_lst = []
+            page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
+            text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
+            page_code=page_code)
         else:
             char_lst = []
             cut_info = {
@@ -568,10 +579,10 @@ def extract_line_separators(text):
             pos += 1
     return separators
 
-def get_reel_text(reel):
+def get_reel_text(reel, force_download=False):
     pages = []
     for vol_page in range(reel.start_vol_page, reel.end_vol_page+1):
-        data = fetch_cut_file(reel, vol_page)
+        data = fetch_cut_file(reel, vol_page, force_download)
         if not data:
             pages.append( 'p\n' )
             continue

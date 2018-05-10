@@ -17,8 +17,8 @@ from jkapi.views.punct import PunctTaskDetail
 from jkapi.views.lqtripitaka import LQSutraViewSet, LQReelTextDetail
 from jkapi.views.tripitaka import SutraViewSet,SutraText,TripitakaViewSet
 from jkapi.views.punct_feedback import LQPunctFeedbackList, LQPunctFeedbackDetail, LQPunctFeedbackTask
-+from jkapi.views.volumn import VolumeViewSet
-+from jkapi.views.judge_feedback import JudgeFeedbackList, JudgeFeedbackDetail, JudgeFeedbackTask
+from jkapi.views.volumn import VolumeViewSet
+from jkapi.views.judge_feedback import JudgeFeedbackList, JudgeFeedbackDetail, JudgeFeedbackTask
 
 router = routers.DefaultRouter()
 router.register(r'pagerect', PageRectViewSet)

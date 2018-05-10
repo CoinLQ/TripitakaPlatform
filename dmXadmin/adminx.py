@@ -1,10 +1,11 @@
 import xadmin
 from xadmin import views
-from xadmin.views import BaseAdminPlugin
-from xadmin.views import ListAdminView
+from xadmin.sites import site
+from xadmin.views import BaseAdminPlugin, ListAdminView
 from xadmin.plugins.actions import BaseActionView
 from xadmin.views.base import filter_hook
 from django.template.response import TemplateResponse
+from django.template import loader
 
 from tdata.models import *
 from tasks.models import Task, CorrectFeedback, JudgeFeedback, LQPunctFeedback
@@ -257,22 +258,20 @@ class UpdateTaskResultAction(BaseActionView):
                 "count": len(task_lst),
             }, 'success')
 
+class GeneTaskPlugin(BaseAdminPlugin):
+    gene_task = False
+    # Block Views
+    def block_top_toolbar(self, context, nodes):
+        if self.gene_task:
+            context.update({
+                "title": '生成任务',
+            })
+            nodes.append(loader.render_to_string('tasks/gene_button.html',
+                                                 {
+                                                     "title": '生成任务',
+                                                 }))
 
-class GenerateTaskAction(BaseActionView):
-
-    action_name = "generate_task"
-    description = '发布任务'
-    icon = 'fa fa-refresh'
-
-    @filter_hook
-    def do_action(self, queryset):
-        context = self.get_context()
-        context.update({
-            "title": '生成任务',
-        })
-        #return TemplateResponse(self.request, 'xadmin/views/form.html', context)
-        return TemplateResponse(self.request, 'tasks/gene_task.html', context)
-
+site.register_plugin(GeneTaskPlugin, ListAdminView)
 
 @xadmin.sites.register(Task)
 class TaskAdmin(object):
@@ -297,9 +296,10 @@ class TaskAdmin(object):
                      'reel__sutra__name', 'reel__reel_no', 'lqreel__lqsutra__name']
     fields = ['status', 'result', 'picked_at', 'picker', 'priority']
     remove_permissions = ['add']
+    gene_task = True
     actions = [PauseSelectedTasksAction, ContinueSelectedTasksAction, ReclaimSelectedTasksAction,
                SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,
-               UpdateTaskResultAction, GenerateTaskAction]
+               UpdateTaskResultAction]
 
 @xadmin.sites.register(JudgeFeedback)
 class JudgeFeedbackAdmin:

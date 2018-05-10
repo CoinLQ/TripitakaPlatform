@@ -30,5 +30,17 @@ class ClassifyDetailView(CommAdminView):
             'viewrects/cp_details.html'
             ], context)
 
+class GeneTaskView(CommAdminView):
+
+    @csrf_protect_m
+    def get(self, request, *args, **kwargs):
+        # 这里的参数和页面，根据API再做调整
+        context = self.get_context()
+        return TemplateResponse(self.request, [
+            'tasks/gene_task.html'
+            ], context)
+
+site.register_view(r'^tasks/task/gene_task/$', GeneTaskView, name='gene_task')
 site.register_view(r'^rect/schedule/detail2/$',CCDetailView, name='cc_detail')
 site.register_view(r'^rect/charclassifyplan/detail2/$',ClassifyDetailView, name='cp_detail')
+

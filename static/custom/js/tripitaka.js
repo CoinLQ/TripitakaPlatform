@@ -163,10 +163,11 @@ Vue.component('diffseg-box', {
     template: `
     <div :class="currentKls" @click.stop.prevent="click">
         <div>
-        <span v-if="diffsegresult.selected_text == null" ><font style="background:white;color:red;font-size:20px;">{{ base_text }}</font></span>
-        <span v-else ><font style="background:white;color:green;font-size:20px;">{{ base_text }}</font></span>
-        <span><a href="#" @click.stop.prevent="showImage(diffsegresult)" style="text-decoration:underline;">查看列图</a></span>
+            <span v-if="diffsegresult.selected_text == null" ><font style="background:white;color:red;font-size:20px;">{{ base_text }}</font></span>
+            <span v-else ><font style="background:white;color:green;font-size:20px;">{{ base_text }}</font></span>
+            <span><a href="#" @click.stop.prevent="showImage(diffsegresult)" style="text-decoration:underline;">查看列图</a></span>
         </div>
+
         <span v-for="(diffsegtexts, text, index) in diffsegresult.text_to_diffsegtexts">
             <span v-for="(diffsegtext, idx) in diffsegtexts">
                 <span v-if="idx != 0">/</span><a href="#" @click="openPageDialog(diffsegtext)" style="text-decoration:underline;">{{ diffsegtext.tripitaka.shortname }}</a>
@@ -176,26 +177,32 @@ Vue.component('diffseg-box', {
             <span v-if="index < (diffsegresult.text_count - 1)">；</span>
             <span v-else>。</span>
         </span>
+
         <div v-if="sharedata.task_typ != 3" v-for="(judge_result, index) in diffsegresult.judge_results">
             <div>
                 <span>判取{{ index + 1 }}：{{ getResult(judge_result) }}</span>
                 <a href="#" v-if="judge_result.typ == 2" @click.stop.prevent="showSplit(judge_result)">显示拆分方案</a>
             </div>
         </div>
-        <div style="line-height:50px!important;"></div>
+
+        <div style="line-height:50px!important;">
+        </div>
+
         <div v-if="sharedata.judge_verify_task_id != 0">
             <div>
                 <sstyle="line-height:50px!important;"pan>判取审定：{{ getResult(diffsegresult.judge_verify_result) }}</span>
                 <a href="#" v-if="diffsegresult.judge_verify_result.typ == 2" @click.stop.prevent="showSplit(diffsegresult.judge_verify_result)">显示拆分方案</a>
             </div>
         </div>
+
         <div>
             <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>
             <a href="#" class="diffseg-btn" @click.stop.prevent="doMerge(segindex)" :disabled="diffsegresult.typ == 2">合并</a>
             <a href="#" class="diffseg-btn" v-if="diffsegresult.merged_diffsegresults.length == 0" @click.stop.prevent="doSplit(segindex)">拆分</a>
         </div>
+
         <div>
-        <span v-if="diffsegresult.selected_text != null" style="background:#eee;">处理结果：{{ getResult(diffsegresult, (sharedata.task_typ != 12)) }}</span>
+            <span v-if="diffsegresult.selected_text != null" style="background:#eee;">处理结果：{{ getResult(diffsegresult, (sharedata.task_typ != 12)) }}</span>
         </div>
     </div>`,
     computed: {
@@ -408,7 +415,6 @@ Vue.component('sutra-unit', {
                 }
                 
             }
-            console.log(this.data.diffseg_id+s)
             return s;
         }
     },
@@ -438,15 +444,6 @@ Vue.component('sutra-unit', {
                 let idx = _.findIndex(this.sharedata.diffseg_pos_lst, function(v) {return v.diffseg_id == diffseg_id}.bind(this))
                 this.$emit('diffpage', parseInt(idx/5)+1)
             }
-        },
-        noNumbers: function(e)
-        {
-            var keynum;
-            var keychar;
-
-            keynum = window.event ? e.keyCode : e.which;
-            keychar = String.fromCharCode(keynum);
-            alert(keynum+':'+keychar);
         },
         mounted() {
             document.body.onkeydown = this.keyDown;
@@ -510,18 +507,6 @@ Vue.component('judge-dialog', {
                 this.doubt_comment = this.sharedata.diffsegresults[this.sharedata.segindex].doubt_comment;
             }
         },
-        // reloaddiffseg: function(diffseg_id) {
-        //     try {
-        //       console.log('ss'+diffseg_id+this.sharedata.result_marked_list[diffseg].selected_text);
-        //         this.sharedata.diffseg_id = diffseg_id;
-        //         this.sharedata.image_diffseg_id = diffseg_id;
-        //         let idx = _.findIndex(this.sharedata.diffseg_pos_lst, function(v) {return v.diffseg_id == diffseg_id}.bind(this))
-        //         this.$emit('diffpage', parseInt(idx/5)+1)
-             
-        //     } catch(err) {
-        //       console.log('reloaddiffseg: ', err)
-        //     }
-        // },
         handleOK: function() {
             var vm = this;
             var url = '/api/judge/' + this.sharedata.task_id + '/diffsegresults/' + this.diffsegresult_id + '/';
@@ -974,7 +959,6 @@ Vue.component('column-image', {
             image.onload = function () {
                 var width = 40;
                 var height = width / image.width * image.height;
-                // console.log(image.width, image.height, width, height)
                 canvas.width = width;
                 canvas.height = height;
                 context.clearRect(0, 0, width, height);
@@ -1123,7 +1107,6 @@ Vue.component('judge-page-dialog', {
             }
         },
         setImg: function(img_url, data, start_line_no, start_char_no, end_line_no, end_char_no) {
-            //console.log('setImg: ', img_url)
             var canvas = document.getElementById("page-canvas");
             var context = canvas.getContext("2d");
             var image = new Image();
@@ -1146,7 +1129,6 @@ Vue.component('judge-page-dialog', {
                 }
                 canvas.width = canvas.width;
                 canvas.height = canvas.width / sw * sh;
-                // console.log(canvas.width, canvas.height)
                 context.clearRect(0, 0, canvas.width, canvas.height);
                 context.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
                 var xratio = canvas.width / sw;

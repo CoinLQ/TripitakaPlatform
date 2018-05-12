@@ -69,6 +69,7 @@
                     
                         <el-button plain @click="openDoubtForm" round>存疑</el-button>
                         <el-button plain :disabled="premitSubmit" @click="finishTask" round>完成</el-button>
+                        <el-button plain @click="returnTask" round>退回任务</el-button>
                       
                         <span class="help-icon"><i class="el-icon-question"></i></span>
                       </div>
@@ -802,6 +803,18 @@
         .then(function(response) {
           vm.sharedata.status = response.data.status;
           alert('提交成功！');
+        })
+        .catch(function (error) {
+          vm.error = '提交出错！';
+        });
+      },
+      returnTask: function() {
+        var vm = this;
+        axios.post('/api/correct/' + this.sharedata.task_id + '/return/')
+        .then(function(response) {
+          vm.sharedata.status = response.data.status;
+          alert('退回任务成功！');
+          window.history.back();
         })
         .catch(function (error) {
           vm.error = '提交出错！';

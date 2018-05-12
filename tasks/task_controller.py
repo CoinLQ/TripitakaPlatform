@@ -18,6 +18,7 @@ create_new_data_for_judge_tasks
 import json, re, logging, traceback
 from operator import attrgetter, itemgetter
 from background_task import background
+from datetime import timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -950,3 +951,13 @@ def regenerate_correctseg_async(reel_id_lst_json):
             regenerate_correctseg(reel)
         except:
             pass
+
+@background(schedule=timedelta(days=7))
+def revoke_overdue_task_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    if task.status == Task.STATUS_PROCESSING:
+        print('task %s is overdue, to be revoked.' % task_id)
+        task.picker = None
+        task.picked_at = None
+        task.status = Task.STATUS_READY
+        task.save(update_fields=['picker', 'picked_at', 'status'])

@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from django.contrib.contenttypes.models import ContentType
 from tasks.serializers import TaskSerializer
 from tasks.models import Task, FeedbackBase, JudgeFeedback, LQPunctFeedback
+from tasks.task_controller import revoke_overdue_task_async
 from ccapi.utils.task import redis_lock
 from django.utils import timezone
 TASK_MODELS = ('correct', 'verify_correct', 'judge', 'verify_judge', 'punct', 'verify_punct', 'lqpunct',
@@ -141,6 +142,7 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
                 picker=request.user,
                 picked_at=timezone.now(),
                 status=Task.STATUS_PROCESSING)
+            revoke_overdue_task_async(pk)
         elif self.model_name == 'judgefeedback':
             count = JudgeFeedback.objects.filter(pk=pk, processor=None)\
             .update(processor=request.user, processed_at=timezone.now())

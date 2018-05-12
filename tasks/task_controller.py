@@ -28,10 +28,10 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_
     if reel.sutra.sid.startswith('CB') or reel.sutra.sid.startswith('GL'): # 不对CBETA, GL生成任务
         return
     # Correct Task
-    print('create_correct_tasks: ', reel)
+    print('create_correct_tasks: ', reel.sutra.sid, reel.reel_no)
     reel_ocr_texts = list(ReelOCRText.objects.filter(reel=reel))
     if len(reel_ocr_texts) == 0:
-        print('no ocr text for reel: ', reel)
+        print('no ocr text for reel: ', reel.sutra.sid, reel.reel_no)
         return None
     reel_ocr_text = reel_ocr_texts[0]
     ocr_text = OCRCompare.preprocess_ocr_text(reel_ocr_text.text)
@@ -238,7 +238,7 @@ mark_times = 0, mark_verify_times = 0):
             base_reel = base_reel_lst[0]
             create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_times)
         except:
-            print('create judge task failed: ', lqsutra, reel_no)
+            print('create judge task failed: ', lqsutra.sid, reel_no)
         if lqreel:
             create_lqpunct_tasks(batchtask, lqreel, lqpunct_times, lqpunct_verify_times)
 
@@ -589,7 +589,7 @@ def regenerate_correctseg(reel):
     try:
         reel_ocr_text = ReelOCRText.objects.get(reel_id = reel.id)
     except:
-        print('no ocr text for reel: ', reel)
+        print('no ocr text for reel: ', reel.sutra.sid, reel.reel_no)
         return
     text = get_reel_text(reel) #, force_download=True) # test
     if not text:
@@ -666,7 +666,7 @@ def regenerate_correctseg(reel):
         CorrectSeg.objects.bulk_create(correctsegs)
     Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT, picker=None).update(status=Task.STATUS_READY)
     Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT).exclude(picker=None).update(status=Task.STATUS_PROCESSING)
-    print('regenerate_correctseg done: %s' % reel)
+    print('regenerate_correctseg done:', reel.sutra.sid, reel.reel_no)
 
 def judge_submit(task):
     '''

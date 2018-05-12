@@ -265,6 +265,8 @@ class OCRCompare(object):
                     page_no, line_no, char_no = cls.count_page_line(result, page_no, line_no, char_no)
                 else:
                     if tag == 'equal':
+                        correctseg.text1 = result
+                        correctseg.text2 = None
                         correctseg.selected_text = result
                     elif tag == 'replace':
                         consumed_text_len += result_len

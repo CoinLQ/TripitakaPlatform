@@ -92,7 +92,7 @@ class Sutra(models.Model):
         return '%s:%s' % (self.tripitaka, self.name)
 
 class LQReel(models.Model):
-    lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', on_delete=models.CASCADE)
+    lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', on_delete=models.CASCADE, editable=False)
     reel_no = models.SmallIntegerField('卷序号')
     remark = models.TextField('备注', blank=True, default='')
     text_ready = models.BooleanField(verbose_name='是否有龙泉藏经经文', default=False)
@@ -112,7 +112,7 @@ class LQReel(models.Model):
             self.save(update_fields=['text_ready'])
 
 class Reel(models.Model):
-    sutra = models.ForeignKey(Sutra, verbose_name='实体藏经', on_delete=models.CASCADE)
+    sutra = models.ForeignKey(Sutra, verbose_name='实体藏经', on_delete=models.CASCADE, editable=False)
     reel_no = models.SmallIntegerField('卷序号')
     start_vol = models.SmallIntegerField('起始册')
     start_vol_page = models.SmallIntegerField('起始册的页序号')
@@ -182,7 +182,7 @@ class Reel(models.Model):
         return False
 
 class ReelOCRText(models.Model):
-    reel = models.OneToOneField(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, primary_key=True)
+    reel = models.OneToOneField(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, primary_key=True, editable=False)
     text = SutraTextField('经文', blank=True, default='') #按实际行加了换行符，换页标记为p\n
 
     class Meta:
@@ -221,7 +221,7 @@ class PageStatus:
 
 class Page(models.Model):
     pid = models.CharField(verbose_name='实体藏经页级总编码', max_length=21, blank=False, primary_key=True)
-    reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE)
+    reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False)
     reel_page_no = models.SmallIntegerField('卷中页序号')
     page_no = models.SmallIntegerField('页序号')
     bar_no = models.CharField('栏序号', max_length=1, default='0') # TODO: confirm
@@ -316,7 +316,7 @@ class Page(models.Model):
 
 class Column(models.Model):
     id = models.CharField('列图ID', max_length=32, primary_key=True)
-    page = models.ForeignKey(Page, verbose_name='实体藏经页', on_delete=models.CASCADE)
+    page = models.ForeignKey(Page, verbose_name='实体藏经页', on_delete=models.CASCADE, editable=False)
     x = models.SmallIntegerField('X坐标', default=0)
     y = models.SmallIntegerField('Y坐标', default=0)
     x1 = models.SmallIntegerField('X1坐标', default=0)

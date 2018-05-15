@@ -22,7 +22,6 @@ class Command(BaseCommand):
         for sid in options['LQSutra_sid']:
             lqsutra = LQSutra.objects.get(sid=sid) #大方廣佛華嚴經60卷
             tcode_lst = ['PL', 'SX', 'YB', 'QL', 'ZH', 'QS', 'ZC', 'GL', 'LC']
-            tcode_lst = ['YB', 'QL', 'ZH', 'QS', 'GL', 'SX', 'ZC', 'PL']
             for tcode in tcode_lst:
                 tripitaka = Tripitaka.objects.get(code=tcode)
                 print(tripitaka)

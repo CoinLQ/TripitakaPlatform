@@ -279,7 +279,7 @@ mark_times = 0, mark_verify_times = 0):
         if sutra.tripitaka.cut_ready:
             pass
         else:
-            print("切分未准备好！")
+            print("tripitaka.cut_ready is False.")
         base_sutra_lst = []
         sutra_to_body = {}
         # 先得到两个base_reel，CBETA和高丽藏
@@ -411,12 +411,12 @@ def publish_correct_result(task):
     lqsutra = sutra.lqsutra
     batchtask = task.batchtask
     if not lqsutra:
-        print('没有关联的龙泉藏经')
-        logging.error('没有关联的龙泉藏经')
+        print('no lqsutra')
+        logging.error('no lqsutra')
         return None
     judge_tasks = list(Task.objects.filter(batchtask=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE))
     if len(judge_tasks) == 0:
-        print('没有校勘判取任务')
+        print('no judge task')
         return
     base_sutra = judge_tasks[0].base_reel.sutra
     judge_task_not_ready = (judge_tasks[0].status == Task.STATUS_NOT_READY)
@@ -582,7 +582,7 @@ def regenerate_correctseg(reel):
     '''
     由于卷中某些页有增加或更新等原因，需要重新生成此卷的文字校对任务的CorrectSeg数据
     '''
-    print('regenerate_correctseg: %s' % reel)
+    print('regenerate_correctseg: ', reel.sutra.sid, reel.reel_no)
     if reel.sutra.sid.startswith('CB') or reel.sutra.sid.startswith('GL'): # 不对CBETA, GL生成任务
         return
     # 更新ReelOCRText

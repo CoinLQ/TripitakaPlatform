@@ -9,14 +9,11 @@ def do_mark_task(request, task_id):
     if task.typ == Task.TYPE_MARK:
         mark_task_ids = []
     elif task.typ in [Task.TYPE_MARK_VERIFY]:
-        mark_task_ids = [ mark_task.id for mark_task in \
-        Task.objects.filter(batchtask_id=task.batchtask_id, \
-        lqreel_id=task.lqreel.id, typ=Task.TYPE_MARK).order_by('task_no') ]
+        mark_task_ids = []
     else:
         return redirect('/')
     context = {
         'task': task,
-        'mark_task_ids': mark_task_ids,
         }
     return render(request, 'tasks/do_mark_task.html', context)
 

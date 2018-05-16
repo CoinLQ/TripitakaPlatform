@@ -143,3 +143,8 @@ class LQPunctFeedbackSerializer(serializers.ModelSerializer):
             'end': {'required': 'True'},
             'fb_punctuation': {'required': 'True'},
         }
+
+class MarkUnitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MarkUnit
+        fields = '__all__'

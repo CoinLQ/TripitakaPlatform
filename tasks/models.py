@@ -413,7 +413,7 @@ class DiffSegResult(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     diffseg = models.ForeignKey(DiffSeg, on_delete=models.CASCADE, related_name='diffsegresults')
     typ = models.SmallIntegerField('结果类型', choices=TYPE_CHOICES, default=1, editable=True)
-    selected_text = models.TextField('判取文本', blank=True, null=True, default='')
+    selected_text = models.TextField('判取文本', blank=True, null=True)
     merged_diffsegresults = models.ManyToManyField("self", blank=True)
     split_info = models.TextField('拆分信息', blank=True, null=True, default='{}')
     selected = models.SmallIntegerField('是否判取', blank=True, default=0) #　0, 1 -- 未判取，已判取
@@ -484,13 +484,11 @@ class Mark(models.Model):
 
 class MarkUnit(models.Model):
     TYPE_MARK = 1
-    TYPE_MARK_VERIFY = 2
-    TYPE_MARK_DIFF = 3
-    TYPE_MARK_FEEDBACK = 4
+    TYPE_MARK_DOUBT = 2
+    TYPE_MARK_FEEDBACK = 3
     TYPE_CHOICES = (
         (TYPE_MARK, '标注'),
-        (TYPE_MARK_VERIFY, '确认标注'),
-        (TYPE_MARK_DIFF, '标注差异'),
+        (TYPE_MARK_DOUBT, '存疑标注'),
         (TYPE_MARK_FEEDBACK, '标注反馈'),
     )
     mark = models.ForeignKey(Mark, on_delete=models.CASCADE)

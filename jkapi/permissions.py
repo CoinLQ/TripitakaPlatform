@@ -79,3 +79,13 @@ class CanSubmitFeedbackOrReadOnly(permissions.BasePermission):
             request.data['fb_user'] = request.user.id
             return True
         return False
+
+class CanViewMyFeedback(permissions.BasePermission):
+    """
+    将当前用户保存到view.user
+    """
+    def has_permission(self, request, view):
+        if request.user and request.user.is_authenticated:
+            view.user = request.user
+            return True
+        return False

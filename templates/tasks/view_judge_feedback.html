@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="judge-fb-process">
+  <div class="container">
+    <div class="row">
+      <div class="judge-base-text" id="judge-base-text">
+        <span v-for="e in merged_text">
+            <span is="judge-fb-sutra-unit" :data="e" :sharedata="sharedata"></span>
+        </span>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+        </div>
+        <div class="col-md-6">
+          <div class="pull-right">
+            <el-switch
+                style="display: block;margin: 3px;"
+                v-model="show_punct"
+                active-color="lightslategrey"
+                inactive-color="#ccc"
+                active-text="显示标点"
+                inactive-text="">
+            </el-switch>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <judge-fb-show :textdiffsegtexts="text_to_diffsegtexts" :judgefeedback="judgefeedback"></judge-fb-show>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block foot_script %}
+<script src="{{ static('custom/js/lqtripitaka.js') }}"></script>
+<script>
+  var app = new Vue({
+    el: '#judge-fb-process',
+    data: {
+      judgefeedback_id: {{ judgefeedback_id }},
+      judgefeedback: null,
+      text: '',
+      punct_lst: [],
+      orig_separators: [],
+      diffsegresult_pos_lst: [],
+      task_id: null,
+      diffsegresult: null,
+      merged_text: [],
+      text_to_diffsegtexts: {},
+      show_punct: true,
+      submit_title: '',
+      sharedata: {
+      }
+    },
+    created: function() {
+      this.loadSutraText();
+    },
+    watch: {
+      show_punct: function(newValue, oldValue) {
+        if (this.text != '') {
+          this.mergeTextPunct();
+        }
+      }
+    },
+    methods: {
+      loadSutraText: function() {
+        var url = '/api/judgefeedback/' + this.judgefeedback_id + '/';
+        var vm = this;
+        axios.get(url).then(function(response) {
+          vm.judgefeedback = response.data;
+          vm.getSubmitTitle();
+        });
+        url = url + 'process/';
+        axios.get(url).then(function(response) {
+          vm.task_id = response.data.task_id;
+          vm.text = response.data.text;
+          vm.punct_lst = response.data.punct_lst;
+          vm.orig_separators = response.data.orig_separators;
+          vm.diffsegresult_pos_lst = response.data.diffsegresult_pos_lst;
+          vm.diffsegresult = response.data.diffsegresult;
+          vm.mergeTextPunct();
+          vm.processDiffsegresult();
+        });
+      },
+      mergeTextPunct: function() {
+        var punct_lst = [];
+        if (this.show_punct) {
+          punct_lst = this.punct_lst;
+        } else {
+          punct_lst = this.orig_separators;
+        }
+        this.merged_text = judge_merge_text_punct(this.text,
+        this.diffsegresult_pos_lst, 'diffsegresult_id', punct_lst);
+      },
+      processDiffsegresult: function() {
+        this.text_to_diffsegtexts = {};
+        var text_to_diffsegtexts = this.text_to_diffsegtexts;
+        var diffsegtexts = this.diffsegresult.diffseg.diffsegtexts;
+        var text_count = 0;
+        for (var j = 0; j < diffsegtexts.length; ++j) {
+          var text = diffsegtexts[j].text;
+          if (text == null) {
+            continue;
+          }
+          if (text in text_to_diffsegtexts) {
+            text_to_diffsegtexts[text].push(diffsegtexts[j]);
+          } else {
+            text_to_diffsegtexts[text] = [ diffsegtexts[j] ];
+            text_count++;
+          }
+        }
+      },
+      getSubmitTitle: function() {
+        if (this.judgefeedback.response != 1) {
+          this.submit_title = '已处理';
+        } else {
+          this.submit_title = '';
+        }
+      },
+      submitResponse: function(result) {
+        var url = '/api/judgefeedback/' + this.judgefeedback_id + '/';
+        var vm = this;
+        axios.put(url, {
+          'response': result
+        }).then(function(response) {
+          vm.judgefeedback = response.data;
+          vm.getSubmitTitle();
+          alert('提交成功！')
+        });
+      }
+    }
+  });
+</script>
+{% endblock %}

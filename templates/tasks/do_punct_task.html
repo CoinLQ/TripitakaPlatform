@@ -1,103 +1,118 @@
 {% extends "base.html" %}
 {% block style %}
-<style type="text/css">
-[contenteditable]:focus {
-  outline: 0px solid transparent;
-}
-</style>
+  <style type="text/css">
+    [contenteditable]:focus {
+      outline: 0px solid transparent;
+    }
+  </style>
 {% endblock %}
 {% block content %}
-<div id="punct">
-  <div class="container">
-    <div class="row">
-      <div class="punct-region">
-        <span v-for="punctseg in punctseg_lst">
-          <span is="punct-show-seg" :punctseg="punctseg" :sharedata="sharedata"></span>
-        </span>
-      </div>
-      <div>
-        <input type="checkbox" v-model="sharedata.show_refpunct" id="show_refpunct" /><label for="show_refpunct">显示参考标点</label>
+  <div id="punct" class="punct">
+
+    <div class="punct-in">
+      <div class="punct-main" id="punct-main">
+      <span v-for="punctseg in punctseg_lst">
+        <span is="punct-show-seg" :punctseg="punctseg" :sharedata="sharedata"></span></br>
+      </span>
       </div>
     </div>
-    <div class="row">
-      <div class="text-center">
-        <button class="btn btn-primary" v-if="submit_title.length != 0" :disabled="sharedata.status == 4" :title="submit_title" @click.stop.prevent="submitPunctTask">暂存</button>
-        <button class="btn btn-primary" v-if="submit_title.length != 0" :disabled="sharedata.status == 4" :title="submit_title" @click.stop.prevent="finishPunctTask">完成</button>
+
+    <div class="tools">
+      <div style="display:none">
+        <input type="checkbox" v-model="sharedata.show_refpunct" id="show_refpunct"/>
+      </div>
+      <div class="refer">
+        <label for="show_refpunct">
+          <img v-if="sharedata.show_refpunct" src="{{ static('custom/imgs/icon12.png') }}" alt="">
+          <img v-else src="{{ static('custom/imgs/icon14.png') }}" alt="">
+          显示参考标点
+        </label>
+      </div>
+      <div class="btns">
+        <button class="store" v-if="submit_title.length != 0" :disabled="sharedata.status == 4" :title="submit_title"
+                @click.stop.prevent="submitPunctTask">暂存
+        </button>
+        <button v-if="submit_title.length != 0" :disabled="sharedata.status == 4" :title="submit_title"
+                @click.stop.prevent="finishPunctTask">完成
+        </button>
       </div>
     </div>
   </div>
-</div>
 {% endblock %}
 {% block foot_script %}
-<script src="{{ static('custom/js/punct.js') }}"></script>
-<script>
-  var app = new Vue({
-    el: '#punct',
-    data: {
-      reeltext: '',
-      puncts: [],
-      punct_result: [],
-      punctseg_lst: [],
-      submit_title: '',
-      sharedata: {task_id: {{ task_id }}, status: 4, show_refpunct: true  }
-    },
-    created: function() {
-      var vm = this;
-      axios.get('/api/punct/' + vm.sharedata.task_id + '/')
-      .then(function(response) {
-        vm.sharedata.status = response.data.status;
-        vm.punct_result = response.data.punct_result;
-        vm.punctseg_lst = response.data.punctseg_lst;
-        if (vm.sharedata.status == 4) {
-          vm.submit_title = '已完成';
-        } else {
-          vm.submit_title = '未完成前离开标点任务，请点暂存；已做完，可直接点完成'
-        }
-      });
-    },
-    methods: {
-      merge_punct_lst: function() {
-        var orig_idx = 0;
-        var orig_count = this.punct_result.length;
-        var new_punct_result = [];
-        for (var i = 0; i < this.punctseg_lst.length; ++i) {
-          var punctseg = this.punctseg_lst[i];
-          for (var j = 0; j < punctseg.user_puncts.length; ++j) {
-            var punct_unit = punctseg.user_puncts[j];
-            new_punct_result.push(punct_unit);
+  <script src="{{ static('custom/js/punct.js') }}"></script>
+  <script>
+    var app = new Vue({
+      el: '#punct',
+      data: {
+        reeltext: '',
+        puncts: [],
+        punct_result: [],
+        punctseg_lst: [],
+        submit_title: '',
+        sharedata: {task_id: {{ task_id }}, status: 4, show_refpunct: true}
+      },
+      created: function () {
+        var vm = this;
+        axios.get('/api/punct/' + vm.sharedata.task_id + '/')
+            .then(function (response) {
+              vm.sharedata.status = response.data.status;
+              vm.punct_result = response.data.punct_result;
+              vm.punctseg_lst = response.data.punctseg_lst;
+              if (vm.sharedata.status == 4) {
+                vm.submit_title = '已完成';
+              } else {
+                vm.submit_title = '未完成前离开标点任务，请点暂存；已做完，可直接点完成'
+              }
+            });
+      },
+      methods: {
+        merge_punct_lst: function () {
+          var orig_idx = 0;
+          var orig_count = this.punct_result.length;
+          var new_punct_result = [];
+          for (var i = 0; i < this.punctseg_lst.length; ++i) {
+            var punctseg = this.punctseg_lst[i];
+            for (var j = 0; j < punctseg.user_puncts.length; ++j) {
+              var punct_unit = punctseg.user_puncts[j];
+              new_punct_result.push(punct_unit);
+            }
           }
+          this.punct_result = new_punct_result;
+        },
+        submitPunctTask: function () {
+          var vm = this;
+          this.merge_punct_lst();
+          axios.post('/api/punct/' + this.sharedata.task_id + '/', {
+            'punct_result': this.punct_result
+          })
+              .then(function (response) {
+                alert('提交成功！');
+              })
+              .catch(function (error) {
+                vm.error = '提交出错！';
+              });
+        },
+        finishPunctTask: function () {
+          var vm = this;
+          this.merge_punct_lst();
+          axios.post('/api/punct/' + this.sharedata.task_id + '/', {
+            'punct_result': this.punct_result,
+            'finished': 1
+          })
+              .then(function (response) {
+                vm.sharedata.status = response.data.status;
+                alert('提交成功！');
+              })
+              .catch(function (error) {
+                vm.error = '提交出错！';
+              });
         }
-        this.punct_result = new_punct_result;
-      },
-      submitPunctTask: function() {
-        var vm = this;
-        this.merge_punct_lst();
-        axios.post('/api/punct/' + this.sharedata.task_id + '/', {
-          'punct_result': this.punct_result
-        })
-        .then(function(response) {
-          alert('提交成功！');
-        })
-        .catch(function (error) {
-          vm.error = '提交出错！';
-        });
-      },
-      finishPunctTask: function() {
-        var vm = this;
-        this.merge_punct_lst();
-        axios.post('/api/punct/' + this.sharedata.task_id + '/', {
-          'punct_result': this.punct_result,
-          'finished': 1
-        })
-        .then(function(response) {
-          vm.sharedata.status = response.data.status;
-          alert('提交成功！');
-        })
-        .catch(function (error) {
-          vm.error = '提交出错！';
-        });
       }
-    }
-  });
-</script>
+    });
+
+    $(function () {
+      $("#punct-main").slimScroll({height: '500px'});
+    })
+  </script>
 {% endblock %}

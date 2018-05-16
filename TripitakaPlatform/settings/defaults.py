@@ -296,6 +296,8 @@ CELERY_ENABLE_UTC = True
 
 CELERY_BROKER_USER = os.environ.get('AWS_ACCESS_KEY', '')
 CELERY_BROKER_PASSWORD = os.environ.get('AWS_SECRET_KEY', '')
+API_USERNAME = os.environ.get('DISCOURSE_API_USERNAME','')
+API_KEY = os.environ.get('DISCOURSE_API_KEY','')
 
 CELERY_BROKER_TRANSPORT = 'sqs'
 CELERY_BROKER_TRANSPORT_OPTIONS = {
@@ -325,6 +327,7 @@ CELERY_IMPORTS = (
     )
 
 ## 系统邮箱设置
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.sina.cn'
 EMAIL_PORT = 25
 EMAIL_HOST_USER = '17074810135@sina.cn'

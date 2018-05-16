@@ -86,46 +86,6 @@ class OCRCompare(object):
     '''
 
     @classmethod
-    def insert(cls, result_lst, t):
-        if t:
-            result_lst.append(t)
-
-    @classmethod
-    def split_text_by_linefeed(cls, result_lst, text):
-        segs = text.split('\n')
-        i = 0
-        count = len(segs)
-        while i < count:
-            cls.insert(result_lst, segs[i])
-            if i < count - 1:
-                result_lst.append('\n')
-            i += 1
-
-    @classmethod
-    def split_text_by_b(cls, result_lst, text):
-        segs = text.split('b')
-        i = 0
-        count = len(segs)
-        while i < count:
-            cls.split_text_by_linefeed(result_lst, segs[i])
-            if i < count - 1:
-                result_lst.append('b')
-            i += 1
-
-    @classmethod
-    def split_text(cls, text):
-        result_lst = []
-        segs = text.split('p')
-        i = 0
-        count = len(segs)
-        while i < count:
-            cls.split_text_by_b(result_lst, segs[i])
-            if i < count - 1:
-                result_lst.append('p')
-            i += 1
-        return result_lst
-
-    @classmethod
     def count_page_line(cls, text, page_no, line_no, char_no):
         for ch in text:
             if ch == 'p':
@@ -265,6 +225,8 @@ class OCRCompare(object):
                     page_no, line_no, char_no = cls.count_page_line(result, page_no, line_no, char_no)
                 else:
                     if tag == 'equal':
+                        correctseg.text1 = result
+                        correctseg.text2 = None
                         correctseg.selected_text = result
                     elif tag == 'replace':
                         consumed_text_len += result_len

@@ -20,7 +20,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
         for sid in options['LQSutra_sid']:
-            lqsutra = LQSutra.objects.get(sid=sid) #大方廣佛華嚴經60卷
+            lqsutra = LQSutra.objects.get(sid=sid)
             tcode_lst = ['PL', 'SX', 'YB', 'QL', 'ZH', 'QS', 'ZC', 'GL', 'LC']
             for tcode in tcode_lst:
                 tripitaka = Tripitaka.objects.get(code=tcode)
@@ -34,10 +34,15 @@ class Command(BaseCommand):
                             reel_ocr_text = ReelOCRText.objects.get(reel_id = reel.id)
                         except:
                             reel_ocr_text = None
-                        if not reel_ocr_text:
+                        if reel_ocr_text:
                             print('reel: ', reel)
                             text = get_reel_text(reel)
                             if text:
-                                reel_ocr_text = ReelOCRText(reel=reel, text = text)
-                                reel_ocr_text_lst.append(reel_ocr_text)
-                    ReelOCRText.objects.bulk_create(reel_ocr_text_lst)
+                                reel_ocr_text.text = text
+                                reel_ocr_text.save(update_fields=['text'])
+
+                        # 得到精确的切分数据
+                        try:
+                            compute_accurate_cut(reel)
+                        except Exception:
+                            traceback.print_exc()

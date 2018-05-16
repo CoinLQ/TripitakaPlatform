@@ -112,10 +112,10 @@ class Task(models.Model):
 
     batchtask = models.ForeignKey(BatchTask, on_delete=models.CASCADE, verbose_name='批次号')
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE, related_name='tasks',
-    blank=True, null=True)
-    lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE, blank=True, null=True)
+    blank=True, null=True, editable=False)
+    lqreel = models.ForeignKey(LQReel, on_delete=models.CASCADE, blank=True, null=True, editable=False)
     typ = models.SmallIntegerField('任务类型', choices=TYPE_CHOICES, db_index=True)
-    base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本', blank=True, null=True)
+    base_reel = models.ForeignKey(Reel, on_delete=models.CASCADE, verbose_name='底本', blank=True, null=True, editable=False)
     task_no = models.SmallIntegerField('组合任务序号', choices=TASK_NO_CHOICES, default=0)
     status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=1, db_index=True)
 
@@ -124,10 +124,10 @@ class Task(models.Model):
     cur_focus = models.IntegerField('当前工作的条目', default=0)
 
     # 校勘判取相关
-    reeldiff = models.ForeignKey('ReelDiff', on_delete=models.SET_NULL, blank=True, null=True)
+    reeldiff = models.ForeignKey('ReelDiff', on_delete=models.SET_NULL, blank=True, null=True, editable=False)
     # 标点相关
-    reeltext = models.ForeignKey('ReelCorrectText', related_name='punct_tasks', on_delete=models.SET_NULL, blank=True, null=True)
-    lqtext = models.ForeignKey('LQReelText', related_name='lqpunct_tasks', verbose_name='龙泉藏经卷经文', on_delete=models.SET_NULL, blank=True, null=True)
+    reeltext = models.ForeignKey('ReelCorrectText', related_name='punct_tasks', on_delete=models.SET_NULL, blank=True, null=True, editable=False)
+    lqtext = models.ForeignKey('LQReelText', related_name='lqpunct_tasks', verbose_name='龙泉藏经卷经文', on_delete=models.SET_NULL, blank=True, null=True, editable=False)
 
     result = SutraTextField('结果', blank=True)
     started_at = models.DateTimeField('开始时间', blank=True, null=True)
@@ -242,7 +242,7 @@ class ReelCorrectText(models.Model):
     BODY_END_PATTERN = re.compile('卷第[一二三四五六七八九十百]*$')
     SEPARATORS_PATTERN = re.compile('[pb\n]')
 
-    reel = models.ForeignKey(Reel, related_name='reel_correct_texts' ,verbose_name='实体藏经卷', on_delete=models.CASCADE)
+    reel = models.ForeignKey(Reel, related_name='reel_correct_texts' ,verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False)
     text = SutraTextField('经文', blank=True) # 文字校对或文字校对审定后得到的经文
     head = SutraTextField('经文正文前文本', blank=True, default='')
     body = SutraTextField('经文正文', blank=True, default='')
@@ -307,7 +307,7 @@ class LQReelText(models.Model):
 
 # 校勘判取相关
 class ReelDiff(models.Model):
-    lqsutra = models.ForeignKey(LQSutra, on_delete=models.CASCADE, blank=True, null=True)
+    lqsutra = models.ForeignKey(LQSutra, on_delete=models.CASCADE, blank=True, null=True, editable=False)
     reel_no = models.SmallIntegerField('卷序号')
     base_text = models.ForeignKey(ReelCorrectText, related_name='reeldiffs', verbose_name='基准文本', on_delete=models.CASCADE)
     published_at = models.DateTimeField('发布时间', blank=True, null=True)

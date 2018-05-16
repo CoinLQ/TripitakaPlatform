@@ -69,6 +69,7 @@
                     
                         <el-button plain @click="openDoubtForm" round>存疑</el-button>
                         <el-button plain :disabled="premitSubmit" @click="finishTask" round>完成</el-button>
+                        <el-button plain @click="returnTask" round>退回任务</el-button>
                       
                         <span class="help-icon"><i class="el-icon-question"></i></span>
                       </div>
@@ -85,7 +86,7 @@
    
             
             <div class="spn" v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id">
-              <span v-if="seg.tag == 1" v-html="getSegText(seg)" @click="textSelection(seg, $event)" @keydown="blockthem" :class="{ changed: (seg.text2 != seg.selected_text), current: (current_seg.id == seg.id) }" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @click="textSelection(seg, $event)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null), current: (current_seg.id == seg.id)}" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span class="newline" v-if="seg.tag == 4" contenteditable="true" @keydown="permitNewline" @click="segClick(seg, $event)" @input="segInput(seg, $event)" v-html="getSegText(seg)"></span>
+              <span v-if="seg.tag == 1" v-html="getSegText(seg)" @click="textSelection(seg, $event)" @keydown="blockthem" :class="{ changed: (seg.text1 != seg.selected_text), current: (current_seg.id == seg.id) }" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @click="textSelection(seg, $event)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null), current: (current_seg.id == seg.id)}" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span class="newline" v-if="seg.tag == 4" contenteditable="true" @keydown="permitNewline" @click="segClick(seg, $event)" @input="segInput(seg, $event)" v-html="getSegText(seg)"></span>
             </div>
           </div>
           <el-dialog title="存疑意见" :visible.sync="doubt.formVisible">
@@ -802,6 +803,18 @@
         .then(function(response) {
           vm.sharedata.status = response.data.status;
           alert('提交成功！');
+        })
+        .catch(function (error) {
+          vm.error = '提交出错！';
+        });
+      },
+      returnTask: function() {
+        var vm = this;
+        axios.post('/api/correct/' + this.sharedata.task_id + '/return/')
+        .then(function(response) {
+          vm.sharedata.status = response.data.status;
+          alert('退回任务成功！');
+          window.history.back();
         })
         .catch(function (error) {
           vm.error = '提交出错！';

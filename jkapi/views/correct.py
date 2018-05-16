@@ -126,3 +126,12 @@ class FinishCorrectTask(APIView):
             correct_difficult_submit_async(task_id)
         return Response({'task_id': task_id, 'status': self.task.status})
 
+class ReturnCorrectTask(APIView):
+    permission_classes = (IsTaskPickedByCurrentUser, )
+
+    def post(self, request, task_id, format=None):
+        self.task.picker = None
+        self.task.picked_at = None
+        self.task.status = Task.STATUS_READY
+        self.task.save(update_fields=['picker', 'picked_at', 'status'])
+        return Response({'task_id': task_id, 'status': self.task.status})

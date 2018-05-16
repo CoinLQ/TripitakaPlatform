@@ -156,30 +156,98 @@ ul.diffseg-region {
 }
 .diffseg-tag-notext {
     background: #337ab7;
+    border-color: red;
+    border-width: 3px;
 }
 .diffseg-tag-notext-selected {
     background: darkred;
 }
+.diffseg-tag-notext-selected-judge {
+    background: green;
+    border: 3px solid green;
+    padding: 2px;
+}
+.diffseg-tag-notext-selected-notext {
+    background: red;
+    border: 3px solid red;
+    padding: 2px;
+}
 .diffseg-tag-judged {
     color: green !important;
 }
-.diffseg-tag-white {
-    display: inline-block;
+.diffseg-tag-judged-none {
+    color: green !important;
+    border:3px;
     width: 4px;
+    padding: 2px;
+}
+.diffseg-tag-white {
+    /* display: inline-block; */
+    background: red;
+    width: 4px;
+    padding: 2px;
+}
+.diffseg-tag-white-judged {
+    /* display: inline-block; */
+    background: red;
+    width: 4px;
+    padding: 2px;
+}
+.diffseg-tag-white-notext {
+    /* display: inline-block; */
+    background: red;
+    width: 4px;
+    padding: 2px;
 }
 
 .judge-base-text a {
     color: red;
 }
-.judge-base-text a.diffseg-tag-selected {
+.judge-base-text c {
+    color: black;
+}
+.judge-base-text a.diffseg-tag-selected{
     color: white;
-    background-color: indigo;
+    background-color: red;
+}
+.judge-base-text a.diffseg-tag-selected-judged {
+    color: green;
+    background-color: white;
+    border: 3px solid green;
+}
+.judge-base-text a.diffseg-tag-selected-notext {
+    color: red;
+    background-color: white;
+    border: 3px solid red;
 }
 .diffseg-btn {
-    margin-right: 10px;
+    display: inline-block;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid #337ab7;
+    color: #337ab7;
+    -webkit-appearance: none;
+    text-align: center;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    outline: 0;
+    margin: 10px;
+    -webkit-transition: 0.1s;
+    transition: 0.1s;
+    font-weight: 500;
+    padding: 3px 5px;
+    font-size: 14px;
+    border-radius: 17px;
 }
 .diffseg-image {
     overflow: scroll;
+}
+.diffseg-image-header {
+    overflow: scroll;
+    background: #eee;
+    border-radius: 50%
 }
 .punct-region {
     padding: 10px;
@@ -359,12 +427,13 @@ opacity: 0;
 }
 
 .jk-list {
-    background-color: lightslategrey;
+    background-color: #101010;
     color: white;
     text-align: center;
     font-size: 16px;
     line-height: 1.2;
     padding: 5px 3px;
+    border-radius: 21px;
 }
 
 #show_all {
@@ -442,6 +511,9 @@ span.vprogress {
     padding: 12px 14px;
 }
 
+.el-dialog {
+    border-radius: 13px;
+}
 .sutra-tree {
     height: 600px;
     overflow-y: scroll;
@@ -465,6 +537,11 @@ span.vprogress {
     font-size: 20px;
     height: 800px;
     overflow: scroll;
+}
+
+.disabledtreenode {
+    color: #999;
+    pointer-events: none;
 }
 
 a.lqtripitaka-diffseg {

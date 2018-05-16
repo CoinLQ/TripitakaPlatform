@@ -10,3 +10,4 @@ static/fonts
 *.log
 logs
 rect/test_data
+jwt_auth_middleware.py

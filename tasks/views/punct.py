@@ -8,6 +8,3 @@ def do_punct_task(request, task_id):
         Task.TYPE_LQPUNCT, Task.TYPE_LQPUNCT_VERIFY]:
         return redirect('/')
     return render(request, 'tasks/do_punct_task.html', {'task_id': task_id})
-
-def process_lqpunctfeedback(request, lqpunctfeedback_id):
-    return render(request, 'tasks/punct_feedback.html', {'lqpunctfeedback_id': lqpunctfeedback_id})

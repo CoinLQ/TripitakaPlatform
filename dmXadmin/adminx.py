@@ -150,11 +150,20 @@ class ReelAdmin(object):
     list_display_links = ('sutra_name')
     actions = [RegenerateCorrectSegAction]
 
+class ConfigurationAdmin:
+    def modify(self, instance):
+        return '修改'
+    modify.short_description = '操作'
+    list_display = ['task_timeout', 'modify']
+    list_display_links = ("modify",)
+    remove_permissions = ['add', 'delete']
+
 xadmin.site.register(LQSutra, LQSutraAdmin)
 xadmin.site.register(Tripitaka, TripitakaAdmin)
 xadmin.site.register(Volume, VolumeAdmin)
 xadmin.site.register(Sutra, SutraAdmin)
 xadmin.site.register(Reel, ReelAdmin)
+xadmin.site.register(Configuration, ConfigurationAdmin)
 
 #####################################################################################
 # 校勘任务
@@ -522,7 +531,7 @@ class GlobalSetting(object):
     def data_mana_menu(self):
         return [{
                 'title': u'藏经数据管理',
-                'icon': 'fa fa-book',
+                'icon': 'fa fa-cloud',
                 'menus': (
                     {'title': u'龙泉经目', 'url': self.get_model_url(
                         LQSutra, 'changelist'), 'icon': 'fa fa-book', },
@@ -534,6 +543,8 @@ class GlobalSetting(object):
                         Sutra, 'changelist'), 'icon': 'fa fa-book', },
                     {'title': u'实体卷',  'url': self.get_model_url(
                         Reel, 'changelist'), 'icon': 'fa fa-book', },
+                    {'title': u'配置',  'url': self.get_model_url(
+                        Configuration, 'changelist'), 'icon': 'fa fa-cog', },
                 )}, ]
 
     def user_mana_menu(self):

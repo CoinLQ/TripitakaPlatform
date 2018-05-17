@@ -103,25 +103,19 @@ Vue.component('mark-list', {
         style="width: 100%"
         max-height="200">
         <el-table-column
-          fixed
-          prop="typ"
-          label="ID"
-          width="50">
-        </el-table-column>
-        <el-table-column
           prop="start"
           label="标记起点"
-          width="180">
+          >
         </el-table-column>
         <el-table-column
           prop="end"
           label="标记终点"
-          width="180">
+          >
         </el-table-column>
         <el-table-column
           prop="mark_typ"
           label="标记类型"
-          width="220">
+          >
           <template slot-scope="scope">
             <span >{{ typeStr(scope.row.mark_typ) }}</span>
           </template>
@@ -215,25 +209,19 @@ Vue.component('mark-doubt-list', {
         style="width: 100%"
         max-height="200">
         <el-table-column
-          fixed
-          prop="typ"
-          label="ID"
-          width="50">
-        </el-table-column>
-        <el-table-column
           prop="start"
           label="标记起点"
-          width="180">
+          >
         </el-table-column>
         <el-table-column
           prop="end"
           label="标记终点"
-          width="180">
+          >
         </el-table-column>
         <el-table-column
           prop="mark_typ"
           label="标记类型"
-          width="220">
+          width="100">
           <template slot-scope="scope">
             <span >{{ typeStr(scope.row.mark_typ) }}</span>
           </template>

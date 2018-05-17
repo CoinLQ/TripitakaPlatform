@@ -62,7 +62,7 @@
 }
 
 .labelformat .left-con {
-    width: 40%;
+    width: 55%;
     margin-right: 2%;
 }
 
@@ -75,18 +75,16 @@
 }
 
 .labelformat .left {
-    height: 550px;
-    overflow: scroll;
+    height: 80%;
 }
 
 .labelformat .tools {
     width: 100%;
-    height: 40px;
+    height: 7%;
     border: 1px solid #ccc;
     border-top: 0;
     border-radius: 0 0 5px 5px;
     text-align: right;
-    padding-top: 10px;
 }
 
 .labelformat .pager, .labelformat .btns {
@@ -107,7 +105,7 @@
 }
 
 .labelformat .right {
-    width: 58%;
+    width: 43%;
     position: relative;
 }
 

@@ -1,4 +1,5 @@
 from rest_framework import mixins, viewsets
+from tdata.lib.image_name_encipher import get_image_url
 from rect.serializers import CCTaskSerializer, DelTaskSerializer, ClassifyTaskSerializer, \
                 PageTaskSerializer
 from ccapi.serializer import RectSerializer, PageRectSerializer, DeletionCheckItemSerializer, \
@@ -55,9 +56,10 @@ class RectBulkOpMixin(object):
             rects = RectSerializer(data=_rects, many=True)
             rects.is_valid()
             page= rectpages[0].page
+            image_url = get_image_url(page.reel, page.page_no)
             return Response({"status": instance.status,
                             "rects": rects.data,
-                            "page_code": page.page_code,
+                            "image_url": image_url,
                             "page_info": str(page),
                             "task_id": instance.pk})
         return Response(serializer.data)
@@ -200,9 +202,10 @@ class PageTaskViewSet(RectBulkOpMixin,
         rects = RectSerializer(data=_rects, many=True)
         rects.is_valid()
         page = rectpages[0].page
+        image_url = get_image_url(page.reel, page.page_no)
         return Response({"status": task.status,
                         "rects": rects.data,
-                        "page_code": page.page_code,
+                        "image_url": image_url,
                         "page_info": str(page),
                         "task_id": task.pk})
 

@@ -27,8 +27,8 @@ class MarkTaskDetail(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
     
     def get(self, request, task_id, format=None):
-        base_text = re.compile('[pb\n]').sub("\n", self.task.mark.reeltext.text)
-        p_pos = self.task.mark.reeltext.text.split('p')
+        base_text = re.compile('[pb\n]').sub("\n", self.task.reeltext.text)
+        p_pos = self.task.reeltext.text.split('p')
         lf_postions = []
         for _n in p_pos:
             ahead = 0

@@ -105,6 +105,37 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
         status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
         task.save()
 
+
+def create_mark_tasks(batchtask, reel, mark_times, mark_verify_times):
+    if mark_times == 0:
+        return
+    reelcorrecttext = None
+    status = Task.STATUS_NOT_READY
+
+    task_marks = '[]'
+    reelcorrecttext = ReelCorrectText.objects.filter(reel=reel).order_by('-id').first()
+    if reelcorrecttext:
+        status = Task.STATUS_READY                
+    for task_no in range(1, mark_times + 1):
+        task = Task(batchtask=batchtask, typ=Task.TYPE_MARK, reel=reel,
+        reeltext=reelcorrecttext, result=task_marks, task_no=task_no,
+        status=status, publisher=batchtask.publisher)
+        task.save()
+        if not task.mark:
+            mark = Mark(reel=reel, reeltext=task.reeltext,  publisher=batchtask.publisher, task=task)
+            mark.save()
+
+    # 标点审定任务只有一次
+    if mark_verify_times:
+        task = Task(batchtask=batchtask, typ=Task.TYPE_MARK_VERIFY, reel=reel,
+        reeltext=reelcorrecttext, result='[]', task_no=task_no,
+        status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
+        task.save()
+        if not task.mark:
+            mark = Mark(reel=reel, reeltext=task.reeltext,  publisher=batchtask.publisher, task=task)
+            mark.save()
+
+
 def create_lqpunct_tasks(batchtask, lqreel, lqpunct_times, lqpunct_verify_times):
     if lqpunct_times == 0:
         return
@@ -233,6 +264,7 @@ mark_times = 0, mark_verify_times = 0):
             if reel.ocr_ready:
                 create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
                 create_punct_tasks(batchtask, reel, punct_times, punct_verify_times)
+                create_mark_tasks(batchtask, reel, mark_times, mark_verify_times)
         try:
             lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
             base_reel = base_reel_lst[0]
@@ -406,6 +438,14 @@ def publish_correct_result(task):
         .update(reeltext=reel_correct_text, result='[]', status=Task.STATUS_READY)
         # 基础标点审定任务
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
+
+        # 格式标注数据
+        Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK)\
+        .update(reeltext=reel_correct_text)
+        Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK, status=Task.STATUS_NOT_READY)\
+        .update(result='[]', status=Task.STATUS_READY)
+        # 基础标点审定任务
+        Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra

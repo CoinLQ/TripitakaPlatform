@@ -14,7 +14,7 @@ from tasks.task_controller import revoke_overdue_task_async
 from ccapi.utils.task import redis_lock
 from django.utils import timezone
 TASK_MODELS = ('correct', 'verify_correct', 'judge', 'verify_judge', 'punct', 'verify_punct', 'lqpunct',
-               'verify_lqpunct', 'correct_difficult', 'judge_difficult')
+               'verify_lqpunct', 'correct_difficult', 'judge_difficult', 'mark', 'verify_mark')
 
 
 def underscore_to_camelcase(word, lower_first=False):
@@ -50,6 +50,10 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
                 return model.objects.filter(typ=model.TYPE_CORRECT, status=Task.STATUS_READY)
             elif model_name == 'verify_correct':
                 return model.objects.filter(typ=model.TYPE_CORRECT_VERIFY, status=Task.STATUS_READY)
+            elif model_name == 'mark':
+                return model.objects.filter(typ=model.TYPE_MARK, status=Task.STATUS_READY)
+            elif model_name == 'verify_mark':
+                return model.objects.filter(typ=model.TYPE_MARK_VERIFY, status=Task.STATUS_READY)
             elif model_name == 'judge':
                 return model.objects.filter(typ=model.TYPE_JUDGE, status=Task.STATUS_READY)
             elif model_name =='verify_judge':
@@ -85,7 +89,7 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
     def _search_fields(self):
         model_name = self.model_name
         if (model_name in TASK_MODELS):
-            if model_name in ['correct', 'verify_correct', 'punct', 'verify_punct', 'correct_difficult']:
+            if model_name in ['correct', 'verify_correct', 'punct', 'verify_punct', 'correct_difficult', 'mark', 'verify_mark']:
                 return ('reel__sutra__name', 'reel__sutra__tripitaka__name', 'reel__sutra__sid', 'reel__reel_no')
             elif model_name in ['judge', 'verify_judge', 'lqpunct', 'verify_lqpunct', 'judge_difficult']:
                 return ('lqreel__lqsutra__name', 'lqreel__lqsutra__sid', 'lqreel__reel_no')
@@ -122,7 +126,7 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
     def _exist_task_by_samepicker(self, task, picker):
         if task.typ in [Task.TYPE_JUDGE, Task.TYPE_LQPUNCT]:
             exist_task = Task.objects.filter(batchtask=task.batchtask, lqreel=task.lqreel, typ=task.typ, picker=picker).first()
-        elif task.typ in [Task.TYPE_CORRECT, Task.TYPE_PUNCT]:
+        elif task.typ in [Task.TYPE_CORRECT, Task.TYPE_MARK, Task.TYPE_PUNCT]:
             exist_task = Task.objects.filter(batchtask=task.batchtask, reel=task.reel , typ=task.typ, picker=picker).first()
         else:
             return False
@@ -134,7 +138,7 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
             if self._exist_task_by_samepicker(task, request.user):
                 if task.typ in [Task.TYPE_CORRECT, Task.TYPE_JUDGE]:
                     msg = "同一用户不能同时领取校一、校二"
-                elif task.typ in [Task.TYPE_PUNCT, Task.TYPE_LQPUNCT]:
+                elif task.typ in [Task.TYPE_PUNCT, Task.TYPE_LQPUNCT, Task.TYPE_MARK]:
                     msg = "同一用户不能同时领取标一、标二"
                 return Response({"status": -1, "task_id": pk, "msg": msg})
             count = Task.objects.filter(pk=pk, status=Task.STATUS_READY, picker=None)\
@@ -168,6 +172,10 @@ class CommonHistoryAPIView(CommonListAPIView):
                 return model.objects.filter(typ=model.TYPE_CORRECT, picker=request.user)
             elif model_name == 'verify_correct':
                 return model.objects.filter(typ=model.TYPE_CORRECT_VERIFY, picker=request.user)
+            elif model_name == 'mark':
+                return model.objects.filter(typ=model.TYPE_MARK, picker=request.user)
+            elif model_name == 'verify_mark':
+                return model.objects.filter(typ=model.TYPE_MARK_VERIFY, picker=request.user)
             elif model_name == 'judge':
                 return model.objects.filter(typ=model.TYPE_JUDGE, picker=request.user)
             elif model_name =='verify_judge':

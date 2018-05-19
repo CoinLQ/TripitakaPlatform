@@ -413,7 +413,7 @@ class DiffSegResult(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     diffseg = models.ForeignKey(DiffSeg, on_delete=models.CASCADE, related_name='diffsegresults')
     typ = models.SmallIntegerField('结果类型', choices=TYPE_CHOICES, default=1, editable=True)
-    selected_text = models.TextField('判取文本', blank=True, null=True, default='')
+    selected_text = models.TextField('判取文本', blank=True, null=True)
     merged_diffsegresults = models.ManyToManyField("self", blank=True)
     split_info = models.TextField('拆分信息', blank=True, null=True, default='{}')
     selected = models.SmallIntegerField('是否判取', blank=True, default=0) #　0, 1 -- 未判取，已判取
@@ -474,25 +474,29 @@ class LQPunct(models.Model):
     def __str__(self):
         return '%s' % self.reeltext
 
-# 格式标注相关
-class MarkUnitBase(models.Model):
-    typ = models.SmallIntegerField('类型', default=0)
-    start = models.IntegerField('起始字index', default=0)
-    end = models.IntegerField('结束字下一个index', default=0)
-    text = models.TextField('文本', default='')
-
-    class Meta:
-        abstract = True
 
 class Mark(models.Model):
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE)
     reeltext = models.ForeignKey(ReelCorrectText, verbose_name='实体藏经卷经文', on_delete=models.CASCADE)
-    task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始格式标注结果，不为null表示格式标注任务和格式标注审定任务的结果
+    task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始格式标注结果，不任务和为null表示格式标注格式标注审定任务的结果
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', blank=True, null=True)
 
-class MarkUnit(MarkUnitBase):
+class MarkUnit(models.Model):
+    TYPE_MARK = 1
+    TYPE_MARK_DOUBT = 2
+    TYPE_MARK_FEEDBACK = 3
+    TYPE_CHOICES = (
+        (TYPE_MARK, '标注'),
+        (TYPE_MARK_DOUBT, '存疑标注'),
+        (TYPE_MARK_FEEDBACK, '标注反馈'),
+    )
     mark = models.ForeignKey(Mark, on_delete=models.CASCADE)
+    typ = models.SmallIntegerField('类型',  choices=TYPE_CHOICES, default=1)
+    mark_typ = models.SmallIntegerField('标注类型', default=1)
+    start = models.IntegerField('起始字index', default=0)
+    end = models.IntegerField('结束字下一个index', default=0)
+    text = models.TextField('文本', default='')
 
 ####
 class FeedbackBase(models.Model):

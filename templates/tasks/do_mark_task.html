@@ -1,0 +1,608 @@
+{% extends "base.html" %}
+{% block title %}格式标注{% endblock %}
+{% block style %}
+<style type="text/css">
+/* .clearfix:after{content:".";display:block;height:0;clear:both;visibility:hidden}
+.clearfix{*+height:1%;} */
+#mark {
+    overflow: hidden !important;
+}
+.box { 
+    height: 60%;
+    scroll-behavior: auto;
+    overflow-y: scroll;
+}
+.inner-box { 
+    padding: 10px 20px;
+    margin-top: 2%;
+    height: 39%;
+    scroll-behavior: unset;
+    overflow-y: scroll;
+}
+.v-cmd-block {
+    border: 1px solid #ebebeb;
+    border-radius: 3px;
+    background-color: whitesmoke;
+    position: relative;
+    top: 4px;
+    height: 80%;
+    /* float: left; */
+    width: 7%;
+    right: 0px;
+    padding: 0px;
+    z-index: 2001;
+    box-shadow: 1px 1px 4px -1px #363E4E;
+}
+.reel-text-pane {
+    float: left;
+    width: 90%;
+    padding: 0 15px;
+    height: 80%;
+    overflow: scroll;
+    box-shadow: 1px 1px 4px -1px #363E4E;
+}
+b, i, u, small, big, strike {
+    font-size: 24px;
+    display: inline;
+    margin: 0;
+}
+.el-table td, .el-table th {
+    padding: 4px 0;
+}
+.el-button--mini {
+    width: 98%;
+    padding: 12px 14px;
+}
+.el-button+.el-button {
+    margin-left: 0px;
+    margin-top: 5px;
+}
+</style>
+{% endblock %}
+{% block content %}
+<div id='mark' class="labelformat">
+        {% raw %}
+        <div class="labelformat-in clearfix">
+            <div class="left-con fl">
+                <div class="left">
+                    <div class="left-in canvas-pane">
+                            <canvas id="page-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="tools">
+                    <div class="pager">
+                        <span @click="scale -=1">-</span>
+                        <span><em>1</em>:<em>{{scale}}</em></span>
+                        <span @click="scale +=1">+</span>
+                    </div>
+                    <div class="btns">
+                        <span class="store" @click="saveTask()">暂存</span>
+                        <span  @click="submitTask()">完成</span>
+                    </div>
+                </div>
+            </div>
+            <div class="right fr clearfix">
+                <div class="bd fl">
+                    <div class="box ">
+                            <ul ref='textArea'  @mouseup="mouseMark" v-html="content_html">
+                                    <font>经文载入中...</font>
+                                    </ul>
+                        
+                    </div>
+                    <div class="inner-box">
+                            <el-collapse v-model="activeNames" @change="handleChange" class="biaoji">
+                                <el-collapse-item name="1">
+                                <template slot="title">
+                                <span ><i class="el-icon-date"></i> 标记列表</span>
+                                
+                                </template>
+                                <div is="mark-list" :marks.sync="marksegs" :current_mark.sync="current_mark"></div>
+                                </el-collapse-item>
+                                <el-collapse-item v-if="sharedata.task_typ == 10" name="2">
+                                    <template slot="title">
+                                    <span ><i class="el-icon-date"></i> 存疑列表</span>
+                                    </template>
+                                    <div is="mark-doubt-list" :marks.sync="doubt_marks" v-on:accept="acceptThis" :current_mark.sync="current_doubt_mark"></div>
+                                </el-collapse-item>
+                            </el-collapse>
+                    </div>
+                        
+                </div>
+                <div class="hd fl">
+                    <span @click="markedTextContent(1)" ><i></i>标题</span>
+                    <span @click="markedTextContent(2)" ><i></i>作译者</span>
+                    <span @click="markedTextContent(3)" ><i></i>序</span>
+                    <span @click="markedTextContent(4)" ><i></i>正文</span>
+                    <span @click="markedTextContent(5)" ><i></i>跋</span>
+                    <span @click="markedTextContent(6)" ><i></i>偈颂</span>
+                    <span @click="markedTextContent(7)" ><i></i>夹注小字</span>
+                    <span @click="markedTextContent(8)" ><i></i>梵文</span>
+                    <span @click="markedTextContent(9)" ><i></i>咒语</span>
+                    <span @click="markedTextContent(10)" ><i></i>行间小字</span>
+                </div>
+                
+            </div>
+            {% endraw %}
+    </div>
+</div>
+{% endblock %}
+{% block foot_script %}
+<script>
+var app = new Vue({
+    el: '#mark',
+    data: {
+        activeNames: ["1"],
+        current_mark: {},
+        current_doubt_mark: {},
+        base_text: "",
+        content_html: "",
+        marked_start_pos: 0,
+        marked_end_pos: 0,
+        marked_text: "",
+        marksegs: [],
+        doubt_marks: [],
+        marks: [],
+        sharedata: {
+            task_id: {{ task.id }},
+            task_typ: {{task.typ}},
+            status: 0
+        },
+        page_no: 1,
+        img_url: '',
+        image_urls: '',
+        scale: 1,
+        line_no: 1,
+        current_char_no: 1,
+        
+    },
+    created: function() {
+      var vm = this
+      axios.get('/api/mark/' + vm.sharedata.task_id + '/')
+      .then(function(response) {
+        vm.base_text = response.data.base_text;
+        vm.marks = response.data.marks.sort(function(a,b) { return a.start - b.start});;
+        vm.lf_postions = response.data.lf_postions;
+        vm.image_urls = response.data.image_urls;
+        vm.loadImage();
+      });
+    },
+    watch: {
+        marks: function(val, oldVal) {
+            this.marksegs = _.filter(val, {typ: 1})
+            this.doubt_marks = _.filter(val, {typ: 2})
+        },
+        marksegs: function(val, oldVal) {
+            this.compiledBaseText();
+        },
+        current_mark: function (val, oldVal) {
+            if (val) {
+                this.gotoCurrentMark();
+            }
+        },
+        scale: function (val, oldVal) {
+            if (val > 5) {
+                this.scale = 5
+                return
+            } 
+            if (val < 1) {
+                this.scale = 1
+                return;
+            }
+            if (val != oldVal) {
+                this.setImg();
+            }
+        },
+        page_no: function (val, oldVal) {
+            this.loadImage();
+        },
+        current_doubt_mark: function(val, oldVal) {
+            this.compiledBaseText();
+            this.$nextTick(function(){
+                if (val) {
+                    var contentPs = this.$refs.textArea.getElementsByTagName("li");
+                    let p = _.findLast(contentPs, function(o) { return parseInt(o.getAttribute("data-position")) <= val.start;})
+                    var offset = this.$el.querySelector('div.box').scrollTop + p.getBoundingClientRect().top - 360;
+                    this.$el.querySelector('div.box').scrollTop = offset;
+                }
+            }.bind(this));
+        }
+    },
+    computed: {
+        pos_list() {
+            let pos_segs = {};
+            let marks = this.marksegs;
+            if (this.current_doubt_mark && this.current_doubt_mark.start) {
+                marks = marks.concat([this.current_doubt_mark])
+            }
+            _.forEach(marks, function(markseg){
+                pos_segs[markseg.start] = pos_segs[markseg.start] || []
+                pos_segs[markseg.start].push({start: true, mark_typ: markseg.mark_typ})
+                pos_segs[markseg.start].sort(function(a,b){ return a.start - b.start})
+                pos_segs[markseg.end] = pos_segs[markseg.end] || []
+                pos_segs[markseg.end].push({start: false, mark_typ: markseg.mark_typ})
+                pos_segs[markseg.end].sort(function(a,b){ return a.start - b.start})
+            });
+            return pos_segs
+        },
+        
+    },
+    mounted: function() {
+        this.handleChange();
+        
+    },
+    methods: {
+        setImg: function() {
+        var img_url = this.img_url;
+        var x = this.x * this.scale;
+        var y = this.y * this.scale;
+        var w = this.w * this.scale;
+        var h = this.h * this.scale;
+        var scale = this.scale;
+        var canvas = document.getElementById("page-canvas");
+        var context = canvas.getContext("2d");
+        var image = new Image();
+        image.onload = function () {
+          canvas.width = canvas.width;
+          canvas.height = image.height * scale;
+          canvas.width = image.width * scale;
+
+          x = ~~x; y = ~~y; w = ~~w; h = ~~h;
+
+          context.scale(0.8, 0.8);
+          context.drawImage(image, 0, 0, image.width, image.height,
+          0, 0, image.width * scale, image.height * scale);
+
+          //设置样式
+          context.lineWidth = 1;
+          context.globalAlpha = 0.5;
+          context.strokeStyle = "#F5270B";
+          context.fillStyle = "#F5270B";
+          //绘制
+          context.strokeRect(x, y, w, h);
+          context.fillRect(x, y, w, h);
+
+          let wrapper_h = this.$el.querySelector('.canvas-pane').clientHeight;
+          let wrapper_w = this.$el.querySelector('.canvas-pane').clientWidth;
+          let trans_y = y*0.8 > (wrapper_h-100)/2 ? y*0.8-wrapper_h/2: 0;
+          let trans_x = x*0.8 > wrapper_w-100 ? x*0.8-wrapper_w/2: 0;
+          this.$el.querySelector('.canvas-pane').scrollTop = ~~trans_y;
+          this.$el.querySelector('.canvas-pane').scrollLeft = ~~trans_x;
+        }.bind(this);
+        image.src = img_url;
+      },
+      loadImage: function() {
+        this.img_url = this.image_urls[this.page_no-1];
+        var cut_url = this.img_url.replace('.jpg', '.cut');
+        var vm = this;
+        axios.get(cut_url).then(function(response) {
+          var char_data = response.data['char_data'];
+          v = _.find(char_data, function(v) { return v['line_no']  == vm.line_no && v['char_no'] == vm.current_char_no })
+          // 结尾缺字
+          if (!v) {
+            v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no })
+            let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
+            vm.x = v['x'];
+            vm.y = v['y']+ v['h'];
+            vm.w = v['w'];
+            vm.h = (max_char_no['char_no'] - vm.current_char_no +1)*v['h'];
+            vm.setImg();
+            return;
+          }
+
+          vm.x = v['x'];
+          vm.y = v['y'];
+          vm.w = v['w'];
+          vm.h = v['h'];
+          vm.setImg();
+        });
+
+        
+      },
+      notifyErrorMsg(msg) {
+        this.$notify({  title: '提示',
+                        message: msg,
+                        duration: 3000  });
+      },
+      saveTask: function() {
+            submit_marks = this.marksegs.concat(this.doubt_marks);
+            axios.put('/api/mark/' + this.sharedata.task_id + '/finish/', {
+                task: this.task_id,
+                marks: submit_marks
+            }).then(function (response) {
+                this.notifyErrorMsg('暂存成功！')
+            }.bind(this))
+            .catch(function (error) {
+                this.notifyErrorMsg(error.data.msg)
+            }.bind(this));
+        },
+        submitTask: function() {
+            submit_marks = this.marksegs.concat(this.doubt_marks);
+            axios.post('/api/mark/' + this.sharedata.task_id + '/finish/', {
+                task: this.task_id,
+                marks: submit_marks
+            }).then(function (response) {
+                this.notifyErrorMsg('提交成功！')
+                window.history.back();
+            }.bind(this))
+            .catch(function (error) {
+                this.notifyErrorMsg(error.data.msg)
+            }.bind(this));
+        },
+        acceptThis: function(mark) {
+            mark.typ = 1 
+            this.marksegs.push(mark);
+            this.marksegs = _.uniqWith(this.marksegs, _.isEqual).sort(function(a,b) { return a.start - b.start});
+        },
+        gotoCurrentMark: function() {
+            let start = this.current_mark.start;
+            var contentPs = this.$refs.textArea.getElementsByTagName("li");
+            let p = _.findLast(contentPs, function(o) { return parseInt(o.getAttribute("data-position")) <= start;})
+            var offset = this.$el.querySelector('div.box').scrollTop + p.getBoundingClientRect().top - 160;
+            this.$el.querySelector('div.box').scrollTop = offset;
+        },
+        handleChange() {
+            let totalHeight = this.$el.querySelector('.left-con').clientHeight;
+            this.$el.querySelector('div.bd').style.height = totalHeight;
+        },
+        segFontDiv(mark_typ) {
+            switch (mark_typ) {
+                case 1:  //标题
+                    return '<font style="background-color: red">';
+                case 2: //作译者
+                    return '<font style="background-color: green">';
+                case 3: //序
+                    return '<font style="background-color: blue">';
+                case 4: //正文
+                    return '<font style="background-color: grey">';
+                case 5: //跋
+                    return '<font style="background-color: yellow">';
+                case 6: //偈颂
+                    return '<b style="color: grey">';
+                case 7: //夹注小字
+                    return '<i style="color: blue;">';
+                case 8: //梵文
+                    return '<u style="color: red;">';
+                case 9: //咒语
+                    return '<big style="color: green;">';
+                case 10: //行间小字
+                    return '<small style="color: blue;">';
+
+            }
+        },
+        segCloseDiv(mark_typ) {
+            switch (mark_typ) {
+                case 1:  //标题
+                    return '</font>';
+                case 2: //作译者
+                    return '</font>';
+                case 3: //序
+                    return '</font>';
+                case 4: //正文
+                    return '</font>';
+                case 5: //跋
+                    return '</font>';
+                case 6: //偈颂
+                    return '</b>';
+                case 7: //夹注小字
+                    return '</i>';
+                case 8: //梵文
+                    return '</u>';
+                case 9: //咒语
+                    return '</big>';
+                case 10: //行间小字
+                    return '</small>';
+            }
+        },
+        userSelection() {
+            var userSelection, rangeObject;
+            if (window.getSelection) { 
+                //现代浏览器
+                userSelection = window.getSelection();
+            } else if (document.selection) { 
+                //IE浏览器 考虑到Opera，应该放在后面
+                userSelection = document.selection.createRange();
+            }
+
+            return userSelection;
+        },
+        getParentPTag(node) {
+            if (node.nodeName.toString().toUpperCase() != 'LI')
+            {
+                return this.getParentPTag(node.parentElement)
+            }    
+            return node;
+        },
+        headerOffset(pnode, currentNode) {
+            let nodes = pnode.childNodes;
+            let offset = 0;
+            let append_nodes = []
+            for (var i=0; i < nodes.length; i++){
+                if (currentNode == nodes[i] || nodes[i].contains(currentNode)){
+                    if (currentNode != nodes[i] ) {
+                        offset += this.headerOffset(nodes[i], currentNode);
+                    } 
+                    break;
+                }
+                offset += nodes[i].textContent.length;
+            }
+            return offset;
+        },
+        markedTextContent(mark_typ) {
+            if (this.marked_start_pos != this.marked_end_pos) {
+                this.marksegs.push({start:this.marked_start_pos, end: this.marked_end_pos, typ: 1, mark_typ: mark_typ})
+                this.marksegs = _.uniqWith(this.marksegs, _.isEqual).sort(function(a,b) { return a.start - b.start});
+            }
+        },
+        getChoicePosition(startNode, startOffset, focusNode, focusOffset) {
+            var contentPs = this.$refs.textArea.getElementsByTagName("li");
+            var startPos = 0;
+            var endPos = 0;
+            var start = startOffset;
+            var end = focusOffset;
+            
+            if (startNode == focusNode && startOffset == focusOffset) {
+                this.marked_start_pos = 0;
+                this.marked_end_pos = 0;
+                this.marked_text = "";
+                this.page_no = parseInt(this.getParentPTag(startNode).getAttribute("page-no"));
+                return;
+            }
+            for (var i=0; i < contentPs.length; i++){
+                _.forEach(contentPs[i].childNodes, function(childNode) {
+                    if (startNode == childNode || childNode.contains(startNode.parentElement)){
+                        startPos = i;
+                    }
+
+                    if (focusNode == childNode || childNode.contains(focusNode.parentElement)){
+                        endPos = i;
+                    }
+                })
+            }
+            if (endPos ==0 && focusNode.className.includes('biaoji')) {
+                endPos = contentPs.length - 1;
+                focusNode = contentPs[endPos].lastChild;
+                end = focusNode.textContent.length;
+            }
+            
+            if (startPos > endPos) { 
+                let tmpNode = startNode;
+                let tmpPos = startPos;
+                let _tmp = start;
+                startNode = focusNode;
+                startPos = endPos;
+                focusNode = tmpNode;
+                endPos = tmpPos;
+                start = end;
+                end = _tmp;
+            }
+            
+            
+
+            if (startNode == focusNode)
+            {
+                if(start > end) {
+                    start += end;
+                    end = start - end;
+                    start -= end;
+                }
+                var content_text = startNode.data.substr(start, end-start);
+                //console.log(content_text)
+                
+                let offset = this.headerOffset(contentPs[startPos], startNode);
+                var mark_start = parseInt(this.getParentPTag(startNode).getAttribute("data-position")) + offset;
+                var mark_end = mark_start + end;
+                mark_start += start;
+                //console.log(mark_start, mark_end);
+                this.marked_start_pos = mark_start;
+                this.marked_end_pos = mark_end;
+                this.marked_text = content_text;
+                
+                //this.marksegs.push({start:mark_start, end: mark_end, typ: 1, mark_typ: 1})
+            } else if (startPos == endPos) {
+                let nodes = contentPs[startPos].childNodes;
+                let _start = 0, _end = 0
+                for (var i=0; i < nodes.length; i++){
+                    if (startNode == nodes[i] || nodes[i].contains(startNode)){
+                        _start = i;
+                    }
+
+                    if (focusNode == nodes[i] || nodes[i].contains(focusNode)){
+                        _end = i;
+                    }
+                }
+                if (_start > _end) { 
+                    let tmpNode = startNode;
+                    let tmpPos = _start;
+                    let _tmp = start;
+                    startNode = focusNode;
+                    _start = _end;
+                    focusNode = tmpNode;
+                    _end = tmpPos;
+                    start = end;
+                    end = _tmp;
+                }
+                var head_text =  startNode.data.substr(start, startNode.data.length-start);
+                var content_text = '';
+                for (var i= _start+1; i < _end; i++){
+                    content_text += nodes[i].textContent;
+                }
+                var tail_text = focusNode.data.substr(0, end);
+                let offset = this.headerOffset(contentPs[startPos], startNode);
+                var mark_start = parseInt(this.getParentPTag(startNode).getAttribute("data-position")) + offset + start;
+                offset = this.headerOffset(contentPs[endPos], focusNode);
+                var mark_end = parseInt(this.getParentPTag(focusNode).getAttribute("data-position")) + offset + end;
+                //this.marksegs.push({start:mark_start, end: mark_end, typ: 1, mark_typ: 1})
+                this.marked_start_pos = mark_start;
+                this.marked_end_pos = mark_end;
+                this.marked_text = head_text + content_text + tail_text;
+            } 
+            else{
+              var head_text =  startNode.data.substr(start, startNode.data.length-start);
+              var content_text = '';
+              var startMatch = false;
+              for (var i= startPos; i < endPos + 1; i++){
+                let nodes = contentPs[i].childNodes;
+                for (var j=0; j < nodes.length; j++){
+                    if (startNode == nodes[j] || nodes[j].contains(startNode)){
+                        startMatch = true
+                    }
+
+                    if (focusNode == nodes[j] || nodes[j].contains(focusNode)){
+                        break
+                    }
+                    if (startMatch) {
+                        content_text += nodes[j].textContent;
+                    }
+                    
+                }
+                
+              }
+              var tail_text =  focusNode.data.substr(0, end);
+              let offset = this.headerOffset(contentPs[startPos], startNode);
+              var mark_start = parseInt(this.getParentPTag(startNode).getAttribute("data-position")) + offset + start;
+              offset = this.headerOffset(contentPs[endPos], focusNode);
+              var mark_end = parseInt(this.getParentPTag(focusNode).getAttribute("data-position")) + offset + end;
+              //this.marksegs.push({start:mark_start, end: mark_end, typ: 1, mark_typ: 1})
+              this.marked_start_pos = mark_start;
+                this.marked_end_pos = mark_end;
+                this.marked_text = head_text + content_text + tail_text;
+            }
+            
+        },
+        mouseMark() {
+            let userSelection = this.userSelection();
+            let startNode = userSelection.anchorNode,
+            startOffset = userSelection.anchorOffset,
+            focusNode = userSelection.focusNode,
+            focusOffset = userSelection.focusOffset;
+            this.getChoicePosition(startNode, startOffset, focusNode, focusOffset)
+        },
+        compiledBaseText() {
+            let content = '<li data-position="0" page-no="1">';
+            let page_no = 1
+            for(var i=0; i< this.base_text.length; i++){
+                if (i >= this.lf_postions[page_no]) {
+                    page_no += 1
+                }
+                if (this.pos_list[i]){
+                    _.forEach(this.pos_list[i], function(seg) {
+                        if (!seg.start) {
+                            content += this.segCloseDiv(seg.mark_typ);
+                        } else {
+                            content += this.segFontDiv(seg.mark_typ);
+                        }
+                    }.bind(this));
+                }
+                if (this.base_text[i] != "\n") {
+                    content += this.base_text[i];
+                } else {
+                    content +='<br></li><li data-position="' + (i+1) + '" page-no="' + page_no + '">'
+                }
+                
+            }
+            this.content_html = content;
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -14,6 +14,7 @@ FinishCorrectTask, ReturnCorrectTask, DoubtSegViewSet
 from jkapi.views.judge import DiffSegResultList, DiffSegResultDetail, get_judge_result_marked, \
 JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected, DiffSegDetail
 from jkapi.views.punct import PunctTaskDetail
+from jkapi.views.mark import MarkTaskDetail, FinishMarkTask
 from jkapi.views.lqtripitaka import LQSutraViewSet, LQReelTextDetail
 from jkapi.views.tripitaka import SutraViewSet,SutraText,TripitakaViewSet
 from jkapi.views.punct_feedback import LQPunctFeedbackList, MyLQPunctFeedbackList, LQPunctFeedbackDetail, LQPunctFeedbackTask
@@ -58,6 +59,8 @@ urlpatterns = [
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegresults/(?P<diffsegresult_id>[0-9]+)/mergelist/$', MergeList.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegs/(?P<pk>[0-9]+)/$', DiffSegDetail.as_view()),
     url(r'^punct/(?P<task_id>[0-9]+)/$', PunctTaskDetail.as_view()),
+    url(r'^mark/(?P<task_id>[0-9]+)/$', MarkTaskDetail.as_view()),
+    url(r'^mark/(?P<task_id>[0-9]+)/finish/$', FinishMarkTask.as_view()),
     url(r'^lqreeltext/$', LQReelTextDetail.as_view()),
     url(r'^judgefeedback/$', JudgeFeedbackList.as_view()),
     url(r'^judgefeedback/(?P<pk>[0-9]+)/$', JudgeFeedbackDetail.as_view()),

@@ -8,6 +8,7 @@ from ccapi.pagination import CommonPageNumberPagination
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 from django.contrib.contenttypes.models import ContentType
+from tdata.models import Configuration
 from tasks.serializers import TaskSerializer
 from tasks.models import Task, FeedbackBase, JudgeFeedback, LQPunctFeedback
 from tasks.task_controller import revoke_overdue_task_async
@@ -146,7 +147,9 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
                 picker=request.user,
                 picked_at=timezone.now(),
                 status=Task.STATUS_PROCESSING)
-            revoke_overdue_task_async(pk)
+            conf = Configuration.objects.values('task_timeout').first()
+            task_timeout = conf['task_timeout']
+            revoke_overdue_task_async(pk, schedule=task_timeout)
         elif self.model_name == 'judgefeedback':
             count = JudgeFeedback.objects.filter(pk=pk, processor=None)\
             .update(processor=request.user, processed_at=timezone.now())

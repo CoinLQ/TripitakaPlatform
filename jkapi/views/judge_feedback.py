@@ -9,7 +9,8 @@ from tasks.models import DiffSegResult, JudgeFeedback, LQReelText, LQPunct
 from tasks.common import extract_line_separators
 
 from jkapi.serializers import JudgeFeedbackSerializer, JudgeFeedbackUpdateSerializer, DiffSegResultSerializer
-from jkapi.permissions import CanProcessJudgeFeedback, CanSubmitFeedbackOrReadOnly
+from tasks.serializers import JudgeFeedbackSerializer as JudgeFeedbackSerializerForList
+from jkapi.permissions import CanProcessJudgeFeedback, CanSubmitFeedbackOrReadOnly, CanViewMyFeedback
 
 class JudgeFeedbackList(generics.ListAPIView):
     queryset = JudgeFeedback.objects.all()
@@ -29,6 +30,15 @@ class JudgeFeedbackList(generics.ListAPIView):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class MyJudgeFeedbackList(generics.ListAPIView):
+    serializer_class = JudgeFeedbackSerializerForList
+    permission_classes = (CanViewMyFeedback, )
+
+    def get_queryset(self):
+        queryset = JudgeFeedback.objects.filter(
+            fb_user=self.user).order_by('id')
+        return queryset
 
 class JudgeFeedbackDetail(generics.RetrieveUpdateAPIView):
     queryset = JudgeFeedback.objects

@@ -153,6 +153,7 @@ Vue.component('judge-fb-show', {
             <div>反馈判取：{{ judgefeedback.fb_text }}</div>
             <div>反馈说明：</div>
             <div>{{ judgefeedback.fb_comment }}</div>
+            <div>审查意见：{{ getResponseDesc(judgefeedback.response) }}</div>
         </div>
     </div>
     `,
@@ -163,6 +164,15 @@ Vue.component('judge-fb-show', {
                 tnames.push(diffsegtext.tripitaka.shortname);
             });
             return tnames.join(' / ');
+        },
+        getResponseDesc: function(response) {
+            if (response == 1) {
+                return '未处理';
+            } else if (response == 2) {
+                return '同意';
+            } else if (response == 3) {
+                return '不同意';
+            }
         }
     }
 })

@@ -12,12 +12,22 @@ from tasks.common import extract_line_separators, clean_separators, compact_json
 
 from jkapi.views.punct import merge_text_punct
 from jkapi.serializers import LQPunctFeedbackSerializer
-from jkapi.permissions import CanProcessLQPunctFeedback, CanSubmitFeedbackOrReadOnly
+from tasks.serializers import LQPunctFeedbackSerializer as LQPunctFeedbackSerializerForList
+from jkapi.permissions import CanProcessLQPunctFeedback, CanSubmitFeedbackOrReadOnly, CanViewMyFeedback
 
 class LQPunctFeedbackList(generics.ListCreateAPIView):
     queryset = LQPunctFeedback.objects.all()
     serializer_class = LQPunctFeedbackSerializer
     permission_classes = (CanSubmitFeedbackOrReadOnly, )
+
+class MyLQPunctFeedbackList(generics.ListAPIView):
+    serializer_class = LQPunctFeedbackSerializerForList
+    permission_classes = (CanViewMyFeedback, )
+
+    def get_queryset(self):
+        queryset = LQPunctFeedback.objects.filter(
+            fb_user=self.user).order_by('id')
+        return queryset
 
 class LQPunctFeedbackDetail(generics.RetrieveUpdateAPIView):
     queryset = LQPunctFeedback.objects

@@ -87,6 +87,7 @@ def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
         elif tag == 'replace':
             i = i1
             j = j1
+            consumed_char_count = 0
             while i < i2:
                 ch = text1[i]
                 if ch == '\n':
@@ -96,6 +97,8 @@ def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
                     if (i-i1)+j1 < j2:
                         #print('char_index: ', char_index)
                         char_data = old_char_lst[char_index]
+                        char_index += 1
+                        consumed_char_count += 1
                         char_data['line_no'] = line_no
                         char_data['char_no'] = char_no
                         char_data['ch'] = ch
@@ -110,9 +113,11 @@ def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
                     char_lst.append(char_data)
                     char_no += 1
                 i += 1
+            text2_char_count = 0
             for ch in text2[j1:j2]:
                 if ch != '\n':
-                    char_index += 1
+                    text2_char_count += 1
+            char_index += (text2_char_count - consumed_char_count)
         elif tag == 'delete': # OCR本缺少的字，需要增加
             add_count = i2 -i1
             for i in range(add_count):
@@ -230,8 +235,8 @@ def get_accurate_cut(text1, text2, cut_json, pid):
     """
     用于文字校对后的文本比对，text1是文字校对审定后得到的精确本，text2是OCR原始结果，都包含换行和换页标记。
     """
-    clean_text1 = text1.replace('b\n', '')
-    clean_text2 = text2.replace('b\n', '')
+    clean_text1 = text1.rstrip('b').replace('b\n', '')
+    clean_text2 = text2.rstrip('b').replace('b\n', '')
     try:
         cut = json.loads(cut_json)
     except Exception as err:
@@ -422,39 +427,13 @@ def compute_accurate_cut(reel, process_cut=True):
         # 如果有分栏，最后一位是栏号，需用a/b；无分栏，为空
         page_code = '%s_%s_%s%s' % (sid[0:2], reel.path_str(), vol_page, '') # YB_1_1
         if i < correct_page_count and cut_file:
-            ## 新版本切分直接使用OCR切分结果，不计算
-            # try:
-            #     #print('vol_page: ', vol_page)
-            #     #print('%s\n----------\n%s\n----------' % (correct_pagetexts[i], pagetexts[i]))
-            #     char_lst, line_count, column_count, char_count_lst, cut_add_count, cut_wrong_count, cut_confirm_count = \
-            #     get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
-            #     min_x, min_y, max_x, max_y = get_char_region_cord(char_lst)
-            #     cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
-            #     cut_info = {
-            #         'page_code': page_code,
-            #         'min_x': min_x,
-            #         'min_y': min_y,
-            #         'max_x': max_x,
-            #         'max_y': max_y,
-            #         'char_data': char_lst,
-            #     }
-            #     cut_info_json = json.dumps(cut_info, indent=None)
-            #     page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
-            #     text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
-            #     cut_add_count=cut_add_count, cut_wrong_count=cut_wrong_count, cut_confirm_count=cut_confirm_count,
-            #     cut_verify_count=cut_verify_count,
-            #     page_code = page_code)
-            # except:
-            #     print('get_accurate_cut failed: %s\n' % pid, traceback.print_exc())
-            cut_info_json = cut_file
-            char_count_lst = []
-            line_count = 0
-            column_count = 0
-            if cut_file:
-                cut_info = json.loads(cut_file)
-                cut_info_json = cut_file
-                char_lst = cut_info['char_data']
+            try:
+                #print('vol_page: ', vol_page)
+                #print('%s\n----------\n%s\n----------' % (correct_pagetexts[i], pagetexts[i]))
+                char_lst, line_count, column_count, char_count_lst, cut_add_count, cut_wrong_count, cut_confirm_count = \
+                get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
                 min_x, min_y, max_x, max_y = get_char_region_cord(char_lst)
+                cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
                 cut_info = {
                     'page_code': page_code,
                     'min_x': min_x,
@@ -463,13 +442,38 @@ def compute_accurate_cut(reel, process_cut=True):
                     'max_y': max_y,
                     'char_data': char_lst,
                 }
-            else:
-                cut_info = {
-                    'page_code': page_code,
-                    'char_data': [],
-                }
                 cut_info_json = json.dumps(cut_info, indent=None)
-                char_lst = []
+                page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
+                text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
+                cut_add_count=cut_add_count, cut_wrong_count=cut_wrong_count, cut_confirm_count=cut_confirm_count,
+                cut_verify_count=cut_verify_count,
+                page_code = page_code)
+            except:
+                print('get_accurate_cut failed: %s\n' % pid, traceback.print_exc())
+                cut_info_json = cut_file
+                char_count_lst = []
+                line_count = 0
+                column_count = 0
+                if cut_file:
+                    cut_info = json.loads(cut_file)
+                    cut_info_json = cut_file
+                    char_lst = cut_info['char_data']
+                    min_x, min_y, max_x, max_y = get_char_region_cord(char_lst)
+                    cut_info = {
+                        'page_code': page_code,
+                        'min_x': min_x,
+                        'min_y': min_y,
+                        'max_x': max_x,
+                        'max_y': max_y,
+                        'char_data': char_lst,
+                    }
+                else:
+                    cut_info = {
+                        'page_code': page_code,
+                        'char_data': [],
+                    }
+                    cut_info_json = json.dumps(cut_info, indent=None)
+                    char_lst = []
             page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
             text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
             page_code=page_code)

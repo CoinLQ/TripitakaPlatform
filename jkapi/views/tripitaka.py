@@ -8,7 +8,7 @@ from tasks.models import ReelCorrectText,Punct,Page
 from tdata.serializer import SutraSerializer ,TripitakaSerializer
 from tdata.lib.image_name_encipher import get_image_url
 from tasks.common import clean_separators, extract_line_separators
-
+from rect.models import *
 
 import json, re
 
@@ -43,7 +43,7 @@ class TripitakaViewSet(viewsets.ReadOnlyModelViewSet):
 class SutraText(APIView):
     # test http://api.lqdzj.cn/api/sutra_text/231/
     def get(self, request, s_id, format=None):
-        from rect.models import Rect
+        
         print('=======================')
         #根据卷ID 获得页号 和页数
         reel = Reel.objects.get(id = s_id)
@@ -81,7 +81,8 @@ class SutraText(APIView):
         response = {
             'sutra': reel_ocr_text,
             'pageurls':strURLRet,
-            'cut_Info_list':cut_Info_list
+            'cut_Info_list':cut_Info_list,
+            'sutra_name': str(reel.sutra.name)
             #'punct_lst': punctuation,            
         }
         return Response(response)    
@@ -102,8 +103,11 @@ class RedoPageRect(APIView):
                 task.save(update_fields=['priority'])
                 return Response({'status': 'level up'})
 
-        if pagetasks[0]:
+        if len(pagetasks) > 0:
             pagetasks[0].roll_new_task()
             return Response({'status': 'ok'})
+        else:
+            pass
+            # Schedule.create_reels_pptasks(reel)
 
         return Response({'status': 'null'})

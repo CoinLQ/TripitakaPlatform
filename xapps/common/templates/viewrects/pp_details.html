@@ -327,7 +327,7 @@
 <script src="{{ '/static/custom/js/tripitaka.js' }}"></script>
 <script src="{{ '/static/custom/js/tp_component.js' }}"></script>
 {% endblock %}
-{% block title %}实体藏经浏览{% endblock %}
+{% block title %}切分数据浏览{% endblock %}
 {% block content %}
 
   
@@ -359,33 +359,37 @@
     </div>
   </el-col>
   <el-col :span="18">
-    <el-row>
-      <el-col :span="24">
-      <div class="sutra-image" id="sutra-image" >    
-        
-        <canvas id="page-canvas"></canvas>
-      </div>
-    </el-col>
-      <el-col :span="8" v-if='false' >
-        <div class="sutra-text hidden"  >
-          <ul> <li v-for="item in sutra_text_list">${ item }</li> </ul>
+        <div class="tpd-right">
+                <div class="tpd-right-header">
+                  <el-breadcrumb separator="/">
+                        <el-breadcrumb-item>${cur_tripitaka.name}</el-breadcrumb-item>
+                        <el-breadcrumb-item>${sutra_name}</el-breadcrumb-item>
+                        <el-breadcrumb-item>第${reel_no}卷</el-breadcrumb-item>
+                        <el-breadcrumb-item>第${curreelpage}页</el-breadcrumb-item>
+                        </el-breadcrumb>
+                </div>
+        <el-row>
+            <el-col :span="24">
+                <div class="sutra-image" id="sutra-image" >    
+                    <canvas id="page-canvas"></canvas>
+                </div>
+            </el-col>
+        <el-col :span="14" :offset="2">
+            <el-pagination
+            @current-change="handleCurrentChange"
+            :current-page.sync="curreelpage"
+            :page-size="1"
+            layout="total, prev, next, jumper"
+            :total="reelpage_count">
+            </el-pagination>
+        </el-col> 
+
+            <el-col :span="8"  >
+                <el-button @click="redoPageRect()">重做</el-button>
+            </el-col>
+        </el-row>
         </div>
-      </el-col>
-      
-      <el-col :span="16">
-          <el-pagination
-          @current-change="handleCurrentChange"
-          :current-page.sync="curreelpage"
-          :page-size="1"
-          layout="total, prev, next, jumper"
-          :total="reelpage_count">
-        </el-pagination>
-      </el-col>
-      <el-col :span="8"  >
-            <el-button @click="redoPageRect()">重做</el-button>
-          </el-col>
-    </el-row>
-  </el-col>
+    </el-col>
 </el-row>
 
 </div>
@@ -402,7 +406,7 @@
       imageURL :'',
       sutra_text:'',
       sutra_text_list: [''],
-
+      sutra_name: '',
       sutra_list: [],      
       tree_props: {
         children: 'reel_set',
@@ -437,6 +441,7 @@
       //卷页导航
       reelvolumestartpage:1,//卷的册级别起始页
       reelpage_count:1,
+      reel_no: 0,
       curreelpage: 0,
 
       //册导航
@@ -501,20 +506,9 @@
     methods: {
       redoPageRect() {
         alert(this.curreelpage);
-        axios.post('/api/redo_pagerect/' + data.reel_no + '/').then(function(response) {
-        vm.sutra_text = response.data.sutra;
-        vm.reel_page_list = response.data.pageurls.split('|');                
-        vm.reelpage_count = vm.reel_page_list.length;
-        //console.log(response.data.cut_Info_list);
-        vm.page_cut_Info_list=response.data.cut_Info_list;
-        vm._showSutraText();
-        vm.curreelpage = 1 ;        
-        vm._updatePage();  
-        //console.log(data.end_vol,data.end_vol_page);
-        vm.curvolume=data.start_vol;
-        vm.curvolumepage=data.start_vol_page;
-        vm.reelvolumestartpage=vm.curvolumepage;
-         });        
+        axios.post('/api/redo_pagerect/' + this.reel_no + '/', {page_no: this.curreelpage}).then(function(response) {
+            console.log(1);
+        });        
       },
       handleCommand(command) {
         this.$message('click on item ' + command);
@@ -627,7 +621,6 @@
         return false;
       },
       selTripitaka: function(data) {    
-        debugger;
         var vm = this;
         for (var i=0;i<vm.tripitaka_table.length;i++){
           //console.log('|', data.target.text,'|', vm.tripitaka_table[i]['name'])
@@ -710,7 +703,9 @@
         //console.log(response.data.cut_Info_list);
         vm.page_cut_Info_list=response.data.cut_Info_list;
         vm._showSutraText();
-        vm.curreelpage = 1 ;        
+        vm.curreelpage = 1 ;
+        vm.reel_no = data.reel_no;
+        vm.sutra_name = response.data.sutra_name;        
         vm._updatePage();  
         //console.log(data.end_vol,data.end_vol_page);
         vm.curvolume=data.start_vol;

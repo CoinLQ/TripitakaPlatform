@@ -16,7 +16,7 @@ JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected, DiffSegDe
 from jkapi.views.punct import PunctTaskDetail
 from jkapi.views.mark import MarkTaskDetail, FinishMarkTask
 from jkapi.views.lqtripitaka import LQSutraViewSet, LQReelTextDetail
-from jkapi.views.tripitaka import SutraViewSet,SutraText,TripitakaViewSet
+from jkapi.views.tripitaka import SutraViewSet, SutraText,TripitakaViewSet, RedoPageRect
 from jkapi.views.punct_feedback import LQPunctFeedbackList, MyLQPunctFeedbackList, LQPunctFeedbackDetail, LQPunctFeedbackTask
 from jkapi.views.volumn import VolumeViewSet
 from jkapi.views.judge_feedback import JudgeFeedbackList, MyJudgeFeedbackList, JudgeFeedbackDetail, JudgeFeedbackTask
@@ -67,6 +67,7 @@ urlpatterns = [
     url(r'^judgefeedback/(?P<pk>[0-9]+)/process/$', JudgeFeedbackTask.as_view()),
     url(r'^judgefeedback/mine/$', MyJudgeFeedbackList.as_view()),
     url(r'^sutra_text/(?P<s_id>[0-9]+)/$', SutraText.as_view()),
+    url(r'^redo_pagerect/(?P<s_id>[0-9]+)/$', RedoPageRect.as_view()),
     url(r'^lqpunctfeedback/$', LQPunctFeedbackList.as_view()),
     url(r'^lqpunctfeedback/(?P<pk>[0-9]+)/$', LQPunctFeedbackDetail.as_view()),
     url(r'^lqpunctfeedback/(?P<pk>[0-9]+)/process/$', LQPunctFeedbackTask.as_view()),

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from jwt_auth.models import Staff
 from tdata.models import *
 from tdata.lib.image_name_encipher import get_image_url
@@ -604,3 +605,35 @@ class LQPunctFeedback(models.Model):
 
     class Config:
         search_fields = ('fb_user__username',)
+
+class AbnormalLineCountTask(models.Model):
+    STATUS_READY = 2
+    STATUS_PROCESSING = 3
+    STATUS_FINISHED = 4
+    STATUS_CHOICES = (
+        (STATUS_READY, '待领取'),
+        (STATUS_PROCESSING, '进行中'),
+        (STATUS_FINISHED, '已完成'),
+    )
+
+    reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False)
+    reel_page_no = models.SmallIntegerField('卷中页序号')
+    page_no = models.SmallIntegerField('页序号')
+    bar_no = models.SmallIntegerField('第几栏')
+    correct_text = models.ForeignKey(ReelCorrectText, on_delete=models.CASCADE)
+    line_count = models.SmallIntegerField('文本行数')
+    status = models.SmallIntegerField('状态', choices=STATUS_CHOICES, default=2, db_index=True)
+    picker = models.ForeignKey(Staff, on_delete=models.SET_NULL, blank=True, null=True,
+    verbose_name='领取用户')
+    picked_at = models.DateTimeField('领取时间', blank=True, null=True)
+
+    @property
+    def task_url(self):
+        url = '<a href="/verify_correct/%d/?page=%d" target="_blank">检查</a>' % (self.correct_text.task.id, self.reel_page_no)
+        return mark_safe(url)
+    task_url.fget.short_description = '文字校对审定任务链接'
+
+    class Meta:
+        verbose_name = '异常文本行数检查任务'
+        verbose_name_plural = '异常文本行数检查任务'
+

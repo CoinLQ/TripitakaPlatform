@@ -8,7 +8,8 @@ from django.template.response import TemplateResponse
 from django.template import loader
 
 from tdata.models import *
-from tasks.models import Task, CorrectFeedback, JudgeFeedback, LQPunctFeedback
+from tasks.models import Task, CorrectFeedback, JudgeFeedback, LQPunctFeedback, \
+AbnormalLineCountTask
 from rect.models import *
 from jwt_auth.models import Staff
 from tasks.task_controller import correct_update_async, regenerate_correctseg_async
@@ -86,7 +87,7 @@ class SutraAdmin(object):
     # tripitaka.short_description=u'藏'
     list_select_related = False
 
-    search_fields = ['name', 'tripitaka__name', 'lqsutra__id',
+    search_fields = ['name', 'tripitaka__name', 'tripitaka__code', 'lqsutra__id',
                      'sid', 'total_reels', 'remark']  # 可以搜索的字段
     free_query_filter = True
     list_filter = ['name', 'lqsutra__id', 'sid', 'remark']
@@ -141,8 +142,8 @@ class ReelAdmin(object):
     sutra_name.short_description = u'经名'
     tripitaka_name.short_description = u'藏名'
     longquan_Name.short_description = u'龙泉经名'
-    search_fields = ['sutra__sid', 'sutra__name', 'sutra__tripitaka__name',
-                     'reel_no', 'remark']  # 可以搜索的字段
+    search_fields = ['sutra__sid', 'sutra__name', 'sutra__tripitaka__name',  'sutra__tripitaka__code',
+                     '=reel_no', 'remark']  # 可以搜索的字段
     list_filter = ['sutra__sid', 'sutra__name', 'ocr_ready', 'correct_ready']
     ordering = ['id', 'reel_no']  # 按照倒序排列
     fields = ('sutra', 'reel_no', 'remark',
@@ -301,8 +302,8 @@ class TaskAdmin(object):
                     'publisher', 'created_at', 'picker', 'picked_at', 'finished_at', 'task_link', 'modify']
     list_display_links = ("modify",)
     list_filter = ['typ', 'batchtask', 'picker', 'status', 'task_no']
-    search_fields = ['reel__sutra__tripitaka__name',
-                     'reel__sutra__name', 'reel__reel_no', 'lqreel__lqsutra__name']
+    search_fields = ['reel__sutra__tripitaka__name', 'reel__sutra__tripitaka__code',
+                     'reel__sutra__name', '=reel__reel_no', 'lqreel__lqsutra__name']
     fields = ['status', 'result', 'picked_at', 'picker', 'priority']
     remove_permissions = ['add']
     gene_task = True
@@ -331,6 +332,17 @@ class LQPunctFeedbackAdmin:
                     'fb_user', 'created_at', 'processor', 'processed_at',
                     'status', 'task_link']
     list_display_links = ['']  # 不显示修改的链接
+    remove_permissions = ['add']
+
+@xadmin.sites.register(AbnormalLineCountTask)
+class AbnormalLineCountTaskAdmin:
+    list_display = ['reel', 'reel_page_no', 'page_no', 'bar_no',
+                    'line_count', 'status', 'picker', 'picked_at', 'task_url']
+    list_editable = ['status']
+    list_display_links = ['']  # 不显示修改的链接
+    list_filter = ['status']
+    search_fields = ['reel__sutra__tripitaka__name', 'reel__sutra__tripitaka__code',
+                     'reel__sutra__name', '=reel__reel_no']
     remove_permissions = ['add']
 
 #####################################################################################

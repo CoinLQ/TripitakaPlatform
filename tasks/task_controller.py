@@ -340,6 +340,43 @@ mark_times = 0, mark_verify_times = 0):
             continue
         create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
 
+def calculate_abnormal_line_count(reel_correct_text):
+    if reel_correct_text.task is None:
+        return
+    tasks = []
+    reel = reel_correct_text.reel
+    bar_line_count = reel.sutra.tripitaka.bar_line_count
+    if bar_line_count.isdigit():
+        bar_line_count = int(bar_line_count)
+    else:
+        bar_line_count = json.loads(bar_line_count)
+    text = reel_correct_text.text.rstrip('pb\n')
+    if text.startswith('p\n'):
+        text = text[2:]
+    else:
+        print('reel correct text not start with "p\n": ', reel.sutra.sid, reel.reel_no)
+    page_texts = text.split('\np\n')
+    page_count = len(page_texts)
+    for reel_page_no in range(1, page_count + 1):
+        page_text = page_texts[reel_page_no - 1]
+        bar_texts = page_text.split('\nb\n')
+        for bar_no in range(1, len(bar_texts) + 1):
+            bar_text = bar_texts[bar_no - 1]
+            line_count = bar_text.count('\n') + 1
+            line_count_correct = 0
+            if type(bar_line_count) is int:
+                line_count_correct = bar_line_count
+            else:
+                line_count_correct = bar_line_count[str(bar_no)]
+            if line_count != line_count_correct:
+                page_no = reel.start_vol_page + reel_page_no - 1
+                task = AbnormalLineCountTask(reel=reel, reel_page_no=reel_page_no,
+                                             page_no=page_no, bar_no=bar_no,
+                                             correct_text=reel_correct_text, line_count=line_count)
+                tasks.append(task)
+    if tasks:
+        AbnormalLineCountTask.objects.bulk_create(tasks)
+
 def publish_correct_result(task):
     '''
     发布文字校对的结果，供校勘判取使用

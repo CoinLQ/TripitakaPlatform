@@ -406,8 +406,7 @@
         )
         //range.moveStart('character', 1);
       },
-      RemoveLine: function(){
-        console.log(this.page_no,  this.line_no)
+      RemoveLine: function() {
         let recover_mode = false;
         if (this.current_seg.selected_text == '') {
           recover_mode = true;
@@ -418,9 +417,13 @@
               if (!recover_mode) {
                 seg.selected_text = '';
               } else {
-                if (seg.tag != 2){
-                  seg.selected_text = seg.text2
+                if (seg.tag == 4) {
+                  seg.selected_text = '\n';
+                }
+                else if (seg.tag != 2){
+                  seg.selected_text = seg.text1
                 } else {
+                  console.log(seg.text1, seg.text2)
                   seg.selected_text = null;
                 }
               }

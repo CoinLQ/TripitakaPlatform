@@ -1,321 +1,335 @@
-{% extends "base.html" %}
-{% block title %}实体藏经浏览{% endblock %}
+{% extends "common/base.html" %}
+{% block extrahead %} 
+<link rel="stylesheet" href="{{ '/static/css/element-ui.css' }}">
+<link href="{{ '/static/custom/css/base.css' }}" type="text/css" rel="stylesheet">
+<link href="{{ '/static/custom/css/style.css' }}" type="text/css" rel="stylesheet">
+<style>
+    #content-block {
+  min-height: 1000px !important;
+  min-height: 1000px !important;
+}
+          .col-md-10_col-xs-10 {
+            float: left;
+            margin-left: 80px;         
+          }
+          .col-md-9_col-xs-9 {
+            float: left;
+            margin-left:10px;         
+          }
+          .dropdown-menu {
+            float: left;
+            margin-left: 10px;
+            height: 200px;
+            overflow-y:auto;        
+          }
+          .sutra-tree {
+            float: left;
+            width: 100%;
+            
+            overflow-y:auto;
+          }
+          .sutra-image {
+            float: left;
+            height: 800px;
+            margin-top: 0px;
+            overflow-y:auto;
+            overflow-x:hidden；        
+          }
+          .sutra-text {
+            float: left;
+            margin-left: 0px;
+            height: 800px;
+            width: 350px;
+            overflow-y:auto;
+            overflow-x:hidden；
+          }
+          .switcher {
+            transition: left 0.8s;
+          }
+          .left {
+             left: 0px;
+          }
+          .right {
+            left: 50px;
+          }
+          #tripitaka {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 25px;
+      height: 100%;
+      font-size: 14px;
+    }
+    #tripitaka .tpd-header {
+      text-align: right;
+      margin-bottom: 20px;
+    }
+    #tripitaka .tpd-header {
+      text-align: right;
+    }
+    #tripitaka .input {
+      box-sizing: border-box;
+      width: 100%;
+      height: 26px;
+      border-radius: 13px;
+      padding: 0 15px;
+      outline: none;
+      border: 1px solid #ddd;
+    }
+    
+    #tripitaka .el-input__inner[readonly="readonly"] {
+      width: 120px;
+    }
+    #tripitaka .input-group {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+    #tripitaka .tpd-header-input {
+      width: 20%;
+      display: inline-block;
+    }
+    #tripitaka .tpd-left-input {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+    #tripitaka .input-group .icon {
+      box-sizing: border-box;
+      display: inline-block;
+      position: absolute;
+      right: 10px;
+      top: 5px;
+      background-image: url(../imgs/tripidata/search.png);
+      background-repeat: no-repeat;
+      width: 16px;
+      height: 16px;
+    }
+    #tripitaka .tpd-main {
+      height: calc(100% - 30px);
+      vertical-align: top;
+    }
+    #tripitaka .tpd-left {
+      vertical-align: top;
+      box-sizing: border-box;
+      height: calc(100%);
+      width: 30%;
+      display: inline-block;
+    }
+    #tripitaka .tpd-left-content {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      height: calc(100%);
+      position: relative;
+    }
+    #tripitaka .tpd-right {
+      vertical-align: top;
+      box-sizing: border-box;
+      width: 67%;
+      height: calc(100%);
+      margin-left: 2%;
+      display: inline-block;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+    }
+    #tripitaka .tpd-right .tpd-right-content {
+      height: 100%;
+      padding: 20px;
+      height: calc(100%);
+      line-height: 26px;
+      overflow-y: auto;
+    }
+    #tripitaka .tpd-right .tpd-right-header {
+      display: block;
+      padding: 15px;
+      border-bottom: 1px solid #ddd;
+    }
+    #tripitaka .tpd-right .tpd-right-breadcrumb {
+      width: 50%;
+      display: inline-block;
+    }
+    #tripitaka .tpd-right .tpd-right-btngroup {
+      width: 49%;
+      display: inline-block;
+      text-align: right;
+    }
+    #tripitaka .tpd-right .tpd-right-btngroup .cut-switch {
+      display: inline-block;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    #tripitaka .tpd-right .tpd-right-btngroup .cut-switch-text {
+      display: inline-block;
+      color: #409eff;
+      vertical-align: middle;
+    }
+    #tripitaka .tpd-right .tpd-right-btngroup .el-switch {
+      display: inline-block;
+      vertical-align: middle;
+    }
+    #tripitaka .tpd-right .tpd-right-btngroup .tpd-pagination {
+      display: inline-block;
+      vertical-align: middle;
+    }
+    #tripitaka .tpd-right .tpd-right-btngroup .tpd-pagination input {
+      box-sizing: border-box;
+      display: inline-block;
+      height: 28px;
+      padding: 0 10px;
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      text-align: center;
+      outline: none;
+      width: 52px;
+    }
+    #tripitaka .tpd-main-st {
+      height: calc(100% - 25px) !important;
+    }
+    #tripitaka .tpd-main-st .tpd-left {
+      height: calc(100%) !important;
+    }
+    #tripitaka .tpd-main-st .el-tabs {
+      height: calc(100% - 10px) !important;
+    }
+    #tripitaka .tpd-main-st .tpd-left-content {
+      border: none;
+    }
+    #tripitaka .tpd-main-st .el-tabs__content {
+      height: calc(100% - 30px) !important;
+      border-top: 1px solid #ddd;
+      border: 1px solid #ddd;
+    }
+    #tripitaka .tpd-main-st .tpd-right {
+      height: calc(100% - 10px) !important;
+    }
+    #tripitaka .tpd-main-st .tpd-right-content {
+      height: calc(100% - 60px) !important;
+    }
+    #tripitaka .tpd-tree {
+      padding: 20px;
+    }
+    #tripitaka .el-tree-node__content {
+      border-bottom: 1px dotted #ddd;
+      line-height: 30px;
+      height: 32px;
+      font-size: 20px;
+    }
+    #tripitaka .el-tabs--card > .el-tabs__header {
+      border-bottom: none;
+      margin: 0;
+    }
+    #tripitaka .el-tabs--card > .el-tabs__header .el-tabs__nav {
+      border: none;
+      margin-bottom: -10px;
+    }
+    #tripitaka .el-tabs__item {
+      border: 1px solid #ddd;
+      width: 80px;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      text-align: center;
+    }
+    #tripitaka .el-tabs__item.is-active {
+      background-color: #409eff;
+      color: #fff;
+      border-color: #409eff;
+    }
+    #tripitaka .sub-funeral-list {
+      box-sizing: border-box;
+      width: 100%;
+      height: 100%;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      overflow-y: auto;
+      padding: 10px;
+    }
+    #tripitaka .sub-funeral-list .el-col {
+      margin: 1%;
+      width: 18%;
+      box-sizing: border-box;
+    }
+    #tripitaka .sub-funeral-list .sub-funeral-item {
+      width: 100%;
+      text-align: center;
+    }
+    #tripitaka .sub-funeral-list .sub-funeral-item img {
+      width: 100%;
+    }
+    .right-click-menu {
+      position: absolute;
+      display: none;
+      top: 10%;
+      left: 50%;
+      width: 400px;
+      box-shadow: 4px 4px 4px #ddd;
+    }
+    .right-click-menu .right-click-content {
+      border: 1px solid #ddd;
+      padding: 15px;
+      background: #fff;
+    }
+    .right-click-menu .right-click-triangle {
+      display: inline-block;
+      border-top: 1px solid #ddd;
+      border-left: 1px solid #ddd;
+      position: absolute;
+      z-index: 999;
+      top: -10px;
+      left: 50%;
+      margin-left: -10px;
+      width: 20px;
+      height: 20px;
+      transform: rotate(45deg);
+      background-color: #fff;
+    }
+    .right-click-menu li {
+      cursor: pointer;
+      line-height: 25px;
+    }
+    .right-click-menu li i {
+      margin-right: 5px;
+    }
+    .right-click-menu .el-row {
+      border-left: 1px solid #ddd;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+    .right-click-menu .el-row .el-col {
+      line-height: 50px;
+      border-right: 1px solid #ddd;
+      border-top: 1px solid #ddd;
+    }
+    .right-click-menu .modal-fankui {
+      margin: 10px;
+    }
+    .right-click-menu .modal-text {
+      line-height: 30px;
+    }
+    .right-click-menu .modal-btngroup {
+      margin: 10px;
+      text-align: center;
+    }
+    .right-click-menu2 {
+      left: 70%;
+    }
+    .text-center {
+      padding: 6px 10px;
+    }
+        </style>
+      
+{% endblock %}
+{% block extrabody %}
+<script src="{{ '/static/js/vue.js' }}"></script>
+<script src="{{ '/static/js/jquery.slimscroll.js' }}"></script>
+<script src="{{ '/static/js/axios.min.js' }}"></script>
+<script src="{{ '/static/js/lodash.min.js' }}"></script>
+<script src="{{ '/static/js/element-ui.js' }}"></script>
+<script src="{{ '/static/custom/js/tripitaka.js' }}"></script>
+<script src="{{ '/static/custom/js/tp_component.js' }}"></script>
+{% endblock %}
+{% block title %}切分数据浏览{% endblock %}
 {% block content %}
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-    <title>Insert title here</title>
 
-    <style>
-      .col-md-10_col-xs-10 {
-        float: left;
-        margin-left: 80px;         
-      }
-      .col-md-9_col-xs-9 {
-        float: left;
-        margin-left:10px;         
-      }
-      .dropdown-menu {
-        float: left;
-        margin-left: 10px;
-        height: 200px;
-        overflow-y:auto;        
-      }
-      .sutra-tree {
-        float: left;
-        width: 100%;
-        height: 75%;
-        overflow-y:auto;
-      }
-      .sutra-image {
-        float: left;
-        height: 80%;
-        margin-top: 0px;
-        overflow-y:auto;
-        overflow-x:hidden；        
-      }
-      .sutra-text {
-        float: left;
-        margin-left: 0px;
-        height: 80%;
-        width: 350px;
-        overflow-y:auto;
-        overflow-x:hidden；
-      }
-      .switcher {
-        transition: left 0.8s;
-      }
-      .left {
-         left: 0px;
-      }
-      .right {
-        left: 50px;
-      }
-      #tripitaka {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 25px;
-  height: 100%;
-  font-size: 14px;
-}
-#tripitaka .tpd-header {
-  text-align: right;
-  margin-bottom: 20px;
-}
-#tripitaka .tpd-header {
-  text-align: right;
-}
-#tripitaka .input {
-  box-sizing: border-box;
-  width: 100%;
-  height: 26px;
-  border-radius: 13px;
-  padding: 0 15px;
-  outline: none;
-  border: 1px solid #ddd;
-}
-
-#tripitaka .el-input__inner[readonly="readonly"] {
-  width: 120px;
-}
-#tripitaka .input-group {
-  position: relative;
-  display: inline-block;
-  width: 100%;
-}
-#tripitaka .tpd-header-input {
-  width: 20%;
-  display: inline-block;
-}
-#tripitaka .tpd-left-input {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 20px;
-  border-bottom: 1px solid #ddd;
-}
-#tripitaka .input-group .icon {
-  box-sizing: border-box;
-  display: inline-block;
-  position: absolute;
-  right: 10px;
-  top: 5px;
-  background-image: url(../imgs/tripidata/search.png);
-  background-repeat: no-repeat;
-  width: 16px;
-  height: 16px;
-}
-#tripitaka .tpd-main {
-  height: calc(100% - 30px);
-  vertical-align: top;
-}
-#tripitaka .tpd-left {
-  vertical-align: top;
-  box-sizing: border-box;
-  height: calc(100%);
-  width: 30%;
-  display: inline-block;
-}
-#tripitaka .tpd-left-content {
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  height: calc(100%);
-  position: relative;
-}
-#tripitaka .tpd-right {
-  vertical-align: top;
-  box-sizing: border-box;
-  width: 100%;
-  height: calc(100%);
-  margin-left: 2%;
-  display: inline-block;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-}
-#tripitaka .tpd-right .tpd-right-content {
-  height: 100%;
-  padding: 20px;
-  height: calc(100%);
-  line-height: 26px;
-  overflow-y: auto;
-}
-#tripitaka .tpd-right .tpd-right-header {
-  display: block;
-  padding: 15px;
-  border-bottom: 1px solid #ddd;
-}
-#tripitaka .tpd-right .tpd-right-breadcrumb {
-  width: 40%;
-  display: inline-block;
-}
-#tripitaka .tpd-right .tpd-right-btngroup {
-  width: 100%;
-  display: inline-block;
-  text-align: right;
-}
-#tripitaka .tpd-right .tpd-right-btngroup .cut-switch {
-  display: inline-block;
-  margin-left: 10px;
-  vertical-align: middle;
-}
-#tripitaka .tpd-right .tpd-right-btngroup .cut-switch-text {
-  display: inline-block;
-  color: #409eff;
-  vertical-align: middle;
-}
-#tripitaka .tpd-right .tpd-right-btngroup .el-switch {
-  display: inline-block;
-  vertical-align: middle;
-}
-#tripitaka .tpd-right .tpd-right-btngroup .tpd-pagination {
-  display: inline-block;
-  vertical-align: middle;
-}
-#tripitaka .tpd-right .tpd-right-btngroup .tpd-pagination input {
-  box-sizing: border-box;
-  display: inline-block;
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid #ddd;
-  border-radius: 14px;
-  text-align: center;
-  outline: none;
-  width: 52px;
-}
-#tripitaka .tpd-main-st {
-  height: calc(100% - 25px) !important;
-}
-#tripitaka .tpd-main-st .tpd-left {
-  height: calc(100%) !important;
-}
-#tripitaka .tpd-main-st .el-tabs {
-  height: calc(100% - 10px) !important;
-}
-#tripitaka .tpd-main-st .tpd-left-content {
-  border: none;
-}
-#tripitaka .tpd-main-st .el-tabs__content {
-  height: calc(100% - 30px) !important;
-  border-top: 1px solid #ddd;
-  border: 1px solid #ddd;
-}
-#tripitaka .tpd-main-st .tpd-right {
-  height: calc(100% - 10px) !important;
-}
-#tripitaka .tpd-main-st .tpd-right-content {
-  height: calc(100% - 60px) !important;
-}
-#tripitaka .tpd-tree {
-  padding: 20px;
-}
-#tripitaka .el-tree-node__content {
-  border-bottom: 1px dotted #ddd;
-  line-height: 30px;
-  height: 32px;
-  font-size: 20px;
-}
-#tripitaka .el-tabs--card > .el-tabs__header {
-  border-bottom: none;
-  margin: 0;
-}
-#tripitaka .el-tabs--card > .el-tabs__header .el-tabs__nav {
-  border: none;
-  margin-bottom: -10px;
-}
-#tripitaka .el-tabs__item {
-  border: 1px solid #ddd;
-  width: 80px;
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
-  text-align: center;
-}
-#tripitaka .el-tabs__item.is-active {
-  background-color: #409eff;
-  color: #fff;
-  border-color: #409eff;
-}
-#tripitaka .sub-funeral-list {
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  overflow-y: auto;
-  padding: 10px;
-}
-#tripitaka .sub-funeral-list .el-col {
-  margin: 1%;
-  width: 18%;
-  box-sizing: border-box;
-}
-#tripitaka .sub-funeral-list .sub-funeral-item {
-  width: 100%;
-  text-align: center;
-}
-#tripitaka .sub-funeral-list .sub-funeral-item img {
-  width: 100%;
-}
-.right-click-menu {
-  position: absolute;
-  display: none;
-  top: 10%;
-  left: 50%;
-  width: 400px;
-  box-shadow: 4px 4px 4px #ddd;
-}
-.right-click-menu .right-click-content {
-  border: 1px solid #ddd;
-  padding: 15px;
-  background: #fff;
-}
-.right-click-menu .right-click-triangle {
-  display: inline-block;
-  border-top: 1px solid #ddd;
-  border-left: 1px solid #ddd;
-  position: absolute;
-  z-index: 999;
-  top: -10px;
-  left: 50%;
-  margin-left: -10px;
-  width: 20px;
-  height: 20px;
-  transform: rotate(45deg);
-  background-color: #fff;
-}
-.right-click-menu li {
-  cursor: pointer;
-  line-height: 25px;
-}
-.right-click-menu li i {
-  margin-right: 5px;
-}
-.right-click-menu .el-row {
-  border-left: 1px solid #ddd;
-  border-bottom: 1px solid #ddd;
-  text-align: center;
-}
-.right-click-menu .el-row .el-col {
-  line-height: 50px;
-  border-right: 1px solid #ddd;
-  border-top: 1px solid #ddd;
-}
-.right-click-menu .modal-fankui {
-  margin: 10px;
-}
-.right-click-menu .modal-text {
-  line-height: 30px;
-}
-.right-click-menu .modal-btngroup {
-  margin: 10px;
-  text-align: center;
-}
-.right-click-menu2 {
-  left: 70%;
-}
-.text-center {
-  padding: 6px 10px;
-}
-    </style>
-  </head>
   
 <div id="tripitaka">
 <el-row>
@@ -345,85 +359,37 @@
     </div>
   </el-col>
   <el-col :span="18">
-      <div class="tpd-right">
-          <div class="tpd-right-header">
-            <el-breadcrumb separator="/">
-                  <el-breadcrumb-item>${cur_tripitaka.name}</el-breadcrumb-item>
-                  <el-breadcrumb-item>${sutra_name}</el-breadcrumb-item>
-                  <el-breadcrumb-item>第${reel_no}卷</el-breadcrumb-item>
-                  <el-breadcrumb-item>第${curreelpage}页</el-breadcrumb-item>
-                  </el-breadcrumb>
-          
-          <div class="tpd-right-btngroup">
-              <div class="tpd-pagination">
-                  <el-pagination
-                  @current-change="handleCurrentChange"
-                  :current-page.sync="curreelpage"
-                  :page-size="1"
-                  layout="total, prev, next, jumper"
-                  :total="reelpage_count">
-                </el-pagination>
-              </div>
-              <div class="cut-switch">
-                <el-switch @change="switchchange" v-model="showCutData" active-text="切分框"></el-switch>
-              </div>
-            </div>
-          </div>
-    <el-row>
-      <el-col :span="16">
-      <div class="sutra-image" id="sutra-image" >    
-        
-        <canvas id="page-canvas"></canvas>
-      </div>
-    </el-col>
-      <el-col :span="8">
-        <div class="sutra-text"  >
-          <ul> <li v-for="item in sutra_text_list">${ item }</li> </ul>
+        <div class="tpd-right">
+                <div class="tpd-right-header">
+                  <el-breadcrumb separator="/">
+                        <el-breadcrumb-item>${cur_tripitaka.name}</el-breadcrumb-item>
+                        <el-breadcrumb-item>${sutra_name}</el-breadcrumb-item>
+                        <el-breadcrumb-item>第${reel_no}卷</el-breadcrumb-item>
+                        <el-breadcrumb-item>第${curreelpage}页</el-breadcrumb-item>
+                        </el-breadcrumb>
+                </div>
+        <el-row>
+            <el-col :span="24">
+                <div class="sutra-image" id="sutra-image" >    
+                    <canvas id="page-canvas"></canvas>
+                </div>
+            </el-col>
+        <el-col :span="14" :offset="2">
+            <el-pagination
+            @current-change="handleCurrentChange"
+            :current-page.sync="curreelpage"
+            :page-size="1"
+            layout="total, prev, next, jumper"
+            :total="reelpage_count">
+            </el-pagination>
+        </el-col> 
+
+            <el-col :span="8"  >
+                <el-button @click="redoPageRect()">重做</el-button>
+            </el-col>
+        </el-row>
         </div>
-      </el-col>
-      <el-col :span="8">
-         
-      </el-col>
-      <el-col :span="16">
-          
-      </el-col>
-    </el-row>
-    </div>
-      
-        <div class="row">
-          <div class="col-md-9_col-xs-9" id="col-md-9_col-xs-9" >
-            <div class="el-pagination">
-              <div class="el-pagination__rightwrapper"></div>
-              <button type="button" v-on:click="prevvolume" class="el-icon el-icon-arrow-left" class="btn-prev" :class="{ disabled: (curvolume <= volume_min) }">          
-              </button>
-              <span class="el-pagination__jump">
-                <div class="el-input el-pagination__editor is-in-pagination">
-                  <input v-on:input='inputvolume' v-model="curvolume" autocomplete="off" type="number" rows="2" min="1" validateevent="true" class="el-input__inner">
-                </div>/ ${ volume_count }册</span>
-              <ul class="el-pager"></ul>
-              <button type="button" v-on:click="nextvolume" class="el-icon el-icon-arrow-right" class="btn-next" :class="{ disabled: (curvolume == volume_count) }">       
-              </button>
-      
-            </div>
-          </div>   
-      
-        <div class="col-md-10_col-xs-10" id="col-md-10_col-xs-10" >
-          <div class="el-pagination">
-            <div class="el-pagination__rightwrapper"></div>
-            <button type="button" v-on:click="prevvolumepage" class="el-icon el-icon-arrow-left" class="btn-prev" :class="{ disabled: (curvolumepage <= volumepage_min) }">          
-            </button>
-            <span class="el-pagination__jump">
-              <div class="el-input el-pagination__editor is-in-pagination">
-                <input v-on:input='inputvolumepage' v-model="curvolumepage" autocomplete="off" type="number" rows="2" min="1" validateevent="true" class="el-input__inner">
-              </div>/ ${ volumepage_count }页(册)</span>
-            <ul class="el-pager"></ul>
-            <button type="button" v-on:click="nextvolumepage" class="el-icon el-icon-arrow-right" class="btn-next" :class="{ disabled: (curvolumepage == volumepage_count) }">       
-            </button>
-            
-          </div>
-        </div> 
-      </div>
-  </el-col>
+    </el-col>
 </el-row>
 
 </div>
@@ -439,9 +405,8 @@
       reel_page_list: [],
       imageURL :'',
       sutra_text:'',
-      sutra_name: '',
       sutra_text_list: [''],
-
+      sutra_name: '',
       sutra_list: [],      
       tree_props: {
         children: 'reel_set',
@@ -477,7 +442,7 @@
       reelvolumestartpage:1,//卷的册级别起始页
       reelpage_count:1,
       reel_no: 0,
-      curreelpage:1,
+      curreelpage: 0,
 
       //册导航
       volume_count:1,
@@ -490,7 +455,7 @@
       volumepage_min:1,
 
       //切分开关
-      showCutData: false,
+      showCutData: true,
 
       //展开数组
       expandlist:[],
@@ -520,6 +485,7 @@
       }
     },
     created: function() {
+        $('#content-block').height(window.document.body.clientHeight * 0.8);
       var vm = this;
         //获得藏 列表
         axios.get('/api/tripitaka/').then(function(response) {
@@ -536,10 +502,14 @@
         setTimeout(function() {
           vm.fetchSutraList();
         }, 500);
-        
     },
-    
     methods: {
+      redoPageRect() {
+        alert(this.curreelpage);
+        axios.post('/api/redo_pagerect/' + this.reel_no + '/', {page_no: this.curreelpage}).then(function(response) {
+            console.log(1);
+        });        
+      },
       handleCommand(command) {
         this.$message('click on item ' + command);
         for (var i=0;i<this.tripitaka_table.length;i++){
@@ -651,7 +621,6 @@
         return false;
       },
       selTripitaka: function(data) {    
-        debugger;
         var vm = this;
         for (var i=0;i<vm.tripitaka_table.length;i++){
           //console.log('|', data.target.text,'|', vm.tripitaka_table[i]['name'])
@@ -733,10 +702,10 @@
         vm.reelpage_count = vm.reel_page_list.length;
         //console.log(response.data.cut_Info_list);
         vm.page_cut_Info_list=response.data.cut_Info_list;
-        vm.reel_no = data.reel_no;
-        vm.sutra_name = response.data.sutra_name;     
         vm._showSutraText();
-        vm.curreelpage = 1 ;        
+        vm.curreelpage = 1 ;
+        vm.reel_no = data.reel_no;
+        vm.sutra_name = response.data.sutra_name;        
         vm._updatePage();  
         //console.log(data.end_vol,data.end_vol_page);
         vm.curvolume=data.start_vol;
@@ -785,7 +754,7 @@
                 
                 /////////////////////////////////////////////////
                 var data = JSON.parse(vm.page_cut_Info_list[vm.curreelpage-1]);
-                //console.log(data);
+                console.log(data);
                 var sx = 0;
                 var sy = 0;
                 var sw = canvas.width;

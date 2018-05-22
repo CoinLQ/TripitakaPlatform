@@ -8,7 +8,7 @@ from tasks.models import ReelCorrectText,Punct,Page
 from tdata.serializer import SutraSerializer ,TripitakaSerializer
 from tdata.lib.image_name_encipher import get_image_url
 from tasks.common import clean_separators, extract_line_separators
-
+from rect.models import *
 
 import json, re
 
@@ -43,17 +43,19 @@ class TripitakaViewSet(viewsets.ReadOnlyModelViewSet):
 class SutraText(APIView):
     # test http://api.lqdzj.cn/api/sutra_text/231/
     def get(self, request, s_id, format=None):
-         
+        
         print('=======================')
         #根据卷ID 获得页号 和页数
         reel = Reel.objects.get(id = s_id)
-        reelPages = Page.objects.filter(reel = reel ).order_by("reel_page_no")          
+        reelPages = Page.objects.filter(reel = reel).order_by("reel_page_no")          
         strURLRet=''
         cut_Info_list=[]
+        
         for p in reelPages:   
             print (p)         
             image_url = get_image_url(reel, p.reel_page_no)
             cut_Info_list.append(p.cut_info)
+            # cut_Info_list.append(json.dumps({'char_data': [rect.serialize_set for rect in Rect.objects.filter(page_pid=p.pk).order_by('-id')]},separators=(',', ':')))
             strURLRet += image_url+'|'
         print('=======================')    
 
@@ -79,7 +81,33 @@ class SutraText(APIView):
         response = {
             'sutra': reel_ocr_text,
             'pageurls':strURLRet,
-            'cut_Info_list':cut_Info_list
+            'cut_Info_list':cut_Info_list,
+            'sutra_name': str(reel.sutra.name)
             #'punct_lst': punctuation,            
         }
         return Response(response)    
+
+
+class RedoPageRect(APIView):
+
+    # test http://api.lqdzj.cn/api/redo_pagerect/231/
+    def post(self, request, s_id, format=None):
+        # 审定任务已开始，提交将失效
+        reel = Reel.objects.get(id = s_id)
+        reelPages = Page.objects.filter(reel = reel).order_by("reel_page_no").all() 
+        pagerect= PageRect.objects.filter(page_id=reelPages[request.data['page_no']-1].pk).first()
+        pagetasks = PageTask.objects.filter(pagerect=pagerect).all()
+        for task in pagetasks:
+            if task.status < TaskStatus.COMPLETED:
+                task.priority = PriorityLevel.HIGH
+                task.save(update_fields=['priority'])
+                return Response({'status': 'level up'})
+
+        if len(pagetasks) > 0:
+            pagetasks[0].roll_new_task()
+            return Response({'status': 'ok'})
+        else:
+            pass
+            # Schedule.create_reels_pptasks(reel)
+
+        return Response({'status': 'null'})

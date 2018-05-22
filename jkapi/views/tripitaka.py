@@ -63,12 +63,15 @@ class SutraText(APIView):
         print('=======================')    
 
         #根据卷ID获得经文
-        reel_ocr_text=None         
+        reel_ocr_text=None
+        reelcorrectid=-1
         try:
-            reel_ocr_text = ReelCorrectText.objects.get(reel_id = s_id).text
+            reel_ocr_text = ReelCorrectText.objects.get(reel_id=int(s_id))
+            reelcorrectid = reel_ocr_text.id
+            text = reel_ocr_text.text
         except:
-            reel_ocr_text = ReelOCRText.objects.get(reel_id = s_id).text
-        #reel_ocr_text=clean_separators(reel_ocr_text)
+            reel_ocr_text = ReelOCRText.objects.get(reel_id=int(s_id))
+            text = reel_ocr_text.text
         
         # punctuation=None
         # try :
@@ -82,10 +85,11 @@ class SutraText(APIView):
        
 
         response = {
-            'sutra': reel_ocr_text,
+            'sutra': text,
             'pageurls':strURLRet,
             'cut_Info_list':cut_Info_list,
-            'sutra_name': str(reel.sutra.name)
+            'sutra_name': str(reel.sutra.name),
+            'reelcorrectid': reelcorrectid,
             #'punct_lst': punctuation,            
         }
         return Response(response)    
@@ -124,12 +128,8 @@ class CorrectFeedbackViewset(generics.ListAPIView):
         correct_text = request.data['correct_text']
         if correct_text != -1:
             data = dict(request.data)
-            # rct = ReelCorrectText.objects.get(id=correct_text_id)
-            # data['correct_text'] = rct
             serializer = CorrectFeedbackSerializer(data=data)
-            print(serializer.initial_data)
             if serializer.is_valid():
-                print(serializer.initial_data)
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response({'errors': "未校对，不能反馈！"}, status=status.HTTP_400_BAD_REQUEST)

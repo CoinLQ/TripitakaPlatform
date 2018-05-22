@@ -1258,7 +1258,6 @@ Vue.component('correct-feedback-dialog', {
     props: ['sharedata'],
     template: `
     <el-dialog title="校对文字反馈" :visible.sync="sharedata.correctFeedbackDialogVisible" width="35%" @open="handleOpen" :before-close="handleCancel">
-        
         <div class="row">
         现有文本:<p>{{ sharedata.original_text }}</p>
         反馈文本：<el-input v-model="sharedata.fb_text"></el-input>

@@ -139,6 +139,7 @@
       selected_text:'',
       scrolled: false,
       segid: 1,
+      page: {{ page }},
       image_url_prefix: '',
       page_no: 1,
       line_no: 1,
@@ -534,6 +535,9 @@
       },
       loadImage: function() {
         this.img_url = this.image_urls[this.page_no-1];
+        if (!this.img_url) {
+          return ;
+        }
         var cut_url = this.img_url.replace('.jpg', '.cut');
         var vm = this;
         axios.get(cut_url).then(function(response) {
@@ -542,16 +546,18 @@
           // 结尾缺字
           if (!v) {
             v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no })
-            let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
-            vm.x = v['x'];
-            vm.y = v['y']+ v['h'];
-            vm.w = v['w'];
-            vm.h = (max_char_no['char_no'] - vm.current_char_no +1)*v['h'];
-            vm.setImg();
-            return;
+            if (v) {
+              let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
+              vm.x = v['x'];
+              vm.y = v['y']+ v['h'];
+              vm.w = v['w'];
+              vm.h = (max_char_no['char_no'] - vm.current_char_no +1)*v['h'];
+              vm.setImg();
+              return;
+            }
           }
           // 漏框，换算
-          if (!vm.current_seg.text2) {
+          if (v && !vm.current_seg.text2) {
             let pre_v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no && v['char_no'] < vm.current_char_no })
             // 当前位置缺框
             if (pre_v){
@@ -574,11 +580,12 @@
             }
             return
           }
-
-          vm.x = v['x'];
-          vm.y = v['y'];
-          vm.w = v['w'];
-          vm.h = v['h'];
+          if (v) {
+            vm.x = v['x'];
+            vm.y = v['y'];
+            vm.w = v['w'];
+            vm.h = v['h'];
+          }
           vm.setImg();
         });
 
@@ -649,10 +656,10 @@
       },
       moveSegDiffToView: function(segid) {
         try {
-          if (!this.$el.querySelector('#segdiff-'+ segid + ' span.difftext')) {
+          if (!this.$el.querySelector('#segdiff-'+ segid)) {
             return
           }
-          this.$el.querySelector('#segdiff-'+ segid + ' span.difftext').focus()
+          this.$el.querySelector('#segdiff-'+ segid).focus()
           var offset = this.$el.querySelector('div.diff-text-pane').scrollTop + this.$el.querySelector('#segdiff-' + segid).getBoundingClientRect().top - 360;
           this.$el.querySelector('div.diff-text-pane').scrollTop = offset;
         } catch(err) {
@@ -770,11 +777,23 @@
           vm.sharedata.correctsegs = response.data;
           for(var i = 0; i < vm.sharedata.correctsegs.length; ++i) {
             var seg = vm.sharedata.correctsegs[i];
-            if (seg.id == vm.segid) {
-              vm.page_no = seg.page_no;
-              vm.line_no = seg.line_no;
-              vm.char_no = seg.char_no;
-              vm.current_char_no = vm.char_no;
+            if (vm.page != 0) {
+              if (seg.page_no == vm.page && seg.line_no != 0 && seg.char_no != 0) {
+                vm.page_no = seg.page_no;
+                vm.line_no = seg.line_no;
+                vm.char_no = seg.char_no;
+                vm.current_char_no = vm.char_no;
+                vm.segid = seg.id;
+                vm.page = 0;
+                console.log(vm.page_no, vm.line_no, vm.char_no);
+              }
+            } else {
+              if (seg.id == vm.segid) {
+                vm.page_no = seg.page_no;
+                vm.line_no = seg.line_no;
+                vm.char_no = seg.char_no;
+                vm.current_char_no = vm.char_no;
+              }
             }
           }
 

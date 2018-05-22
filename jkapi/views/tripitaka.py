@@ -3,12 +3,15 @@ from rest_framework import viewsets, generics, filters
 from rest_framework import pagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
 from tdata.models import Sutra,ReelOCRText,Reel,Tripitaka
-from tasks.models import ReelCorrectText,Punct,Page
+from tasks.models import ReelCorrectText, Punct, Page, CorrectFeedback
 from tdata.serializer import SutraSerializer ,TripitakaSerializer
 from tdata.lib.image_name_encipher import get_image_url
 from tasks.common import clean_separators, extract_line_separators
 from rect.models import *
+from jkapi.serializers import CorrectFeedbackSerializer
+from jkapi.permissions import CanSubmitFeedbackOrReadOnly
 
 import json, re
 
@@ -56,7 +59,7 @@ class SutraText(APIView):
             image_url = get_image_url(reel, p.reel_page_no)
             cut_Info_list.append(p.cut_info)
             # cut_Info_list.append(json.dumps({'char_data': [rect.serialize_set for rect in Rect.objects.filter(page_pid=p.pk).order_by('-id')]},separators=(',', ':')))
-            strURLRet += image_url+'|'
+            strURLRet= image_url+'|'
         print('=======================')    
 
         #根据卷ID获得经文
@@ -111,3 +114,22 @@ class RedoPageRect(APIView):
             # Schedule.create_reels_pptasks(reel)
 
         return Response({'status': 'null'})
+
+class CorrectFeedbackViewset(generics.ListAPIView):
+    queryset = CorrectFeedback.objects.all()
+    serializer_class = CorrectFeedbackSerializer
+    permission_classes = (CanSubmitFeedbackOrReadOnly,)
+
+    def post(self, request, format=None):
+        correct_text = request.data['correct_text']
+        if correct_text != -1:
+            data = dict(request.data)
+            # rct = ReelCorrectText.objects.get(id=correct_text_id)
+            # data['correct_text'] = rct
+            serializer = CorrectFeedbackSerializer(data=data)
+            print(serializer.initial_data)
+            if serializer.is_valid():
+                print(serializer.initial_data)
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({'errors': "未校对，不能反馈！"}, status=status.HTTP_400_BAD_REQUEST)

@@ -3,12 +3,15 @@ from rest_framework import viewsets, generics, filters
 from rest_framework import pagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
 from tdata.models import Sutra,ReelOCRText,Reel,Tripitaka
-from tasks.models import ReelCorrectText,Punct,Page
+from tasks.models import ReelCorrectText, Punct, Page, CorrectFeedback
 from tdata.serializer import SutraSerializer ,TripitakaSerializer
 from tdata.lib.image_name_encipher import get_image_url
 from tasks.common import clean_separators, extract_line_separators
 from rect.models import *
+from jkapi.serializers import CorrectFeedbackSerializer
+from jkapi.permissions import CanSubmitFeedbackOrReadOnly
 
 import json, re
 
@@ -56,16 +59,19 @@ class SutraText(APIView):
             image_url = get_image_url(reel, p.reel_page_no)
             cut_Info_list.append(p.cut_info)
             # cut_Info_list.append(json.dumps({'char_data': [rect.serialize_set for rect in Rect.objects.filter(page_pid=p.pk).order_by('-id')]},separators=(',', ':')))
-            strURLRet += image_url+'|'
+            strURLRet= image_url+'|'
         print('=======================')    
 
         #根据卷ID获得经文
-        reel_ocr_text=None         
+        reel_ocr_text=None
+        reelcorrectid=-1
         try:
-            reel_ocr_text = ReelCorrectText.objects.get(reel_id = s_id).text
+            reel_ocr_text = ReelCorrectText.objects.get(reel_id=int(s_id))
+            reelcorrectid = reel_ocr_text.id
+            text = reel_ocr_text.text
         except:
-            reel_ocr_text = ReelOCRText.objects.get(reel_id = s_id).text
-        #reel_ocr_text=clean_separators(reel_ocr_text)
+            reel_ocr_text = ReelOCRText.objects.get(reel_id=int(s_id))
+            text = reel_ocr_text.text
         
         # punctuation=None
         # try :
@@ -79,10 +85,11 @@ class SutraText(APIView):
        
 
         response = {
-            'sutra': reel_ocr_text,
+            'sutra': text,
             'pageurls':strURLRet,
             'cut_Info_list':cut_Info_list,
-            'sutra_name': str(reel.sutra.name)
+            'sutra_name': str(reel.sutra.name),
+            'reelcorrectid': reelcorrectid,
             #'punct_lst': punctuation,            
         }
         return Response(response)    
@@ -111,3 +118,18 @@ class RedoPageRect(APIView):
             # Schedule.create_reels_pptasks(reel)
 
         return Response({'status': 'null'})
+
+class CorrectFeedbackViewset(generics.ListAPIView):
+    queryset = CorrectFeedback.objects.all()
+    serializer_class = CorrectFeedbackSerializer
+    permission_classes = (CanSubmitFeedbackOrReadOnly,)
+
+    def post(self, request, format=None):
+        correct_text = request.data['correct_text']
+        if correct_text != -1:
+            data = dict(request.data)
+            serializer = CorrectFeedbackSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({'errors': "未校对，不能反馈！"}, status=status.HTTP_400_BAD_REQUEST)

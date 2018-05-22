@@ -124,7 +124,7 @@
 #tripitaka .tpd-right {
   vertical-align: top;
   box-sizing: border-box;
-  width: 67%;
+  width: 100%;
   height: calc(100%);
   margin-left: 2%;
   display: inline-block;
@@ -144,11 +144,11 @@
   border-bottom: 1px solid #ddd;
 }
 #tripitaka .tpd-right .tpd-right-breadcrumb {
-  width: 50%;
+  width: 40%;
   display: inline-block;
 }
 #tripitaka .tpd-right .tpd-right-btngroup {
-  width: 49%;
+  width: 100%;
   display: inline-block;
   text-align: right;
 }
@@ -345,6 +345,30 @@
     </div>
   </el-col>
   <el-col :span="18">
+      <div class="tpd-right">
+          <div class="tpd-right-header">
+            <el-breadcrumb separator="/">
+                  <el-breadcrumb-item>${cur_tripitaka.name}</el-breadcrumb-item>
+                  <el-breadcrumb-item>${sutra_name}</el-breadcrumb-item>
+                  <el-breadcrumb-item>第${reel_no}卷</el-breadcrumb-item>
+                  <el-breadcrumb-item>第${curreelpage}页</el-breadcrumb-item>
+                  </el-breadcrumb>
+          
+          <div class="tpd-right-btngroup">
+              <div class="tpd-pagination">
+                  <el-pagination
+                  @current-change="handleCurrentChange"
+                  :current-page.sync="curreelpage"
+                  :page-size="1"
+                  layout="total, prev, next, jumper"
+                  :total="reelpage_count">
+                </el-pagination>
+              </div>
+              <div class="cut-switch">
+                <el-switch @change="switchchange" v-model="showCutData" active-text="切分框"></el-switch>
+              </div>
+            </div>
+          </div>
     <el-row>
       <el-col :span="16">
       <div class="sutra-image" id="sutra-image" >    
@@ -358,18 +382,13 @@
         </div>
       </el-col>
       <el-col :span="8">
-          <el-switch @change="switchchange" v-model="showCutData" active-text="切分框"></el-switch>
+         
       </el-col>
       <el-col :span="16">
-          <el-pagination
-          @current-change="handleCurrentChange"
-          :current-page.sync="curreelpage"
-          :page-size="1"
-          layout="total, prev, next, jumper"
-          :total="reelpage_count">
-        </el-pagination>
+          
       </el-col>
     </el-row>
+    </div>
       
         <div class="row">
           <div class="col-md-9_col-xs-9" id="col-md-9_col-xs-9" >
@@ -420,6 +439,7 @@
       reel_page_list: [],
       imageURL :'',
       sutra_text:'',
+      sutra_name: '',
       sutra_text_list: [''],
 
       sutra_list: [],      
@@ -456,6 +476,7 @@
       //卷页导航
       reelvolumestartpage:1,//卷的册级别起始页
       reelpage_count:1,
+      reel_no: 0,
       curreelpage:1,
 
       //册导航
@@ -712,6 +733,8 @@
         vm.reelpage_count = vm.reel_page_list.length;
         //console.log(response.data.cut_Info_list);
         vm.page_cut_Info_list=response.data.cut_Info_list;
+        vm.reel_no = data.reel_no;
+        vm.sutra_name = response.data.sutra_name;     
         vm._showSutraText();
         vm.curreelpage = 1 ;        
         vm._updatePage();  

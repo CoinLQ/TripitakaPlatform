@@ -1,56 +1,129 @@
 {% extends "base.html" %}
 {% block title %}文字校对{% endblock %}
+{% block style %}
+<style type="text/css">
+.pager {
+    padding-left: 0;
+    margin: 0px 0;
+    list-style: none;
+}
+</style>
+{% endblock %}
 {% block content %}
 <div id="correct">
-  <div class="row content-container">
+  <div class="row content-container correct">
     {% raw %}
-    <div class="col-md-6 left-pane">
-      <div class="canvas-pane">
-        <canvas id="page-canvas"></canvas>
-      </div>
-      <div class='scale-op'>
-        <el-button-group>
-          <el-button plain size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
-          <el-button plain size="mini" round>{{scale_rate}}</el-button>
-          <el-button plain size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
-        </el-button-group>
-         <div class="block" style="display:none;width: 30%;margin-left: 50px;">
-            <span class="demonstration">图片大小</span>
-            <el-slider
-              v-model="scale"
-              :step="1"
-              :max="5"
-              :min="1"
-              show-stops>
-            </el-slider>
+    <div class="correct-in clearfix">
+        <div class="left fl">
+            <div class="hd">
+              <div class="pager tr">
+                <span @click="scale -=1">-</span>
+                <span ><em>1</em>:<em></em>{{scale}}</em></span>
+                <span @click="scale +=1">+</span>
+              </div>
+            </div>
+            <div class="bd">
+              <div class="bd-in">
+                  <div class="canvas-pane">
+                    <canvas id="page-canvas"></canvas>
+                  </div>
+              </div>
+            </div>
+        </div>
+        <div class="right fr clearfix">
+          <div class="diff-text-pane">
+            <div class="hd clearfix">
+              <div class="left-tool fl">
+                <span>差异文本</span>
+                <div class="pager">
+                  <span @click="nextPopup({shiftKey: true})" ><</span>
+                  <span><em>{{progress_text}}</em></span>
+                  <span @click="nextPopup({})">></span>
+                </div>
+                <span class="newline">换行</span>
+                <span class="del">删除</span>
+              </div>
+              <div class="right-tool fr">
+                <div class="btns">
+                  <span>整行删除</span>
+                  <span class="store">存疑</span>
+                  <span>完成</span>
+                  <span>返回任务</span>
+                </div>
+                <span class="help"></span>
+              </div>
+            </div>
+            <div class="bd">
+              <ul>
+                <li class="spn" v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id">
+                  <span v-if="seg.tag == 1" v-html="getSegText(seg)" @click="textSelection(seg, $event)" @keydown="blockthem" :class="{ changed: (seg.text1 != seg.selected_text), current: (current_seg.id == seg.id) }" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @click="textSelection(seg, $event)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null), current: (current_seg.id == seg.id)}" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span class="newline" v-if="seg.tag == 4"  style="padding:0px 20px;" contenteditable="true" @keydown="permitNewline" @click="segClick(seg, $event)" @input="segInput(seg, $event)" v-html="getSegText(seg)"></span>
+                </li>
+              </ul>
+              <div class="correct-dialog dialog-common" ref='popover'>
+                  <dl class="item" @click="choiceText(current_seg, current_seg.text1, $event)"><dt>{{compare_text}}</dt><dd class="text" v-html="spanContent(current_seg.text1)">圍遶</dd></dl>
+                  <dl class="item" @click="choiceText(current_seg, current_seg.text2, $event)"><dt>{{ocr_text}}</dt><dd class="text" v-html="spanContent(current_seg.text2)">圍遶</dd></dl>
+                  <dl class="item" v-if="correct_task_count >= 3" @click="choiceText(current_seg, current_seg.text3, $event)"><dt>三校</dt><dd class="text" v-html="spanContent(current_seg.text3)">圍遶</dd></dl>
+                  <dl class="item" v-if="correct_task_count >= 3" @click="choiceText(current_seg, current_seg.text4, $event)"><dt>四校</dt><dd class="text" v-html="spanContent(current_seg.text4)">圍遶</dd></dl>
+                  <dl class="item"><dt>选择结果</dt><dd class="text"><span id="pop-input" type="text"  @keydown="blockthem" placeholder="请选择或输入……" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)" ></span></dd></dl>
+              </div>
+            </div>
           </div>
-      </div>
+          <div class="doubt-lists">
+             <div class="hd">
+               存疑列表
+             </div>
+            <table class="doubt-table">
+              <thead>
+                <th>行数</th>
+                <th>存疑文本</th>
+                <th>存疑理由</th>
+                <th>操作</th>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>提國</td>
+                  <td>提國</td>
+                  <td><em>移除</em></td>
+                </tr>
+                <tr>
+                  <td>2</td>
+                  <td>提國</td>
+                  <td>提國</td>
+                  <td><em>移除</em></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+    </div>
+</div>
+    <div class="col-md-6 left-pane">
+      <div class="left fl">
+                <div class="hd">
+                  <div class='scale-op'>
+                    <el-button-group>
+                      <el-button plain size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
+                      <el-button plain size="mini" round>{{scale_rate}}</el-button>
+                      <el-button plain size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
+                    </el-button-group>
+                    <div class="block" style="display:none;width: 30%;margin-left: 50px;">
+                        <span class="demonstration">图片大小</span>
+                        <el-slider
+                          v-model="scale"
+                          :step="1"
+                          :max="5"
+                          :min="1"
+                          show-stops>
+                        </el-slider>
+                    </div>
+                  </div>
+        </div>
+      
+      
     </div>
     <div class="col-md-6 right-pane">
-      <div class="operation">
-                <el-popover ref='popover' width="300" style="position: absolute; top: -500;transform-origin: left center 0px" placement="top" popper-class="elpopup" trigger="manual" >
-                        <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info" class='ll'>{{compare_text}}</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text1, $event)" class='selection' v-html="spanContent(current_seg.text1)"></span></div></el-col>
-                        </el-row>
-                        <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info" class='ll'>{{ocr_text}}</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text2, $event)" class='selection' v-html="spanContent(current_seg.text2)"></span></div></el-col>
-                        </el-row>
-                        <el-row :gutter="20" v-if="correct_task_count >= 3">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info" class='ll'>三校</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text3, $event)" class='selection' v-html="spanContent(current_seg.text3)"></span></div></el-col>
-                        </el-row>
-                        <el-row :gutter="20" v-if="correct_task_count >= 4">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info" class='ll'>四校</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text4, $event)" class='selection' v-html="spanContent(current_seg.text4)"></span></div></el-col>
-                        </el-row>
-                        <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info">选择结果</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span id="pop-input" type="text"  @keydown="blockthem" placeholder="请选择或输入……" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)" ></span></div></el-col>
-                        </el-row>
-                </el-popover>
-            </div>
+      
             <div class="diff-text-pane-top">
               <transition name="slide-fade" appear>
                 <div v-if="scrolled || (!scrolled)" style="position: inherit;" class='cmd-block'>
@@ -85,9 +158,7 @@
           <div id="reel-text-compare" class="reel-text-compare">
    
             
-            <div class="spn" v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id">
-              <span v-if="seg.tag == 1" v-html="getSegText(seg)" @click="textSelection(seg, $event)" @keydown="blockthem" :class="{ changed: (seg.text1 != seg.selected_text), current: (current_seg.id == seg.id) }" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @click="textSelection(seg, $event)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null), current: (current_seg.id == seg.id)}" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span class="newline" v-if="seg.tag == 4" contenteditable="true" @keydown="permitNewline" @click="segClick(seg, $event)" @input="segInput(seg, $event)" v-html="getSegText(seg)"></span>
-            </div>
+         
           </div>
           <el-dialog title="存疑意见" :visible.sync="doubt.formVisible">
             <el-form :model="doubt" ref="doubt" label-position="right" >
@@ -139,7 +210,6 @@
       selected_text:'',
       scrolled: false,
       segid: 1,
-      page: {{ page }},
       image_url_prefix: '',
       page_no: 1,
       line_no: 1,
@@ -280,8 +350,8 @@
         if (this.$el.querySelector('div.cmd-block').contains(e.target)) {
           return;
         }
-        if (!this.$refs['popover'].$el.contains(e.target)) {
-          this.$refs['popover'].doClose();
+        if (!this.$refs['popover'].contains(e.target)) {
+          this.$refs['popover'].style.display ='none';
         }
       },
       handleDocumentTab: function(e) {
@@ -319,7 +389,7 @@
       },
       spanContent: function(content) {
         if (!content) {
-          return '<span></span>'
+          return '&nbsp;'
         } else {
           return content;
         }
@@ -335,19 +405,19 @@
         if (this.correct_task_count == 4) {
           offset = 290;
         }
-        let pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().bottom;
+        
+        let pos = this.$el.querySelector('#segdiff-' + seg.id).offsetTop + 36;//+ this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().top;
         //if (diff_pane.scrollHeight - diff_pane.scrollTop == diff_pane.clientHeight) {
-          if (diff_pane.clientHeight - pos < offset) {
-            pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().top - offset;
-          }
+          // if (diff_pane.clientHeight - pos < offset) {
+          //   pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().top - offset;
+          // }
         //}
-
-        this.$refs['popover'].$el.style.position = 'absolute'
-        this.$refs['popover'].$el.style.top = pos + 'px';
-        this.$refs['popover'].doShow();
+        console.log(this.$el.querySelector('#segdiff-' + seg.id).offsetTop)
+        this.$refs['popover'].style.top = pos + 'px';
+        this.$refs['popover'].style.display='';
       },
       hidePopup: function (){
-        this.$refs['popover'].doClose();
+        this.$refs['popover'].style.display='none';
       },
       textSelection: function(seg = null, e = {}){
         if (e.stopPropagation){
@@ -381,7 +451,7 @@
         if (seg && seg.tag == 2) {
           this.loadPopup(seg);
         } else {
-          this.$refs['popover'].doClose();
+          this.hidePopup();
         }
       
         this.$nextTick(function() {
@@ -535,9 +605,6 @@
       },
       loadImage: function() {
         this.img_url = this.image_urls[this.page_no-1];
-        if (!this.img_url) {
-          return ;
-        }
         var cut_url = this.img_url.replace('.jpg', '.cut');
         var vm = this;
         axios.get(cut_url).then(function(response) {
@@ -546,18 +613,16 @@
           // 结尾缺字
           if (!v) {
             v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no })
-            if (v) {
-              let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
-              vm.x = v['x'];
-              vm.y = v['y']+ v['h'];
-              vm.w = v['w'];
-              vm.h = (max_char_no['char_no'] - vm.current_char_no +1)*v['h'];
-              vm.setImg();
-              return;
-            }
+            let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
+            vm.x = v['x'];
+            vm.y = v['y']+ v['h'];
+            vm.w = v['w'];
+            vm.h = (max_char_no['char_no'] - vm.current_char_no +1)*v['h'];
+            vm.setImg();
+            return;
           }
           // 漏框，换算
-          if (v && !vm.current_seg.text2) {
+          if (!vm.current_seg.text1) {
             let pre_v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no && v['char_no'] < vm.current_char_no })
             // 当前位置缺框
             if (pre_v){
@@ -580,12 +645,11 @@
             }
             return
           }
-          if (v) {
-            vm.x = v['x'];
-            vm.y = v['y'];
-            vm.w = v['w'];
-            vm.h = v['h'];
-          }
+
+          vm.x = v['x'];
+          vm.y = v['y'];
+          vm.w = v['w'];
+          vm.h = v['h'];
           vm.setImg();
         });
 
@@ -656,12 +720,13 @@
       },
       moveSegDiffToView: function(segid) {
         try {
-          if (!this.$el.querySelector('#segdiff-'+ segid)) {
+          if (!this.$el.querySelector('#segdiff-'+ segid + ' span.difftext')) {
+            debugger;
             return
           }
-          this.$el.querySelector('#segdiff-'+ segid).focus()
-          var offset = this.$el.querySelector('div.diff-text-pane').scrollTop + this.$el.querySelector('#segdiff-' + segid).getBoundingClientRect().top - 360;
-          this.$el.querySelector('div.diff-text-pane').scrollTop = offset;
+          this.$el.querySelector('#segdiff-'+ segid + ' span.difftext').focus()
+          var offset = this.$el.querySelector('#segdiff-' + segid).offsetTop - 160;
+          this.$el.querySelector('.diff-text-pane .bd').scrollTop = offset;
         } catch(err) {
           console.log('moveSegDiffToView: ', err)
         }
@@ -777,23 +842,11 @@
           vm.sharedata.correctsegs = response.data;
           for(var i = 0; i < vm.sharedata.correctsegs.length; ++i) {
             var seg = vm.sharedata.correctsegs[i];
-            if (vm.page != 0) {
-              if (seg.page_no == vm.page && seg.line_no != 0 && seg.char_no != 0) {
-                vm.page_no = seg.page_no;
-                vm.line_no = seg.line_no;
-                vm.char_no = seg.char_no;
-                vm.current_char_no = vm.char_no;
-                vm.segid = seg.id;
-                vm.page = 0;
-                console.log(vm.page_no, vm.line_no, vm.char_no);
-              }
-            } else {
-              if (seg.id == vm.segid) {
-                vm.page_no = seg.page_no;
-                vm.line_no = seg.line_no;
-                vm.char_no = seg.char_no;
-                vm.current_char_no = vm.char_no;
-              }
+            if (seg.id == vm.segid) {
+              vm.page_no = seg.page_no;
+              vm.line_no = seg.line_no;
+              vm.char_no = seg.char_no;
+              vm.current_char_no = vm.char_no;
             }
           }
 

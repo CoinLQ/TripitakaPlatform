@@ -12,7 +12,7 @@
     <div class="punct-in">
       <div class="punct-main" id="punct-main">
       <span v-for="punctseg in punctseg_lst">
-        <span is="punct-show-seg" :punctseg="punctseg" :sharedata="sharedata"></span></br>
+        <span is="punct-show-seg" :punctseg="punctseg" :sharedata="sharedata"></span>
       </span>
       </div>
     </div>
@@ -23,8 +23,8 @@
       </div>
       <div class="refer">
         <label for="show_refpunct">
-          <img v-if="sharedata.show_refpunct" src="{{ static('custom/imgs/icon12.png') }}" alt="">
-          <img v-else src="{{ static('custom/imgs/icon14.png') }}" alt="">
+          <img v-if="sharedata.show_refpunct" src="{{ static('custom/imgs/icon14.png') }}" alt="">
+          <img v-else src="{{ static('custom/imgs/icon12.png') }}" alt="">
           显示参考标点
         </label>
       </div>

@@ -252,6 +252,8 @@ def get_accurate_cut(text1, text2, cut_json, pid):
         char_data['char_no'] = int(char_data['char_no'])
 
     debug = False
+    if debug:
+        print('pid: ', pid)
     char_lst = generate_accurate_chars(clean_text1, clean_text2, old_char_lst, debug)
 
     column_count = 0
@@ -324,11 +326,12 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                     if char_no == 1:
                         char_idx = 0
                     else: # 找到上一字对应的index
+                        char_idx = len(bar_cord_lst[bar_index]) - 1
                         last_char_s = '%02dn%02d' % (line_no, char_no-1)
                         last_y = char_map[last_char_s]['y']
                         for i in range(len(bar_cord_lst[bar_index])):
                             y, h = bar_cord_lst[bar_index][i]
-                            if y - h/2 < last_y and last_y <= y + h/2:
+                            if y - h/2 < last_y and last_y <= y + h/2 and (i + 1) < len(bar_cord_lst[bar_index]):
                                 char_idx = i + 1
                                 break
                     char_data['y'], char_data['h'] = bar_cord_lst[bar_index][char_idx]
@@ -337,7 +340,8 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                 char_data['x'] = x
                 char_data['w'] = w
             except:
-               print('get_accurate_cut except: ', json.dumps(char_data))    
+                traceback.print_exc()
+                print('get_accurate_cut except: ', json.dumps(char_data))
     return char_lst, line_count, column_count, char_count_lst, add_count, wrong_count, confirm_count
 
 def get_char_region_cord(char_lst):

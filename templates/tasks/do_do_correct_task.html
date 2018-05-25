@@ -32,23 +32,23 @@
         </div>
         <div class="right fr clearfix">
           <div class="diff-text-pane">
-            <div class="hd clearfix">
+            <div class="hd clearfix cmd-block">
               <div class="left-tool fl">
-                <span>差异文本</span>
+                <span>异文</span>
                 <div class="pager">
                   <span @click="nextPopup({shiftKey: true})" ><</span>
                   <span><em>{{progress_text}}</em></span>
                   <span @click="nextPopup({})">></span>
                 </div>
-                <span class="newline">换行</span>
-                <span class="del">删除</span>
+                <span class="newline" @click="display_newline =!display_newline">换行</span>
+                <span class="del" @click="display_space =!display_space">空位</span>
               </div>
               <div class="right-tool fr">
                 <div class="btns">
-                  <span>整行删除</span>
-                  <span class="store">存疑</span>
-                  <span>完成</span>
-                  <span>返回任务</span>
+                  <span @click="RemoveLine">{{remove_btn_text}}</span>
+                  <span class="store" @click="openDoubtForm">存疑</span>
+                  <span :disabled="premitSubmit" @click="finishTask">完成</span>
+                  <span @click="returnTask">返回任务</span>
                 </div>
                 <span class="help"></span>
               </div>
@@ -56,10 +56,18 @@
             <div class="bd">
               <ul>
                 <li class="spn" v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id">
-                  <span v-if="seg.tag == 1" v-html="getSegText(seg)" @click="textSelection(seg, $event)" @keydown="blockthem" :class="{ changed: (seg.text1 != seg.selected_text), current: (current_seg.id == seg.id) }" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @click="textSelection(seg, $event)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null), current: (current_seg.id == seg.id)}" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span class="newline" v-if="seg.tag == 4"  style="padding:0px 20px;" contenteditable="true" @keydown="permitNewline" @click="segClick(seg, $event)" @input="segInput(seg, $event)" v-html="getSegText(seg)"></span>
+                  <span v-if="seg.tag == 1" v-html="getSegText(seg)" @click="textSelection(seg, $event)" @keydown="blockthem" :class="{ changed: (seg.text1 != seg.selected_text), current: (current_seg.id == seg.id) }" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @click="textSelection(seg, $event)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null), current: (current_seg.id == seg.id)}" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span class="newline" v-if="seg.tag == 4"  style="padding:0px 20px 0px 0px;" contenteditable="true" @keydown="permitNewline" @click="segClick(seg, $event)" @input="segInput(seg, $event)" v-html="getSegText(seg)"></span>
                 </li>
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
               </ul>
-              <div class="correct-dialog dialog-common" ref='popover'>
+              <div class="correct-dialog dialog-common" ref='popover' style='display:none'>
                   <dl class="item" @click="choiceText(current_seg, current_seg.text1, $event)"><dt>{{compare_text}}</dt><dd class="text" v-html="spanContent(current_seg.text1)">圍遶</dd></dl>
                   <dl class="item" @click="choiceText(current_seg, current_seg.text2, $event)"><dt>{{ocr_text}}</dt><dd class="text" v-html="spanContent(current_seg.text2)">圍遶</dd></dl>
                   <dl class="item" v-if="correct_task_count >= 3" @click="choiceText(current_seg, current_seg.text3, $event)"><dt>三校</dt><dd class="text" v-html="spanContent(current_seg.text3)">圍遶</dd></dl>
@@ -407,14 +415,9 @@
         }
         
         let pos = this.$el.querySelector('#segdiff-' + seg.id).offsetTop + 36;//+ this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().top;
-        //if (diff_pane.scrollHeight - diff_pane.scrollTop == diff_pane.clientHeight) {
-          // if (diff_pane.clientHeight - pos < offset) {
-          //   pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().top - offset;
-          // }
-        //}
-        console.log(this.$el.querySelector('#segdiff-' + seg.id).offsetTop)
         this.$refs['popover'].style.top = pos + 'px';
-        this.$refs['popover'].style.display='';
+        this.$refs['popover'].style.left = this.$el.querySelector('#segdiff-' + seg.id).offsetLeft + 'px';
+        this.$refs['popover'].style.display='block';
       },
       hidePopup: function (){
         this.$refs['popover'].style.display='none';
@@ -446,7 +449,7 @@
         this.doubt.doubt_char_no = range.startOffset + this.doubt.char_no;
 
         this.current_char_no = this.char_no + range.startOffset ;
-        
+
         this.loadImage();
         if (seg && seg.tag == 2) {
           this.loadPopup(seg);
@@ -536,10 +539,10 @@
       },
       getSegText: function(seg) {
         if (seg.selected_text == null) {
-          if (!seg.text2) {
+          if (!seg.text1) {
             return '<span class="ocr-missing"></span>'
           }else {
-            return seg.text2
+            return seg.text1
           }
         } else if(!seg.selected_text) {
             if (seg.tag == 4) {
@@ -721,7 +724,6 @@
       moveSegDiffToView: function(segid) {
         try {
           if (!this.$el.querySelector('#segdiff-'+ segid + ' span.difftext')) {
-            debugger;
             return
           }
           this.$el.querySelector('#segdiff-'+ segid + ' span.difftext').focus()

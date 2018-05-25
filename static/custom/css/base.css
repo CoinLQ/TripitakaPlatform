@@ -364,9 +364,6 @@ span.removed, span.ocr-missing {
 span.ocr-missing {
     background-color: coral
 }
-span.newline {
-    font-size: 12px;
-}
 
 .elpopup {
     margin-top: 5px;

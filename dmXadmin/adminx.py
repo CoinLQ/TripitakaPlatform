@@ -218,6 +218,20 @@ class ReclaimSelectedTasksAction(BaseActionView):
             msg = "成功将%d个任务的状态变为待领取。" % n
             self.message_user(msg, 'success')
 
+class RemindSelectedTasksAction(BaseActionView):
+
+    action_name = "remind_selected_tasks"
+    description = '对所选的任务催单'
+    icon = 'fa fa-bell'
+
+    @filter_hook
+    def do_action(self, queryset):
+        n = queryset.filter(status=Task.STATUS_PROCESSING).update(
+            status=Task.STATUS_REMINDED)
+        if n:
+            self.message_user("成功对%(count)d个任务催单。" % {
+                "count": n,
+            }, 'success')
 
 class SetPriorityActionBase(BaseActionView):
     icon = 'fa fa-tasks'
@@ -307,7 +321,8 @@ class TaskAdmin(object):
     fields = ['status', 'result', 'picked_at', 'picker', 'priority']
     remove_permissions = ['add']
     gene_task = True
-    actions = [PauseSelectedTasksAction, ContinueSelectedTasksAction, ReclaimSelectedTasksAction,
+    actions = [PauseSelectedTasksAction, ContinueSelectedTasksAction,
+               ReclaimSelectedTasksAction, RemindSelectedTasksAction,
                SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,
                UpdateTaskResultAction]
 

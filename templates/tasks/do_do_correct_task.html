@@ -150,6 +150,7 @@
                     
                         <el-button plain @click="openDoubtForm" round>存疑</el-button>
                         <el-button plain :disabled="premitSubmit" @click="finishTask" round>完成</el-button>
+                        <el-button plain @click="checkLinefeed" round>检查换行</el-button>
                         <el-button plain @click="returnTask" round>退回任务</el-button>
                       
                         <span class="help-icon"><i class="el-icon-question"></i></span>
@@ -192,11 +193,26 @@
       {% raw %}
       <el-collapse v-model="activeNames" @change="handleChange" class="cunyi">
         <el-collapse-item name="1">
-          <template slot="title">
-          <span ><i class="el-icon-date"></i> 存疑列表</span>
-          <el-button v-if="doubt_count!=0" type="danger" size="mini" round>{{doubt_count}}</el-button>
-          </template>
-          <div is="doubt-list" :doubts.sync="doubts" :task_id="sharedata.task_id" :task_typ="sharedata.task_typ" :current_doubt.sync="current_doubt"></div>
+          <el-tabs v-model="activeTabName">
+            <el-tab-pane label="存疑列表" name="doubt_tab">
+              <template slot="title">
+              <span ><i class="el-icon-date"></i> 存疑列表</span>
+              <el-button v-if="doubt_count!=0" type="danger" size="mini" round>{{doubt_count}}</el-button>
+              </template>
+              <div is="doubt-list" :doubts.sync="doubts" :task_id="sharedata.task_id" :task_typ="sharedata.task_typ" :current_doubt.sync="current_doubt"></div>
+            </el-tab-pane>
+            <el-tab-pane label="需要检查行数的栏" name="seg_check_tab">
+              <div v-if="segs_need_fix_linefeed.length == 0 && segs_need_check.length == 0">
+                没有需要检查的
+              </div>
+              <ul v-for="seg in segs_need_fix_linefeed">
+                <li :seg="seg" @click="selectSeg(seg)">{{ seg.selected_text }}</li>
+              </ul>
+              <ul v-for="seg in segs_need_check">
+                <li :seg="seg" @click="selectSeg(seg)">{{ seg.selected_text }}</li>
+              </ul>
+            </el-tab-pane>
+          </el-tabs>
         </el-collapse-item>
       </el-collapse>
       {% endraw %}
@@ -242,7 +258,10 @@
       x: 0,
       y: 0,
       w: 0,
-      h: 0
+      h: 0,
+      activeTabName: 'doubt_tab',
+      segs_need_fix_linefeed: [],
+      segs_need_check: []
     },
     computed: {
       premitSubmit: function (){
@@ -316,6 +335,7 @@
         vm.correct_task_count = response.data.correct_task_count;
         vm.segid = response.data.cur_focus;
         vm.image_urls = response.data.image_urls;
+        vm.bar_line_count = response.data.bar_line_count;
         this.loadCorrectSegs();
       }.bind(this));
       
@@ -873,6 +893,95 @@
             }.bind(this))
           }
         }.bind(this));
+      },
+      checkPBLinefeed: function() {
+        this.segs_need_fix_linefeed = [];
+        for (var i = 0; i < this.sharedata.correctsegs.length; ++i) {
+          var seg = this.sharedata.correctsegs[i];
+          var pos = seg.selected_text.search(/[pb]/);
+          if (pos != -1) { // 检查下一个字符是否为换行符
+            var linefeed_attached = false;
+            if (seg.selected_text.length > pos + 1) {
+              linefeed_attached = (seg.selected_text.substr(pos + 1, 1) == '\n');
+            } else { // 检查下一个seg
+              for (var j = i + 1; j < this.sharedata.correctsegs.length; ++j) {
+                var seg_next = this.sharedata.correctsegs[j];
+                if (seg_next.selected_text != null && seg_next.selected_text.length > 0) {
+                  linefeed_attached = (seg_next.selected_text.substr(0, 1) == '\n');
+                  break;
+                }
+                if (j == this.sharedata.correctsegs.length - 1) {
+                  linefeed_attached = true;
+                }
+              }
+            }
+            if (!linefeed_attached) {
+              this.segs_need_fix_linefeed.push(seg);
+              console.log('segs_need_fix_linefeed:', seg.id, seg.selected_text);
+            }
+          }
+        }
+      },
+      checkLineCount: function() {
+        this.segs_need_check = [];
+        var line_count = 0;
+        var bar_no = 0;
+        var seg_first = null;
+        for (var i = 0; i < this.sharedata.correctsegs.length; ++i) {
+          var seg = this.sharedata.correctsegs[i];
+          var pos = seg.selected_text.search(/[pb]/);
+          if (pos != -1) {
+            // 处理上一栏
+            if (bar_no > 0) {
+              --line_count;
+              if (!isNaN(this.bar_line_count)) {
+                if (line_count != this.bar_line_count) {
+                  this.segs_need_check.push(seg_first);
+                  console.log('segs_need_check:', seg_first.id, seg_first.selected_text, line_count, this.bar_line_count);
+                }
+              } else {
+                if (line_count != this.bar_line_count[bar_no]) {
+                  this.segs_need_check.push(seg_first);
+                  console.log('segs_need_check:', seg_first.id, seg_first.selected_text, line_count, this.bar_line_count[bar_no]);
+                }
+              }
+            }
+
+            seg_first = null;
+            line_count = 0;
+            for (var j = pos + 1; j < seg.selected_text.length; ++j) {
+              if (seg.selected_text[j] == '\n') {
+                ++line_count;
+              }
+            }
+            if (seg.selected_text[pos] == 'p') {
+              bar_no = 1;
+            } else {
+              bar_no += 1;
+            }
+          } else {
+            if (bar_no == 0) { // 起始的p没有
+              bar_no = 1;
+            }
+            if (seg.selected_text != '\n' && seg_first == null) {
+              seg_first = seg;
+            }
+            for (var j = 0; j < seg.selected_text.length; ++j) {
+              if (seg.selected_text[j] == '\n') {
+                ++line_count;
+              }
+            }
+          }
+        }
+      },
+      selectSeg: function(seg) {
+        this.moveSegDiffToView(seg.id);
+        this.textSelection(seg);
+      },
+      checkLinefeed: function() {
+        this.checkPBLinefeed();
+        this.checkLineCount();
+        return ;
       },
       finishTask: function() {
         var vm = this;

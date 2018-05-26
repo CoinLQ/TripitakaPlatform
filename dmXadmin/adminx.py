@@ -9,7 +9,7 @@ from django.template import loader
 
 from tdata.models import *
 from tasks.models import Task, CorrectFeedback, JudgeFeedback, LQPunctFeedback, \
-AbnormalLineCountTask
+AbnormalLineCountTask ,BatchTask
 from rect.models import *
 from jwt_auth.models import Staff
 from tasks.task_controller import correct_update_async, regenerate_correctseg_async
@@ -500,6 +500,29 @@ class AbsentTaskAdmin(object):
     date_hierarchy = 'update_date'  # 详细时间分层筛选
     relfield_style = "fk-select"
 
+
+
+@xadmin.sites.register(BatchTask)
+class BatchTaskAdmin(object):
+    list_display = ("batch_no", "priority", "created_at", "publisher",
+                    "description")
+    def batch_no(self, obj):
+        return '%d%02d%02d%02d%02d' % (obj.created_at.year,
+                obj.created_at.month, obj.created_at.day, obj.created_at.hour,
+                obj.created_at.minute)
+    batch_no.short_description = u'批次号'
+    batch_no.allow_tags = True
+
+    #list_display_links = ("created_at")
+    #list_filter = ( 'publisher')
+    #search_fields = [ "created_at"]    
+    #list_editable = ('owner', "status")
+    #date_hierarchy = 'created_at'  # 详细时间分层筛选
+    #relfield_style = "fk-select"
+
+    
+
+    
 # @xadmin.sites.register(Permission)
 # class PermissionAdmin(object):
 #     list_display = ('id', 'name', 'menu', 'get_roles', 'is_active')

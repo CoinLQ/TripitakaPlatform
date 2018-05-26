@@ -383,14 +383,6 @@ opacity: 0;
 }
 
 .cmd-block {
-    border: 1px solid #ebebeb;
-    border-radius: 3px;
-    background-color: whitesmoke;
-    position: relative;
-    top: 4px;
-    width: 100%;
-    padding: 10px;
-    z-index: 2001;
 }
 
 .content-container {

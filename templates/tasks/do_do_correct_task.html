@@ -46,6 +46,7 @@
               <div class="right-tool fr">
                 <div class="btns">
                   <span @click="RemoveLine">{{remove_btn_text}}</span>
+                  <span :disabled="premitSubmit" @click="checkLinefeed">检查</span>
                   <span class="store" @click="openDoubtForm">存疑</span>
                   <span :disabled="premitSubmit" @click="finishTask">完成</span>
                   <span @click="returnTask">返回任务</span>
@@ -75,147 +76,62 @@
                   <dl class="item"><dt>选择结果</dt><dd class="text"><span id="pop-input" type="text"  @keydown="blockthem" placeholder="请选择或输入……" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)" ></span></dd></dl>
               </div>
             </div>
-          </div>
+          
+          
+          
           <div class="doubt-lists">
-             <div class="hd">
-               存疑列表
-             </div>
-            <table class="doubt-table">
-              <thead>
-                <th>行数</th>
-                <th>存疑文本</th>
-                <th>存疑理由</th>
-                <th>操作</th>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>1</td>
-                  <td>提國</td>
-                  <td>提國</td>
-                  <td><em>移除</em></td>
-                </tr>
-                <tr>
-                  <td>2</td>
-                  <td>提國</td>
-                  <td>提國</td>
-                  <td><em>移除</em></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+              <el-tabs v-model="activeTabName">
+                  <el-tab-pane name="doubt_tab">
+                    <template slot="label">
+                    <div class="hd"> 存疑列表</div>
+                    <el-button v-if="doubt_count==100" type="danger" size="mini" round>{{doubt_count}}</el-button>
+                    </template>
+                    <div is="doubt-list" :doubts.sync="doubts" :task_id="sharedata.task_id" :task_typ="sharedata.task_typ" :current_doubt.sync="current_doubt"></div>
+                  </el-tab-pane>
+                  <el-tab-pane label="需要检查行数的栏" name="seg_check_tab">
+                      <template slot="label">
+                        <div class="hd"> 需要检查行数的栏</div>
+                          
+                      </template>
+                    <div v-if="segs_need_fix_linefeed.length == 0 && segs_need_check.length == 0">
+                      没有需要检查的
+                    </div>
+                    <ul v-for="seg in segs_need_fix_linefeed">
+                      <li :seg="seg" @click="selectSeg(seg)">{{ seg.selected_text }}</li>
+                    </ul>
+                    <ul v-for="seg in segs_need_check">
+                      <li :seg="seg" @click="selectSeg(seg)">{{ seg.selected_text }}</li>
+                    </ul>
+                  </el-tab-pane>
+                </el-tabs>
+
+     
+             
+          <el-dialog title="存疑意见" :visible.sync="doubt.formVisible">
+              <el-form :model="doubt" ref="doubt" label-position="right" >
+                <el-col :span="24">
+                  <el-form-item label="存疑文本" label-width="120px">
+                    <el-input v-model="doubt.doubt_text" :disabled="true" auto-complete="off"></el-input>
+                  </el-form-item>
+                </el-col>
+                <el-form-item label="存疑理由" prop="doubt_comment" :rules="[
+                      { required: true, message: '存疑理由不能为空', trigger: 'blur'},
+                    ]" label-width="120px" >
+                    <el-input type="textarea" :autosize="{ minRows: 3, maxRows: 5}" v-model="doubt.doubt_comment" required auto-complete="off"></el-input>
+                  </el-form-item>
+              </el-form>
+              <div slot="footer" class="dialog-footer">
+                <el-button @click="doubt.formVisible = false">取 消</el-button>
+                <el-button type="primary" @click="submitForm('doubt')">确 定</el-button>
+              </div>
+            </el-dialog>
         </div>
     </div>
 </div>
-    <div class="col-md-6 left-pane">
-      <div class="left fl">
-                <div class="hd">
-                  <div class='scale-op'>
-                    <el-button-group>
-                      <el-button plain size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
-                      <el-button plain size="mini" round>{{scale_rate}}</el-button>
-                      <el-button plain size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
-                    </el-button-group>
-                    <div class="block" style="display:none;width: 30%;margin-left: 50px;">
-                        <span class="demonstration">图片大小</span>
-                        <el-slider
-                          v-model="scale"
-                          :step="1"
-                          :max="5"
-                          :min="1"
-                          show-stops>
-                        </el-slider>
-                    </div>
-                  </div>
-        </div>
-      
-      
-    </div>
-    <div class="col-md-6 right-pane">
-      
-            <div class="diff-text-pane-top">
-              <transition name="slide-fade" appear>
-                <div v-if="scrolled || (!scrolled)" style="position: inherit;" class='cmd-block'>
-                  <el-row :gutter="10">
-                    <el-col :span="24">
-                      <label>差异文本</label>
-                      <el-button @click="nextPopup({shiftKey: true})" plain icon="el-icon-arrow-left" size="mini" circle></el-button>
-                      <span class="vprogress" plain round size="small">{{progress_text}}</span>
-                      <el-button @click="nextPopup({})" plain icon="el-icon-arrow-right" size="mini" circle></el-button>
-                      <label>换行符</label>
-                      <el-button :class="{'b-highlight': display_newline, 'new-line': true}" circle @click="display_newline =!display_newline"  size="mini">↵</el-button>
-                      <label>空位符</label>
-                      <el-button :class="{'b-highlight': display_space, 'deletion': true}" circle @click="display_space =!display_space"  size="mini"><span class="removed"></span></el-button>
-                      <div class='to-right'>
-                        <el-button icon="el-icon-back" plain round @click="RemoveLine">{{remove_btn_text}}</el-button>
-                    
-                        <el-button plain @click="openDoubtForm" round>存疑</el-button>
-                        <el-button plain :disabled="premitSubmit" @click="finishTask" round>完成</el-button>
-                        <el-button plain @click="checkLinefeed" round>检查换行</el-button>
-                        <el-button plain @click="returnTask" round>退回任务</el-button>
-                      
-                        <span class="help-icon"><i class="el-icon-question"></i></span>
-                      </div>
-                  </el-col>
-                  </el-row>
-                </div>
-              </transition>
-            </div>
-        <div class="diff-text-pane" @scroll="handleScroll">
-        
-        <div class="reel-text-region-o">
-          
-          <div id="reel-text-compare" class="reel-text-compare">
-   
-            
-         
-          </div>
-          <el-dialog title="存疑意见" :visible.sync="doubt.formVisible">
-            <el-form :model="doubt" ref="doubt" label-position="right" >
-              <el-col :span="24">
-                <el-form-item label="存疑文本" label-width="120px">
-                  <el-input v-model="doubt.doubt_text" :disabled="true" auto-complete="off"></el-input>
-                </el-form-item>
-              </el-col>
-              <el-form-item label="存疑理由" prop="doubt_comment" :rules="[
-                    { required: true, message: '存疑理由不能为空', trigger: 'blur'},
-                  ]" label-width="120px" >
-                  <el-input type="textarea" :autosize="{ minRows: 3, maxRows: 5}" v-model="doubt.doubt_comment" required auto-complete="off"></el-input>
-                </el-form-item>
-            </el-form>
-            <div slot="footer" class="dialog-footer">
-              <el-button @click="doubt.formVisible = false">取 消</el-button>
-              <el-button type="primary" @click="submitForm('doubt')">确 定</el-button>
-            </div>
-          </el-dialog>
-          {% endraw %}
-        </div>
-      </div>
-      {% raw %}
-      <el-collapse v-model="activeNames" @change="handleChange" class="cunyi">
-        <el-collapse-item name="1">
-          <el-tabs v-model="activeTabName">
-            <el-tab-pane label="存疑列表" name="doubt_tab">
-              <template slot="title">
-              <span ><i class="el-icon-date"></i> 存疑列表</span>
-              <el-button v-if="doubt_count!=0" type="danger" size="mini" round>{{doubt_count}}</el-button>
-              </template>
-              <div is="doubt-list" :doubts.sync="doubts" :task_id="sharedata.task_id" :task_typ="sharedata.task_typ" :current_doubt.sync="current_doubt"></div>
-            </el-tab-pane>
-            <el-tab-pane label="需要检查行数的栏" name="seg_check_tab">
-              <div v-if="segs_need_fix_linefeed.length == 0 && segs_need_check.length == 0">
-                没有需要检查的
-              </div>
-              <ul v-for="seg in segs_need_fix_linefeed">
-                <li :seg="seg" @click="selectSeg(seg)">{{ seg.selected_text }}</li>
-              </ul>
-              <ul v-for="seg in segs_need_check">
-                <li :seg="seg" @click="selectSeg(seg)">{{ seg.selected_text }}</li>
-              </ul>
-            </el-tab-pane>
-          </el-tabs>
-        </el-collapse-item>
-      </el-collapse>
-      {% endraw %}
+
+
+    
+      {% endraw %} 
     </div>
   </div>
 </div>
@@ -252,7 +168,7 @@
       },
       current_doubt: {},
       doubts: [],
-      activeNames: [],
+      activeNames: ["1"],
       scale: 1,
       img_url: '',
       x: 0,
@@ -285,7 +201,7 @@
       },
       progress_text: function() {
         let done_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
-        return done_segs.length + " / " + this.sharedata.correctsegs.length
+        return done_segs.length + " / " + _.filter(this.sharedata.correctsegs, function(o) { return o.tag == 2; }).length
       },
       remove_btn_text: function() {
         if (this.current_seg && this.current_seg.selected_text == '') {
@@ -408,12 +324,12 @@
         });
       },
       handleChange() {
-        let totalHeight = this.$el.querySelector('.canvas-pane').clientHeight - this.$el.querySelector('div.diff-text-pane-top').clientHeight
-        if (this.activeNames.length == 0) {
-          this.$el.querySelector('div.diff-text-pane').style.height = totalHeight- 16;
-        } else {
-          this.$el.querySelector('div.diff-text-pane').style.height = totalHeight - 253;
-        }
+        // let totalHeight = this.$el.querySelector('.canvas-pane').clientHeight - this.$el.querySelector('div.diff-text-pane-top').clientHeight
+        // if (this.activeNames.length == 0) {
+        //   this.$el.querySelector('div.diff-text-pane').style.height = totalHeight- 16;
+        // } else {
+        //   this.$el.querySelector('div.diff-text-pane').style.height = totalHeight - 253;
+        // }
       },
       spanContent: function(content) {
         if (!content) {

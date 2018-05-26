@@ -854,11 +854,22 @@ table {
     cursor: pointer;
 }
 
+.correct .right .doubt-lists {
+    border-top: lightgrey 1px solid;
+}
 .correct .right .doubt-lists .hd {
-    padding-left: 40px;
+    padding: 0 0 0 40px;
     position: relative;
+    font-size: 16px;
+}
+.correct .right .doubt-lists .el-tabs__item {
+    height: 48px;
+    line-height: 48px;
 }
 
+.correct .right .doubt-lists .el-table td, .correct .right .doubt-lists .el-table th {
+    padding: 4px 0;
+}
 .correct .right .doubt-lists .hd:before {
     content: "";
     position: absolute;

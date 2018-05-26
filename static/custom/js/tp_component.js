@@ -1,51 +1,24 @@
+
 Vue.component('doubt-list', {
   props: ['doubts', 'task_id', 'current_doubt', 'task_typ'],
   template: `
-        <el-table
-        :data="doubts"
-        :cell-style="{height: '20px'}"
-        highlight-current-row
-        @current-change="handleCurrentChange"
-        style="width: 100%"
-        max-height="200">
-        <el-table-column
-          fixed
-          prop="id"
-          label="ID"
-          width="50">
-        </el-table-column>
-        <el-table-column
-          prop="doubt_text"
-          label="存疑文本"
-          width="170">
-        </el-table-column>
-        <el-table-column
-          prop="doubt_comment"
-          label="存疑理由"
-          width="220">
-        </el-table-column>
-        <el-table-column
-          fixed="right"
-          label="操作"
-          width="120">
-          <template slot-scope="scope">
-            <el-button v-if="task_typ!=11"
-              @click.native.prevent="deleteRow(scope.$index, doubts)"
-              type="text"
-              size="small">
-              移除
-            </el-button>
-            <el-button v-else v-show="!scope.row.processed"
-              @click.native.prevent="processRow(scope.$index, doubts)"
-              type="text"
-              size="small">
-              完成处理
-            </el-button>
-
-          </template>
-        </el-table-column>
-      </el-table>
-    `,
+<table class="doubt-table">
+<thead>
+  <th>行数</th>
+  <th>存疑文本</th>
+  <th>存疑理由</th>
+  <th>操作</th>
+</thead>
+<tbody>
+  <tr v-for="(item, index) in doubts">
+    <td>{{item.id}}</td>
+    <td>{{item.doubt_text}}</td>
+    <td>{{item.doubt_comment}}</td>
+    <td><em  v-if="task_typ!=11" @click.native.prevent="deleteRow(index, doubts)">移除</em>
+    <em v-else v-show="!scope.row.processed" @click.native.prevent="processRow(index, doubts)">完成处理</em></td>
+  </tr>
+</tbody>
+`,
   data() {
     return {}
   },

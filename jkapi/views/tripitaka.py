@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import get_list_or_404
 from rest_framework import viewsets, generics, filters
 from rest_framework import pagination
@@ -132,4 +133,64 @@ class CorrectFeedbackViewset(generics.ListAPIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response({'errors': "未校对，不能反馈！"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'errors': "未校对，不能反馈！"})
+
+class CorrectFeedbackDetailViewset(APIView):
+    queryset = CorrectFeedback.objects.all()
+    serializer_class = CorrectFeedbackSerializer
+
+    def get(self, request, pk, format=None):
+        correct_fb = CorrectFeedback.objects.get(id=pk)
+        correct_text = correct_fb.correct_text
+        text_list = []
+        whole_text = correct_text.head + correct_text.body + correct_text.tail
+        page_txt_list = whole_text.split('p')
+        for p_no, i in enumerate(page_txt_list):
+            for b_no, j in enumerate(i.split('b')):
+                for line_no, k in enumerate(j.split('\n')):
+                    for char_no, l in enumerate(k):
+                        text_list.append((p_no, b_no, line_no, char_no, l))
+        original_txt_info = text_list[correct_fb.position]
+        p_no = original_txt_info[0]
+        b_no = original_txt_info[1]
+        line_no = original_txt_info[2]
+        char_no = original_txt_info[3]
+        reel = correct_text.reel
+        page = reel.page_set.all()[p_no-1]
+        image_url = get_image_url(reel, page.reel_page_no)
+        cut_list = []
+        cid = 'c{0}{1}{2:02d}n{3:02d}'.format(p_no, b_no, line_no, char_no+1)#切分信息中字符从1开始计数
+        page_cuts = json.loads(page.cut_info)['char_data']
+        for c_no, cut in enumerate(page_cuts):
+            if cut['char_id'] == cid:
+                cut_list = page_cuts[c_no: c_no+len(correct_fb.original_text)]
+        page_lines = page_txt_list[p_no].split('\n')
+        fb_line = page_lines[line_no]
+        page_lines[line_no] = fb_line[:char_no] +'<span class="difftext confirmed">'+fb_line[char_no]+'</span>'+fb_line[char_no+1:]
+        if correct_fb.processor:
+            processor = correct_fb.processor.id
+        else:
+            processor = 0
+        return Response({
+            'fb_id': correct_fb.id,
+            'origin_text': correct_fb.original_text,
+            'fb_text': correct_fb.fb_text,
+            'fb_comment': correct_fb.fb_comment,
+            'cut_info': cut_list,
+            'page_txt': page_lines,
+            'image_url': image_url,
+            'processor': processor
+        })
+
+    def patch(self, request, pk, format=None):
+        correctfb = CorrectFeedback.objects.get(pk=pk)
+        data = dict(request.data)
+        data['correct_text'] = correctfb.correct_text.id
+        data['fb_comment'] = correctfb.fb_comment
+        data['processor'] = request.user.id
+        data['processed_at'] = timezone.now()
+        serializer = CorrectFeedbackSerializer(correctfb, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response('提交成功!')
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

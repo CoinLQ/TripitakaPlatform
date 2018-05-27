@@ -11,13 +11,6 @@
     box-shadow: 0px -1px 1px 1px #363E4E;
 }
 
-.diff-text-pane {
-    padding: 0 15px;
-    height: 80%;
-    overflow: scroll;
-    box-shadow: 0px 1px 1px 1px #363E4E;
-}
-
 .canvas-wrapper {
     float: left;
     overflow: scroll;
@@ -371,9 +364,6 @@ span.removed, span.ocr-missing {
 span.ocr-missing {
     background-color: coral
 }
-span.newline {
-    font-size: 12px;
-}
 
 .elpopup {
     margin-top: 5px;
@@ -393,14 +383,6 @@ opacity: 0;
 }
 
 .cmd-block {
-    border: 1px solid #ebebeb;
-    border-radius: 3px;
-    background-color: whitesmoke;
-    position: relative;
-    top: 4px;
-    width: 100%;
-    padding: 10px;
-    z-index: 2001;
 }
 
 .content-container {

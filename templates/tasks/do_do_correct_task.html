@@ -1,126 +1,137 @@
 {% extends "base.html" %}
 {% block title %}文字校对{% endblock %}
+{% block style %}
+<style type="text/css">
+.pager {
+    padding-left: 0;
+    margin: 0px 0;
+    list-style: none;
+}
+</style>
+{% endblock %}
 {% block content %}
 <div id="correct">
-  <div class="row content-container">
+  <div class="row content-container correct">
     {% raw %}
-    <div class="col-md-6 left-pane">
-      <div class="canvas-pane">
-        <canvas id="page-canvas"></canvas>
-      </div>
-      <div class='scale-op'>
-        <el-button-group>
-          <el-button plain size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
-          <el-button plain size="mini" round>{{scale_rate}}</el-button>
-          <el-button plain size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
-        </el-button-group>
-         <div class="block" style="display:none;width: 30%;margin-left: 50px;">
-            <span class="demonstration">图片大小</span>
-            <el-slider
-              v-model="scale"
-              :step="1"
-              :max="5"
-              :min="1"
-              show-stops>
-            </el-slider>
-          </div>
-      </div>
-    </div>
-    <div class="col-md-6 right-pane">
-      <div class="operation">
-                <el-popover ref='popover' width="300" style="position: absolute; top: -500;transform-origin: left center 0px" placement="top" popper-class="elpopup" trigger="manual" >
-                        <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info" class='ll'>{{compare_text}}</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text1, $event)" class='selection' v-html="spanContent(current_seg.text1)"></span></div></el-col>
-                        </el-row>
-                        <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info" class='ll'>{{ocr_text}}</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text2, $event)" class='selection' v-html="spanContent(current_seg.text2)"></span></div></el-col>
-                        </el-row>
-                        <el-row :gutter="20" v-if="correct_task_count >= 3">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info" class='ll'>三校</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text3, $event)" class='selection' v-html="spanContent(current_seg.text3)"></span></div></el-col>
-                        </el-row>
-                        <el-row :gutter="20" v-if="correct_task_count >= 4">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info" class='ll'>四校</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span @click="choiceText(current_seg, current_seg.text4, $event)" class='selection' v-html="spanContent(current_seg.text4)"></span></div></el-col>
-                        </el-row>
-                        <el-row :gutter="20">
-                          <el-col :offset="1" :span="6"><div class="grid-content bg-purple"><el-tag type="info">选择结果</el-tag></div></el-col>
-                          <el-col :span="17"><div class="grid-content bg-purple"><span id="pop-input" type="text"  @keydown="blockthem" placeholder="请选择或输入……" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)" ></span></div></el-col>
-                        </el-row>
-                </el-popover>
+    <div class="correct-in clearfix">
+        <div class="left fl">
+            <div class="hd">
+              <div class="pager tr">
+                <span @click="scale -=1">-</span>
+                <span ><em>1</em>:<em></em>{{scale}}</em></span>
+                <span @click="scale +=1">+</span>
+              </div>
             </div>
-            <div class="diff-text-pane-top">
-              <transition name="slide-fade" appear>
-                <div v-if="scrolled || (!scrolled)" style="position: inherit;" class='cmd-block'>
-                  <el-row :gutter="10">
-                    <el-col :span="24">
-                      <label>差异文本</label>
-                      <el-button @click="nextPopup({shiftKey: true})" plain icon="el-icon-arrow-left" size="mini" circle></el-button>
-                      <span class="vprogress" plain round size="small">{{progress_text}}</span>
-                      <el-button @click="nextPopup({})" plain icon="el-icon-arrow-right" size="mini" circle></el-button>
-                      <label>换行符</label>
-                      <el-button :class="{'b-highlight': display_newline, 'new-line': true}" circle @click="display_newline =!display_newline"  size="mini">↵</el-button>
-                      <label>空位符</label>
-                      <el-button :class="{'b-highlight': display_space, 'deletion': true}" circle @click="display_space =!display_space"  size="mini"><span class="removed"></span></el-button>
-                      <div class='to-right'>
-                        <el-button icon="el-icon-back" plain round @click="RemoveLine">{{remove_btn_text}}</el-button>
-                    
-                        <el-button plain @click="openDoubtForm" round>存疑</el-button>
-                        <el-button plain :disabled="premitSubmit" @click="finishTask" round>完成</el-button>
-                        <el-button plain @click="returnTask" round>退回任务</el-button>
-                      
-                        <span class="help-icon"><i class="el-icon-question"></i></span>
-                      </div>
-                  </el-col>
-                  </el-row>
-                </div>
-              </transition>
+            <div class="bd">
+              <div class="bd-in">
+                  <div class="canvas-pane">
+                    <canvas id="page-canvas"></canvas>
+                  </div>
+              </div>
             </div>
-        <div class="diff-text-pane" @scroll="handleScroll">
-        
-        <div class="reel-text-region-o">
-          
-          <div id="reel-text-compare" class="reel-text-compare">
-   
-            
-            <div class="spn" v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id">
-              <span v-if="seg.tag == 1" v-html="getSegText(seg)" @click="textSelection(seg, $event)" @keydown="blockthem" :class="{ changed: (seg.text1 != seg.selected_text), current: (current_seg.id == seg.id) }" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @click="textSelection(seg, $event)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null), current: (current_seg.id == seg.id)}" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span class="newline" v-if="seg.tag == 4" contenteditable="true" @keydown="permitNewline" @click="segClick(seg, $event)" @input="segInput(seg, $event)" v-html="getSegText(seg)"></span>
-            </div>
-          </div>
-          <el-dialog title="存疑意见" :visible.sync="doubt.formVisible">
-            <el-form :model="doubt" ref="doubt" label-position="right" >
-              <el-col :span="24">
-                <el-form-item label="存疑文本" label-width="120px">
-                  <el-input v-model="doubt.doubt_text" :disabled="true" auto-complete="off"></el-input>
-                </el-form-item>
-              </el-col>
-              <el-form-item label="存疑理由" prop="doubt_comment" :rules="[
-                    { required: true, message: '存疑理由不能为空', trigger: 'blur'},
-                  ]" label-width="120px" >
-                  <el-input type="textarea" :autosize="{ minRows: 3, maxRows: 5}" v-model="doubt.doubt_comment" required auto-complete="off"></el-input>
-                </el-form-item>
-            </el-form>
-            <div slot="footer" class="dialog-footer">
-              <el-button @click="doubt.formVisible = false">取 消</el-button>
-              <el-button type="primary" @click="submitForm('doubt')">确 定</el-button>
-            </div>
-          </el-dialog>
-          {% endraw %}
         </div>
-      </div>
-      {% raw %}
-      <el-collapse v-model="activeNames" @change="handleChange" class="cunyi">
-        <el-collapse-item name="1">
-          <template slot="title">
-          <span ><i class="el-icon-date"></i> 存疑列表</span>
-          <el-button v-if="doubt_count!=0" type="danger" size="mini" round>{{doubt_count}}</el-button>
-          </template>
-          <div is="doubt-list" :doubts.sync="doubts" :task_id="sharedata.task_id" :task_typ="sharedata.task_typ" :current_doubt.sync="current_doubt"></div>
-        </el-collapse-item>
-      </el-collapse>
-      {% endraw %}
+        <div class="right fr clearfix">
+          <div class="diff-text-pane">
+            <div class="hd clearfix cmd-block">
+              <div class="left-tool fl">
+                <span>异文</span>
+                <div class="pager">
+                  <span @click="nextPopup({shiftKey: true})" ><</span>
+                  <span><em>{{progress_text}}</em></span>
+                  <span @click="nextPopup({})">></span>
+                </div>
+                <span class="newline" @click="display_newline =!display_newline">换行</span>
+                <span class="del" @click="display_space =!display_space">空位</span>
+              </div>
+              <div class="right-tool fr">
+                <div class="btns">
+                  <span @click="RemoveLine">{{remove_btn_text}}</span>
+                  <span :disabled="premitSubmit" @click="checkLinefeed">检查</span>
+                  <span class="store" @click="openDoubtForm">存疑</span>
+                  <span :disabled="premitSubmit" @click="finishTask">完成</span>
+                  <span @click="returnTask">返回任务</span>
+                </div>
+                <span class="help"></span>
+              </div>
+            </div>
+            <div class="bd">
+              <ul>
+                <li class="spn" v-for="(seg, index) in sharedata.correctsegs" :id="'segdiff-' + seg.id">
+                  <span v-if="seg.tag == 1" v-html="getSegText(seg)" @click="textSelection(seg, $event)" @keydown="blockthem" :class="{ changed: (seg.text1 != seg.selected_text), current: (current_seg.id == seg.id) }" contenteditable="true" @input="segInput(seg, $event)" /></span><span v-if="seg.tag == 2" v-html="getSegText(seg)" @click="textSelection(seg, $event)"  @keydown="blockthem" class="difftext" :class="{ confirmed: (seg.selected_text!=null), current: (current_seg.id == seg.id)}" contenteditable="true" @input="segInput(seg, $event)"></span><span v-if="seg.tag == 3" @keydown="blockthem" v-html="getSegText(seg)" contenteditable="false"></span><span class="newline" v-if="seg.tag == 4"  style="padding:0px 20px 0px 0px;" contenteditable="true" @keydown="permitNewline" @click="segClick(seg, $event)" @input="segInput(seg, $event)" v-html="getSegText(seg)"></span>
+                </li>
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+              </ul>
+              <div class="correct-dialog dialog-common" ref='popover' style='display:none'>
+                  <dl class="item" @click="choiceText(current_seg, current_seg.text1, $event)"><dt>{{compare_text}}</dt><dd class="text" v-html="spanContent(current_seg.text1)">圍遶</dd></dl>
+                  <dl class="item" @click="choiceText(current_seg, current_seg.text2, $event)"><dt>{{ocr_text}}</dt><dd class="text" v-html="spanContent(current_seg.text2)">圍遶</dd></dl>
+                  <dl class="item" v-if="correct_task_count >= 3" @click="choiceText(current_seg, current_seg.text3, $event)"><dt>三校</dt><dd class="text" v-html="spanContent(current_seg.text3)">圍遶</dd></dl>
+                  <dl class="item" v-if="correct_task_count >= 3" @click="choiceText(current_seg, current_seg.text4, $event)"><dt>四校</dt><dd class="text" v-html="spanContent(current_seg.text4)">圍遶</dd></dl>
+                  <dl class="item"><dt>选择结果</dt><dd class="text"><span id="pop-input" type="text"  @keydown="blockthem" placeholder="请选择或输入……" v-html="getSegRealText(current_seg)" contenteditable="true" @input="segInput(current_seg, $event)" ></span></dd></dl>
+              </div>
+            </div>
+          
+          
+          
+          <div class="doubt-lists">
+              <el-tabs v-model="activeTabName">
+                  <el-tab-pane name="doubt_tab">
+                    <template slot="label">
+                    <div class="hd"> 存疑列表</div>
+                    <el-button v-if="doubt_count==100" type="danger" size="mini" round>{{doubt_count}}</el-button>
+                    </template>
+                    <div is="doubt-list" :doubts.sync="doubts" :task_id="sharedata.task_id" :task_typ="sharedata.task_typ" :current_doubt.sync="current_doubt"></div>
+                  </el-tab-pane>
+                  <el-tab-pane label="需要检查行数的栏" name="seg_check_tab">
+                      <template slot="label">
+                        <div class="hd"> 需要检查行数的栏</div>
+                          
+                      </template>
+                    <div v-if="segs_need_fix_linefeed.length == 0 && segs_need_check.length == 0">
+                      没有需要检查的
+                    </div>
+                    <ul v-for="seg in segs_need_fix_linefeed">
+                      <li :seg="seg" @click="selectSeg(seg)">{{ seg.selected_text }}</li>
+                    </ul>
+                    <ul v-for="seg in segs_need_check">
+                      <li :seg="seg" @click="selectSeg(seg)">{{ seg.selected_text }}</li>
+                    </ul>
+                  </el-tab-pane>
+                </el-tabs>
+
+     
+             
+          <el-dialog title="存疑意见" :visible.sync="doubt.formVisible">
+              <el-form :model="doubt" ref="doubt" label-position="right" >
+                <el-col :span="24">
+                  <el-form-item label="存疑文本" label-width="120px">
+                    <el-input v-model="doubt.doubt_text" :disabled="true" auto-complete="off"></el-input>
+                  </el-form-item>
+                </el-col>
+                <el-form-item label="存疑理由" prop="doubt_comment" :rules="[
+                      { required: true, message: '存疑理由不能为空', trigger: 'blur'},
+                    ]" label-width="120px" >
+                    <el-input type="textarea" :autosize="{ minRows: 3, maxRows: 5}" v-model="doubt.doubt_comment" required auto-complete="off"></el-input>
+                  </el-form-item>
+              </el-form>
+              <div slot="footer" class="dialog-footer">
+                <el-button @click="doubt.formVisible = false">取 消</el-button>
+                <el-button type="primary" @click="submitForm('doubt')">确 定</el-button>
+              </div>
+            </el-dialog>
+        </div>
+    </div>
+</div>
+
+
+    
+      {% endraw %} 
     </div>
   </div>
 </div>
@@ -139,7 +150,6 @@
       selected_text:'',
       scrolled: false,
       segid: 1,
-      page: {{ page }},
       image_url_prefix: '',
       page_no: 1,
       line_no: 1,
@@ -158,13 +168,16 @@
       },
       current_doubt: {},
       doubts: [],
-      activeNames: [],
+      activeNames: ["1"],
       scale: 1,
       img_url: '',
       x: 0,
       y: 0,
       w: 0,
-      h: 0
+      h: 0,
+      activeTabName: 'doubt_tab',
+      segs_need_fix_linefeed: [],
+      segs_need_check: []
     },
     computed: {
       premitSubmit: function (){
@@ -188,7 +201,7 @@
       },
       progress_text: function() {
         let done_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
-        return done_segs.length + " / " + this.sharedata.correctsegs.length
+        return done_segs.length + " / " + _.filter(this.sharedata.correctsegs, function(o) { return o.tag == 2; }).length
       },
       remove_btn_text: function() {
         if (this.current_seg && this.current_seg.selected_text == '') {
@@ -238,6 +251,7 @@
         vm.correct_task_count = response.data.correct_task_count;
         vm.segid = response.data.cur_focus;
         vm.image_urls = response.data.image_urls;
+        vm.bar_line_count = response.data.bar_line_count;
         this.loadCorrectSegs();
       }.bind(this));
       
@@ -280,8 +294,8 @@
         if (this.$el.querySelector('div.cmd-block').contains(e.target)) {
           return;
         }
-        if (!this.$refs['popover'].$el.contains(e.target)) {
-          this.$refs['popover'].doClose();
+        if (!this.$refs['popover'].contains(e.target)) {
+          this.$refs['popover'].style.display ='none';
         }
       },
       handleDocumentTab: function(e) {
@@ -310,16 +324,16 @@
         });
       },
       handleChange() {
-        let totalHeight = this.$el.querySelector('.canvas-pane').clientHeight - this.$el.querySelector('div.diff-text-pane-top').clientHeight
-        if (this.activeNames.length == 0) {
-          this.$el.querySelector('div.diff-text-pane').style.height = totalHeight- 16;
-        } else {
-          this.$el.querySelector('div.diff-text-pane').style.height = totalHeight - 253;
-        }
+        // let totalHeight = this.$el.querySelector('.canvas-pane').clientHeight - this.$el.querySelector('div.diff-text-pane-top').clientHeight
+        // if (this.activeNames.length == 0) {
+        //   this.$el.querySelector('div.diff-text-pane').style.height = totalHeight- 16;
+        // } else {
+        //   this.$el.querySelector('div.diff-text-pane').style.height = totalHeight - 253;
+        // }
       },
       spanContent: function(content) {
         if (!content) {
-          return '<span></span>'
+          return '&nbsp;'
         } else {
           return content;
         }
@@ -335,19 +349,14 @@
         if (this.correct_task_count == 4) {
           offset = 290;
         }
-        let pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().bottom;
-        //if (diff_pane.scrollHeight - diff_pane.scrollTop == diff_pane.clientHeight) {
-          if (diff_pane.clientHeight - pos < offset) {
-            pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().top - offset;
-          }
-        //}
-
-        this.$refs['popover'].$el.style.position = 'absolute'
-        this.$refs['popover'].$el.style.top = pos + 'px';
-        this.$refs['popover'].doShow();
+        
+        let pos = this.$el.querySelector('#segdiff-' + seg.id).offsetTop + 36;//+ this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().top;
+        this.$refs['popover'].style.top = pos + 'px';
+        this.$refs['popover'].style.left = this.$el.querySelector('#segdiff-' + seg.id).offsetLeft + 'px';
+        this.$refs['popover'].style.display='block';
       },
       hidePopup: function (){
-        this.$refs['popover'].doClose();
+        this.$refs['popover'].style.display='none';
       },
       textSelection: function(seg = null, e = {}){
         if (e.stopPropagation){
@@ -376,12 +385,12 @@
         this.doubt.doubt_char_no = range.startOffset + this.doubt.char_no;
 
         this.current_char_no = this.char_no + range.startOffset ;
-        
+
         this.loadImage();
         if (seg && seg.tag == 2) {
           this.loadPopup(seg);
         } else {
-          this.$refs['popover'].doClose();
+          this.hidePopup();
         }
       
         this.$nextTick(function() {
@@ -466,10 +475,10 @@
       },
       getSegText: function(seg) {
         if (seg.selected_text == null) {
-          if (!seg.text2) {
+          if (!seg.text1) {
             return '<span class="ocr-missing"></span>'
           }else {
-            return seg.text2
+            return seg.text1
           }
         } else if(!seg.selected_text) {
             if (seg.tag == 4) {
@@ -535,9 +544,6 @@
       },
       loadImage: function() {
         this.img_url = this.image_urls[this.page_no-1];
-        if (!this.img_url) {
-          return ;
-        }
         var cut_url = this.img_url.replace('.jpg', '.cut');
         var vm = this;
         axios.get(cut_url).then(function(response) {
@@ -546,18 +552,16 @@
           // 结尾缺字
           if (!v) {
             v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no })
-            if (v) {
-              let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
-              vm.x = v['x'];
-              vm.y = v['y']+ v['h'];
-              vm.w = v['w'];
-              vm.h = (max_char_no['char_no'] - vm.current_char_no +1)*v['h'];
-              vm.setImg();
-              return;
-            }
+            let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
+            vm.x = v['x'];
+            vm.y = v['y']+ v['h'];
+            vm.w = v['w'];
+            vm.h = (max_char_no['char_no'] - vm.current_char_no +1)*v['h'];
+            vm.setImg();
+            return;
           }
           // 漏框，换算
-          if (v && !vm.current_seg.text2) {
+          if (!vm.current_seg.text1) {
             let pre_v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no && v['char_no'] < vm.current_char_no })
             // 当前位置缺框
             if (pre_v){
@@ -580,12 +584,11 @@
             }
             return
           }
-          if (v) {
-            vm.x = v['x'];
-            vm.y = v['y'];
-            vm.w = v['w'];
-            vm.h = v['h'];
-          }
+
+          vm.x = v['x'];
+          vm.y = v['y'];
+          vm.w = v['w'];
+          vm.h = v['h'];
           vm.setImg();
         });
 
@@ -656,12 +659,12 @@
       },
       moveSegDiffToView: function(segid) {
         try {
-          if (!this.$el.querySelector('#segdiff-'+ segid)) {
+          if (!this.$el.querySelector('#segdiff-'+ segid + ' span.difftext')) {
             return
           }
-          this.$el.querySelector('#segdiff-'+ segid).focus()
-          var offset = this.$el.querySelector('div.diff-text-pane').scrollTop + this.$el.querySelector('#segdiff-' + segid).getBoundingClientRect().top - 360;
-          this.$el.querySelector('div.diff-text-pane').scrollTop = offset;
+          this.$el.querySelector('#segdiff-'+ segid + ' span.difftext').focus()
+          var offset = this.$el.querySelector('#segdiff-' + segid).offsetTop - 160;
+          this.$el.querySelector('.diff-text-pane .bd').scrollTop = offset;
         } catch(err) {
           console.log('moveSegDiffToView: ', err)
         }
@@ -777,23 +780,11 @@
           vm.sharedata.correctsegs = response.data;
           for(var i = 0; i < vm.sharedata.correctsegs.length; ++i) {
             var seg = vm.sharedata.correctsegs[i];
-            if (vm.page != 0) {
-              if (seg.page_no == vm.page && seg.line_no != 0 && seg.char_no != 0) {
-                vm.page_no = seg.page_no;
-                vm.line_no = seg.line_no;
-                vm.char_no = seg.char_no;
-                vm.current_char_no = vm.char_no;
-                vm.segid = seg.id;
-                vm.page = 0;
-                console.log(vm.page_no, vm.line_no, vm.char_no);
-              }
-            } else {
-              if (seg.id == vm.segid) {
-                vm.page_no = seg.page_no;
-                vm.line_no = seg.line_no;
-                vm.char_no = seg.char_no;
-                vm.current_char_no = vm.char_no;
-              }
+            if (seg.id == vm.segid) {
+              vm.page_no = seg.page_no;
+              vm.line_no = seg.line_no;
+              vm.char_no = seg.char_no;
+              vm.current_char_no = vm.char_no;
             }
           }
 
@@ -818,6 +809,95 @@
             }.bind(this))
           }
         }.bind(this));
+      },
+      checkPBLinefeed: function() {
+        this.segs_need_fix_linefeed = [];
+        for (var i = 0; i < this.sharedata.correctsegs.length; ++i) {
+          var seg = this.sharedata.correctsegs[i];
+          var pos = seg.selected_text.search(/[pb]/);
+          if (pos != -1) { // 检查下一个字符是否为换行符
+            var linefeed_attached = false;
+            if (seg.selected_text.length > pos + 1) {
+              linefeed_attached = (seg.selected_text.substr(pos + 1, 1) == '\n');
+            } else { // 检查下一个seg
+              for (var j = i + 1; j < this.sharedata.correctsegs.length; ++j) {
+                var seg_next = this.sharedata.correctsegs[j];
+                if (seg_next.selected_text != null && seg_next.selected_text.length > 0) {
+                  linefeed_attached = (seg_next.selected_text.substr(0, 1) == '\n');
+                  break;
+                }
+                if (j == this.sharedata.correctsegs.length - 1) {
+                  linefeed_attached = true;
+                }
+              }
+            }
+            if (!linefeed_attached) {
+              this.segs_need_fix_linefeed.push(seg);
+              console.log('segs_need_fix_linefeed:', seg.id, seg.selected_text);
+            }
+          }
+        }
+      },
+      checkLineCount: function() {
+        this.segs_need_check = [];
+        var line_count = 0;
+        var bar_no = 0;
+        var seg_first = null;
+        for (var i = 0; i < this.sharedata.correctsegs.length; ++i) {
+          var seg = this.sharedata.correctsegs[i];
+          var pos = seg.selected_text.search(/[pb]/);
+          if (pos != -1) {
+            // 处理上一栏
+            if (bar_no > 0) {
+              --line_count;
+              if (!isNaN(this.bar_line_count)) {
+                if (line_count != this.bar_line_count) {
+                  this.segs_need_check.push(seg_first);
+                  console.log('segs_need_check:', seg_first.id, seg_first.selected_text, line_count, this.bar_line_count);
+                }
+              } else {
+                if (line_count != this.bar_line_count[bar_no]) {
+                  this.segs_need_check.push(seg_first);
+                  console.log('segs_need_check:', seg_first.id, seg_first.selected_text, line_count, this.bar_line_count[bar_no]);
+                }
+              }
+            }
+
+            seg_first = null;
+            line_count = 0;
+            for (var j = pos + 1; j < seg.selected_text.length; ++j) {
+              if (seg.selected_text[j] == '\n') {
+                ++line_count;
+              }
+            }
+            if (seg.selected_text[pos] == 'p') {
+              bar_no = 1;
+            } else {
+              bar_no += 1;
+            }
+          } else {
+            if (bar_no == 0) { // 起始的p没有
+              bar_no = 1;
+            }
+            if (seg.selected_text != '\n' && seg_first == null) {
+              seg_first = seg;
+            }
+            for (var j = 0; j < seg.selected_text.length; ++j) {
+              if (seg.selected_text[j] == '\n') {
+                ++line_count;
+              }
+            }
+          }
+        }
+      },
+      selectSeg: function(seg) {
+        this.moveSegDiffToView(seg.id);
+        this.textSelection(seg);
+      },
+      checkLinefeed: function() {
+        this.checkPBLinefeed();
+        this.checkLineCount();
+        return ;
       },
       finishTask: function() {
         var vm = this;

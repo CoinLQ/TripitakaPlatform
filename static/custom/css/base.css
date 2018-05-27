@@ -530,6 +530,12 @@ a.lqtripitaka-diffseg {
     background: greenyellow;
 }
 
+.lqtripitaka-diffseg-tag-white {
+    background: greenyellow;
+    width: 4px;
+    padding: 2px;
+}
+
 .popup-menu {
     position: fixed;
     padding: 0px;

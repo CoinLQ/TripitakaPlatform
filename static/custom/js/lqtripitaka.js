@@ -3,7 +3,7 @@ Vue.component('lqtripitaka-sutra-unit', {
     props: ['data', 'sharedata'],
     template: `
     <span v-if="data.diffsegresult_id == undefined" :position="data.position" v-html="data.text"></span>
-    <span v-else-if="data.text.length == 0" :position="data.position"><a href="#" class="lqtripitaka-diffseg" :diffsegresult_id="data.diffsegresult_id" @click="clickDiffSegResult()"><span class="diffseg-tag-white"></span></a></span>
+    <span v-else-if="data.text.length == 0" :position="data.position"><a href="#" class="lqtripitaka-diffseg" :diffsegresult_id="data.diffsegresult_id" @click="clickDiffSegResult()"><span class="lqtripitaka-diffseg-tag-white"></span></a></span>
     <span v-else :position="data.position"><a href="#" class="lqtripitaka-diffseg" :diffsegresult_id="data.diffsegresult_id" @click="clickDiffSegResult()" v-html="data.text"></a></span>
     `,
     methods: {

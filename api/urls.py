@@ -20,7 +20,7 @@ from jkapi.views.tripitaka import SutraViewSet, SutraText,TripitakaViewSet, Redo
 from jkapi.views.punct_feedback import LQPunctFeedbackList, MyLQPunctFeedbackList, LQPunctFeedbackDetail, LQPunctFeedbackTask
 from jkapi.views.volumn import VolumeViewSet
 from jkapi.views.judge_feedback import JudgeFeedbackList, MyJudgeFeedbackList, JudgeFeedbackDetail, JudgeFeedbackTask
-from jkapi.views.tripitaka import CorrectFeedbackViewset
+from jkapi.views.tripitaka import CorrectFeedbackViewset, CorrectFeedbackDetailViewset
 
 router = routers.DefaultRouter()
 router.register(r'pagerect', PageRectViewSet)
@@ -74,4 +74,5 @@ urlpatterns = [
     url(r'^lqpunctfeedback/(?P<pk>[0-9]+)/process/$', LQPunctFeedbackTask.as_view()),
     url(r'^lqpunctfeedback/mine/$', MyLQPunctFeedbackList.as_view()),
     url(r'^correctfeedback/$', CorrectFeedbackViewset.as_view()),
+    url(r'^correctfeedback/(?P<pk>[0-9]+)/$', CorrectFeedbackDetailViewset.as_view()),
 ]

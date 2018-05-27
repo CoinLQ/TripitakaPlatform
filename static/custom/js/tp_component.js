@@ -61,7 +61,7 @@ Vue.component('doubt-list', {
   mounted() {
     this.loadDoubtSeg();
   }
-})
+});
 
 
 
@@ -273,4 +273,68 @@ Vue.component('mark-doubt-list', {
   mounted() {
     this.loadMarkSeg();
   }
-})
+});
+
+Vue.component('correct-feedback-list', {
+  props: ['cut_data', 'fb_id', 'processor'],
+  template: `
+        <el-table
+        :data="cut_data"
+        :cell-style="{height: '20px'}"
+        highlight-current-row
+        style="width: 100%"
+        max-height="200">
+        <el-table-column
+          prop="origin_text"
+          label="原始文本"
+          width="150">
+        </el-table-column>
+        <el-table-column
+          prop="fb_text"
+          label="反馈文本"
+          width="150">
+        </el-table-column>
+        <el-table-column
+          prop="fb_comment"
+          label="反馈意见"
+          width="220">
+        </el-table-column>
+        <el-table-column
+          fixed="right"
+          label="操作"
+          width="120">
+          <template slot-scope="scope">
+            <el-button v-if="processor==0 && !processed"
+              @click="processFb(2)"
+              type="text"
+              size="media">
+              同意
+            </el-button>
+            <el-button v-if="processor==0 && !processed"
+              @click="processFb(3)"
+              type="text"
+              size="media">
+              拒绝
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    `,
+  data() {
+    return { processed:false }
+  },
+  methods: {
+    processFb(re_type) {
+      axios.patch('/api/correctfeedback/' + this.fb_id + '/', {
+        'response': re_type,
+      }).then(function (response) {
+        //this.$emit('update:processor', this.processor);
+        this.processed = true;
+        alert(response.data);
+      }.bind(this))
+          .catch(function (error) {
+            console.log(error)
+          });
+    },
+  },
+});

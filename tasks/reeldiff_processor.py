@@ -313,6 +313,8 @@ def get_multireeltext(sutra, variant_manager=None):
     multireeltext = MultiReelText(sutra.tripitaka_id)
     queryset = Reel.objects.filter(sutra=sutra)
     for reel in queryset.order_by('reel_no'):
+        if not reel.used_in_collation:
+            continue
         reelcorrecttext = ReelCorrectText.objects.filter(reel_id=reel.id).order_by('-id').first()
         if reelcorrecttext:
             body = reelcorrecttext.body
@@ -562,6 +564,6 @@ def is_sutra_ready_for_judge(lqsutra):
     sutra_lst = list(lqsutra.sutra_set.all())
     for sutra in sutra_lst:
         for reel in sutra.reel_set.all():
-            if reel.ocr_ready and (not reel.correct_ready):
+            if reel.ocr_ready and reel.used_in_collation and (not reel.correct_ready):
                 return False
     return True

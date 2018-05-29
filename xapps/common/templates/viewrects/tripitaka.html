@@ -1,0 +1,1259 @@
+{% extends "base.html" %}
+{% block title %}龙泉藏经{% endblock %}
+{% block content %}
+<style>
+#header {
+    background-color:black;
+    color:white;
+    text-align:center;
+    padding:5px;
+}
+#nav {
+    line-height:30px;
+    background-color:#eeeeee;
+    height:300px;
+    width:100px;
+    float:left;
+    padding:5px; 
+}
+#section {
+    width:350px;
+    float:left;
+    padding:10px; 
+}
+#footer {
+    background-color:black;
+    color:white;
+    clear:both;
+    text-align:center;
+    padding:5px; 
+}
+</style>
+<div id="lqtripitaka">  
+    {% raw %}    
+    <div class="row content-container">
+      <div class="col-md-3">
+        <div class="row">
+          <div class="text-center"><input type="text" class="sutra-searchbox" v-model="searchword" placeholder="搜索经名" /></div>
+        </div>
+        <div class="sutra-tree">
+          <el-tree :data="lqsutra_list" :props="tree_props" @node-click="clickLQSutraTreeNode">
+            <span class="el-tree-node__label" slot-scope="{ node, data }" v-bind:class="{disabledtreenode: data.reel_no && !data.text_ready}">
+              <span v-text="node.label"></span>
+            </span>
+          </el-tree>
+        </div>
+        <div class="row">
+          <div class="text-center">
+            <input type="number" class="sutra-page-input" v-model="page" /> / {{ page_count }}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 right-pane">
+          <div class="diff-text-pane-top">
+              <transition name="slide-fade" appear>
+                <div v-if="scrolled || (!scrolled)" style="position: inherit;" class='cmd-block'>
+                  <el-row :gutter="10">
+                    <el-col :span="24">
+                      <label>差异文本</label>
+                      <el-button @click="nextPopup({shiftKey: true})" plain icon="el-icon-arrow-left" size="mini" circle></el-button>
+                      <span class="vprogress" plain round size="small">{{progress_text}}</span>
+                      <el-button @click="nextPopup({})" plain icon="el-icon-arrow-right" size="mini" circle></el-button>
+                      <label>换行符</label>
+                      <el-button :class="{'b-highlight': display_newline, 'new-line': true}" circle @click="display_newline =!display_newline"  size="mini">↵</el-button>
+                      <label>空位符</label>
+                      <el-button :class="{'b-highlight': display_space, 'deletion': true}" circle @click="display_space =!display_space"  size="mini"><span class="removed"></span></el-button>
+                      <div class='to-right'>
+                        <el-button icon="el-icon-back" plain round @click="RemoveLine">{{remove_btn_text}}</el-button>
+                    
+                        <el-button plain @click="openDoubtForm" round>存疑</el-button>
+                        <el-button plain :disabled="premitSubmit" @click="finishTask" round>完成</el-button>
+                      
+                        <span class="help-icon"><i class="el-icon-question"></i></span>
+                      </div>
+                  </el-col>
+                  </el-row>
+                </div>
+              </transition>
+            </div>
+        <div class="canvas-pane">
+          <canvas id="page-canvas"><img src="https://s3.cn-north-1.amazonaws.com.cn/lqdzj-images/YB/27/YB_27_1-65edebc2.jpg"  alt="上海鲜花港 - 郁金香" />
+          </canvas>
+          <img src="https://s3.cn-north-1.amazonaws.com.cn/lqdzj-images/YB/27/YB_27_1-65edebc2.jpg"  alt="" />
+        </div>
+        <div class='scale-op'>
+          <el-button-group>
+            <el-button plain size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
+            <el-button plain size="mini" round>{{scale_rate}}</el-button>
+            <el-button plain size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
+          </el-button-group>
+           <div class="block" style="display:none;width: 30%;margin-left: 50px;">
+              <span class="demonstration">图片大小</span>
+              <el-slider
+                v-model="scale"
+                :step="1"
+                :max="5"
+                :min="1"
+                show-stops>
+              </el-slider>
+            </div>
+        </div>
+      </div>
+
+      <div class="col-md-8 lqtripitaka-text" id="lqtripitaka-text" @mouseup="userSelectionChanged">
+        <span v-for="e in merged_text" is="lqtripitaka-sutra-unit" :data="e" :sharedata="sharedata">
+        </span>
+      </div>
+      <ul class="popup-menu" v-show="popupMenuShown" :style="popupMenuStyle">
+        <li><button @click="punctFeedback()">反馈标点</button></li>
+      </ul>
+    </div>
+    <div is="judge-result-dialog" :sharedata="sharedata"></div>
+    <div is="punct-feedback-dialog" :sharedata="sharedata" v-if="sharedata.punctFeedbackDialogVisible"></div>
+    
+      {% endraw %}
+</div>
+
+
+
+
+
+
+
+
+
+
+<div id="correct">
+    <div class="row content-container">
+       
+      <div class="col-md-6 left-pane">
+          
+      </div>
+      <div class="col-md-6 right-pane">
+          <div class="diff-text-pane-top">
+              <transition name="slide-fade" appear>
+                <div v-if="scrolled || (!scrolled)" style="position: inherit;" class='cmd-block'>
+                  <el-row :gutter="10">
+                    <el-col :span="24">
+                      <label>差异文本</label>
+                      <el-button @click="nextPopup({shiftKey: true})" plain icon="el-icon-arrow-left" size="mini" circle></el-button>
+                      <span class="vprogress" plain round size="small">{{progress_text}}</span>
+                      <el-button @click="nextPopup({})" plain icon="el-icon-arrow-right" size="mini" circle></el-button>
+                      <label>换行符</label>
+                      <el-button :class="{'b-highlight': display_newline, 'new-line': true}" circle @click="display_newline =!display_newline"  size="mini">↵</el-button>
+                      <label>空位符</label>
+                      <el-button :class="{'b-highlight': display_space, 'deletion': true}" circle @click="display_space =!display_space"  size="mini"><span class="removed"></span></el-button>
+                      <div class='to-right'>
+                        <el-button icon="el-icon-back" plain round @click="RemoveLine">{{remove_btn_text}}</el-button>
+                    
+                        <el-button plain @click="openDoubtForm" round>存疑</el-button>
+                        <el-button plain :disabled="premitSubmit" @click="finishTask" round>完成</el-button>
+                      
+                        <span class="help-icon"><i class="el-icon-question"></i></span>
+                      </div>
+                  </el-col>
+                  </el-row>
+                </div>
+              </transition>
+            </div>
+        <div class="canvas-pane">
+          <canvas id="page-canvas"><img src="https://s3.cn-north-1.amazonaws.com.cn/lqdzj-images/YB/27/YB_27_1-65edebc2.jpg"  alt="上海鲜花港 - 郁金香" />
+          </canvas>
+          <img src="https://s3.cn-north-1.amazonaws.com.cn/lqdzj-images/YB/27/YB_27_1-65edebc2.jpg"  alt="" />
+        </div>
+        <div class='scale-op'>
+          <el-button-group>
+            <el-button plain size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
+            <el-button plain size="mini" round>{{scale_rate}}</el-button>
+            <el-button plain size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
+          </el-button-group>
+           <div class="block" style="display:none;width: 30%;margin-left: 50px;">
+              <span class="demonstration">图片大小</span>
+              <el-slider
+                v-model="scale"
+                :step="1"
+                :max="5"
+                :min="1"
+                show-stops>
+              </el-slider>
+            </div>
+        </div>
+      </div>
+      
+    </div>
+</div>
+
+{% endblock %}
+{% block foot_script %}
+<script src="{{ static('custom/js/punct.js') }}"></script>
+<script src="{{ static('custom/js/lqtripitaka.js') }}"></script>
+<script src="//unpkg.com/vue/dist/vue.js"></script>
+<script src="//unpkg.com/element-ui@2.3.8/lib/index.js"></script>
+<script>
+  var app = new Vue({
+    el: '#lqtripitaka',
+    data: {
+      PUNCT_LIST: '：，。；、！？‘’”“\n',
+      lqsutra_list: [],
+      searchword: '',
+      page_count: 0,
+      page: 1,
+      tree_props: {
+        children: 'lqreel_set',
+        label: function(data, node) {
+          if (data.reel_no == undefined) {
+            return data.name + '(' + data.total_reels + ')';
+          } else {
+            return '第' + data.reel_no + '卷';
+          }
+        },
+        disabled: function(data, node) {
+          if (data.text_ready != undefined) {
+            return !data.text_ready;
+          }
+          return false;
+        }
+      },
+      text: '',
+      punct_lst: [],
+      diffsegresult_pos_lst: [],
+      merged_text: [],
+      popupMenuShown: false,
+      popupMenuStyle: {
+        left: 1,
+        top: 1
+      },
+      sharedata: {
+        task_id: null,
+        lqpunct_id: null,
+        judgeResultDialogVisible: false,
+        punctFeedbackDialogVisible: false,
+        selection_start: 0,
+        selection_end: 0,
+        punct_text: '',
+        puncts: [],
+        punct_result: [],
+        punctseg_lst: [],
+        show_refpunct: false
+      }
+    },
+    watch: {
+      searchword: function(value, oldValue) {
+        this.fetchSutraList();
+      },
+      page: function(value, oldValue) {
+        if (this.page <= 0) {
+          this.page = 1;
+          return ;
+        }
+        if (this.page > this.page_count) {
+          this.page = this.page_count;
+          return ;
+        }
+        this.fetchSutraList();
+      }
+    },
+    created: function() {
+      this.fetchSutraList();
+    },
+    methods: {
+      fetchSutraList: function() {
+        var url = '/api/lqsutra/?page=' + this.page;
+        if (this.searchword.length > 0) {
+          url += '&search=' + this.searchword;
+        }
+        var vm = this;
+        axios.get(url).then(function(response) {
+          vm.lqsutra_list = response.data.results;
+          vm.page_count = Math.ceil(response.data.count / 30);
+          vm.page = 1;
+        });
+        
+      },
+      clickLQSutraTreeNode: function(data) {
+        if (data.reel_no != undefined && data.text_ready) {
+          var lqreel_id = data.id;
+          var url = '/api/lqreeltext/?lqreel_id=' + lqreel_id;
+          var vm = this;
+          axios.get(url).then(function(response) {
+            vm.sharedata.task_id = response.data.task_id;
+            vm.sharedata.lqpunct_id = response.data.lqpunct_id;
+            vm.text = response.data.text;
+            vm.punct_lst = response.data.punct_lst;
+            vm.diffsegresult_pos_lst = response.data.diffsegresult_pos_lst;
+            vm.loadSutraText();
+          });
+        }else{
+          
+          if (! data.text_ready){
+            alert("第"+data.id+"卷暂无经文数据！");
+            this.loadImage();
+          }
+          
+        }
+      },
+      loadSutraText: function() {
+        this.merged_text = judge_merge_text_punct(this.text,
+        this.diffsegresult_pos_lst, 'diffsegresult_id', this.punct_lst);
+      },
+      cleanPunct: function(str) {
+        var ch_lst = [];
+        for (var i = 0; i < str.length; ++i) {
+          if (this.PUNCT_LIST.indexOf(str[i]) == -1) {
+            ch_lst.push(str[i]);
+          }
+        }
+        return ch_lst.join('');
+      },
+      userSelectionChanged: function() {
+        var vm = this;
+        setTimeout(function() {
+          var selection = window.getSelection();
+          var text = window.getSelection().toString();
+          if (text.length == 0) {
+            vm.popupMenuShown = false;
+          } else {
+            var seg_position = parseInt(selection.anchorNode.parentElement.getAttribute('position'));
+            var selection_offset = Math.min(selection.focusOffset, selection.anchorOffset);
+            var pre_text = selection.anchorNode.data.substr(0, selection_offset);
+            var offset = vm.cleanPunct(pre_text).length;
+            vm.sharedata.punct_text = vm.cleanPunct(text);
+            vm.sharedata.punctseg_lst = punct_merge_text_punct(vm.sharedata.punct_text,
+            vm.sharedata.puncts, vm.sharedata.punct_result);
+            vm.sharedata.selection_start = seg_position + offset;
+            vm.sharedata.selection_end = vm.sharedata.punct_text.length + vm.sharedata.selection_start;
+            vm.popupMenuShown = true;
+            var range = selection.getRangeAt(0);
+            var rect = range.getBoundingClientRect();
+            vm.popupMenuStyle.left = rect.left;
+            vm.popupMenuStyle.top = rect.bottom;
+          }
+        }, 10);
+      },
+      punctFeedback: function() {
+        this.sharedata.punctFeedbackDialogVisible = true;
+      },
+      ////////////////////////////////////////////////////////
+      clearImage: function() {
+            try {
+                var canvas = document.getElementById("page-canvas");
+                var context = canvas.getContext("2d");
+                context.clearRect(0, 0, canvas.width, canvas.height);
+            } catch(err) {
+            }
+        },
+        setImg: function(img_url, data, start_line_no, start_char_no, end_line_no, end_char_no) {
+            var canvas = document.getElementById("page-canvas");
+            var context = canvas.getContext("2d");
+            var image = new Image();
+            image.onload = function () {
+                var sx = 0;
+                var sy = 0;
+                var sw = canvas.width;
+                var sh = canvas.height;
+                if ('min_x' in data) {
+                    sx = data['min_x'] - 130;
+                    sy = data['min_y'] - 100;
+                    sw = data['max_x'] + 130 - sx;
+                    sh = data['max_y'] + 100 - sy;
+                    if (data['min_y'] < data['max_y'] * 2 / 3) {
+                        if (sy > 200) {
+                            sy = 100;
+                        }
+                        sh = data['max_y'] + 100 - sy;
+                    }
+                }
+                canvas.width = canvas.width;
+                canvas.height = canvas.width / sw * sh;
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+                var xratio = canvas.width / sw;
+                var yratio = canvas.height / sh;
+                data['char_data'].forEach(function(v){
+                    var line_no = v['line_no'];
+                    var char_no = v['char_no'];
+                    var color = "#F5270B";
+                    var x = v['x'] - sx;
+                    var y = v['y'] - sy;
+                    var w = v['w'];
+                    var h = v['h'];
+                    x = parseInt(x * xratio);
+                    y = parseInt(y * yratio);
+                    w = parseInt(w * xratio);
+                    h = parseInt(h * yratio);
+
+                    var to_draw = false;
+                    
+                    if ('added' in v) {
+                        color = 'ForestGreen';
+                    } else if ('old_char' in v) {
+                        color = 'blue';
+                    }
+                    if (start_line_no != end_line_no) {
+                        if (line_no == start_line_no && char_no >= start_char_no) {
+                            color = '#ff00ff';
+                            to_draw = true;
+                        } else if (line_no > start_line_no && line_no < end_line_no) {
+                            color = '#ff00ff';
+                            to_draw = true;
+                        } else if (line_no == end_line_no && char_no <= end_char_no) {
+                            color = '#ff00ff';
+                            to_draw = true;
+                        }
+                    } else {
+                        if (line_no == start_line_no && char_no >= start_char_no && 
+                            char_no <= end_char_no) {
+                            color = '#ff00ff';
+                            to_draw = true;
+                        }
+                    }
+                    if (to_draw) {
+                        context.beginPath();
+                        context.moveTo(x, y);
+                        context.lineTo(x + w, y);
+                        context.lineTo(x + w, y + h);
+                        context.lineTo(x, y + h);
+                        context.lineTo(x, y);
+                        //设置样式
+                        context.lineWidth = 1;
+                        context.strokeStyle = color;
+                        context.stroke();
+                    }
+                });
+            };
+            image.src = img_url;
+            image.src = 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-images/YB/27/YB_27_1-65edebc2.jpg';
+        },
+        loadImage: function() {
+            var start_char_pos = this.sharedata.pageDialogInfo.start_char_pos;
+            var end_char_pos = this.sharedata.pageDialogInfo.end_char_pos;
+            var pid = start_char_pos.substr(0, 17);
+            pid = "YB000860_001_01_0";
+            var start_line_no = parseInt(start_char_pos.substr(18, 2));
+            var start_char_no = parseInt(start_char_pos.substr(21, 2));
+            var end_line_no = parseInt(end_char_pos.substr(18, 2));
+            var end_char_no = parseInt(end_char_pos.substr(21, 2));
+            var cut_url = '/api/page/' + pid + '/';
+            var vm = this;
+            axios.get(cut_url).then(function(response) {
+                var data = JSON.parse(response.data.cut_info);
+                vm.text = vm.getDisplayHtml(response.data.text,
+                    start_line_no, start_char_no, end_line_no, end_char_no);
+                // vm.setImg(vm.sharedata.pageDialogInfo.page_url, data,
+                //     start_line_no, start_char_no, end_line_no, end_char_no);
+                vm.setImg('https://s3.cn-north-1.amazonaws.com.cn/lqdzj-images/YB/27/YB_27_1-65edebc2.jpg', data,
+                    start_line_no, start_char_no, end_line_no, end_char_no);
+            });
+        },
+        getDisplayHtml: function(text, start_line_no, start_char_no, end_line_no, end_char_no) {
+            var lines = text.split('\n');
+            var text_lst = [];
+            for (var i = 0; i < lines.length; ++i) {
+                var line_no = i + 1;
+                if (line_no < start_line_no) {
+                    text_lst.push(lines[i]);
+                    text_lst.push('<br />');
+                } else if (line_no == start_line_no) {
+                    if (start_char_no != 1) {
+                        text_lst.push(lines[i].substr(0, start_char_no-1));
+                    }
+                    text_lst.push('<span class="judge-page-text-focus">');
+                    if (start_line_no == end_line_no) {
+                        var focus_length = end_char_no + 1 - start_char_no;
+                        text_lst.push(lines[i].substr(start_char_no-1, focus_length));
+                        text_lst.push('</span>');
+                        if (end_char_no == lines[i].length) {
+                            text_lst.push('<br />');
+                        } else {
+                            text_lst.push(lines[i].substr(end_char_no));
+                            text_lst.push('<br />');
+                        }
+                    } else {
+                        text_lst.push(lines[i].substr(start_char_no-1));
+                        text_lst.push('<br />');
+                    }
+                } else if (line_no > start_line_no && line_no < end_line_no) {
+                    text_lst.push(lines[i]);
+                    text_lst.push('<br />');
+                } else if (line_no == end_line_no) {
+                    text_lst.push(lines[i].substr(0, end_char_no));
+                    text_lst.push('</span>');
+                    if (end_char_no == lines[i].length) {
+                        text_lst.push('<br />');
+                    } else {
+                        text_lst.push(lines[i].substr(end_char_no));
+                        text_lst.push('<br />');
+                    }
+                } else {
+                    text_lst.push(lines[i]);
+                    text_lst.push('<br />');
+                }
+            }
+            var html = text_lst.join('');
+            return html;
+        },
+        handleOpen: function () {
+            this.clearImage();
+            this.text = '';
+            this.loadImage();
+        },
+        handleOK: function () {
+            this.sharedata.judgePageDialogVisible = false;
+        }
+    }
+  });
+
+
+
+  ////////////////////////////////////////////////////////
+  var app = new Vue({
+    el: '#correct',
+    data: {
+      result: '',
+      display_space: true,
+      display_newline: false,
+      correct_task_count: 2,
+      current_seg: {},
+      selected_text:'',
+      scrolled: false,
+      segid: 1,
+      image_url_prefix: '',
+      page_no: 1,
+      line_no: 1,
+      char_no: 1,
+      isOnComposition: false,
+      current_char_no: 1,
+      sharedata: {task_id: {{ task.id }}, task_typ: {{task.typ}}, status: 0, correctsegs: []  },
+      doubt:{ 
+        formVisible: false,
+        doubt_text: '',
+        line_no: 0,
+        page_no: 0,
+        char_no: 0,
+        doubt_char_no: 0, 
+        doubt_comment: '',
+      },
+      current_doubt: {},
+      doubts: [],
+      activeNames: [],
+      scale: 1,
+      img_url: '',
+      x: 0,
+      y: 0,
+      w: 0,
+      h: 0
+    },
+    computed: {
+      premitSubmit: function (){
+        let empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
+        // 对于文字校对审查，已经完成的，禁止再提交
+        return (this.sharedata.task_typ != 11 && (empty_segs.length != 0 || (this.sharedata.status >= 4 && this.sharedata.task_typ == 2))) || (this.sharedata.task_typ == 11 && (_.filter(this.doubts, {'processed':false}).length > 0 || this.sharedata.status >= 4))
+      },
+      doubt_count: function(){
+        return this.doubts.length;
+      },
+      scale_rate: function() {
+        return "1:"+ this.scale
+      },
+      compare_text: function() {
+        if (this.sharedata.task_typ == 2) { return "一校" }
+        return "比对本"
+      },
+      ocr_text: function() {
+        if (this.sharedata.task_typ == 2) { return "二校" }
+        return "OCR"
+      },
+      progress_text: function() {
+        let done_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
+        return done_segs.length + " / " + this.sharedata.correctsegs.length
+      },
+      remove_btn_text: function() {
+        if (this.current_seg && this.current_seg.selected_text == '') {
+          return '整行恢复'
+        } 
+        return '整行删除'
+      }
+    },
+    watch: {
+      current_doubt: {
+        handler: function (val, oldVal) { 
+          if (val == null) { return }
+          // console.log(val.page_no, val.line_no, val.char_no)
+          let seg = _.find(this.sharedata.correctsegs, function(o) { 
+            return o.page_no == val.page_no && o.line_no == val.line_no && o.char_no == val.char_no; })
+          // 当审查校对时，字号被合并的情况，只需要页，行一致。
+          seg = seg ||  _.find(this.sharedata.correctsegs, function(o) { 
+            return o.page_no == val.page_no && o.line_no == val.line_no })
+          if (seg) {
+            this.gotoDoubtSeg(seg, val);
+          }
+        },
+        deep: true
+      },
+      scale: function (val, oldVal) {
+        if (val > 5){
+          this.scale = 5
+          return
+        } 
+        if (val < 1){
+          this.scale = 1
+          return;
+        }
+        if (val != oldVal) {
+
+          this.setImg();
+        }
+      }
+    },
+    created: function() {
+      var vm = this
+      axios.get('/api/correct/' + vm.sharedata.task_id + '/')
+      .then(function(response) {
+        vm.result = response.data.result;
+        vm.sharedata.status = response.data.status;
+        vm.image_url_prefix = response.data.image_url_prefix;
+        vm.correct_task_count = response.data.correct_task_count;
+        vm.segid = response.data.cur_focus;
+        vm.image_urls = response.data.image_urls;
+        this.loadCorrectSegs();
+      }.bind(this));
+      
+    },
+    mounted: function(){
+      document.addEventListener('click', this.handleDocumentClick);
+      document.addEventListener('keydown', this.handleDocumentTab);
+      document.addEventListener('compositionstart', this.handleComposition);
+      document.addEventListener('compositionend', this.handleComposition);
+      this.handleChange();
+    },
+    destroyed: function(){
+      document.removeEventListener('click', this.handleDocumentClick);
+      document.removeEventListener('keydown', this.handleDocumentTab);
+      document.removeEventListener('compositionstart', this.handleComposition);
+      document.removeEventListener('compositionend', this.handleComposition);
+    },
+    methods: {
+      handleComposition: function (event) {
+        var isChrome = !!window.chrome && !!window.chrome.webstore;
+            if (event.type === 'compositionstart') {
+                this.isOnComposition = true;
+            } else if (event.type === 'compositionend') {
+                this.isOnComposition = false;
+                // fixed for Chrome v53+ and detect all Chrome
+                // https://chromium.googlesource.com/chromium/src/+/afce9d93e76f2ff81baaa088a4ea25f67d1a76b3%5E%21/
+                if (isChrome) {
+                    console.log(this.isOnComposition);
+                    if (event.target.attributes.id && event.target.attributes.id.value === "pop-input") {
+                      this.segInput(this.current_seg, event);
+                    } else {
+                      let id = event.target.parentElement.id.replace("segdiff-", "")
+                      let seg = _.find(this.sharedata.correctsegs, function(v) { return v.id == parseInt(id)});
+                      this.segInput(seg, event);
+                    }
+                }
+            }
+      },
+      handleDocumentClick: function(e) {
+        if (this.$el.querySelector('div.cmd-block').contains(e.target)) {
+          return;
+        }
+        if (!this.$refs['popover'].$el.contains(e.target)) {
+          this.$refs['popover'].doClose();
+        }
+      },
+      handleDocumentTab: function(e) {
+        if (e.keyCode == 9) {
+            e.preventDefault();
+            this.nextPopup(e);
+          return false;
+        }
+      },
+      openDoubtForm: function() {
+
+        if (!this.doubt.doubt_text) {
+           this.$message('请选择要存疑的文字');
+        } else {
+          this.doubt.formVisible = true;
+        }
+      },
+      submitForm: function(formName) {
+        this.$refs[formName].validate((valid) => {
+          if (valid) {
+            this.createDoubtSeg()
+          } else {
+            console.log('error submit!!');
+            return false;
+          }
+        });
+      },
+      handleChange() {
+        let totalHeight = this.$el.querySelector('.canvas-pane').clientHeight - this.$el.querySelector('div.diff-text-pane-top').clientHeight
+        if (this.activeNames.length == 0) {
+          this.$el.querySelector('div.diff-text-pane').style.height = totalHeight- 16;
+        } else {
+          this.$el.querySelector('div.diff-text-pane').style.height = totalHeight - 253;
+        }
+      },
+      spanContent: function(content) {
+        if (!content) {
+          return '<span></span>'
+        } else {
+          return content;
+        }
+      },
+      choiceText: function(seg, text, evt = null) {
+        if (evt) { evt.preventDefault(); }
+        seg.selected_text = text;
+        this.updateCorrectSeg(seg);
+      },
+      loadPopup: function (seg){
+        let diff_pane = this.$el.querySelector('div.diff-text-pane');
+        let offset = 210;
+        if (this.correct_task_count == 4) {
+          offset = 290;
+        }
+        let pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().bottom;
+        //if (diff_pane.scrollHeight - diff_pane.scrollTop == diff_pane.clientHeight) {
+          if (diff_pane.clientHeight - pos < offset) {
+            pos = this.$el.querySelector('#segdiff-' + seg.id).getBoundingClientRect().top - offset;
+          }
+        //}
+
+        this.$refs['popover'].$el.style.position = 'absolute'
+        this.$refs['popover'].$el.style.top = pos + 'px';
+        this.$refs['popover'].doShow();
+      },
+      hidePopup: function (){
+        this.$refs['popover'].doClose();
+      },
+      textSelection: function(seg = null, e = {}){
+        if (e.stopPropagation){
+          e.stopPropagation();
+        }
+        var userSelection = this.userSelection(),
+        range = userSelection.getRangeAt(0),
+        orig_seg = this.current_seg;
+        
+        // console.log(range.startOffset);
+        // console.log(range.startContainer);
+        // console.log(range.cloneContents().textContent);
+        
+        if (seg) {
+          this.page_no = seg.page_no;
+          this.line_no = seg.line_no;
+          this.char_no = seg.char_no;
+          this.current_seg = seg;
+
+          this.doubt.page_no = seg.page_no;
+          this.doubt.line_no = seg.line_no;
+          this.doubt.char_no = seg.char_no;
+        }
+
+        this.doubt.doubt_text = range.cloneContents().textContent;
+        this.doubt.doubt_char_no = range.startOffset + this.doubt.char_no;
+
+        this.current_char_no = this.char_no + range.startOffset ;
+        
+        this.loadImage();
+        if (seg && seg.tag == 2) {
+          this.loadPopup(seg);
+        } else {
+          this.$refs['popover'].doClose();
+        }
+      
+        this.$nextTick(function() {
+          let userSelection = this.userSelection();
+          if (userSelection.getRangeAt(0).startContainer.length == 1 && userSelection.getRangeAt(0).cloneContents().textContent == "")
+          {
+            if (seg && orig_seg != seg) {
+              var range = document.createRange();
+              userSelection = this.userSelection();
+              let node = this.inputNode(seg, e);
+              let textNode = node.childNodes[0]
+
+              textNode = node.childNodes[0]
+              range.selectNode(textNode)
+              range.setStart(textNode, 0);
+              range.setEnd(textNode, 0);
+              
+              userSelection.removeAllRanges();
+              userSelection.addRange(range);
+            }
+          }
+        }.bind(this)
+        )
+        //range.moveStart('character', 1);
+      },
+      RemoveLine: function(){
+        console.log(this.page_no,  this.line_no)
+        let recover_mode = false;
+        if (this.current_seg.selected_text == '') {
+          recover_mode = true;
+        }
+        for(var i = 0; i < this.sharedata.correctsegs.length; ++i) {
+            var seg = this.sharedata.correctsegs[i];
+            if (seg.page_no == this.page_no && seg.line_no == this.line_no ) {
+              if (!recover_mode) {
+                seg.selected_text = '';
+              } else {
+                if (seg.tag != 2){
+                  seg.selected_text = seg.text2
+                } else {
+                  seg.selected_text = null;
+                }
+              }
+              
+              this.$set(this.sharedata.correctsegs, i, seg)
+              this.updateCorrectSeg(seg); 
+            }
+            
+        }
+      },
+      handleScroll: function(){
+        // this.scrolled = this.$el.querySelector('div.diff-text-pane').scrollTop >20;
+        // if (this.scrolled) {
+        //   this.$el.querySelector('.cmd-block').style.position='fixed';
+        //   this.$el.querySelector('.cmd-block').style.width="41%"
+        // } else {
+        //   this.$el.querySelector('.cmd-block').style.position='inherit';
+        //   this.$el.querySelector('.cmd-block').style.width="110%"
+        // }
+        
+      },
+      nextPopup: function(evt) {
+        if (evt.preventDefault) {
+          evt.preventDefault()
+        }
+        let empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
+        let segid = this.current_seg.id || this.segid;
+        if (evt.shiftKey){
+          seg = _.findLast(empty_segs, function(o) { return o.id < segid; });
+        } else {
+          seg = _.find(empty_segs, function(o) { return o.id > segid; });
+          if (!seg) {
+            seg = _.find(empty_segs, function(o) { return o.id < segid; });
+          }
+        }
+        if (!seg) { return }
+        this.moveSegDiffToView(seg.id);
+        this.textSelection(seg);
+      },
+      getSegText: function(seg) {
+        if (seg.selected_text == null) {
+          if (!seg.text2) {
+            return '<span class="ocr-missing"></span>'
+          }else {
+            return seg.text2
+          }
+        } else if(!seg.selected_text) {
+            if (seg.tag == 4) {
+              return ''
+            } else if (this.display_space) {
+              return '<span class="removed"></span>'
+            } 
+            return ''
+        }
+        else {
+          if (this.display_newline) {
+            return seg.selected_text.replace(/↵/g, '').replace(/\n\n$/g, '\n').replace(/\n/g, '↵<br>');
+          } else {
+            return seg.selected_text.replace(/↵/g, '').replace(/\n\n$/g, '\n').replace(/\n/g, '<br>');
+          }
+        }
+      },
+      getSegRealText: function(seg) {
+        if (!seg.selected_text) {
+          return ''
+        } else {
+          return this.getSegText(seg);
+        }
+      },
+      setImg: function() {
+        var img_url = this.img_url;
+        var x = this.x * this.scale;
+        var y = this.y * this.scale;
+        var w = this.w * this.scale;
+        var h = this.h * this.scale;
+        var scale = this.scale;
+        var canvas = document.getElementById("page-canvas");
+        var context = canvas.getContext("2d");
+        var image = new Image();
+        image.onload = function () {
+          canvas.width = canvas.width;
+          canvas.height = image.height * scale;
+          canvas.width = image.width * scale;
+
+          x = ~~x; y = ~~y; w = ~~w; h = ~~h;
+
+          context.scale(0.8, 0.8);
+          context.drawImage(image, 0, 0, image.width, image.height,
+          0, 0, image.width * scale, image.height * scale);
+
+          //设置样式
+          context.lineWidth = 1;
+          context.globalAlpha = 0.5;
+          context.strokeStyle = "#F5270B";
+          context.fillStyle = "#F5270B";
+          //绘制
+          context.strokeRect(x, y, w, h);
+          context.fillRect(x, y, w, h);
+
+          let wrapper_h = this.$el.querySelector('.canvas-pane').clientHeight;
+          let wrapper_w = this.$el.querySelector('.canvas-pane').clientWidth;
+          let trans_y = y*0.8 > (wrapper_h-100)/2 ? y*0.8-wrapper_h/2: 0;
+          let trans_x = x*0.8 > wrapper_w-100 ? x*0.8-wrapper_w/2: 0;
+          this.$el.querySelector('.canvas-pane').scrollTop = ~~trans_y;
+          this.$el.querySelector('.canvas-pane').scrollLeft = ~~trans_x;
+        }.bind(this);
+        image.src = img_url;
+      },
+      loadImage: function() {
+        this.img_url = this.image_urls[this.page_no-1];
+        var cut_url = this.img_url.replace('.jpg', '.cut');
+        var vm = this;
+        axios.get(cut_url).then(function(response) {
+          var char_data = response.data['char_data'];
+          v = _.find(char_data, function(v) { return v['line_no']  == vm.line_no && v['char_no'] == vm.current_char_no })
+          // 结尾缺字
+          if (!v) {
+            v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no })
+            let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
+            vm.x = v['x'];
+            vm.y = v['y']+ v['h'];
+            vm.w = v['w'];
+            vm.h = (max_char_no['char_no'] - vm.current_char_no +1)*v['h'];
+            vm.setImg();
+            return;
+          }
+          // 漏框，换算
+          if (!vm.current_seg.text2) {
+            let pre_v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no && v['char_no'] < vm.current_char_no })
+            // 当前位置缺框
+            if (pre_v){
+              vm.x = v['x'];
+              vm.y = pre_v['y'] + pre_v['h'];
+              vm.w = v['w'];
+              vm.h = (v['y'] - pre_v['y'] - pre_v['h']);
+              vm.setImg();
+            } else {
+            // 首个字符缺框
+              let last_v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no })
+              let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
+              let offset = (max_char_no['char_no'] - last_v['char_no']) *v['h']
+              let start_y = (v['y'] - offset < 0 ) ? 0 : v['y'] - offset;
+              vm.x = v['x'];
+              vm.y = start_y;
+              vm.w = v['w'];
+              vm.h = v['y'] - start_y;
+              vm.setImg();
+            }
+            return
+          }
+
+          vm.x = v['x'];
+          vm.y = v['y'];
+          vm.w = v['w'];
+          vm.h = v['h'];
+          vm.setImg();
+        });
+
+        
+      },
+      selectText: function(seg, index, no, evt) {
+        evt.preventDefault();
+        if (no == 1) {
+          seg.selected_text = seg.text1;
+          this.updateCorrectSeg(seg);
+        } else if (no == 2) {
+          seg.selected_text = seg.text2;
+          this.updateCorrectSeg(seg);
+        } else if (no == 0)
+        {
+          evt.preventDefault()
+        }
+        return false;
+      },
+      permitNewline: function(evt) {
+        if (evt.keyCode == 13 || evt.keyCode == 8) {
+          return 
+        }
+        evt.preventDefault()
+        return false
+      },
+      blockthem: function(evt) {
+        if (evt.keyCode == 46){
+          var selection = window.getSelection(),
+          range = selection.getRangeAt(0);
+          let is_tail = false;
+          // delete键按在列尾
+          if (range.startContainer.length == range.startOffset) {
+            is_tail = true;
+          }
+          newline = _.findLast(this.sharedata.correctsegs, function(v) { return v['line_no']  == this.current_seg.line_no && v['page_no']  == this.current_seg.page_no }.bind(this))
+          last_tags = _.filter(this.sharedata.correctsegs, function(v) { return v['line_no']  == this.current_seg.line_no && v['page_no']  == this.current_seg.page_no && v.tag != 4 && v.position > this.current_seg.position }.bind(this))
+          let all_selected_text = _.reduce(last_tags, function(sum, n) { return sum + n.selected_text;}, '');
+          //console.log('all:', all_selected_text)
+          // 余下所有非回车tag，内容都有空
+          if (all_selected_text == "" && is_tail) {
+            // 最后一个的内容是回车
+            if (newline.selected_text == '\n') {
+              let idx = _.find(this.sharedata.correctsegs, function(v) { return v.position == newline.position});
+              newline.selected_text = ''
+              this.updateCorrectSeg(newline);
+              this.$set(this.sharedata.correctsegs, idx, newline)
+            }
+          }
+          this.$nextTick(function () {
+            // DOM is now updated
+            // `this` is bound to the current instance
+            this.textSelection()
+          }.bind(this))
+          return
+        } else if (evt.keyCode == 37 || evt.keyCode == 39) {
+          this.$nextTick(function () {
+            // DOM is now updated
+            // `this` is bound to the current instance
+            this.textSelection()
+          }.bind(this))
+          return
+        }
+        if (evt.keyCode >= 32 && evt.keyCode <= 222 || evt.keyCode== 229) {
+          evt.preventDefault()
+          return
+        }
+      },
+      moveSegDiffToView: function(segid) {
+        try {
+          if (!this.$el.querySelector('#segdiff-'+ segid + ' span.difftext')) {
+            return
+          }
+          this.$el.querySelector('#segdiff-'+ segid + ' span.difftext').focus()
+          var offset = this.$el.querySelector('div.diff-text-pane').scrollTop + this.$el.querySelector('#segdiff-' + segid).getBoundingClientRect().top - 360;
+          this.$el.querySelector('div.diff-text-pane').scrollTop = offset;
+        } catch(err) {
+          console.log('moveSegDiffToView: ', err)
+        }
+      },
+      segClick: function(seg, e) {
+        if (e.stopPropagation){
+          e.stopPropagation();
+        }
+        this.segid = seg.id;
+        this.selected_text = seg.selected_text;
+        
+        
+        this.page_no = seg.page_no;
+        this.line_no = seg.line_no;
+        this.char_no = seg.char_no;
+      },
+      userSelection: function() {
+        var userSelection, rangeObject;
+        if (window.getSelection) { 
+            //现代浏览器
+            userSelection = window.getSelection();
+        } else if (document.selection) { 
+            //IE浏览器 考虑到Opera，应该放在后面
+            userSelection = document.selection.createRange();
+        }
+
+        return userSelection;
+      },
+      inputNode: function(seg ,e) {
+        if (e.target && e.target.id) {
+          return this.$el.querySelector('#' + e.target.id)
+        } else {
+          return this.$el.querySelector('#segdiff-' + seg.id + ' span')
+        }
+      },
+      segInput: function(seg, e) {
+        if (this.isOnComposition) {
+          return;
+        }
+        let userSelection = this.userSelection();
+        let startNode = userSelection.anchorNode,
+            startOffset = userSelection.anchorOffset,
+            focusNode = userSelection.focusNode,
+            focusOffset = userSelection.focusOffset;
+        let new_string = e.target.innerText;
+        if ( e.inputType == 'deleteContentBackward'){
+          if (new_string.length >= 1 &&new_string[new_string.length -1] == '\n') {
+            if ((new_string.length==1) || new_string[new_string.length-2] != '↵'){
+              new_string = new_string.replace(/\n$/g, '')
+              e.target.innerText = new_string
+            }
+          }
+        }
+        seg.selected_text = e.target.innerText;
+        //console.log(startNode, startOffset, focusNode, focusOffset )
+        this.updateCorrectSeg(seg);
+        this.$nextTick(function() {
+
+          let userSelection = this.userSelection();
+          let node = this.inputNode(seg, e);
+          let textNode = _.find(node.childNodes, function(o) { return o.data == focusNode.data; }.bind(this) )
+          let includedTextNode = undefined;
+          if (focusNode.data !=undefined) {
+            includedTextNode = _.find(node.childNodes, function(o) { return o.data && o.data.indexOf(focusNode.data.replace(/↵$/g, '')) > -1; }.bind(this) )
+          }
+          var range = document.createRange();
+          // 处理最后一个回车，没有分段Range
+          if (focusNode.data==undefined) {
+            let childNodes = _.filter(node.childNodes,  function(o) { return o.nodeName == "#text"; });
+            if (childNodes.length==0) {
+              return
+            } 
+            textNode = childNodes[childNodes.length-1]
+            range.selectNode(textNode)
+            range.setStart(textNode, textNode.data.length);
+            range.setEnd(textNode, textNode.data.length);
+          }
+          else {
+            if (textNode) {
+              range.selectNode(textNode)
+              range.setStart(textNode, startOffset);
+              range.setEnd(textNode, focusOffset);
+            } else {
+              range.selectNode(includedTextNode)
+              range.setStart(includedTextNode, startOffset-1);
+              range.setEnd(includedTextNode, focusOffset-1);
+            }
+            
+          }
+          
+          e.target.focus();
+          selection = this.userSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }.bind(this))
+      },
+      segLinefeedInput: function(seg, e) {
+        var newtext = e.target.innerText;
+        if (e.inputType == 'insertParagraph') {
+          seg.selected_text = '\n';
+          e.target.innerHTML = this.getLineFeedHtml(seg);
+        } else if (newtext.length <= 2) { // 删除一次去掉换行
+          seg.selected_text = '';
+        } else {
+          seg.selected_text = '\n';
+        }
+        this.updateCorrectSeg(seg);
+      },
+      loadCorrectSegs: function() {
+        var vm = this
+        vm.loadImage();
+        console.log('load image.');
+        axios.get('/api/correct/' + vm.sharedata.task_id + '/correctsegs/')
+        .then(function(response) {
+          vm.sharedata.correctsegs = response.data;
+          for(var i = 0; i < vm.sharedata.correctsegs.length; ++i) {
+            var seg = vm.sharedata.correctsegs[i];
+            if (seg.id == vm.segid) {
+              vm.page_no = seg.page_no;
+              vm.line_no = seg.line_no;
+              vm.char_no = seg.char_no;
+              vm.current_char_no = vm.char_no;
+            }
+          }
+
+          vm.loadImage();
+          setTimeout(function() {
+            vm.moveSegDiffToView(vm.segid);
+          }, 1000);
+        });
+      },
+      updateCorrectSeg: function(seg, update_text = null) {
+        update_text = seg.selected_text && seg.selected_text.replace(/↵/g, '').replace(/\n\n$/, '\n')
+        axios.put('/api/correct/' + this.sharedata.task_id + '/correctsegs/' + seg.id + '/', {
+          selected_text: update_text || seg.selected_text,
+          doubtable: seg.doubtable
+        })
+        .then(function(response) {
+          seg.selected_text = response.data.selected_text
+          // 解决当前行为空，焦点丢失的问题，重新focus
+          if (!seg.selected_text) {
+              this.$nextTick(function() {
+              this.$el.querySelector('#pop-input').focus()
+            }.bind(this))
+          }
+        }.bind(this));
+      },
+      finishTask: function() {
+        var vm = this;
+        axios.post('/api/correct/' + this.sharedata.task_id + '/finish/')
+        .then(function(response) {
+          vm.sharedata.status = response.data.status;
+          alert('提交成功！');
+        })
+        .catch(function (error) {
+          vm.error = '提交出错！';
+        });
+      },
+      createDoubtSeg: function() {
+        this.doubt.formVisible = false;
+        axios.post('/api/doubt_seg/'+ this.sharedata.task_id+'/' , {
+          task: this.sharedata.task_id,
+          page_no: this.doubt.page_no,
+          line_no: this.doubt.line_no,
+          char_no: this.doubt.char_no,
+          doubt_text: this.doubt.doubt_text,
+          doubt_char_no: this.doubt.doubt_char_no,
+          doubt_comment: this.doubt.doubt_comment,
+          processed: this.doubt.processed,
+        }).then(function(response) {
+          console.log(response)
+          this.doubts.unshift(response.data)
+          this.doubt.doubt_comment=''
+        }.bind(this))
+        .catch(function (error) {
+          console.log(error)
+          this.doubt.formVisible = true;
+        });
+      },
+      gotoDoubtSeg: function(seg, doubt) {
+        
+        if (seg) {
+          this.page_no = seg.page_no;
+          this.line_no = seg.line_no;
+          this.char_no = seg.char_no;
+          this.current_seg = seg;
+        }
+
+        this.current_char_no = doubt.doubt_char_no ;
+        let segid = seg.id
+        let node = this.$el.querySelector('#segdiff-'+ segid + ' span')
+        node.focus()
+        var offset = this.$el.querySelector('div.diff-text-pane').scrollTop + this.$el.querySelector('#segdiff-' + segid).getBoundingClientRect().top - 360;
+        this.$el.querySelector('div.diff-text-pane').scrollTop = offset;
+
+
+        this.$nextTick(function() {
+
+          let selection = this.userSelection();
+          let textNode = _.find(node.childNodes, function(o) { return o.data && o.data.indexOf(doubt.doubt_text) >= 0; } )
+          var range = document.createRange();
+          // 处理最后一个回车，没有分段Range
+        
+          if (textNode) {
+            range.selectNode(textNode)
+            let start_pos = doubt.doubt_char_no- doubt.char_no;
+            if (textNode.data.slice(start_pos , start_pos + doubt.doubt_text.length) != doubt.doubt_text) {
+              start_pos = textNode.data.indexOf(doubt.doubt_text)
+            }
+            range.setStart(textNode, start_pos);
+            range.setEnd(textNode, start_pos + doubt.doubt_text.length);
+          } else {
+            textNode = node.childNodes[0]
+            range.selectNode(textNode)
+            range.setStart(textNode, 0);
+            range.setEnd(textNode, 0);
+          }
+          selection.removeAllRanges();
+          selection.addRange(range);
+        });
+        this.loadImage();
+      }
+    }
+  });
+</script>
+{% endblock %}

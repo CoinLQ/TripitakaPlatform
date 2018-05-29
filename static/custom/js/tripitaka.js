@@ -190,7 +190,7 @@ Vue.component('diffseg-box', {
 
         <div v-if="sharedata.judge_verify_task_id != 0">
             <div>
-                <sstyle="line-height:50px!important;"pan>判取审定：{{ getResult(diffsegresult.judge_verify_result) }}</span>
+                <span style="line-height:50px!important;">判取审定：{{ getResult(diffsegresult.judge_verify_result) }}</span>
                 <a href="#" v-if="diffsegresult.judge_verify_result.typ == 2" @click.stop.prevent="showSplit(diffsegresult.judge_verify_result)">显示拆分方案</a>
             </div>
         </div>
@@ -198,7 +198,7 @@ Vue.component('diffseg-box', {
         <div>
             <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>
             <a href="#" class="diffseg-btn" @click.stop.prevent="doMerge(segindex)" :disabled="diffsegresult.typ == 2">合并</a>
-            <a href="#" class="diffseg-btn" v-if="diffsegresult.merged_diffsegresults.length == 0" @click.stop.prevent="doSplit(segindex)">拆分</a>
+            <a href="#" class="diffseg-btn" v-if="base_text.length > 1" @click.stop.prevent="doSplit(segindex)">拆分</a>
         </div>
 
         <div>
@@ -275,6 +275,7 @@ Vue.component('diffseg-box', {
             this.sharedata.mergeDialogVisible = true;
         },
         doSplit: function(segindex) {
+
             this.sharedata.segindex = segindex;
             this.sharedata.splitDialogVisible = true;
         },
@@ -317,6 +318,8 @@ Vue.component('diffseg-box', {
         showSplit: function(judge_result) {
             this.sharedata.show_split_diffsegresult = judge_result;
             this.sharedata.showSplitDialogVisible = true;
+
+            
         },
         showImage: function(diffsegresult) {
             this.sharedata.image_diffseg_id = diffsegresult.diffseg.id;
@@ -329,9 +332,9 @@ Vue.component('diffseg-box', {
 Vue.component('sutra-unit', {
     props: ['data', 'sharedata'],
     template: `
-    <span v-if="data.diffseg_id == undefined" v-html="data.text"></span>
-    <span v-else-if="data.text.length == 0"><a href="#" :diffsegid="data.diffseg_id" :class="className" :tabindex="data.diffseg_id" style="text-decoration:none;" @click="choiceThis()" v-html="selected_text" @keydown="keyDown($event)"></a></span>
-    <span v-else><a href="#" :diffsegid="data.diffseg_id" :class="className" :tabindex="data.diffseg_id" style="text-decoration:none;" @click="choiceThis()" v-html="selected_text"  @keydown="keyDown($event)"></a></span>
+    <span v-if="data.diffseg_id == undefined" v-html="data.text" style="font-size:20;"></span>
+    <span v-else-if="data.text.length == 0"><a href="#" :diffsegid="data.diffseg_id" :class="className" :tabindex="data.diffseg_id" style="text-decoration:none;font-size:20;" @click="choiceThis()" v-html="selected_text" @keydown="keyDown($event)"></a></span>
+    <span v-else><a href="#" :diffsegid="data.diffseg_id" :class="className" :tabindex="data.diffseg_id" style="text-decoration:none;font-size:20;" @click="choiceThis()" v-html="selected_text"  @keydown="keyDown($event)"></a></span>
     `,
     computed: {
         
@@ -663,24 +666,25 @@ Vue.component('merge-dialog', {
 Vue.component('split-dialog', {
     props: ['sharedata'],
     template: `
-    <el-dialog title="拆分" :visible.sync="sharedata.splitDialogVisible" width="100%" @open="handleOpen" :before-close="handleCancel">
-        <button class="btn" @click="incrementSplitCount">新增</button>
-        <button class="btn" @click="decrementSplitCount">减少</button><span>减少到1将取消原先的拆分。</span>
+    <el-dialog title="拆分" :visible.sync="sharedata.splitDialogVisible" :width="split_width" @open="handleOpen" :before-close="handleCancel">
+        <button class="btn" @click="incrementSplitCount" style="margin: 0 4px 4px 0;">新增</button>
+        <button class="btn" @click="decrementSplitCount" style="margin: 0 4px 4px 0;">减少</button>
+        
         <table class="table table-bordered table-condensed">
             <thead>
-                <tr>
-                    <th></th>
-                    <th v-for="tname in tname_lst">{{ tname }}</th>
-                    <th>我的选择</th>
+                <tr >
+                    <th style="text-align:center;"></th>
+                    <th v-for="tname in tname_lst" style="text-align:center;">{{ tname }}</th>
+                    <th style="text-align:center;">我的选择</th>
                 </tr>
             </thead>
             <tbody>
             <tr v-for="(title, index) in title_lst">
-                <td>{{ title }}</td>
-                <td v-for="(tripitaka_id, tripitaka_index) in tripitaka_ids">
+                <td align="center">{{ title }}</td>
+                <td v-for="(tripitaka_id, tripitaka_index) in tripitaka_ids" align="center">
                     <textarea cols="4" v-model="tripitaka_id_to_texts[tripitaka_id][index]" @input="verifyData"></textarea>
                 </td>
-                <td>
+                <td align="center">
                     <textarea cols="4" v-model="selected_lst[index]" @input="verifyData"></textarea>
                 </td>
             </tr>
@@ -696,16 +700,27 @@ Vue.component('split-dialog', {
     data: function () {
         return {
             diffsegresult_id: '',
-            split_count: 2,
-            title_lst: [],
-            tripitaka_ids: [],
-            tname_lst: [],
-            tripitaka_id_to_oldtext: {},
-            tripitaka_id_to_texts: {},
-            selected_lst: [],
+            split_count: 2,         //拆分总数
+            split_count_old:2,      //拆分总数-原值
+            diffseg_id_old:-1,         //待处理文字编号-原值
+            is_init:1,              //是否为初始化：1是0否。
+            title_lst: [],          //类别名称：1、2、3等
+            // split_text_list:[],     //拆分后的数据按列表存储
+            tripitaka_ids: [],      //藏经id
+            tname_lst: [],          //藏经名称:永北、乾隆、高丽等 
+            tripitaka_id_to_oldtext: {},//返回的拆分数据原值
+            tripitaka_id_to_texts: {},  //生成的拆分数据
+            selected_lst: [],           //我的选择中拆分数据
             okDisabled: true,
             error: null
         }
+    },
+    computed: {
+        split_width: function(){
+            //初始化页面宽度
+            return (this.tname_lst.length+1)*150+"px";
+        },
+        
     },
     methods: {
         splitText: function(text, count) {
@@ -726,36 +741,126 @@ Vue.component('split-dialog', {
         },
         generateSplitItems: function() {
             var diffsegresult = this.sharedata.diffsegresults[this.sharedata.segindex];
-            debugger;
+            //根据待处理文字的id，判断是否切换了待处理文字，如果是，标记为待初始化。
+            if (this.sharedata.diffsegresults[this.sharedata.segindex].id != this.diffseg_id_old){
+                this.is_init = 1;
+                this.diffseg_id_old = this.sharedata.diffsegresults[this.sharedata.segindex].id;
+                this.split_count = 2;
+                this.split_count_old = this.split_count;
+            }
+            //准备空数据，用来更新拆分框的内容。
+            this.title_lst = [];
+            this.tripitaka_ids = [];
+            this.tname_lst = [];
+            this.tripitaka_id_to_oldtext = {};
+            console.log(diffsegresult.typ);
+            //开始处理
             if (diffsegresult.typ == 2) {
                 var split_info = JSON.parse(diffsegresult.split_info);
-                this.split_count = split_info.split_count;
-                this.tripitaka_id_to_texts = split_info.tripitaka_id_to_texts;
-                this.selected_lst = split_info.selected_lst;
-                this.title_lst = [];
-                this.tripitaka_ids = [];
-                this.tname_lst = [];
-                this.tripitaka_id_to_oldtext = {};
+                
+                //获取当前校勘文字的返回数据
+                var diffsegtexts = this.sharedata.diffsegresults[this.sharedata.segindex].diffseg.diffsegtexts;
+                var length = diffsegtexts.length;
+                
+                //开始计算
+                for (var i = 0; i < length; ++i) {
+                    //获取网页需要的数据
+                    if (diffsegtexts[i].text != null){
+                        // var text_lst = this.splitText(diffsegtexts[i].text, this.split_count);
+                        var tripitaka_id = diffsegtexts[i].tripitaka.id;
+                        
+                        if (this.is_init == 1){//初始化
+                            //获取返回的拆分总数
+                            this.split_count = split_info.split_count;
+                            //获取返回的拆分信息
+                            var text_lst = split_info.tripitaka_id_to_texts[tripitaka_id];
+                            //将网络返回的拆分数据作为初始化的值
+                            this.tripitaka_id_to_texts = split_info.tripitaka_id_to_texts;
+                            this.selected_lst = split_info.selected_lst;
+                           
+                        }else if (this.split_count > this.split_count_old){//当增加时
+                            //保留原始的拆分数据
+                            var text_lst = this.tripitaka_id_to_texts[tripitaka_id];
+                        }else if (this.split_count < this.split_count_old){//当减少时
+                            //末尾两项合并，删除最后一行。
+                            var text_lst = this.tripitaka_id_to_texts[tripitaka_id];
+                            if (text_lst == null){
+                                //正常
+                                text_lst = [];
+                            }else{
+                                len = this.split_count_old;
+                                //修改原始的拆分数据
+                                if (len > 1) {
+                                    if (text_lst[len-1] == NaN || text_lst[len-1] == undefined || text_lst[len-1] == 'undefined'){
+                                        text_lst[len-1] = '';
+                                    }
+                                    if (text_lst[len-2] == NaN || text_lst[len-2] == undefined || text_lst[len-2] == 'undefined'){
+                                        text_lst[len-2] = '';
+                                    }
+                                    text_lst[len-2]=text_lst[len-2]+text_lst[len-1];
+                                    text_lst.splice(len-1);
+                                    
+                                }
+                            }
+                        }else if (this.split_count == this.split_count_old){//当不变时
+                            //保留原始的拆分数据
+                            var text_lst = this.tripitaka_id_to_texts[tripitaka_id];
+                        }
+                        //填充拆分框内数据
+                        var tname = diffsegtexts[i].tripitaka.shortname;
+                        this.tripitaka_ids.push(tripitaka_id);
+                        this.tname_lst.push(tname);
+                        this.tripitaka_id_to_oldtext[tripitaka_id] = diffsegtexts[i].text;
+                        for (var j = 0; j < text_lst.length; ++j){
+                            if (text_lst[j] == NaN || text_lst[j] == undefined || text_lst[j] == 'undefined'){
+                                text_lst[j] = '';
+                            }
+                        }
+                        //当拆分数据长度小于split_count时，后面用''填充。
+                        var count = text_lst.length;
+                        for (var k = 0;k < this.split_count-count;k++){
+                            text_lst.push('');
+                            console.log(tripitaka_id+'--'+text_lst);
+                        }
+                        this.tripitaka_id_to_texts[tripitaka_id] = text_lst;
+                    }else{//当没有该藏经数据时，将其值设置为''.
+                        var tripitaka_id = diffsegtexts[i].tripitaka.id;
+                        this.tripitaka_id_to_texts[tripitaka_id] = '';
+                    }
+                    
+                }
+                
+                //生成拆分框的行号
                 for (var i = 1; i <= this.split_count; ++i) {
                     this.title_lst.push(i.toString());
                 }
-                var diffsegtexts = this.sharedata.diffsegresults[this.sharedata.segindex].diffseg.diffsegtexts;
-                var length = diffsegtexts.length;
-                for (var i = 0; i < length; ++i) {
-                    var text_lst = this.splitText(diffsegtexts[i].text, this.split_count);
-                    var tripitaka_id = diffsegtexts[i].tripitaka.id;
-                    var tname = diffsegtexts[i].tripitaka.shortname;
-                    this.tripitaka_ids.push(tripitaka_id);
-                    this.tname_lst.push(tname);
-                    this.tripitaka_id_to_oldtext[tripitaka_id] = diffsegtexts[i].text;
+                //处理“我的选择”数据
+                if (this.is_init == 1){//初始化
+                    //关闭初始化
+                    this.is_init = 0;
+                    this.split_count_old = this.split_count;
+                }else if (this.split_count > this.split_count_old){//当增加时
+                    //保留原始的拆分数据
+                    this.selected_lst[this.split_count-1] = '';
+                    
+                }else if (this.split_count < this.split_count_old){//当减少时
+                    if (this.selected_lst[this.split_count-1] == NaN || this.selected_lst[this.split_count-1] == undefined ||this.selected_lst[this.split_count-1] == 'undefined'){
+                        this.selected_lst[this.split_count-1] = '';
+                    }
+                    if (this.selected_lst[this.split_count] == NaN || this.selected_lst[this.split_count] == undefined ||this.selected_lst[this.split_count] == 'undefined' ){
+                        this.selected_lst[this.split_count] = '';
+                    }
+                    this.selected_lst[this.split_count-1] = this.selected_lst[this.split_count-1]+this.selected_lst[this.split_count];
+                    this.selected_lst.splice(this.split_count);
+                    
+                }else if (this.split_count == this.split_count_old){//当不变时
+                    //保留原始的拆分数据
                 }
+                
             } else {
-                this.split_count = 2;
-                this.title_lst = [];
-                this.tripitaka_ids = [];
-                this.tname_lst = [];
-                this.tripitaka_id_to_oldtext = {};
-                this.tripitaka_id_to_texts = {};
+                if (this.tripitaka_id_to_texts.length == 0){
+                    this.tripitaka_id_to_texts = {};//当尚未进行拆分时
+                }
                 this.selected_lst = [];
                 for (var i = 1; i <= this.split_count; ++i) {
                     this.title_lst.push(i.toString());
@@ -763,16 +868,96 @@ Vue.component('split-dialog', {
                 }
                 var diffsegtexts = this.sharedata.diffsegresults[this.sharedata.segindex].diffseg.diffsegtexts;
                 var length = diffsegtexts.length;
+                //开始计算
                 for (var i = 0; i < length; ++i) {
-                    var text_lst = this.splitText(diffsegtexts[i].text, this.split_count);
-                    var tripitaka_id = diffsegtexts[i].tripitaka.id;
-                    var tname = diffsegtexts[i].tripitaka.shortname;
-                    this.tripitaka_ids.push(tripitaka_id);
-                    this.tname_lst.push(tname);
-                    this.tripitaka_id_to_oldtext[tripitaka_id] = diffsegtexts[i].text;
-                    this.tripitaka_id_to_texts[tripitaka_id] = text_lst;              
+                    //获取网页需要的数据
+                    if (diffsegtexts[i].text != null){
+                        // var text_lst = this.splitText(diffsegtexts[i].text, this.split_count);
+                        var tripitaka_id = diffsegtexts[i].tripitaka.id;
+                        if (this.is_init == 1){//初始化
+                            //获取返回的拆分信息
+                            var text_lst = this.splitText(diffsegtexts[i].text, this.split_count);
+                            this.selected_lst = [];
+                            this.tripitaka_id_to_texts[tripitaka_id] = text_lst;
+                           
+                        }else if (this.split_count > this.split_count_old){//当增加时
+                            //保留原始的拆分数据
+                            if (this.tripitaka_id_to_texts[tripitaka_id] == undefined){
+                                var text_lst = [];
+                            }else{
+                                var text_lst = this.tripitaka_id_to_texts[tripitaka_id];
+                            }
+                        }else if (this.split_count < this.split_count_old){//当减少时
+                            //末尾两项合并，删除最后一行。
+                            var text_lst = this.tripitaka_id_to_texts[tripitaka_id];
+                            if (text_lst == null){
+                                //正常
+                                text_lst = [];
+                            }else {
+                                len = this.split_count_old;
+                                //修改原始的拆分数据
+                                if (len > 1) {
+                                    if (text_lst[len-1] == NaN || text_lst[len-1] == undefined || text_lst[len-1] == 'undefined'){
+                                        text_lst[len-1] = '';
+                                    }
+                                    if (text_lst[len-2] == NaN || text_lst[len-2] == undefined || text_lst[len-2] == 'undefined'){
+                                        text_lst[len-2] = '';
+                                    }
+                                    text_lst[len-2]=text_lst[len-2]+text_lst[len-1];
+                                    text_lst.splice(len-1);
+                                    
+                                }
+                            }
+                        }else if (this.split_count == this.split_count_old){//当不变时
+                            //保留原始的拆分数据
+                            var text_lst = this.tripitaka_id_to_texts[tripitaka_id];
+                        }
+                        var tname = diffsegtexts[i].tripitaka.shortname;
+                        this.tripitaka_ids.push(tripitaka_id);
+                        this.tname_lst.push(tname);
+                        this.tripitaka_id_to_oldtext[tripitaka_id] = diffsegtexts[i].text;
+                        for (var j = 0; j < text_lst.length; ++j){
+                            if (text_lst[j] == NaN || text_lst[j] == undefined || text_lst[j] == 'undefined'){
+                                text_lst[j] = '';
+                            }
+                        }
+                        //当拆分数据长度小于split_count时，后面用''填充。
+                        var count = text_lst.length;
+                        for (var k = 0;k < this.split_count-count;k++){
+                            text_lst.push('');
+                        }
+                        this.tripitaka_id_to_texts[tripitaka_id] = text_lst;
+                    }else{//当没有该藏经数据时，将其值设置为''.
+                        var tripitaka_id = diffsegtexts[i].tripitaka.id;
+                        this.tripitaka_id_to_texts[tripitaka_id] = '';
+                    }
+                    
+                }
+                //处理“我的选择”数据
+                if (this.is_init == 1){//初始化
+                    //关闭初始化
+                    this.is_init = 0;
+                    this.split_count_old = this.split_count;
+                }else if (this.split_count > this.split_count_old){//当增加时
+                    //保留原始的拆分数据
+                    this.selected_lst[this.split_count-1] = '';
+                    
+                }else if (this.split_count < this.split_count_old){//当减少时
+                    if (this.selected_lst[this.split_count-1] == NaN || this.selected_lst[this.split_count-1] == undefined ||this.selected_lst[this.split_count-1] == 'undefined'){
+                        this.selected_lst[this.split_count-1] = '';
+                    }
+                    if (this.selected_lst[this.split_count] == NaN || this.selected_lst[this.split_count] == undefined ||this.selected_lst[this.split_count] == 'undefined' ){
+                        this.selected_lst[this.split_count] = '';
+                    }
+                    this.selected_lst[this.split_count-1] = this.selected_lst[this.split_count-1]+this.selected_lst[this.split_count];
+                    this.selected_lst.splice(this.split_count);
+                    
+                }else if (this.split_count == this.split_count_old){//当不变时
+                    //保留原始的拆分数据
                 }
             }
+            
+            
         },
         verifyData: function() {
             var i = 0;
@@ -806,12 +991,14 @@ Vue.component('split-dialog', {
             return false;
         },
         incrementSplitCount: function () {
+            this.split_count_old = this.split_count;
             if (this.split_count < 20) {
                 this.split_count++;
                 this.generateSplitItems();
             }
         },
         decrementSplitCount: function () {
+            this.split_count_old = this.split_count;
             if (this.split_count > 1) {
                 this.split_count--;
                 this.generateSplitItems();
@@ -822,12 +1009,13 @@ Vue.component('split-dialog', {
             this.generateSplitItems();
         },
         handleOK: function () {
+            this.diffsegresult_id = this.sharedata.diffsegresults[this.sharedata.segindex].id;
             var vm = this;
             var url = '/api/judge/' + this.sharedata.task_id + '/diffsegresults/' + this.diffsegresult_id + '/';
             var data = '';
             if (this.split_count == 1) {
                 data = {
-                    typ: 1,
+                    typ: 2,
                     split_info: '{}',
                     merged_diffsegresults: []
                 }
@@ -845,18 +1033,71 @@ Vue.component('split-dialog', {
                     merged_diffsegresults: []
                 }
             }
+            //判断拆分数据中是否包含整行均为空的数据，如果包含，进行提示。
+            var arr = this.tripitaka_id_to_texts;
+            var result_arr = [];
+            for (var item in arr){
+                var text_lst = arr[item];
+                for (var j in text_lst){
+                    if (text_lst[j] == ''){
+                        if (result_arr[j] == null){
+                            result_arr[j] = 1;
+                        }else{
+                            result_arr[j] = result_arr[j]+1;
+                        }
+                        
+                    }
+                }
+            }
+            var put_flag = 1;
+            for (var k in result_arr){
+                if (result_arr[k] == this.tripitaka_ids.length){
+                    var line = parseInt(k)+1;
+                    vm.error = '第'+line+'行不能为空';
+                    put_flag = 0;
+                    break;
+                }
+            }
+            if (put_flag == 1){
+                axios.put(url, data)
+                .then(function(response) {
+                    vm.$emit('reload');
+                    vm.sharedata.splitDialogVisible = false;
+                    //页面关闭，还原为待初始化状态。
+                    this.is_init = 0;
+                    this.split_count_old = this.split_count;
+                    //清除错误提示
+                    vm.error = null;
+                })
+                .catch(function (error) {
+                    if (error.data.non_field_errors[0] != null){
+                        
+                        if (error.data.non_field_errors[0] == 'invalid split_info:oldtext not equal texts.'){
+                            vm.error = '提交数据与原始经文不符。';
+                        }else if (error.data.non_field_errors[0] == 'invalid split_info：texts length not equal split_count.'){
+                            vm.error = '经文拆分结果异常。';
+                        }else if (error.data.non_field_errors[0] == 'invalid split_info:selected_text not equal selected_lst.'){
+                            vm.error = '拆分数据和选择数据不符。';
+                        }else if (error.data.non_field_errors[0] == 'invalid split_info:split_info not have selected_lst'){
+                            vm.error = '缺少“我的选择”数据。';
+                        }else if (error.data.non_field_errors[0] == 'no selected_text'){
+                            vm.error = '拆分数至少为2。';
+                        }else{
+                            vm.error = error.data.non_field_errors[0];
+                        }
+                    }else{
+                        vm.error = '提交出错！';
+                    }
+                });
+            }
             
-            axios.put(url, data)
-            .then(function(response) {
-                vm.$emit('reload');
-                vm.sharedata.splitDialogVisible = false;
-            })
-            .catch(function (error) {
-                vm.error = '提交出错！';
-            });
         },
         handleCancel: function() {
             this.sharedata.splitDialogVisible = false;
+            this.error = null;
+            //页面关闭，还原为待初始化状态。
+            this.is_init = 0;
+            this.split_count_old = this.split_count;
             this.error = null;
         }
     }
@@ -957,7 +1198,7 @@ Vue.component('column-image', {
             var context = canvas.getContext("2d");
             var image = new Image();
             image.onload = function () {
-                var width = 40;
+                var width = 80;
                 var height = width / image.width * image.height;
                 canvas.width = width;
                 canvas.height = height;
@@ -1003,13 +1244,13 @@ Vue.component('judge-image-dialog', {
     <table class="table table-condensed">
             <tbody>
             <tr>
-            <td v-for="(image, index) in images">{{ image.tname }}</td>
+            <td v-for="(image, index) in images" align="center" style="font-size:20;">{{ image.tname }}</td>
             </tr>
             <tr class="diffseg-image">
-            <td v-for="(image, index) in images"><column-image :imageinfo="image" :sharedata="sharedata"></column-image></td>
+            <td v-for="(image, index) in images" align="center"><column-image :imageinfo="image" :sharedata="sharedata"></column-image></td>
             </tr>
             <tr>
-            <td v-for="(image, index) in images"><b v-if="image.cross_line">...</b></td>
+            <td v-for="(image, index) in images" align="center"><b v-if="image.cross_line">...</b></td>
             </tr>
             </tbody>
         </table>
@@ -1022,14 +1263,8 @@ Vue.component('judge-image-dialog', {
     },
     computed: {
         images_width: function() {
-            return this.images.length *60 + 20 + "px";
+            return this.images.length *(80+30) + 20 + "px";
         },
-        images_height: function() {
-            return "100%";
-        },
-        images_border_radius: function() {
-            return "20%";
-        }
     },
     methods: {
         generateItems: function(diffseg) {
@@ -1082,19 +1317,19 @@ Vue.component('judge-page-dialog', {
     props: ['sharedata'],
     template: `
     <el-dialog title="" :visible.sync="sharedata.judgePageDialogVisible" width="95%" height="95%" top="2vh" @open="handleOpen" :before-close="handleOK">
-        <div class="row">
-            <div class="col-md-8 canvas-wrapper">
-                <canvas id="page-canvas" width="800" height="1080"></canvas>
+        <div class="row" >
+            <div class="col-md-8 canvas-wrapper" id="canvasWrapper">
+                <canvas id="page-canvas" width="800"  ></canvas>
             </div>
-            <div class="col-md-4 text-wrapper">
-                <div class="judge-page-text" v-html="text"></div>
+            <div class="col-md-4 text-wrapper" style="background:white;">
+                <div class="judge-page-text" v-html="text" style="background:white;"></div>
             </div>
         </div>
     </el-dialog>
     `,
     data: function () {
         return {
-            text: ''
+            text: '',
         }
     },
     methods: {
@@ -1113,8 +1348,8 @@ Vue.component('judge-page-dialog', {
             image.onload = function () {
                 var sx = 0;
                 var sy = 0;
-                var sw = canvas.width;
-                var sh = canvas.height;
+                var sw = image.width;
+                var sh = image.height;
                 if ('min_x' in data) {
                     sx = data['min_x'] - 130;
                     sy = data['min_y'] - 100;
@@ -1127,8 +1362,9 @@ Vue.component('judge-page-dialog', {
                         sh = data['max_y'] + 100 - sy;
                     }
                 }
-                canvas.width = canvas.width;
-                canvas.height = canvas.width / sw * sh;
+                canvas.width = image.width;
+                canvas.height = image.height ;/// sw * sh;
+
                 context.clearRect(0, 0, canvas.width, canvas.height);
                 context.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
                 var xratio = canvas.width / sw;
@@ -1136,7 +1372,7 @@ Vue.component('judge-page-dialog', {
                 data['char_data'].forEach(function(v){
                     var line_no = v['line_no'];
                     var char_no = v['char_no'];
-                    var color = "#F5270B";
+                    var color = "red";// "#F5270B";
                     var x = v['x'] - sx;
                     var y = v['y'] - sy;
                     var w = v['w'];
@@ -1155,22 +1391,29 @@ Vue.component('judge-page-dialog', {
                     }
                     if (start_line_no != end_line_no) {
                         if (line_no == start_line_no && char_no >= start_char_no) {
-                            color = '#ff00ff';
+                            // color = '#ff00ff';
+                            color = 'red';
                             to_draw = true;
                         } else if (line_no > start_line_no && line_no < end_line_no) {
-                            color = '#ff00ff';
+                            // color = '#ff00ff';
+                            color = 'red';
                             to_draw = true;
                         } else if (line_no == end_line_no && char_no <= end_char_no) {
-                            color = '#ff00ff';
+                            // color = '#ff00ff';
+                            color = 'red';
                             to_draw = true;
                         }
                     } else {
                         if (line_no == start_line_no && char_no >= start_char_no && 
                             char_no <= end_char_no) {
-                            color = '#ff00ff';
+                            // color = '#ff00ff';
+                            color = 'red';
                             to_draw = true;
                         }
                     }
+                    //动态调整图片框高度
+                    document.getElementById('canvasWrapper').style.height=image.height+20+"px";//页面初始化
+                    
                     if (to_draw) {
                         context.beginPath();
                         context.moveTo(x, y);

@@ -65,7 +65,7 @@ class DiffSegResultSimpleSerializer(serializers.ModelSerializer):
         for diffsegtext in self.instance.diffseg.diffsegtexts.all():
             tripitaka_id_to_oldtext[diffsegtext.tripitaka_id] = diffsegtext.text
         try:
-            split_info = loads(data['split_info'])
+            split_info = json.loads(data['split_info'])
         except:
             raise serializers.ValidationError('not json string')
         try:
@@ -81,19 +81,22 @@ class DiffSegResultSimpleSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('no tripitaka_id_to_texts')
         split_count = split_info['split_count']
         tripitaka_id_to_texts = split_info['tripitaka_id_to_texts']
-        selected_lst = split_info['selected_lst']
         try:
-            for tripitaka_id, oldtext in tripitaka_id_to_oldtext.items():
-                tripitaka_id = '%s' % tripitaka_id
-                texts = tripitaka_id_to_texts[tripitaka_id]
-                if (len(texts) != split_count) and (len(texts) != 0):
-                    raise Exception()
-                if (oldtext != ''.join(texts)) and (oldtext is not None):
-                    raise Exception()
-            if selected_text != ''.join(selected_lst):
-                raise Exception()
+            selected_lst = split_info['selected_lst']
         except:
-            raise serializers.ValidationError('invalid split_info')
+            raise serializers.ValidationError('invalid split_info:split_info not have selected_lst')
+        # try:
+        for tripitaka_id, oldtext in tripitaka_id_to_oldtext.items():
+            tripitaka_id = '%s' % tripitaka_id
+            texts = tripitaka_id_to_texts[tripitaka_id]
+            if (len(texts) != split_count) and (len(texts) != 0):
+                raise serializers.ValidationError('invalid split_info：texts length not equal split_count.')
+            if (oldtext != ''.join(texts)) and (oldtext is not None):
+                raise serializers.ValidationError('invalid split_info:oldtext not equal texts.')
+        if selected_text != ''.join(selected_lst):
+            raise serializers.ValidationError('invalid split_info:selected_text not equal selected_lst.')
+        # except:
+        #     raise serializers.ValidationError('invalid split_info')
 
 class CorrectSegSerializer(serializers.ModelSerializer):
     selected_text = serializers.CharField(allow_blank=True, trim_whitespace=False, allow_null=True, label='修正文本', required=False, style={'base_template': 'textarea.html'})

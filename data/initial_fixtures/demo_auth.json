@@ -299,8 +299,8 @@
     "fields": {
         "name": "\u9010\u5b57\u5207\u5206\u6821\u5bf9\u5458",
         "menu_paths": [
-            "/jiaodui/onebyone",
-            "/mytask/onebyone"
+            "/collate_tasks/page_rects",
+            "/collate_history/page_rects"
         ],
         "is_active": true
     }

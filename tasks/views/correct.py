@@ -17,4 +17,11 @@ def do_correct_task(request, task_id):
     task = get_object_or_404(Task, pk=task_id)
     if task.typ not in [Task.TYPE_CORRECT, Task.TYPE_CORRECT_VERIFY, Task.TYPE_CORRECT_DIFFICULT]:
         return redirect('/')
-    return render(request, 'tasks/do_do_correct_task.html', {'task': task})
+    try:
+        page = int(request.GET.get('page', 0))
+    except:
+        page = 0
+    return render(request, 'tasks/do_do_correct_task.html', {'task': task, 'page': page})
+
+def process_abnormal_line_count(request, task_id):
+    return redirect('/')

@@ -34,3 +34,15 @@ def do_generate_task(request):
         return JsonResponse({}, status=200)
     else:
         return JsonResponse({'没有权限发布任务'})
+
+def process_judgefeedback(request, judgefeedback_id):
+    return render(request, 'tasks/judge_feedback.html', {'judgefeedback_id': judgefeedback_id})
+
+def view_judgefeedback(request, judgefeedback_id):
+    return render(request, 'tasks/view_judge_feedback.html', {'judgefeedback_id': judgefeedback_id})
+
+def process_lqpunctfeedback(request, lqpunctfeedback_id):
+    return render(request, 'tasks/punct_feedback.html', {'lqpunctfeedback_id': lqpunctfeedback_id})
+
+def view_lqpunctfeedback(request, lqpunctfeedback_id):
+    return render(request, 'tasks/view_punct_feedback.html', {'lqpunctfeedback_id': lqpunctfeedback_id})

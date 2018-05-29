@@ -150,7 +150,7 @@ input[type="number"]{
 }
 
 .labelformat .left-con {
-    width: 40%;
+    width: 55%;
     margin-right: 2%;
 }
 
@@ -163,18 +163,16 @@ input[type="number"]{
 }
 
 .labelformat .left {
-    height: 550px;
-    overflow: scroll;
+    height: 80%;
 }
 
 .labelformat .tools {
     width: 100%;
-    height: 40px;
+    height: 7%;
     border: 1px solid #ccc;
     border-top: 0;
     border-radius: 0 0 5px 5px;
     text-align: right;
-    padding-top: 10px;
 }
 
 .labelformat .pager, .labelformat .btns {
@@ -195,7 +193,7 @@ input[type="number"]{
 }
 
 .labelformat .right {
-    width: 58%;
+    width: 43%;
     position: relative;
 }
 
@@ -360,7 +358,7 @@ input[type="number"]{
     width: 30px;
     height: 30px;
     text-align: center;
-    line-height: 30px;
+    line-height: 26px;
     border: 1px solid #ccc;
     border-radius: 100%;
     font-size: 14px;
@@ -383,7 +381,7 @@ input[type="number"]{
 .btns span {
     display: inline-block;
     width: 68px;
-    height: 30px;
+    height: 32px;
     border-radius: 18px;
     text-align: center;
     line-height: 30px;
@@ -602,7 +600,7 @@ input[type="number"]{
     background-color: #fff;
     top: -6px;
     left: 50%;
-    margin-left: -6px;
+    margin-left: -103px;
     border-top: none;
     border-left: none;
     box-shadow: 1px 1px 1px 0 rgba(0, 0, 0, .3);
@@ -806,8 +804,8 @@ table {
 }
 
 .correct .left .bd {
-    overflow: scroll;
-    height: 550px;
+    overflow: auto;
+    height: 90%;
 }
 
 .correct .right {
@@ -855,7 +853,7 @@ table {
 }
 
 .correct .right .hd .btns span {
-    width: 58px;
+    width: 86px;
 }
 
 .correct .right .hd .btns {
@@ -876,7 +874,7 @@ table {
     cursor: pointer;
 }
 
-.correct .right .diff-text {
+.correct .right .diff-text-pane {
     border-bottom: 1px solid #ccc;
 }
 
@@ -893,14 +891,15 @@ table {
 .correct .right .bd li {
     color: #333;
     border-bottom: 1px dashed #ccc;
-    font-size: 22px;
-    padding-bottom: 5px;
+    font-size: 24px;
+    padding-bottom: 2px;
     margin-bottom: 10px;
+    line-height: 30px;
 }
 
 .correct .correct-dialog {
     top: 180px;
-    left: 20px;
+    left: 11px;
     padding: 10px;
 }
 
@@ -943,11 +942,22 @@ table {
     cursor: pointer;
 }
 
+.correct .right .doubt-lists {
+    border-top: lightgrey 1px solid;
+}
 .correct .right .doubt-lists .hd {
-    padding-left: 40px;
+    padding: 0 0 0 40px;
     position: relative;
+    font-size: 16px;
+}
+.correct .right .doubt-lists .el-tabs__item {
+    height: 48px;
+    line-height: 48px;
 }
 
+.correct .right .doubt-lists .el-table td, .correct .right .doubt-lists .el-table th {
+    padding: 4px 0;
+}
 .correct .right .doubt-lists .hd:before {
     content: "";
     position: absolute;

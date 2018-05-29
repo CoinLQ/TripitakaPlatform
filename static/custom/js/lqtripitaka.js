@@ -3,7 +3,7 @@ Vue.component('lqtripitaka-sutra-unit', {
     props: ['data', 'sharedata'],
     template: `
     <span v-if="data.diffsegresult_id == undefined" :position="data.position" v-html="data.text"></span>
-    <span v-else-if="data.text.length == 0" :position="data.position"><a href="#" class="lqtripitaka-diffseg" :diffsegresult_id="data.diffsegresult_id" @click="clickDiffSegResult()"><span class="diffseg-tag-white"></span></a></span>
+    <span v-else-if="data.text.length == 0" :position="data.position"><a href="#" class="lqtripitaka-diffseg" :diffsegresult_id="data.diffsegresult_id" @click="clickDiffSegResult()"><span class="lqtripitaka-diffseg-tag-white"></span></a></span>
     <span v-else :position="data.position"><a href="#" class="lqtripitaka-diffseg" :diffsegresult_id="data.diffsegresult_id" @click="clickDiffSegResult()" v-html="data.text"></a></span>
     `,
     methods: {
@@ -153,6 +153,7 @@ Vue.component('judge-fb-show', {
             <div>反馈判取：{{ judgefeedback.fb_text }}</div>
             <div>反馈说明：</div>
             <div>{{ judgefeedback.fb_comment }}</div>
+            <div>审查意见：{{ getResponseDesc(judgefeedback.response) }}</div>
         </div>
     </div>
     `,
@@ -163,6 +164,15 @@ Vue.component('judge-fb-show', {
                 tnames.push(diffsegtext.tripitaka.shortname);
             });
             return tnames.join(' / ');
+        },
+        getResponseDesc: function(response) {
+            if (response == 1) {
+                return '未处理';
+            } else if (response == 2) {
+                return '同意';
+            } else if (response == 3) {
+                return '不同意';
+            }
         }
     }
 })

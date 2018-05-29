@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block style %}
+<link href="/static/xadmin/vendor/font-awesome/css/font-awesome.css" type="text/css" media="screen" rel="stylesheet" />
+<style type="text/css">
+[contenteditable]:focus {
+  outline: 0px solid transparent;
+}
+</style>
+{% endblock %}
+{% block content %}
+<div id="punct">
+  <div class="container">
+    <div class="row">
+      <div class="punct-region">
+        <span v-for="punctseg in punctseg_lst_before" is="punct-show-seg" :punctseg="punctseg" :sharedata="sharedata" v-show="show_not_fb">
+        </span>
+        <span class="punct-fb-range">
+          <span v-for="punctseg in punctseg_lst_fb" is="punct-show-seg" :punctseg="punctseg" :sharedata="sharedata">
+          </span>
+        </span>
+        <span v-for="punctseg in punctseg_lst_after" is="punct-show-seg" :punctseg="punctseg" :sharedata="sharedata" v-show="show_not_fb">
+        </span>
+      </div>
+      <div>
+        <input type="checkbox" v-model="sharedata.show_refpunct" id="show_refpunct" /><label for="show_refpunct">显示参考标点</label>
+        <div class="pull-right">
+          <input type="checkbox" v-model="show_not_fb" id="show_not_fb" /><label for="show_not_fb">显示非反馈段文本</label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block foot_script %}
+<script src="{{ static('custom/js/punct.js') }}"></script>
+<script>
+  var app = new Vue({
+    el: '#punct',
+    data: {
+      reeltext: '',
+      puncts: [],
+      punct_result: [],
+      punctseg_lst: [],
+      punctseg_lst_before: [],
+      punctseg_lst_fb: [],
+      punctseg_lst_after: [],
+      show_not_fb: true,
+      url: '/api/lqpunctfeedback/{{ lqpunctfeedback_id }}/process/',
+      sharedata: {status: 4, show_refpunct: true  }
+    },
+    created: function() {
+      var vm = this;
+      axios.get(this.url)
+      .then(function(response) {
+        vm.sharedata.status = response.data.status;
+        vm.punct_result = response.data.punct_result;
+        vm.punctseg_lst = response.data.punctseg_lst;
+        vm.punctseg_lst.forEach(function(punctseg) {
+          if (punctseg.fb_range == -1) {
+            vm.punctseg_lst_before.push(punctseg);
+          } else if (punctseg.fb_range == 0) {
+            vm.punctseg_lst_fb.push(punctseg);
+          } else {
+            vm.punctseg_lst_after.push(punctseg);
+          }
+        });
+      });
+    },
+    methods: {
+      merge_punct_lst: function() {
+        var orig_idx = 0;
+        var orig_count = this.punct_result.length;
+        var new_punct_result = [];
+        for (var i = 0; i < this.punctseg_lst.length; ++i) {
+          var punctseg = this.punctseg_lst[i];
+          for (var j = 0; j < punctseg.user_puncts.length; ++j) {
+            var punct_unit = punctseg.user_puncts[j];
+            new_punct_result.push(punct_unit);
+          }
+        }
+        this.punct_result = new_punct_result;
+      }
+    }
+  });
+</script>
+{% endblock %}

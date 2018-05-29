@@ -765,6 +765,7 @@ class PageTask(RTask):
                                  verbose_name=u'切分计划')
     count = models.IntegerField("任务页的数量", default=1)
     owner = models.ForeignKey(Staff, null=True, blank=True, related_name='page_tasks', on_delete=models.SET_NULL)
+    pagerect = models.ForeignKey(PageRect, null=True, blank=True, on_delete=models.SET_NULL)
     page_set = JSONField(default=list, verbose_name=u'页的集合') # [page_json]
     redo_count =  models.PositiveSmallIntegerField(default=1, verbose_name=u'任务重作数')
 
@@ -782,14 +783,14 @@ class PageTask(RTask):
     def roll_new_task(self):
         page_pid = self.page_set[0]['page_id']
         pagerect = PageRect.objects.filter(page_id=page_pid).first()
-        if pagerect.pptask_count <= PageRect.PPTASK_MAX_TASK_COUNT:
-            pagerect.pptask_count = pagerect.pptask_count + 1
-            task_no = "%s_%s_%05X" % (self.number.split('_')[0], self.number.split('_')[1], self.task_id())
-            task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1,
-                                    status=TaskStatus.NOT_GOT,
-                                    page_set=self.page_set, redo_count=pagerect.pptask_count)
-            task.save()
-            pagerect.save(update_fields=['pptask_count'])
+        
+        pagerect.pptask_count = pagerect.pptask_count + 1
+        task_no = "%s_%s_%05X" % (self.number.split('_')[0], self.number.split('_')[1], self.task_id())
+        task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1,
+                                status=TaskStatus.NOT_GOT,
+                                page_set=self.page_set, redo_count=pagerect.pptask_count)
+        task.save()
+        pagerect.save(update_fields=['pptask_count'])
 
 #暂不使用
 class AbsentTask(RTask):

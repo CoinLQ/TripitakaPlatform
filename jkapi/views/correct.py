@@ -32,7 +32,11 @@ class CorrectTaskDetail(APIView):
         if self.task.typ == Task.TYPE_CORRECT_VERIFY:
             correct_task_count = Task.objects.filter(reel=self.task.reel, \
             batchtask=self.task.batchtask, typ=Task.TYPE_CORRECT).count()
-
+        bar_line_count = self.task.reel.sutra.tripitaka.bar_line_count
+        if bar_line_count.isdigit():
+            bar_line_count = int(bar_line_count)
+        else:
+            bar_line_count = json.loads(bar_line_count)
         response = {
             'task_id': task_id,
             'correct_task_count': correct_task_count,
@@ -41,6 +45,7 @@ class CorrectTaskDetail(APIView):
             'result': self.task.result,
             'cur_focus': self.task.cur_focus,
             'image_urls': urls,
+            'bar_line_count': bar_line_count,
             }
         return Response(response)
 

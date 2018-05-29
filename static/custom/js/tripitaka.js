@@ -184,23 +184,17 @@ Vue.component('diffseg-box', {
                 <a href="#" v-if="judge_result.typ == 2" @click.stop.prevent="showSplit(judge_result)">显示拆分方案</a>
             </div>
         </div>
-
-        <div style="line-height:50px!important;">
-        </div>
-
         <div v-if="sharedata.judge_verify_task_id != 0">
             <div>
                 <span style="line-height:50px!important;">判取审定：{{ getResult(diffsegresult.judge_verify_result) }}</span>
                 <a href="#" v-if="diffsegresult.judge_verify_result.typ == 2" @click.stop.prevent="showSplit(diffsegresult.judge_verify_result)">显示拆分方案</a>
             </div>
         </div>
-
         <div>
             <a href="#" class="diffseg-btn" @click.stop.prevent="doJudge(segindex)" :disabled="diffsegresult.typ == 2">判取</a>
             <a href="#" class="diffseg-btn" @click.stop.prevent="doMerge(segindex)" :disabled="diffsegresult.typ == 2">合并</a>
             <a href="#" class="diffseg-btn" v-if="base_text.length > 1" @click.stop.prevent="doSplit(segindex)">拆分</a>
         </div>
-
         <div>
             <span v-if="diffsegresult.selected_text != null" style="background:#eee;">处理结果：{{ getResult(diffsegresult, (sharedata.task_typ != 12)) }}</span>
         </div>
@@ -244,11 +238,11 @@ Vue.component('diffseg-box', {
               console.log('jumptodiffseg: ', err)
             }
         },
-        
+
         click: function() {
             this.sharedata.diffseg_id = this.diffsegresult.diffseg.id;
             this.jumptodiffseg(this.sharedata.diffseg_id)
-            
+
         },
         openPageDialog: function(diffsegtext) {
             if (diffsegtext.page_url != null) {
@@ -337,13 +331,13 @@ Vue.component('sutra-unit', {
     <span v-else><a href="#" :diffsegid="data.diffseg_id" :class="className" :tabindex="data.diffseg_id" style="text-decoration:none;font-size:20;" @click="choiceThis()" v-html="selected_text"  @keydown="keyDown($event)"></a></span>
     `,
     computed: {
-        
+
         className: function() {
 
             if (this.data.diffseg_id != undefined) {
                 if (this.data.text.length == 0) {
                     if (this.sharedata.diffseg_id == this.data.diffseg_id) {
-                        
+
                         for (var diffseg in this.sharedata.result_marked_list){
                             if (this.data.diffseg_id == this.sharedata.result_marked_list[diffseg].diffseg_id){
                                 if (this.sharedata.result_marked_list[diffseg].marked == true){
@@ -353,24 +347,24 @@ Vue.component('sutra-unit', {
                                 }
                                 break;
                             }
-                            
+
                         }
                         return 'diffseg-tag-notext-selected';
-                        
+
                     } else {
                         for (var diffseg in this.sharedata.result_marked_list){
                             if (this.data.diffseg_id == this.sharedata.result_marked_list[diffseg].diffseg_id){
                                 if (this.sharedata.result_marked_list[diffseg].marked == true){
                                     return 'diffseg-tag-judged-none';
-                                }else { 
+                                }else {
                                     return 'diffseg-tag-notext';
                                 }
                                 break;
                             }
-                            
+
                         }
                         return 'diffseg-tag-notext';
-                                
+
                     }
                 } else {
                     if (this.sharedata.diffseg_id == this.data.diffseg_id) {
@@ -383,7 +377,7 @@ Vue.component('sutra-unit', {
                                 }
                                 break;
                             }
-                            
+
                         }
                     } else {
                         for (var diffseg in this.sharedata.result_marked_list){
@@ -395,13 +389,13 @@ Vue.component('sutra-unit', {
                                 }
                                 break;
                             }
-                            
+
                         }
-                        
+
                     }
-                    
+
                 }
-                
+
             }
             return '';
         },
@@ -416,7 +410,7 @@ Vue.component('sutra-unit', {
                     }
                     break;
                 }
-                
+
             }
             return s;
         }
@@ -427,16 +421,16 @@ Vue.component('sutra-unit', {
             this.sharedata.image_diffseg_id = this.data.diffseg_id;
             let idx = _.findIndex(this.sharedata.diffseg_pos_lst, function(v) {return v.diffseg_id == this.data.diffseg_id}.bind(this))
             this.$emit('diffpage', parseInt(idx/5)+1)
-            
+
             //this.sharedata.judgeImageDialogVisible = true;
         },
         keyDown(e) {
-            if(e && e.keyCode==27){ // 按 Esc 
+            if(e && e.keyCode==27){ // 按 Esc
                 //要做的事情
             }
-            if(e && e.keyCode==113){ // 按 F2 
+            if(e && e.keyCode==113){ // 按 F2
                 //要做的事情
-            }            
+            }
             if(e && e.keyCode==13){ // enter 键
                 //要做的事情
             }
@@ -450,7 +444,7 @@ Vue.component('sutra-unit', {
         },
         mounted() {
             document.body.onkeydown = this.keyDown;
-        },   
+        },
     }
 })
 
@@ -523,7 +517,7 @@ Vue.component('judge-dialog', {
                 data.doubt = this.doubt;
                 data.doubt_comment = this.doubt_comment;
             }
-            
+
             // this.reloaddiffseg(this.diffsegresult_id);
             //
             axios.put(url, data)
@@ -551,7 +545,7 @@ Vue.component('judge-dialog', {
             .catch(function(error) {
                 vm.error = '提交出错！';
             });
-            
+
         },
         handleCancel: function() {
             this.sharedata.judgeDialogVisible = false;
@@ -641,7 +635,7 @@ Vue.component('merge-dialog', {
                     return;
                 }
             }
-            var url = '/api/judge/' + this.sharedata.task_id + 
+            var url = '/api/judge/' + this.sharedata.task_id +
             '/diffsegresults/' + this.diffsegresult_id + '/';
             axios.put(url, {
                 typ: 1,
@@ -953,7 +947,7 @@ Vue.component('split-dialog', {
                     this.selected_lst.splice(this.split_count);
                     
                 }else if (this.split_count == this.split_count_old){//当不变时
-                    //保留原始的拆分数据
+                   //不做处理
                 }
             }
             
@@ -1090,7 +1084,6 @@ Vue.component('split-dialog', {
                     }
                 });
             }
-            
         },
         handleCancel: function() {
             this.sharedata.splitDialogVisible = false;
@@ -1383,7 +1376,7 @@ Vue.component('judge-page-dialog', {
                     h = parseInt(h * yratio);
 
                     var to_draw = false;
-                    
+
                     if ('added' in v) {
                         color = 'ForestGreen';
                     } else if ('old_char' in v) {
@@ -1404,7 +1397,7 @@ Vue.component('judge-page-dialog', {
                             to_draw = true;
                         }
                     } else {
-                        if (line_no == start_line_no && char_no >= start_char_no && 
+                        if (line_no == start_line_no && char_no >= start_char_no &&
                             char_no <= end_char_no) {
                             // color = '#ff00ff';
                             color = 'red';
@@ -1504,4 +1497,52 @@ Vue.component('judge-page-dialog', {
             this.sharedata.judgePageDialogVisible = false;
         }
     }
-})
+});
+Vue.component('correct-feedback-dialog', {
+    props: ['sharedata'],
+    template: `
+    <el-dialog title="校对文字反馈" :visible.sync="sharedata.correctFeedbackDialogVisible" width="35%" @open="handleOpen" :before-close="handleCancel">
+        <div class="row">
+        现有文本:<p>{{ sharedata.original_text }}</p>
+        反馈文本：<el-input v-model="sharedata.fb_text"></el-input>
+        反馈意见：<el-input v-model="sharedata.fb_comment"></el-input>
+            <span slot="footer" class="dialog-footer">
+                <span class="alert alert-danger" v-if="error">{{ error }}</span>
+                <el-button type="primary" @click="handleOK">确定</el-button>
+                <el-button @click="handleCancel">取消</el-button>
+            </span>
+        </div>
+    </el-dialog>
+    `,
+    data: function () {
+        return {
+            error: null,
+        }
+    },
+    methods: {
+        handleOpen: function () {
+        },
+        handleOK: function () {
+            var vm = this;
+            axios.post('/api/correctfeedback/', {
+                'position': this.sharedata.selection_start,
+                'fb_text': this.sharedata.fb_text,
+                'fb_comment': this.sharedata.fb_comment,
+                'correct_text': this.sharedata.reelcorrectid,
+                'original_text': this.sharedata.original_text,
+            }).then(function(response) {
+                alert('提交成功！');
+                vm.sharedata.correctFeedbackDialogVisible = false;
+                vm.sharedata.popupMenuShown = false;
+                window.getSelection().removeAllRanges();
+            });
+        },
+        handleCancel: function () {
+            this.sharedata.correctFeedbackDialogVisible = false;
+            this.sharedata.popupMenuShown = false;
+            this.error = null;
+            window.getSelection().removeAllRanges();
+        }
+    }
+});
+

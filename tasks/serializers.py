@@ -134,6 +134,13 @@ class PunctTaskSerializer(CorrectTaskSerializer):
 class VerifyPunctTaskSerializer(PunctTaskSerializer):
     pass
 
+
+class MarkTaskSerializer(PunctTaskSerializer):
+    pass
+
+class VerifyMarkTaskSerializer(PunctTaskSerializer):
+    pass
+
 class LqpunctTaskSerializer(JudgeTaskSerializer):
 
     def get_task_no(self, obj):

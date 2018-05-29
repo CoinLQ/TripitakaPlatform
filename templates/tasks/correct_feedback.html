@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}文字校对{% endblock %}
+{% block content %}
+  <div id="correct">
+    <div class="col-md-6 left-pane">
+      <div class="canvas-pane">
+        <canvas id="page-canvas"></canvas>
+      </div>
+      <div class='scale-op'>
+        <el-button-group>
+          <el-button plain size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
+          <el-button plain size="mini" round>{{ scale_rate }}</el-button>
+          <el-button plain size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
+        </el-button-group>
+        <div class="block" style="display:none;width: 30%;margin-left: 50px;">
+          <span class="demonstration">图片大小</span>
+          <el-slider
+              v-model="scale"
+              :step="1"
+              :max="5"
+              :min="1"
+              show-stops>
+          </el-slider>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 right-pane">
+      <div class="diff-text-pane-top">
+        <transition name="slide-fade" appear>
+          <div v-if="scrolled || (!scrolled)" style="position: inherit;" class='cmd-block'>
+            <el-row :gutter="8">
+              <el-col :span="24">
+                <label>文本</label>
+              </el-col>
+            </el-row>
+          </div>
+        </transition>
+      </div>
+      <div class="diff-text-pane" @scroll="handleScroll">
+        <div class="reel-text-region-o">
+          <div class="reel-text-compare changed spn">
+            <p v-for="line in cut_data.page_txt" class="changed" v-html="line"></p>
+          </div>
+        </div>
+      </div>
+      <div is="correct-feedback-list" :cut_data="[cut_data]" :fb_id="cut_data.fb_id" :processor.async="cut_data.processor"></div>
+    </div>
+
+  </div>
+{% endblock %}
+{% block foot_script %}
+  <script>
+    var app = new Vue({
+      el: '#correct',
+      delimeters: ['${', '}'],
+      data: {
+        scrolled: false,
+        cut_data: [],
+        scale: 1,
+        img_url: '',
+        x: 0,
+        y: 0,
+        w: 0,
+        h: 0,
+        p_txt: '',
+        fb_id: 0,
+      },
+      computed: {
+        scale_rate: function () {
+          return "1:" + this.scale
+        },
+      },
+      watch: {
+        scale: function (val, oldVal) {
+          if (val > 5) {
+            this.scale = 5;
+            return
+          }
+          if (val < 1) {
+            this.scale = 1;
+            return;
+          }
+          if (val != oldVal) {
+            this.setImg();
+          }
+        }
+      },
+      created: function () {
+        var vm = this;
+        axios.get('/api/correctfeedback/{{ correct_fb_id }}/')
+        //+ vm.sharedata.task_id + '/')
+            .then(function (response) {
+              vm.cut_data = response.data;
+              vm.image_url = response.data.image_url;
+              var p_txt = response.data.page_txt.join('\n');
+              vm.p_txt = p_txt;
+              this.setImg();
+            }.bind(this));
+      },
+      methods: {
+        submitForm: function (formName) {
+          this.$refs[formName].validate((valid) => {
+            if (valid) {
+              this.createDoubtSeg()
+            } else {
+              console.log('error submit!!');
+              return false;
+            }
+          });
+        },
+        setImg: function () {
+          var img_url = this.image_url;
+          var cut_infos = this.cut_data.cut_info;
+          var canvas = document.getElementById("page-canvas");
+          var context = canvas.getContext("2d");
+          //设置样式
+          var image = new Image();
+          var vm = this;
+          image.onload = function () {
+            var scale = vm.scale;
+            canvas.width = canvas.width;
+            canvas.height = image.height * scale;
+            canvas.width = image.width * scale;
+            x = ~~x;
+            y = ~~y;
+            w = ~~w;
+            h = ~~h;
+            context.scale(0.8, 0.8);
+            context.drawImage(image, 0, 0, image.width, image.height,
+                0, 0, image.width * scale, image.height * scale);
+            context.strokeStyle = "#F5270B";
+            context.fillStyle = "#F5270B";
+            context.lineWidth = 3;
+            context.globalAlpha = 0.5;
+            //绘制
+            for (var i = 0; i < cut_infos.length; i++) {
+              var x = cut_infos[i].x * vm.scale;
+              var y = cut_infos[i].y * vm.scale;
+              var w = cut_infos[i].w * vm.scale;
+              var h = cut_infos[i].h * vm.scale;
+              context.strokeRect(x, y, w, h);
+            }
+            //context.fillRect(x, y, w, h);
+
+            let wrapper_h = this.$el.querySelector('.canvas-pane').clientHeight;
+            let wrapper_w = this.$el.querySelector('.canvas-pane').clientWidth;
+            let trans_y = y * 0.8 > (wrapper_h - 100) / 2 ? y * 0.8 - wrapper_h / 2 : 0;
+            let trans_x = x * 0.8 > wrapper_w - 100 ? x * 0.8 - wrapper_w / 2 : 0;
+            this.$el.querySelector('.canvas-pane').scrollTop = ~~trans_y;
+            this.$el.querySelector('.canvas-pane').scrollLeft = ~~trans_x;
+          }.bind(this);
+          image.src = img_url;
+        },
+        handleScroll: function(){
+        // this.scrolled = this.$el.querySelector('div.diff-text-pane').scrollTop >20;
+        // if (this.scrolled) {
+        //   this.$el.querySelector('.cmd-block').style.position='fixed';
+        //   this.$el.querySelector('.cmd-block').style.width="41%"
+        // } else {
+        //   this.$el.querySelector('.cmd-block').style.position='inherit';
+        //   this.$el.querySelector('.cmd-block').style.width="110%"
+        // }
+
+      },
+      },
+    });
+  </script>
+{% endblock %}

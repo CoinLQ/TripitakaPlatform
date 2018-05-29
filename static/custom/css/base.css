@@ -131,7 +131,8 @@ float: left;
     font-size: 20px;
 }
 .judge-page-text-focus {
-    color: #ff00ff;
+    /* color: #ff00ff; */
+    color:red;
 }
 ul.diffseg-region {
     list-style-type: none;
@@ -206,7 +207,7 @@ ul.diffseg-region {
 .judge-base-text a.diffseg-tag-selected-judged {
     color: green;
     background-color: white;
-    border: 3px solid green;
+    border: 3px solid red;
 }
 .judge-base-text a.diffseg-tag-selected-notext {
     color: red;
@@ -226,7 +227,7 @@ ul.diffseg-region {
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
     outline: 0;
-    margin: 10px;
+    margin: 10px 10px 10px 0px;
     -webkit-transition: 0.1s;
     transition: 0.1s;
     font-weight: 500;
@@ -450,7 +451,7 @@ span.vprogress {
     transition: .1s;
     padding: 12px 5px;
     font-size: 10px;
-    border-radius: 4px;
+    border-radius: 22px;
 }
 .b-highlight {
     background-color: #b3d8ff !important;

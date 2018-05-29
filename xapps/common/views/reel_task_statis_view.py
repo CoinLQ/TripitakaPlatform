@@ -5,6 +5,10 @@ from rect.models import Reel_Task_Statistical, PageTask, TaskStatus
 from django.http import HttpResponseRedirect
 from django.utils.timezone import localtime, now
 
+from django.shortcuts import get_object_or_404, render, redirect
+from tdata.models import *
+from tasks.models import *
+
 class ReelPPTaskView(CommAdminView):
 
     def get(self, request, *args, **kwargs):
@@ -16,6 +20,7 @@ class ReelPPTaskView(CommAdminView):
                      status=TaskStatus.NOT_READY).update(status=TaskStatus.NOT_GOT, update_date=localtime(now()).date())
 
         return HttpResponseRedirect('/xadmin/rect/reel_task_statistical/')
+
 
 site.register_view(r'^rect/reel_pptask/open/$',ReelPPTaskView, name='reel_pp_task')
 

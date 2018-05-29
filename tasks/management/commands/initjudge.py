@@ -21,7 +21,7 @@ def save_reel_with_correct_text(lqsutra, sid, reel_no, start_vol, start_vol_page
     reel, reel_ocr_text = save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page, \
     path1, path2, path3)
     try:
-        reel_correct_text = ReelCorrectText.get(reel=reel)
+        reel_correct_text = ReelCorrectText.objects.get(reel=reel)
     except:
         filename = os.path.join(settings.BASE_DIR, 'data/sutra_text/%s_%03d_fixed.txt' % (sid, reel_no))
         with open(filename, 'r', encoding='utf-8') as f:
@@ -44,14 +44,15 @@ def create_data(lqsutra):
     # save_reel_with_correct_text(lqsutra, 'ZC000780', 1, 10, 21, 48, '10')
     save_reel_with_correct_text(lqsutra, 'SX000770', 1, 956, 2, 38, '956')
     save_reel_with_correct_text(lqsutra, 'PL000810', 1, 1114, 2, 25, '1114')
-    # save_reel_with_correct_text(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
-    # save_reel_with_correct_text(lqsutra, 'QL000870', 2, 24, 18, 31, '24')
-    # save_reel_with_correct_text(lqsutra, 'ZH000860', 2, 12, 13, 24, '12')
-    # save_reel_with_correct_text(lqsutra, 'GL000790', 2, 0, 1, 22, '79', '2')
-    # save_reel_with_correct_text(lqsutra, 'QS000810', 2, 21, 461, 472, '21')
-    # save_reel_with_correct_text(lqsutra, 'ZC000780', 1, 10, 49, 79, '10')
-    # save_reel_with_correct_text(lqsutra, 'SX000770', 2, 957, 2, 36, '957')
-    # save_reel_with_correct_text(lqsutra, 'YB000860', 2, 27, 25, 45, '27')
+    save_reel_with_correct_text(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
+    save_reel_with_correct_text(lqsutra, 'QL000870', 2, 24, 18, 31, '24')
+    save_reel_with_correct_text(lqsutra, 'ZH000860', 2, 12, 13, 24, '12')
+    save_reel_with_correct_text(lqsutra, 'GL000790', 2, 0, 1, 22, '79', '2')
+    save_reel_with_correct_text(lqsutra, 'QS000810', 2, 21, 461, 472, '21')
+    save_reel_with_correct_text(lqsutra, 'ZC000780', 2, 10, 49, 79, '10')
+    save_reel_with_correct_text(lqsutra, 'SX000770', 2, 957, 2, 36, '957')
+    save_reel_with_correct_text(lqsutra, 'YB000860', 2, 27, 25, 45, '27')
+
 
 class Command(BaseCommand):
     def handle(self, *args, **options):

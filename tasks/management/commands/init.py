@@ -75,6 +75,7 @@ class Command(BaseCommand):
             lqsutra.save()
 
         save_reel(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
+        save_reel(lqsutra, 'QL000870', 1, 24, 1, 17, '24')
 
         # create BatchTask
         batchtask = BatchTask(priority=2, publisher=admin)

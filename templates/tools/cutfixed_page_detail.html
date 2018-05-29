@@ -48,13 +48,6 @@ $(function(){
               var to_draw = false;
               
               if ('added' in v) {
-                context.font = "10px SimSun";
-                context.fillText(v['ch'], x+w, y + h/2);
-
-                //设置样式
-                context.lineWidth = 1;
-                context.strokeStyle = color;
-                context.stroke();
                 color = 'ForestGreen';
                 to_draw = true;
               } else if ('old_char' in v) {
@@ -76,6 +69,10 @@ $(function(){
                 context.lineWidth = 1;
                 context.strokeStyle = color;
                 context.stroke();
+
+                context.font = "10px SimSun";
+                context.fillStyle = 'DarkGreen';
+                context.fillText(v['ch'], x+w, y + h/2);
               }
             });
             

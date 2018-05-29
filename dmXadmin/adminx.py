@@ -8,7 +8,8 @@ from django.template.response import TemplateResponse
 from django.template import loader
 
 from tdata.models import *
-from tasks.models import Task, CorrectFeedback, JudgeFeedback, LQPunctFeedback
+from tasks.models import Task, CorrectFeedback, JudgeFeedback, LQPunctFeedback, \
+AbnormalLineCountTask
 from rect.models import *
 from jwt_auth.models import Staff
 from tasks.task_controller import correct_update_async, regenerate_correctseg_async
@@ -86,7 +87,7 @@ class SutraAdmin(object):
     # tripitaka.short_description=u'藏'
     list_select_related = False
 
-    search_fields = ['name', 'tripitaka__name', 'lqsutra__id',
+    search_fields = ['name', 'tripitaka__name', 'tripitaka__code', 'lqsutra__id',
                      'sid', 'total_reels', 'remark']  # 可以搜索的字段
     free_query_filter = True
     list_filter = ['name', 'lqsutra__id', 'sid', 'remark']
@@ -141,8 +142,8 @@ class ReelAdmin(object):
     sutra_name.short_description = u'经名'
     tripitaka_name.short_description = u'藏名'
     longquan_Name.short_description = u'龙泉经名'
-    search_fields = ['sutra__sid', 'sutra__name', 'sutra__tripitaka__name',
-                     'reel_no', 'remark']  # 可以搜索的字段
+    search_fields = ['sutra__sid', 'sutra__name', 'sutra__tripitaka__name',  'sutra__tripitaka__code',
+                     '=reel_no', 'remark']  # 可以搜索的字段
     list_filter = ['sutra__sid', 'sutra__name', 'ocr_ready', 'correct_ready']
     ordering = ['id', 'reel_no']  # 按照倒序排列
     fields = ('sutra', 'reel_no', 'remark',
@@ -150,11 +151,20 @@ class ReelAdmin(object):
     list_display_links = ('sutra_name')
     actions = [RegenerateCorrectSegAction]
 
+class ConfigurationAdmin:
+    def modify(self, instance):
+        return '修改'
+    modify.short_description = '操作'
+    list_display = ['task_timeout', 'modify']
+    list_display_links = ("modify",)
+    remove_permissions = ['add', 'delete']
+
 xadmin.site.register(LQSutra, LQSutraAdmin)
 xadmin.site.register(Tripitaka, TripitakaAdmin)
 xadmin.site.register(Volume, VolumeAdmin)
 xadmin.site.register(Sutra, SutraAdmin)
 xadmin.site.register(Reel, ReelAdmin)
+xadmin.site.register(Configuration, ConfigurationAdmin)
 
 #####################################################################################
 # 校勘任务
@@ -208,6 +218,20 @@ class ReclaimSelectedTasksAction(BaseActionView):
             msg = "成功将%d个任务的状态变为待领取。" % n
             self.message_user(msg, 'success')
 
+class RemindSelectedTasksAction(BaseActionView):
+
+    action_name = "remind_selected_tasks"
+    description = '对所选的任务催单'
+    icon = 'fa fa-bell'
+
+    @filter_hook
+    def do_action(self, queryset):
+        n = queryset.filter(status=Task.STATUS_PROCESSING).update(
+            status=Task.STATUS_REMINDED)
+        if n:
+            self.message_user("成功对%(count)d个任务催单。" % {
+                "count": n,
+            }, 'success')
 
 class SetPriorityActionBase(BaseActionView):
     icon = 'fa fa-tasks'
@@ -292,12 +316,13 @@ class TaskAdmin(object):
                     'publisher', 'created_at', 'picker', 'picked_at', 'finished_at', 'task_link', 'modify']
     list_display_links = ("modify",)
     list_filter = ['typ', 'batchtask', 'picker', 'status', 'task_no']
-    search_fields = ['reel__sutra__tripitaka__name',
-                     'reel__sutra__name', 'reel__reel_no', 'lqreel__lqsutra__name']
+    search_fields = ['reel__sutra__tripitaka__name', 'reel__sutra__tripitaka__code',
+                     'reel__sutra__name', '=reel__reel_no', 'lqreel__lqsutra__name']
     fields = ['status', 'result', 'picked_at', 'picker', 'priority']
     remove_permissions = ['add']
     gene_task = True
-    actions = [PauseSelectedTasksAction, ContinueSelectedTasksAction, ReclaimSelectedTasksAction,
+    actions = [PauseSelectedTasksAction, ContinueSelectedTasksAction,
+               ReclaimSelectedTasksAction, RemindSelectedTasksAction,
                SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,
                UpdateTaskResultAction]
 
@@ -322,6 +347,17 @@ class LQPunctFeedbackAdmin:
                     'fb_user', 'created_at', 'processor', 'processed_at',
                     'status', 'task_link']
     list_display_links = ['']  # 不显示修改的链接
+    remove_permissions = ['add']
+
+@xadmin.sites.register(AbnormalLineCountTask)
+class AbnormalLineCountTaskAdmin:
+    list_display = ['reel', 'reel_page_no', 'page_no', 'bar_no',
+                    'line_count', 'status', 'picker', 'picked_at', 'task_url']
+    list_editable = ['status']
+    list_display_links = ['']  # 不显示修改的链接
+    list_filter = ['status']
+    search_fields = ['reel__sutra__tripitaka__name', 'reel__sutra__tripitaka__code',
+                     'reel__sutra__name', '=reel__reel_no']
     remove_permissions = ['add']
 
 #####################################################################################
@@ -522,7 +558,7 @@ class GlobalSetting(object):
     def data_mana_menu(self):
         return [{
                 'title': u'藏经数据管理',
-                'icon': 'fa fa-book',
+                'icon': 'fa fa-cloud',
                 'menus': (
                     {'title': u'龙泉经目', 'url': self.get_model_url(
                         LQSutra, 'changelist'), 'icon': 'fa fa-book', },
@@ -534,6 +570,8 @@ class GlobalSetting(object):
                         Sutra, 'changelist'), 'icon': 'fa fa-book', },
                     {'title': u'实体卷',  'url': self.get_model_url(
                         Reel, 'changelist'), 'icon': 'fa fa-book', },
+                    {'title': u'配置',  'url': self.get_model_url(
+                        Configuration, 'changelist'), 'icon': 'fa fa-cog', },
                 )}, ]
 
     def user_mana_menu(self):

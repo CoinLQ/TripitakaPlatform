@@ -11,7 +11,10 @@ admin.site.register(ReelDiff)
 admin.site.register(DiffSeg)
 admin.site.register(DiffSegText)
 admin.site.register(DiffSegResult)
-admin.site.register(ReelCorrectText)
+
+class ReelCorrectTextAdmin(admin.ModelAdmin):
+    search_fields = ['reel__sutra__tripitaka__name', 'reel__sutra__name', 'reel__reel_no']
+admin.site.register(ReelCorrectText, ReelCorrectTextAdmin)
 admin.site.register(LQReelText)
 admin.site.register(Punct)
 admin.site.register(LQPunct)

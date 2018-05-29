@@ -14,11 +14,13 @@ FinishCorrectTask, ReturnCorrectTask, DoubtSegViewSet
 from jkapi.views.judge import DiffSegResultList, DiffSegResultDetail, get_judge_result_marked, \
 JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected, DiffSegDetail
 from jkapi.views.punct import PunctTaskDetail
+from jkapi.views.mark import MarkTaskDetail, FinishMarkTask
 from jkapi.views.lqtripitaka import LQSutraViewSet, LQReelTextDetail
-from jkapi.views.tripitaka import SutraViewSet,SutraText,TripitakaViewSet
-from jkapi.views.punct_feedback import LQPunctFeedbackList, LQPunctFeedbackDetail, LQPunctFeedbackTask
+from jkapi.views.tripitaka import SutraViewSet, SutraText,TripitakaViewSet, RedoPageRect
+from jkapi.views.punct_feedback import LQPunctFeedbackList, MyLQPunctFeedbackList, LQPunctFeedbackDetail, LQPunctFeedbackTask
 from jkapi.views.volumn import VolumeViewSet
-from jkapi.views.judge_feedback import JudgeFeedbackList, JudgeFeedbackDetail, JudgeFeedbackTask
+from jkapi.views.judge_feedback import JudgeFeedbackList, MyJudgeFeedbackList, JudgeFeedbackDetail, JudgeFeedbackTask
+from jkapi.views.tripitaka import CorrectFeedbackViewset, CorrectFeedbackDetailViewset
 
 router = routers.DefaultRouter()
 router.register(r'pagerect', PageRectViewSet)
@@ -58,12 +60,19 @@ urlpatterns = [
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegresults/(?P<diffsegresult_id>[0-9]+)/mergelist/$', MergeList.as_view()),
     url(r'^judge/(?P<task_id>[0-9]+)/diffsegs/(?P<pk>[0-9]+)/$', DiffSegDetail.as_view()),
     url(r'^punct/(?P<task_id>[0-9]+)/$', PunctTaskDetail.as_view()),
+    url(r'^mark/(?P<task_id>[0-9]+)/$', MarkTaskDetail.as_view()),
+    url(r'^mark/(?P<task_id>[0-9]+)/finish/$', FinishMarkTask.as_view()),
     url(r'^lqreeltext/$', LQReelTextDetail.as_view()),
     url(r'^judgefeedback/$', JudgeFeedbackList.as_view()),
     url(r'^judgefeedback/(?P<pk>[0-9]+)/$', JudgeFeedbackDetail.as_view()),
     url(r'^judgefeedback/(?P<pk>[0-9]+)/process/$', JudgeFeedbackTask.as_view()),
+    url(r'^judgefeedback/mine/$', MyJudgeFeedbackList.as_view()),
     url(r'^sutra_text/(?P<s_id>[0-9]+)/$', SutraText.as_view()),
+    url(r'^redo_pagerect/(?P<s_id>[0-9]+)/$', RedoPageRect.as_view()),
     url(r'^lqpunctfeedback/$', LQPunctFeedbackList.as_view()),
     url(r'^lqpunctfeedback/(?P<pk>[0-9]+)/$', LQPunctFeedbackDetail.as_view()),
     url(r'^lqpunctfeedback/(?P<pk>[0-9]+)/process/$', LQPunctFeedbackTask.as_view()),
+    url(r'^lqpunctfeedback/mine/$', MyLQPunctFeedbackList.as_view()),
+    url(r'^correctfeedback/$', CorrectFeedbackViewset.as_view()),
+    url(r'^correctfeedback/(?P<pk>[0-9]+)/$', CorrectFeedbackDetailViewset.as_view()),
 ]

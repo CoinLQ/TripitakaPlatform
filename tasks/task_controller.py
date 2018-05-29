@@ -105,6 +105,37 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
         status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
         task.save()
 
+
+def create_mark_tasks(batchtask, reel, mark_times, mark_verify_times):
+    if mark_times == 0:
+        return
+    reelcorrecttext = None
+    status = Task.STATUS_NOT_READY
+
+    task_marks = '[]'
+    reelcorrecttext = ReelCorrectText.objects.filter(reel=reel).order_by('-id').first()
+    if reelcorrecttext:
+        status = Task.STATUS_READY                
+    for task_no in range(1, mark_times + 1):
+        task = Task(batchtask=batchtask, typ=Task.TYPE_MARK, reel=reel,
+        reeltext=reelcorrecttext, result=task_marks, task_no=task_no,
+        status=status, publisher=batchtask.publisher)
+        task.save()
+        if not task.mark:
+            mark = Mark(reel=reel, reeltext=task.reeltext,  publisher=batchtask.publisher, task=task)
+            mark.save()
+
+    # 标点审定任务只有一次
+    if mark_verify_times:
+        task = Task(batchtask=batchtask, typ=Task.TYPE_MARK_VERIFY, reel=reel,
+        reeltext=reelcorrecttext, result='[]', task_no=task_no,
+        status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
+        task.save()
+        if not task.mark:
+            mark = Mark(reel=reel, reeltext=task.reeltext,  publisher=batchtask.publisher, task=task)
+            mark.save()
+
+
 def create_lqpunct_tasks(batchtask, lqreel, lqpunct_times, lqpunct_verify_times):
     if lqpunct_times == 0:
         return
@@ -233,6 +264,7 @@ mark_times = 0, mark_verify_times = 0):
             if reel.ocr_ready:
                 create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
                 create_punct_tasks(batchtask, reel, punct_times, punct_verify_times)
+                create_mark_tasks(batchtask, reel, mark_times, mark_verify_times)
         try:
             lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
             base_reel = base_reel_lst[0]
@@ -307,6 +339,43 @@ mark_times = 0, mark_verify_times = 0):
             # TODO: 记录错误
             continue
         create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
+
+def calculate_abnormal_line_count(reel_correct_text):
+    if reel_correct_text.task is None:
+        return
+    tasks = []
+    reel = reel_correct_text.reel
+    bar_line_count = reel.sutra.tripitaka.bar_line_count
+    if bar_line_count.isdigit():
+        bar_line_count = int(bar_line_count)
+    else:
+        bar_line_count = json.loads(bar_line_count)
+    text = reel_correct_text.text.rstrip('pb\n')
+    if text.startswith('p\n'):
+        text = text[2:]
+    else:
+        print('reel correct text not start with "p\n": ', reel.sutra.sid, reel.reel_no)
+    page_texts = text.split('\np\n')
+    page_count = len(page_texts)
+    for reel_page_no in range(1, page_count + 1):
+        page_text = page_texts[reel_page_no - 1]
+        bar_texts = page_text.split('\nb\n')
+        for bar_no in range(1, len(bar_texts) + 1):
+            bar_text = bar_texts[bar_no - 1]
+            line_count = bar_text.count('\n') + 1
+            line_count_correct = 0
+            if type(bar_line_count) is int:
+                line_count_correct = bar_line_count
+            else:
+                line_count_correct = bar_line_count[str(bar_no)]
+            if line_count != line_count_correct:
+                page_no = reel.start_vol_page + reel_page_no - 1
+                task = AbnormalLineCountTask(reel=reel, reel_page_no=reel_page_no,
+                                             page_no=page_no, bar_no=bar_no,
+                                             correct_text=reel_correct_text, line_count=line_count)
+                tasks.append(task)
+    if tasks:
+        AbnormalLineCountTask.objects.bulk_create(tasks)
 
 def publish_correct_result(task):
     '''
@@ -406,6 +475,14 @@ def publish_correct_result(task):
         .update(reeltext=reel_correct_text, result='[]', status=Task.STATUS_READY)
         # 基础标点审定任务
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
+
+        # 格式标注数据
+        Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK)\
+        .update(reeltext=reel_correct_text)
+        Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK, status=Task.STATUS_NOT_READY)\
+        .update(result='[]', status=Task.STATUS_READY)
+        # 基础标点审定任务
+        Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra
@@ -571,6 +648,57 @@ def correct_update(task):
             reel_correct_text.set_text(task.result)
             reel_correct_text.save()
 
+def mark_submit(task):
+    print('mark_submit')
+    generate_correct_result(task)
+    # 检查一组的几个文字校对任务是否都已完成
+    mark_tasks = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_MARK).order_by('task_no')
+    all_finished = all([_task.status == Task.STATUS_FINISHED for _task in mark_tasks])
+    task_count = len(mark_tasks)
+    # 如果都已完成
+    if all_finished:
+        if task_count == 1:
+            # 系统暂不支持单一校对，如果只有一个校对任务，不进行后续的任务任务。
+            pass
+        elif task_count >= 2:
+            # 查到文字校对审定任务
+            mark_verify_task = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_MARK_VERIFY).first()
+            if mark_verify_task is None:
+                return 
+            if mark_verify_task.status > Task.STATUS_READY:
+                # 已被领取的任务，不再重新发布
+                return
+            # 比较一组的两个字校对任务的结果, 清理原有MarkUnit数据
+            main_mark = mark_verify_task.mark
+            MarkUnit.objects.filter(mark=main_mark).delete()
+
+            # 文字校对审定任务设为待领取
+            mark_verify_task.status = Task.STATUS_READY
+            task_ids = mark_tasks.values_list('id', flat=True)
+            
+            doubt_units =[]
+            base_units = []
+            for unit in mark_tasks[0].mark.markunit_set.all():
+                if mark_tasks[1].mark.markunit_set.filter(start=unit.start, end=unit.end).first():
+                    unit.mark = main_mark
+                    unit.pk = None
+                    unit.typ = 1
+                    base_units.append(unit)
+                else:
+                    unit.mark = main_mark
+                    unit.pk = None
+                    unit.typ = 2
+                    doubt_units.append(unit)
+            for unit in mark_tasks[1].mark.markunit_set.all():
+                if not mark_tasks[0].mark.markunit_set.filter(start=unit.start, end=unit.end).first():
+                    unit.mark = main_mark
+                    unit.pk = None
+                    unit.typ = 2
+                    doubt_units.append(unit)
+            MarkUnit.objects.bulk_create(doubt_units)
+            MarkUnit.objects.bulk_create(base_units)
+            mark_verify_task.save(update_fields=['status'])
+
 def new_base_pos(pos, correctseg):
     if correctseg.tag == CorrectSeg.TAG_DIFF:
         pos += len(correctseg.text1)
@@ -667,6 +795,7 @@ def regenerate_correctseg(reel):
     Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT, picker=None).update(status=Task.STATUS_READY)
     Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT).exclude(picker=None).update(status=Task.STATUS_PROCESSING)
     print('regenerate_correctseg done:', reel.sutra.sid, reel.reel_no)
+
 
 def judge_submit(task):
     '''
@@ -925,6 +1054,16 @@ def lqpunct_submit_result_async(task_id):
 def publish_lqpunct_result_async(task_id):
     task = Task.objects.get(pk=task_id)
     publish_lqpunct_result(task)
+
+@background(schedule=0)
+def mark_submit_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    mark_submit(task)
+
+@background(schedule=0)
+def mark_verify_submit_async(task_id):
+    task = Task.objects.get(pk=task_id)
+    mark_verify_submit(task)
 
 @background(schedule=0)
 def create_tasks_for_lqreels_async(lqreels_json,

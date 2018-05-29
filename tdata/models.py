@@ -35,6 +35,7 @@ class Tripitaka(models.Model):
     path3_char = models.CharField('存储层次3字母', max_length=1, blank=True, default='')
     path3_name = models.CharField('存储层次3中文名', max_length=16, blank=True, default='')
     cut_ready = models.BooleanField(verbose_name='切分数据状态', default=False)
+    bar_line_count = models.CharField('每栏文本行数', max_length=256, default='0')
 
     class Meta:
         verbose_name = '实体藏'
@@ -325,7 +326,11 @@ class Column(models.Model):
 class Configuration(models.Model):
     id = models.PositiveSmallIntegerField(primary_key=True, editable=False)
     variant = models.TextField('异体字列表', default='')
+    task_timeout = models.IntegerField('校勘任务自动回收时间（秒）', default=86400*7)
 
     class Meta:
         verbose_name = '配置'
         verbose_name_plural = '配置'
+
+    def __str__(self):
+        return '当前配置'

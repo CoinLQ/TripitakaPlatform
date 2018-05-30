@@ -533,9 +533,27 @@ class CorrectFeedback(FeedbackBase):
     correct_text = models.ForeignKey(ReelCorrectText, on_delete=models.CASCADE)
     position = models.IntegerField('在卷文本中的位置（前有几个字）', default=0)
 
+    @property
+    def sutra_name(self):
+        return self.correct_text.reel.sutra.name
+
+    sutra_name.fget.short_description = '经名'
+
+    @property
+    def reel_no(self):
+        reel = self.correct_text.reel
+        if reel:
+            return reel.reel_no
+
+    reel_no.fget.short_description = '第几卷'
+
+
     class Meta:
         verbose_name = '文字校对反馈'
         verbose_name_plural = '文字校对反馈'
+
+    class Config:
+        search_fields = ('original_text', 'fb_text', 'fb_user__username')
 
 class JudgeFeedback(FeedbackBase):
     diffsegresult = models.ForeignKey(DiffSegResult, on_delete=models.CASCADE, related_name='feedbacks')

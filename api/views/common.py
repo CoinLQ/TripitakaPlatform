@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from django.contrib.contenttypes.models import ContentType
 from tdata.models import Configuration
 from tasks.serializers import TaskSerializer
-from tasks.models import Task, FeedbackBase, JudgeFeedback, LQPunctFeedback
+from tasks.models import Task, FeedbackBase, JudgeFeedback, LQPunctFeedback, CorrectFeedback
 from tasks.task_controller import revoke_overdue_task_async
 from ccapi.utils.task import redis_lock
 from django.utils import timezone
@@ -75,6 +75,8 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
             return model.objects.filter(response=FeedbackBase.RESPONSE_UNPROCESSED)
         elif model_name == 'lqpunctfeedback':
             return model.objects.filter(status=Task.STATUS_READY)
+        elif model_name == 'correctfeedback':
+            return model.objects.filter(response=model.RESPONSE_UNPROCESSED, processor=None)
 
     def get_serializer_class(self):
         model_type = get_model_content_type(self.app_name, self.model_name)
@@ -156,6 +158,9 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
         elif self.model_name == 'lqpunctfeedback':
             count = LQPunctFeedback.objects.filter(pk=pk, status=LQPunctFeedback.STATUS_READY, processor=None)\
             .update(processor=request.user, processed_at=timezone.now(), status=LQPunctFeedback.STATUS_PROCESSING)
+        elif self.model_name == 'correctfeedback':
+            count = CorrectFeedback.objects.filter(pk=pk, response=CorrectFeedback.RESPONSE_UNPROCESSED, processor=None)\
+            .update(processor=request.user)
         if count == 1:
             return Response({"status": 0, "task_id": pk})
         else:

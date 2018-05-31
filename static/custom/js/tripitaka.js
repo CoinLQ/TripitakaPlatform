@@ -627,7 +627,10 @@ Vue.component('merge-dialog', {
                     merged_diffsegresults.push(id);
                 }
             }
+            merged_diffsegresults.push(this.diffsegresult_id);
             let new_results = _.sortedUniq(merged_diffsegresults);
+            new_results.sort();
+            
             for (let n =1;  n< new_results.length; n++) {
                 if (new_results[n] - new_results[n-1] != 1)
                 {

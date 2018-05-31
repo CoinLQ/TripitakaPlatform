@@ -56,7 +56,7 @@ urlpatterns = [
 
     path('tools/cutfixed_pages/', cutfixed_pages, name='cutfixed_pages'),
     path('tools/cutfixed_pages/<pid>/', cutfixed_page_detail, name='cutfixed_page_detail'),
-    path('correct_feedback/<pk>/', tripitaka.correct_feedback, name='correct_feedback'),
+    path('correctfeedback/<int:pk>/', tripitaka.correct_feedback, name='correct_feedback'),
 ]
 
 # # 通用URL映射，必须放在最后

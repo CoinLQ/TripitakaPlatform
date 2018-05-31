@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.fields import ChoiceField
-from .models import Task, JudgeFeedback, LQPunctFeedback
+from .models import Task, JudgeFeedback, LQPunctFeedback, CorrectFeedback
 from django.conf import settings
 from django.utils.timezone import localtime
 
@@ -180,3 +180,16 @@ class LQPunctFeedbackSerializer(serializers.ModelSerializer):
         model = LQPunctFeedback
         fields = ('id', 'lqsutra_name', 'reel_no', 'status', 'fb_user_display', 'created_at', 'processor', 'processed_at')
         read_only_fields = ('id', 'lqsutra_name', 'reel_no', 'status', 'fb_user_display', 'created_at', 'processor', 'processed_at')
+
+class CorrectFeedbackSerializer(serializers.ModelSerializer):
+    created_at = DateTimeTzAwareField(format=settings.DATETIME_FORMAT)
+    processed_at = DateTimeTzAwareField(format=settings.DATETIME_FORMAT)
+    response = serializers.SerializerMethodField()
+
+    def get_response(self, obj):
+        return obj.get_response_display()
+
+    class Meta:
+        model = CorrectFeedback
+        fields = ('id', 'sutra_name', 'reel_no', 'original_text', 'fb_text', 'fb_comment', 'fb_user_display', 'created_at', 'processor', 'processed_at', 'response')
+        read_only_fields = ('id', 'sutra_name', 'reel_no', 'original_text', 'fb_text', 'fb_comment', 'fb_user_display', 'created_at', 'processor', 'processed_at', 'response')

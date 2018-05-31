@@ -128,6 +128,7 @@ class Reel(models.Model):
     column_ready = models.BooleanField(verbose_name='切列图状态', default=False)
     ocr_ready = models.BooleanField(verbose_name='OCR数据状态', default=False)
     correct_ready = models.BooleanField(verbose_name='是否有文字校对经文', default=False)
+    used_in_collation = models.BooleanField(verbose_name='是否用于校勘', default=True)
 
     class Meta:
         verbose_name = '实体卷'

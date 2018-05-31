@@ -9,7 +9,7 @@ from django.template import loader
 
 from tdata.models import *
 from tasks.models import Task, CorrectFeedback, JudgeFeedback, LQPunctFeedback, \
-AbnormalLineCountTask
+AbnormalLineCountTask ,BatchTask
 from rect.models import *
 from jwt_auth.models import Staff
 from tasks.task_controller import correct_update_async, regenerate_correctseg_async
@@ -500,6 +500,151 @@ class AbsentTaskAdmin(object):
     date_hierarchy = 'update_date'  # 详细时间分层筛选
     relfield_style = "fk-select"
 
+
+
+@xadmin.sites.register(BatchTask)
+class BatchTaskAdmin(object):
+    list_display = ("id",
+                    "batch_no",
+                    "dataRange","priority",
+                    "CORRECT_finished","CORRECT_VERIFY_finished",
+                    "JUDGE_finished","JUDGE_VERIFY_finished",
+                    "PUNCT_finished","PUNCT_VERIFY_finished",
+                    "MARK_finished","MARK_VERIFY_finished",
+                    "publisher", 
+                    "created_at",
+                     )
+    list_display_links = ("id")
+    list_filter = ( "publisher", )
+    #search_fields = [ "created_at"]    
+    #list_editable = ("priority",)
+    #date_hierarchy = 'created_at'  # 详细时间分层筛选
+    relfield_style = "fk-select"
+    fields = ('priority',)
+
+    actions = [SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,]
+    
+    def __any_finished(self,obj,typ):
+        FINISHED_count =  len( Task.objects.filter( batchtask= obj   , typ=typ,status=4) )
+        ALL_count =  len( Task.objects.filter( batchtask= obj   , typ=typ))
+        strRet=""
+        if ( ALL_count !=0 ):
+            strRet='%d/%d(%d%%)'%(FINISHED_count,ALL_count,int(100*FINISHED_count/ALL_count))                          
+        return strRet
+    
+    #文字校对任务完成情况
+    def CORRECT_finished(self, obj):                                              
+        return self.__any_finished(obj,1)
+    
+    CORRECT_finished.short_description = u'文字校对进度'
+    CORRECT_finished.allow_tags = True
+    
+    #文字校对任务完成情况
+    def CORRECT_VERIFY_finished(self, obj):                                              
+        return self.__any_finished(obj,2)
+
+    CORRECT_VERIFY_finished.short_description = u'文字校对审定进度'
+    CORRECT_VERIFY_finished.allow_tags = True            
+    #校勘判取任务完成情况
+    def JUDGE_finished(self, obj):                                              
+        return self.__any_finished(obj,3)    
+
+    JUDGE_finished.short_description = u'校勘判取进度'
+    JUDGE_finished.allow_tags = True
+
+    #校勘审定任务完成情况
+    def JUDGE_VERIFY_finished(self, obj):                                              
+        return self.__any_finished(obj,4)    
+
+    JUDGE_VERIFY_finished.short_description = u'校勘审定进度'
+    JUDGE_VERIFY_finished.allow_tags = True
+
+    #标点任务完成情况
+    def PUNCT_finished(self, obj):                                              
+        return self.__any_finished(obj,5)    
+
+    PUNCT_finished.short_description = u'标点进度'
+    PUNCT_finished.allow_tags = True
+
+    #标点任务完成情况
+    def PUNCT_VERIFY_finished(self, obj):                                              
+        return self.__any_finished(obj,6)    
+
+    PUNCT_VERIFY_finished.short_description = u'标点审定进度'
+    PUNCT_VERIFY_finished.allow_tags = True
+
+    #格式标注任务完成情况
+    def MARK_finished(self, obj):
+        return self.__any_finished(obj,9)
+
+    MARK_finished.short_description = u'格式标注进度'
+    MARK_finished.allow_tags = True
+
+      #格式标注任务完成情况
+    def MARK_VERIFY_finished(self, obj):                                              
+        return self.__any_finished(obj,10)    
+
+    MARK_VERIFY_finished.short_description = u'格式标注审定进度'
+    MARK_VERIFY_finished.allow_tags = True               
+
+    #按照校勘判取任务判断
+    def dataRange(self, obj):
+        mydataRange={}    
+        t_tasks =  Task.objects.filter( batchtask= obj).order_by('reel','typ')#t_tasks =  Task.objects.filter( batchtask= obj , typ = 3 ,task_no=2  ).order_by('lqreel')
+        strRet=''       
+        if len( t_tasks) >0 :
+            #构建去重复数据的数组                      
+            for t in t_tasks:
+                if t and t.reel and t.reel.sutra :
+                    reel_no=t.reel.reel_no                   
+                    if ( mydataRange.get(t.reel.sutra.name) == None ):#新经
+                        newPageDict={}
+                        mydataRange[t.reel.sutra.name] = newPageDict#初始化
+                    curPageDict=mydataRange[t.reel.sutra.name]
+                    curPageDict[reel_no]=reel_no
+            strRet=''
+
+            #循环判断
+            for key in mydataRange :
+                curPageDict=mydataRange[key]                
+                index = -1
+                indexBegin = -1         
+                n = len(curPageDict) - 1
+                i=0
+                for subkey in curPageDict:#                    
+                    if (subkey - index != 1 ) : #不连续 
+                        if ( index != indexBegin ):
+                            strRet += "-"+str(index) #先把前面连续的输出了
+                        if (i == 0):
+                            strRet += key + "("+str(subkey)                            
+                        else:    
+                            strRet += "/"+str(subkey)
+                        indexBegin = subkey
+                    if ( i == n ):
+                        if ( subkey -index == 1):
+                            strRet += "-"+str(subkey)
+                        strRet += ")"
+                    index=subkey
+                    i+=1
+        return strRet    
+    #end   dataRange                 
+    
+    dataRange.short_description = u'数据范围'
+    dataRange.allow_tags = True
+
+    def batch_no(self, obj):
+        return '%d%02d%02d%02d%02d' % (obj.created_at.year,
+                obj.created_at.month, obj.created_at.day, obj.created_at.hour,
+                obj.created_at.minute)
+
+    batch_no.short_description = u'批次号'
+    batch_no.allow_tags = True
+
+
+
+    
+
+    
 # @xadmin.sites.register(Permission)
 # class PermissionAdmin(object):
 #     list_display = ('id', 'name', 'menu', 'get_roles', 'is_active')

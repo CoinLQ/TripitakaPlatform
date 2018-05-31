@@ -87,7 +87,7 @@ class Command(BaseCommand):
     def ImportSutraJuan(self):
         BASE_DIR = settings.BASE_DIR
         sutra_libs_file = '/data/xiangmu'
-        jingmu_files = self.__get_excel_file(BASE_DIR+sutra_libs_file)
+        xiangmu_files = self.__get_excel_file(BASE_DIR+sutra_libs_file)
         #藏经版本
 
         reel_lst = []
@@ -96,13 +96,16 @@ class Command(BaseCommand):
 
         reel_no_str_set = set()
         # load data
-        for oneSutraFile in jingmu_files:
+        for oneSutraFile in xiangmu_files:
             #print (oneSutraFile)
             data = xlrd.open_workbook(oneSutraFile)
             table = data.sheets()[0]
-            nrows = table.nrows
+            nrows = table.nrows            
             ncols = table.ncols
             errorlist = []
+            #5-18 add 合并序和重复编号的卷
+            reel_zero_list=[]#
+            pre_sid=''#前一个有效的卷 的经号
             #解析属性
 
             #先获得tripitaka
@@ -118,20 +121,25 @@ class Command(BaseCommand):
                         end_vol = -1
                         end_vol_page = -1
                         errMsg = ''
-                        remark = ''
-                        myTestprint(i)
-                        values = table.row_values(i)
+                        remark = ''                         
+                        myTestprint('line:'+str(i)+" : ")
+                        values = table.row_values(i)                        
                         myTestprint(values)
                         remark = str(values[8])
 
                         #对应经对象的获得 sutra_sid = '实体藏经的id',第二列
                         bRet, sid = self.__get_reel_sutraID(str(values[1]))
+                        #有新卷就处理下序号0的卷
+                        if ( pre_sid != sid ):
+                            #这个0卷要加到前面卷中                            
+                            self.__deal_zero_reel(pre_sid,sid,reel_zero_list,reel_lst)
+
                         if not bRet:
                             errorlist.append('行%d的sid无效' % (i+1))
                             continue
                         sutras = list(filter(lambda x: x['sid'] == sid, self.sutra_lst))
                         if len(sutras) != 1:
-                            errorlist.append('行%d的sid不存在' % (i+1))
+                            errorlist.append('行%d的sid(%s)不存在' % (i+1,sid))
                             continue
                         sutra = sutras[0]
 
@@ -147,11 +155,17 @@ class Command(BaseCommand):
 
                         #创建卷对象
                         if reel_no <= 0:
-                            errorlist.append('行%d: reel_no<0' % (i+1))
+                            errorlist.append('行%d: reel_no(%d)<=0,做合并处理。' % (i+1,reel_no))
+                            #保存0卷，如果是最后一条记录处理下0卷
+                            self.__save_zero_reel(sid,reel_zero_list,start_vol,start_vol_page,end_vol,end_vol_page,remark)
+                            if ( i== nrows-1 ):
+                                self.__deal_zero_reel(pre_sid,sid,reel_zero_list,reel_lst)
                             continue
                         reel_no_str = '%s%03d' % (sid, reel_no)
                         if reel_no_str in reel_no_str_set:
-                            errorlist.append('行%d的经号+卷号重复' % (i+1))
+                            errorlist.append('行%d的经号+卷号重复(%s),做合并处理。' % (i+1,reel_no_str))
+                            #有重复编号的及时合并
+                            self.__deal_sameno_reel(sid,reel_no,reel_lst,start_vol,start_vol_page,end_vol,end_vol_page,remark)
                             continue
                         reel_no_str_set.add(reel_no_str)
                         d = {}
@@ -164,6 +178,9 @@ class Command(BaseCommand):
                         d['end_vol_page'] = end_vol_page
                         d['remark'] = remark
                         reel_lst.append(d)
+                        #这个0卷加到当前这个新卷上                        
+                        self.__deal_zero_reel(pre_sid,sid,reel_zero_list,reel_lst)
+                        pre_sid=sid
                         if (len(errMsg) > 0):
                             myTestprint(errMsg)
                             errorlist.append(errMsg)
@@ -172,6 +189,7 @@ class Command(BaseCommand):
                         traceback.print_exc()
                         a = '行'+str(i+1)+':(error_c) '+errMsg
                         errorlist.append(a)
+                #end for         
             fl = open(oneSutraFile+'.log', 'w')
             for s in errorlist:
                 fl.write(s)
@@ -180,6 +198,72 @@ class Command(BaseCommand):
             fl.close()
         self.write_file('reel_list.txt', keys, reel_lst)
         return None
+
+    def __deal_zero_reel(self,pre_sid,sid,reel_zero_list,reel_lst):
+        #序号为0的卷处理
+        #除了最后一卷的序合并到最后一卷。
+        #其他序都合并到连续后面的卷上。
+        #调用本函数时机：有新的经出现，或者有正常卷出现。
+        #如果新卷和序号0不是同一个经，说明是新经，序要合并到前面经的最后一卷。
+        #如果新卷和序号0相同一个经，说明要把前面的序文合并到本卷上。
+        #如果是相同编号，presid== sid
+        #zerolist中的数据要合并到 reel_list的最后一条上。逻辑是一样的        
+        if ( len(reel_zero_list) == 0 ):
+            return                    
+        z=reel_zero_list[len(reel_zero_list)-1]
+        if (z['sid'] != pre_sid and pre_sid !=""):
+            return #代码逻辑问题，正确不会有样情况。        
+        #找到相关的卷 d   ,应该是最后一个
+        d =None
+        for d in reversed(reel_lst):
+            if (d['sid'] == pre_sid or pre_sid !="" ):#找到了
+                break
+        if d :
+            for z in reel_zero_list:#依次合并
+                self.__merge_reel(d,z['start_vol'],z['start_vol_page'], z['end_vol'],z['end_vol_page'],z['remark']  )
+            reel_zero_list.clear() #处理结束后，清理reel_zero_list
+        else :
+            print('没有合适的卷？？？')
+    #end __deal_zero_reel
+
+    def __save_zero_reel(self,sid,reel_zero_list,start_vol,start_vol_page,end_vol,end_vol_page,remark ):
+        #序号为0的卷缓存                
+        #调用本函数时机：有序号0的卷。        
+        d = {}
+        d['sid'] = sid
+        d['start_vol'] = start_vol
+        d['start_vol_page'] = start_vol_page
+        d['end_vol'] = end_vol
+        d['end_vol_page'] = end_vol_page
+        d['remark'] = remark
+        reel_zero_list.append(d)
+    #end __save_zero_reel
+
+
+    def __deal_sameno_reel(self,sid,reel_no,reel_lst,start_vol,start_vol_page,end_vol,end_vol_page,remark ):
+        #序号相同的卷处理
+        #凡是相同的序号的卷页码都合并。
+        for d in reel_lst:
+            if d['sid'] == sid and d['reel_no'] == reel_no :                
+                self.__merge_reel(d,start_vol,start_vol_page,end_vol,end_vol_page,remark)
+                break  #结束循环
+    #end __deal_same_reel
+
+    def __merge_reel(self,d,start_vol,start_vol_page,end_vol,end_vol_page,remark ):
+        #合并卷信息
+        #d是一个卷信息集合
+        print('合并卷信息：',start_vol,start_vol_page,end_vol,end_vol_page,remark)
+        if ( d['start_vol'] > start_vol ):
+            d['start_vol']= start_vol
+        if ( d['end_vol'] < end_vol ):
+            d['end_vol']= end_vol
+        if ( d['start_vol_page'] > start_vol_page ):
+            d['start_vol_page']= start_vol_page
+        if ( d['end_vol_page'] < end_vol_page ):
+            d['end_vol_page']= end_vol_page                 
+        d['remark'] = d['remark'] + remark                      
+    #end __deal_same_reel
+
 
    #FUNC_3 ImportSutra 导入经目
     #class Sutra(models.Model, TripiMixin):
@@ -232,21 +316,12 @@ class Command(BaseCommand):
                     if (len(lqsutra_sid) == 0):  # 空编号
                         errMsg += '存疑C,龙泉编号为空'
                         lqsutra_exist = False
-                    elif (len(lqsutra_sid) < 6):  # 编号无效
+                    elif (len(lqsutra_sid) < 8):  # 编号无效
                         errMsg += '存疑C,龙泉编号无效：'+lqsutra_sid
                         lqsutra_exist = False
-                    else:
-                        bRet, lqsutra_sid = self.__get_reel_sutraID(
-                            str(values[0]))  # 经编号
-                        lqsutra_sid = lqsutra_sid.strip()
-                        myTestprint(lqsutra_sid)
-                        if (not bRet):
-                            errMsg += '存疑C,龙泉编号不存在：'+str(values[0])
+                    elif lqsutra_sid not in self.lqsutra_sids:
+                            errMsg += '存疑C,龙泉编号不存在：'+lqsutra_sid
                             lqsutra_exist = False
-                        else:
-                            if lqsutra_sid not in self.lqsutra_sids:
-                                errMsg += '存疑C,龙泉编号不存在：'+lqsutra_sid
-                                lqsutra_exist = False
 
                     #增加逻辑，判断经名是否存在，增加备注信息。2-2
                     if (not lqsutra_exist) and (len(name) != 0):
@@ -349,8 +424,8 @@ class Command(BaseCommand):
             nvolumns = 1
             author = str(values[2])  # 著者
             sid = ''
-            try:
-                sid = self.__get_LQSutraID(str(values[0]))  # 转化编号
+            try:                
+                sid =str(values[0]).strip()  # 转化编号
                 variant_code = sid[-1]  # variant_code  对应模板第二列，要解析横杠后面
                 if len(str(values[3]).strip()) == 0:
                     nvolumns = 0
@@ -402,9 +477,7 @@ class Command(BaseCommand):
             return False
 
     #
-    #实体藏经编号的转化 excel文件导入的为6位，要规范为系统的8位
-    #用户数据是 四位编码 & '-' & 别本号，转化为6位编号，前面加一个0，后面加一位别本号  (0~9a~z)
-    #用户数据 like '0123', or '0123-12' -的后面是别本号
+    #实体藏经编号的转化 excel文件导入的为8位    
     def __get_reel_sutraID(self, orignid):
         #判断是否是一个有效的编号：逻辑为第三个字符应该数字
         if (orignid == None or len(orignid) < 3):
@@ -414,19 +487,7 @@ class Command(BaseCommand):
             if not (nasc >= 48 and nasc <= 57):
                 return False, orignid
 
-        hgindex = orignid.find('-')
-        hgindex2 = orignid.find('–')  # 兼容 –
-        hgindex3 = orignid.find('—')  # 兼容 —
-
-        nbiebenhao = 0
-        #if hgindex ==6 :#带有横杠的
-        if hgindex == 6 or hgindex2 == 6 or hgindex3 == 6:  # 带有横杠的
-            nbiebenhao = int(orignid[7:])
-        if (nbiebenhao <= 9):
-            id = orignid[0:2]+'0'+orignid[2:6]+chr(nbiebenhao+48)
-        else:
-            id = orignid[0:2]+'0'+orignid[2:6]+chr(nbiebenhao+97-10)
-        return True, id
+        return True, orignid
 
     #
     #遍历文件夹，获取所有xls文件名
@@ -591,6 +652,7 @@ class Command(BaseCommand):
         myTestprint(end_vol_page)
 
         return reel_no, start_vol, start_vol_page, end_vol, end_vol_page, errMsg
+
 
     # #FUNC_4 LQSutra 创建某个版本的佛经
     # def CreateSutra(self,bandCode,strsid,code,var_code,sname,lqsutra,t_reels):

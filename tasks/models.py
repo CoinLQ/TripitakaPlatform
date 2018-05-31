@@ -32,6 +32,10 @@ class BatchTask(models.Model):
     verbose_name='发布用户')
     description = models.TextField('描述', blank=True)
 
+    class Meta:
+        verbose_name = '已发布任务'
+        verbose_name_plural = '已发布任务'
+
     @property
     def batch_no(self):
         return '%d%02d%02d%02d%02d' % (self.created_at.year,

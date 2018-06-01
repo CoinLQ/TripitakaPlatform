@@ -700,10 +700,8 @@ def mark_submit(task):
             mark_verify_task.save(update_fields=['status'])
 
 def new_base_pos(pos, correctseg):
-    if correctseg.tag == CorrectSeg.TAG_DIFF:
+    if correctseg.tag in [CorrectSeg.TAG_DIFF, CorrectSeg.TAG_EQUAL]:
         pos += len(correctseg.text1)
-    elif correctseg.tag == CorrectSeg.TAG_EQUAL:
-        pos += len(correctseg.text2)
     return pos
 
 def regenerate_correctseg(reel):
@@ -719,8 +717,9 @@ def regenerate_correctseg(reel):
     except:
         print('no ocr text for reel: ', reel.sutra.sid, reel.reel_no)
         return
-    text = get_reel_text(reel) #, force_download=True) # test
+    text = get_reel_text(reel, force_download=True)
     if not text:
+        print('no ocr text online.')
         return
     reel_ocr_text.text = text
     reel_ocr_text.save(update_fields=['text'])
@@ -760,6 +759,8 @@ def regenerate_correctseg(reel):
         for correctseg in correctsegs:
             if correctseg.tag == CorrectSeg.TAG_DIFF:
                 correctseg.selected_text = None
+            elif correctseg.tag == CorrectSeg.TAG_EQUAL:
+                correctseg.selected_text = correctseg.text1
         # 将已做的结果复制到新生成的CorrectSeg中
         i_old = 0
         i = 0
@@ -775,7 +776,7 @@ def regenerate_correctseg(reel):
                     if correctseg_old.text1 == correctseg.text1:
                         correctseg.selected_text = correctseg_old.selected_text
                 elif correctseg_old.tag == CorrectSeg.TAG_EQUAL:
-                    if correctseg_old.text2 != correctseg_old.selected_text:
+                    if correctseg_old.text1 == correctseg.text1:
                         correctseg.selected_text = correctseg_old.selected_text
                 pos_old = new_base_pos(pos_old, correctseg_old)
                 pos = new_base_pos(pos, correctseg)

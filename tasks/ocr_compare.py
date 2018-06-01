@@ -123,11 +123,11 @@ class OCRCompare(object):
             else:
                 # 最后的tag是equal
                 if last_tag and last_tag.tag == CorrectSeg.TAG_EQUAL:
-                    if last_tag.position + len(last_tag.text2) != seg.position:
+                    if last_tag.position + len(last_tag.text1) != seg.position:
                         new_correctsegs.append(seg)
                     else:
-                        last_tag.text2 = last_tag.text2 + seg.text2
-                        last_tag.selected_text = last_tag.text2
+                        last_tag.text1 = last_tag.text1 + seg.text1
+                        last_tag.selected_text = last_tag.text1
                 # 最后的tag不是equal
                 else:
                     new_correctsegs.append(seg)

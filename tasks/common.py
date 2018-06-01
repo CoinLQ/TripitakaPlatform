@@ -41,9 +41,9 @@ def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
                     char_data = old_char_lst[char_index]
                     if debug:
                         print('move: ', char_data['ch'], char_data['line_no'], char_data['char_no'], line_no, char_no)
-                    else:
-                        if text1[i] != char_data['ch']:
-                            raise ValueError('not equal: %s %s' % (text1[i], char_data['ch']))
+                    if text1[i] != char_data['ch']:
+                        print('not equal: %s %s' % (text1[i], char_data['ch']))
+                        raise ValueError('not equal: %s %s' % (text1[i], char_data['ch']))
                     char_data['line_no'] = line_no
                     char_data['char_no'] = char_no
                     char_lst.append(char_data)
@@ -87,6 +87,7 @@ def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
         elif tag == 'replace':
             i = i1
             j = j1
+            text2_ch_cnt = (j2-j1) - text2[j1:j2].count('\n')
             consumed_char_count = 0
             while i < i2:
                 ch = text1[i]
@@ -94,15 +95,16 @@ def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
                     line_no += 1
                     char_no = 1
                 else:
-                    if (i-i1)+j1 < j2:
+                    text1_ch_cnt = (i-i1) - text1[i1:i].count('\n')
+                    if text1_ch_cnt < text2_ch_cnt:
                         #print('char_index: ', char_index)
                         char_data = old_char_lst[char_index]
                         char_index += 1
                         consumed_char_count += 1
                         char_data['line_no'] = line_no
                         char_data['char_no'] = char_no
+                        char_data['old_ch'] = char_data['ch']
                         char_data['ch'] = ch
-                        char_data['old_ch'] = text2[(i-i1)+j1]
                     else:
                         char_data = {
                             'line_no': line_no,

@@ -10,13 +10,16 @@ from rest_framework.response import Response
 from django.contrib.contenttypes.models import ContentType
 from tdata.models import Configuration
 from tasks.serializers import TaskSerializer
-from tasks.models import Task, FeedbackBase, JudgeFeedback, LQPunctFeedback, CorrectFeedback
-from tasks.task_controller import revoke_overdue_task_async
+from tasks.models import Task, FeedbackBase, JudgeFeedback, LQPunctFeedback
+from tasks.task_controller import revoke_overdue_task_async, revoke_overdue_pagetask_async
 from ccapi.utils.task import redis_lock
 from django.utils import timezone
+from django.utils.timezone import localtime, now
+from rect.models import PageTask, TaskStatus
+
 TASK_MODELS = ('correct', 'verify_correct', 'judge', 'verify_judge', 'punct', 'verify_punct', 'lqpunct',
                'verify_lqpunct', 'correct_difficult', 'judge_difficult', 'mark', 'verify_mark')
-
+RECT_TASK_MODELS = ('pagetask',)
 
 def underscore_to_camelcase(word, lower_first=False):
     result = ''.join(char.capitalize() for char in word.split('_'))
@@ -77,6 +80,8 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
             return model.objects.filter(status=Task.STATUS_READY)
         elif model_name == 'correctfeedback':
             return model.objects.filter(response=model.RESPONSE_UNPROCESSED, processor=None)
+        elif model_name == 'pagetask':
+            return PageTask.objects.filter(status__lt=TaskStatus.ABANDON)
 
     def get_serializer_class(self):
         model_type = get_model_content_type(self.app_name, self.model_name)
@@ -104,6 +109,8 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
 
         if self.model_name in TASK_MODELS:
             self.queryset = self.query_set(self.model_name).order_by('-priority', 'id')
+        elif self.model_name == 'pagetask':
+            self.queryset = self.query_set(self.model_name).order_by('number')
         else:
             self.queryset = self.query_set(self.model_name).order_by('id')
         self.filter_fields = getattr(self.model.Config, 'filter_fields', ())
@@ -149,25 +156,30 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
                 picker=request.user,
                 picked_at=timezone.now(),
                 status=Task.STATUS_PROCESSING)
-            conf = Configuration.objects.values('task_timeout').first()
-            task_timeout = conf['task_timeout']
-            revoke_overdue_task_async(pk, schedule=task_timeout)
+            if count == 1:
+                conf = Configuration.objects.values('task_timeout').first()
+                task_timeout = conf['task_timeout']
+                revoke_overdue_task_async(pk, schedule=task_timeout)
         elif self.model_name == 'judgefeedback':
             count = JudgeFeedback.objects.filter(pk=pk, processor=None)\
             .update(processor=request.user, processed_at=timezone.now())
         elif self.model_name == 'lqpunctfeedback':
             count = LQPunctFeedback.objects.filter(pk=pk, status=LQPunctFeedback.STATUS_READY, processor=None)\
             .update(processor=request.user, processed_at=timezone.now(), status=LQPunctFeedback.STATUS_PROCESSING)
-        elif self.model_name == 'correctfeedback':
-            count = CorrectFeedback.objects.filter(pk=pk, response=CorrectFeedback.RESPONSE_UNPROCESSED, processor=None)\
-            .update(processor=request.user)
+        elif self.model_name == 'pagetask':
+            count = PageTask.objects.filter(pk=pk, owner=None, status__lt=TaskStatus.HANDLING)\
+            .update(owner=request.user, obtain_date=localtime(now()).date(), status=TaskStatus.HANDLING)
+            if count == 1:
+                conf = Configuration.objects.values('task_timeout').first()
+                task_timeout = conf['task_timeout']
+                revoke_overdue_pagetask_async(pk, schedule=task_timeout)
         if count == 1:
             return Response({"status": 0, "task_id": pk})
         else:
             return Response({"status": -1, "task_id": pk, "msg": "任务已被占用无法领取."})
 
 
-class CommonHistoryAPIView(CommonListAPIView):
+class CommonHistoryAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
     filter_backends = (filters.SearchFilter, django_filters.rest_framework.DjangoFilterBackend)
     serializer_class = 'TaskSerializer'
 
@@ -200,8 +212,20 @@ class CommonHistoryAPIView(CommonListAPIView):
                 return model.objects.filter(typ=model.TYPE_CORRECT_DIFFICULT, picker=request.user)
             elif model_name =='judge_difficult':
                 return model.objects.filter(typ=model.TYPE_JUDGE_DIFFICULT, picker=request.user)
+        elif self.model_name == 'pagetask':
+            return model.objects.filter(owner=request.user)
         else:
             return model.objects.filter(processor=request.user)
+
+    def _search_fields(self):
+        model_name = self.model_name
+        if (model_name in TASK_MODELS):
+            if model_name in ['correct', 'verify_correct', 'punct', 'verify_punct', 'correct_difficult', 'mark', 'verify_mark']:
+                return ('reel__sutra__name', 'reel__sutra__tripitaka__name', 'reel__sutra__tripitaka__code', '=reel__reel_no')
+            elif model_name in ['judge', 'verify_judge', 'lqpunct', 'verify_lqpunct', 'judge_difficult']:
+                return ('lqreel__lqsutra__name', '=lqreel__reel_no')
+        else:
+            return getattr(self.model.Config, 'search_fields', ())
 
     def get_serializer_class(self):
         model_type = get_model_content_type(self.app_name, self.model_name)
@@ -220,17 +244,19 @@ class CommonHistoryAPIView(CommonListAPIView):
 
         if self.model_name in TASK_MODELS:
             self.queryset = self.query_set(self.model_name, request).order_by('-priority', 'id')
+        elif self.model_name == 'pagetask':
+            self.queryset = self.query_set(self.model_name, request).order_by('status', 'number')
         else:
             self.queryset = self.query_set(self.model_name, request).order_by('id')
         self.filter_fields = getattr(self.model.Config, 'filter_fields', ())
         self.search_fields = self._search_fields()
         self.serializer_class = self.get_serializer_class()
 
-        return super(CommonListAPIView, self).get(request, *args, **kwargs)
+        return super(CommonHistoryAPIView, self).get(request, *args, **kwargs)
 
 
     def get_queryset(self):
-        q = super(CommonListAPIView, self).get_queryset()
+        q = super(CommonHistoryAPIView, self).get_queryset()
         if hasattr(self.model.Config, 'filter_queryset'):
             q = self.model.Config.filter_queryset(self.request, q)
         return q

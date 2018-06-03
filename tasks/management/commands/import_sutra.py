@@ -20,7 +20,7 @@ tcode_lst2 = ['GL', 'LC']
 class Command(BaseCommand):
     def handle(self, *args, **options):
         # 龙泉藏经
-        self.ImportLQSutra()
+        #self.ImportLQSutra()
         # 实体藏经
         self.ImportSutra()
         self.ImportReel()
@@ -129,7 +129,10 @@ class Command(BaseCommand):
                     continue
 
                 line = line.replace('\n','')
-                sid, sname , reel_no , start_vol,  start_vol_page, end_vol, end_vol_page, remark = line.split('\t',7) 
+                try :
+                    sid, sname , reel_no , start_vol,  start_vol_page, end_vol, end_vol_page, remark = line.split('\t',7) 
+                except:
+                    continue
                 #-----------------------------------------------------------------------------------------------
                 #sid, name, reel_no, start_vol, start_vol_page, end_vol_page = line.split('\t')
                 sid=sid.strip()
@@ -139,7 +142,7 @@ class Command(BaseCommand):
                 reel_no = int(reel_no)
                 try:
                     start_vol = int(start_vol)
-                    end_vol = end_vol
+                    end_vol = int(end_vol)
                 except:
                     start_vol = 0
                     end_vol = 0
@@ -168,4 +171,5 @@ class Command(BaseCommand):
                     reel.path1 = str(int(sid[2:7]))
                     reel.path2 = str(reel.reel_no)
                 mylist.append(reel)
+           
             Reel.objects.bulk_create(mylist)

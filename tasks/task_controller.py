@@ -7,6 +7,7 @@ from django.db.models import Q
 from jwt_auth.models import Staff
 from tdata.models import *
 from tasks.models import *
+from rect.models import PageTask
 from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, \
 clean_separators, clean_jiazhu, compute_accurate_cut, get_reel_text
 from tasks.ocr_compare import OCRCompare
@@ -1101,3 +1102,14 @@ def revoke_overdue_task_async(task_id):
         task.picked_at = None
         task.status = Task.STATUS_READY
         task.save(update_fields=['picker', 'picked_at', 'status'])
+
+
+@background(schedule=timedelta(days=7))
+def revoke_overdue_pagetask_async(task_id):
+    task = PageTask.objects.get(pk=task_id)
+    if task.status == 5:
+        print('pagetask %s is overdue, to be revoked.' % task_id)
+        task.owner = None
+        task.obtain_date = None
+        task.status = 1
+        task.save(update_fields=['owner', 'obtain_date', 'status'])

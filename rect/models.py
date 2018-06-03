@@ -773,6 +773,10 @@ class PageTask(RTask):
         verbose_name = u"逐字校对"
         verbose_name_plural = u"逐字校对"
 
+    class Config:
+        list_display_fields = ('number', 'result', 'created_at')
+        list_form_fields = list_display_fields
+        search_fields = ('number', 'pagerect__reel__sutra__name', 'pagerect__reel__sutra__tripitaka__name', 'pagerect__reel__sutra__tripitaka__code', '=pagerect__reel__reel_no')
 
     def task_id(self):
         cursor = connection.cursor()
@@ -786,7 +790,7 @@ class PageTask(RTask):
         
         pagerect.pptask_count = pagerect.pptask_count + 1
         task_no = "%s_%s_%05X" % (self.number.split('_')[0], self.number.split('_')[1], self.task_id())
-        task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1,
+        task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1, pagerect=pagerect,
                                 status=TaskStatus.NOT_GOT,
                                 page_set=self.page_set, redo_count=pagerect.pptask_count)
         task.save()
@@ -1080,7 +1084,7 @@ class PerpageAllocateTask(AllocateTask):
             page_set.append(pagerect.serialize_set)
             if len(page_set) == count:
                 task_no = "%s_%d_%05X" % (self.schedule.schedule_no, reel.id, self.task_id())
-                task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1,
+                task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1, pagerect=pagerect,
                                   status=TaskStatus.NOT_GOT,
                                   page_set=list(page_set))
                 page_set.clear()

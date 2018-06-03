@@ -704,9 +704,9 @@ def new_base_pos(pos, correctseg):
         pos += len(correctseg.text1)
     return pos
 
-def regenerate_correctseg(reel):
+def regenerate_correctseg(reel, initial_updated_pages):
     '''
-    由于卷中某些页有增加或更新等原因，需要重新生成此卷的文字校对任务的CorrectSeg数据
+    由于卷中某些页有增加或更新，需要重新生成此卷的文字校对任务的CorrectSeg数据
     '''
     print('regenerate_correctseg: ', reel.sutra.sid, reel.reel_no)
     if reel.sutra.sid.startswith('CB') or reel.sutra.sid.startswith('GL'): # 不对CBETA, GL生成任务
@@ -761,42 +761,42 @@ def regenerate_correctseg(reel):
                 correctseg.selected_text = None
             elif correctseg.tag == CorrectSeg.TAG_EQUAL:
                 correctseg.selected_text = correctseg.text1
-        # 将已做的结果复制到新生成的CorrectSeg中
-        i_old = 0
-        i = 0
-        length_old = len(correctsegs_old)
-        length = len(correctsegs)
-        pos_old = 0
-        pos = 0
-        while i_old < length_old and i < length:
-            correctseg_old = correctsegs_old[i_old]
-            correctseg = correctsegs[i]
-            if pos_old == pos:
-                if correctseg_old.tag == CorrectSeg.TAG_DIFF:
-                    if correctseg_old.text1 == correctseg.text1:
-                        correctseg.selected_text = correctseg_old.selected_text
-                elif correctseg_old.tag == CorrectSeg.TAG_EQUAL:
-                    if correctseg_old.text1 == correctseg.text1:
-                        correctseg.selected_text = correctseg_old.selected_text
-                pos_old = new_base_pos(pos_old, correctseg_old)
-                pos = new_base_pos(pos, correctseg)
-                i_old += 1
-                i += 1
-            elif pos_old < pos:
-                pos_old = new_base_pos(pos_old, correctseg_old)
-                i_old += 1
-            else:
-                pos = new_base_pos(pos, correctseg)
-                i += 1
-        CorrectSeg.objects.filter(task=task).delete()
-        for correctseg in correctsegs:
+        page_no = 0
+        seg_count = 0
+        updated_pages = []
+        if initial_updated_pages:
+            updated_pages = initial_updated_pages
+        else:
+            for correctseg in correctsegs_old:
+                if correctseg.page_no != page_no:
+                    if page_no != 0 and seg_count == 0:
+                        updated_pages.append(page_no)
+                    page_no = correctseg.page_no
+                    seg_count = 0
+                if correctseg.tag in [CorrectSeg.TAG_DIFF, CorrectSeg.TAG_EQUAL]:
+                    seg_count += 1
+            if seg_count == 0:
+                updated_pages.append(page_no)
+        print('updated_pages:', updated_pages)
+        correctsegs_new = []
+        for correctseg in correctsegs_old:
+            if correctseg.tag != CorrectSeg.TAG_P and correctseg.page_no in updated_pages:
+                continue
+            correctsegs_new.append(correctseg)
+            if correctseg.tag == CorrectSeg.TAG_P:
+                page_no = correctseg.page_no + 1
+                if page_no in updated_pages:
+                    for seg in correctsegs:
+                        if seg.page_no == page_no and seg.tag != CorrectSeg.TAG_P:
+                            correctsegs_new.append(seg)
+        for correctseg in correctsegs_new:
             correctseg.task = task
             correctseg.id = None
-        CorrectSeg.objects.bulk_create(correctsegs)
+        CorrectSeg.objects.filter(task=task).delete()
+        CorrectSeg.objects.bulk_create(correctsegs_new)
     Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT, picker=None).update(status=Task.STATUS_READY)
     Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT).exclude(picker=None).update(status=Task.STATUS_PROCESSING)
     print('regenerate_correctseg done:', reel.sutra.sid, reel.reel_no)
-
 
 def judge_submit(task):
     '''
@@ -1088,7 +1088,7 @@ def regenerate_correctseg_async(reel_id_lst_json):
     for reel_id in reel_id_lst:
         try:
             reel = Reel.objects.get(id=reel_id)
-            regenerate_correctseg(reel)
+            regenerate_correctseg(reel, [])
         except:
             pass
 

@@ -36,6 +36,7 @@ class Tripitaka(models.Model):
     path3_name = models.CharField('存储层次3中文名', max_length=16, blank=True, default='')
     cut_ready = models.BooleanField(verbose_name='切分数据状态', default=False)
     bar_line_count = models.CharField('每栏文本行数', max_length=256, default='0')
+    use_original_cut = models.BooleanField(verbose_name='使用原始切分', default=False)
 
     class Meta:
         verbose_name = '实体藏'

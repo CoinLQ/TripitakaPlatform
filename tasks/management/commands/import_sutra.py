@@ -20,7 +20,7 @@ tcode_lst2 = ['GL', 'LC']
 class Command(BaseCommand):
     def handle(self, *args, **options):
         # 龙泉藏经
-        #self.ImportLQSutra()
+        self.ImportLQSutra()
         # 实体藏经
         self.ImportSutra()
         self.ImportReel()
@@ -39,7 +39,7 @@ class Command(BaseCommand):
         with open(filename, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             for line in lines:
-                if  line.startswith('#') :
+                if line.startswith('#'):
                     continue
 
                 line = line.rstrip('\n')
@@ -81,19 +81,19 @@ class Command(BaseCommand):
         with open(filename, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             for line in lines:
-                if  line.startswith('#') :
+                if line.startswith('#'):
                     continue
 
                 line = line.rstrip('\n')
                 sid, tripitaka_code, name, lqsutra_sid, total_reels_str, remark= line.split('\t')                                                                             
-                scode=sid[2:7]#code 
-                try :
+                scode = sid[2:7]#code 
+                try:
                     lqsutra = LQSutra.objects.get(sid=lqsutra_sid) 
                 except:
                     print('lqsutra %s not exist: ' % lqsutra_sid, line)
                     continue
 
-                try :
+                try:
                     tripitaka = Tripitaka.objects.get(code=tripitaka_code) 
                 except:
                     pass
@@ -119,25 +119,28 @@ class Command(BaseCommand):
         BASE_DIR = settings.BASE_DIR
 
         mylist = []
+        vol_to_page_count = {}
         filename = os.path.join(BASE_DIR, 'data/sutra_list/%s' % 'reel_list.txt')
         reel_str_set = set()
         exist_reels = set(['%s%03d' % (reel.sutra.sid, reel.reel_no) for reel in Reel.objects.all()])
         with open(filename, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             for line in lines:
-                if  line.startswith('#') :
+                if line.startswith('#'):
                     continue
 
-                line = line.replace('\n','')
-                try :
-                    sid, sname , reel_no , start_vol,  start_vol_page, end_vol, end_vol_page, remark = line.split('\t',7) 
+                line = line.replace('\n', '')
+                try:
+                    sid, sname, reel_no, start_vol, start_vol_page, end_vol, end_vol_page, remark = line.split('\t', 7)
                 except:
+                    traceback.print_exc()
+                    print(line)
                     continue
                 #-----------------------------------------------------------------------------------------------
                 #sid, name, reel_no, start_vol, start_vol_page, end_vol_page = line.split('\t')
-                sid=sid.strip()
-                reel_no=reel_no.strip()
-                key=sid +reel_no 
+                sid = sid.strip()
+                reel_no = reel_no.strip()
+                key = sid + reel_no 
                 tcode = sid[:2]
                 reel_no = int(reel_no)
                 try:
@@ -158,6 +161,13 @@ class Command(BaseCommand):
                     print('no sutra: ', line)
                     continue
 
+                vol_id = '%s_%d' % (sid[:2], start_vol)
+                if vol_id not in vol_to_page_count:
+                    vol_to_page_count[vol_id] = end_vol_page
+                else:
+                    if vol_to_page_count[vol_id] < end_vol_page:
+                        vol_to_page_count[vol_id] = end_vol_page
+
                 reel_str = '%s%03d' % (sid, reel_no)
                 if reel_str in exist_reels or reel_str in reel_str_set:
                     continue
@@ -173,3 +183,13 @@ class Command(BaseCommand):
                 mylist.append(reel)
            
             Reel.objects.bulk_create(mylist)
+
+            # save Volume
+            volume_lst = []
+            for vol_id, page_count in vol_to_page_count.items():
+                tcode = vol_id[:2]
+                vol_no = int(vol_id[3:])
+                tripitaka = Tripitaka.objects.get(code=tcode)
+                volume = Volume(tripitaka=tripitaka, vol_no=vol_no, page_count=page_count)
+                volume_lst.append(volume)
+            Volume.objects.bulk_create(volume_lst)

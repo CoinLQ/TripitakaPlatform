@@ -61,6 +61,8 @@ class RectBulkOpMixin(object):
                             "rects": rects.data,
                             "image_url": image_url,
                             "page_info": str(page),
+                            "current_x": instance.current_x,
+                            "current_y": instance.current_y,
                             "task_id": instance.pk})
         return Response(serializer.data)
 
@@ -207,6 +209,8 @@ class PageTaskViewSet(RectBulkOpMixin,
                         "rects": rects.data,
                         "image_url": image_url,
                         "page_info": str(page),
+                        "current_x": task.current_x,
+                        "current_y": task.current_y,
                         "task_id": task.pk})
 
 
@@ -243,6 +247,9 @@ class PageTaskViewSet(RectBulkOpMixin,
         if (task.owner != request.user):
             return Response({"status": -1,
                              "msg": "No Permission!"})
+        task.current_x = request.data['current_x']
+        task.current_y = request.data['current_y']
+        task.save(update_fields=['current_x', 'current_y'])
         rects = request.data['rects']
         DeletionCheckItem.direct_delete_rects(rects, task)
         _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]

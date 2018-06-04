@@ -764,6 +764,8 @@ class PageTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='page_tasks', on_delete=models.SET_NULL,
                                  verbose_name=u'切分计划')
     count = models.IntegerField("任务页的数量", default=1)
+    current_x = models.IntegerField("当前块X坐标", default=0)
+    current_y = models.IntegerField("当前块Y坐标", default=0)
     owner = models.ForeignKey(Staff, null=True, blank=True, related_name='page_tasks', on_delete=models.SET_NULL)
     pagerect = models.ForeignKey(PageRect, null=True, blank=True, on_delete=models.SET_NULL)
     page_set = JSONField(default=list, verbose_name=u'页的集合') # [page_json]

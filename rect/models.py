@@ -453,41 +453,6 @@ class Rect(models.Model):
 def positive_w_h_fields(sender, instance, **kwargs):
     instance = Rect.normalize(instance)
 
-class Patch(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    reel = models.ForeignKey(Reel, null=True, blank=True, related_name='patches', on_delete=models.CASCADE) # 注意：卷编码这里没有考虑余量
-    op = models.PositiveSmallIntegerField(verbose_name=u'操作类型', default=OpStatus.NORMAL)
-    x = models.PositiveSmallIntegerField(verbose_name=u'X坐标', default=0)
-    y = models.PositiveSmallIntegerField(verbose_name=u'Y坐标', default=0)
-    w = models.PositiveSmallIntegerField(verbose_name=u'宽度', default=1)
-    h = models.PositiveSmallIntegerField(verbose_name=u'高度', default=1)
-    ocolumn_uri = models.CharField(verbose_name='行图片路径', max_length=128, blank=False)
-    ocolumn_x = models.PositiveSmallIntegerField(verbose_name=u'行图X坐标', default=0)
-    ocolumn_y = models.PositiveSmallIntegerField(verbose_name=u'行图Y坐标', default=0)
-    char_no = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=u'字号', default=0)
-    line_no = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=u'行号', default=0)  # 对应图片的一列
-    ch = models.CharField(null=True, blank=True, verbose_name=u'文字', max_length=2, default='')
-    rect_id = models.CharField(verbose_name='字块CID', max_length=128, blank=False)
-    rect_x = models.PositiveSmallIntegerField(verbose_name=u'原字块X坐标', default=0)
-    rect_y = models.PositiveSmallIntegerField(verbose_name=u'原字块Y坐标', default=0)
-    rect_w = models.PositiveSmallIntegerField(verbose_name=u'原字块宽度', default=1)
-    rect_h = models.PositiveSmallIntegerField(verbose_name=u'原字块高度', default=1)
-    ts = models.CharField(null=True, blank=True, verbose_name=u'修订文字', max_length=2, default='')
-    result = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=u'审定意见', default=ReviewResult.INITIAL)  # 1 同意 2 不同意
-    modifier = models.ForeignKey(Staff, null=True, blank=True, related_name='modify_patches', verbose_name=u'修改人', on_delete=models.SET_NULL)
-    verifier = models.ForeignKey(Staff, null=True, blank=True, related_name='verify_patches', verbose_name=u'审定人', on_delete=models.SET_NULL)
-
-    submitted_at = models.DateTimeField(verbose_name='修订时间', auto_now_add=True)
-    updated_at = models.DateTimeField(null=True, blank=True, verbose_name=u'更新时间', auto_now=True)
-
-    def __str__(self):
-        return self.ch
-
-    class Meta:
-        verbose_name = u"Patch"
-        verbose_name_plural = u"Patch管理"
-        ordering = ("ch",)
-
 
 class Schedule(models.Model, ModelDiffMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -759,19 +724,51 @@ class ClassifyTask(RTask):
         verbose_name = u"聚类校对"
         verbose_name_plural = u"聚类校对"
 
+class PageVerifyTask(RTask):
+    schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='pageverity_tasks', on_delete=models.SET_NULL,
+                                 verbose_name=u'切分计划')
+    count = models.IntegerField("任务页的数量", default=1)
+    current_x = models.IntegerField("当前块X坐标", default=0)
+    current_y = models.IntegerField("当前块Y坐标", default=0)
+    owner = models.ForeignKey(Staff, null=True, blank=True, related_name='pageverity_tasks', on_delete=models.SET_NULL)
+    pagerect = models.ForeignKey(PageRect, null=True, blank=True, on_delete=models.SET_NULL)
+    page_set = JSONField(default=list, verbose_name=u'页的集合') # [page_json]
+    redo_count =  models.PositiveSmallIntegerField(default=1, verbose_name=u'任务重作数')
+
+    class Meta:
+        verbose_name = u"切分校对审定"
+        verbose_name_plural = u"切分校对审定"
+
+    class Config:
+        list_display_fields = ('number', 'result', 'created_at')
+        list_form_fields = list_display_fields
+        search_fields = ('number', 'pagerect__reel__sutra__name', 'pagerect__reel__sutra__tripitaka__name', 'pagerect__reel__sutra__tripitaka__code', '=pagerect__reel__reel_no')
+
+    def redo(self):
+        task = PageTask.objects.get(schedule=self.schedule, pagerect=self.pagerect)
+        task.roll_new_task()
+        self.delete()
+
+    def submit_result(self):
+        page = Page.objects.get(pk=self.pagerect.page_id)
+        rects = [rect.serialize_set for rect in Rect.objects.filter(page_pid=page.pk).all().order_by('line_no', 'char_no')]
+        page.cut_info = json.dumps(rects)
+        page.save(update_fields=['cut_info'])
 
 class PageTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='page_tasks', on_delete=models.SET_NULL,
                                  verbose_name=u'切分计划')
     count = models.IntegerField("任务页的数量", default=1)
+    current_x = models.IntegerField("当前块X坐标", default=0)
+    current_y = models.IntegerField("当前块Y坐标", default=0)
     owner = models.ForeignKey(Staff, null=True, blank=True, related_name='page_tasks', on_delete=models.SET_NULL)
     pagerect = models.ForeignKey(PageRect, null=True, blank=True, on_delete=models.SET_NULL)
     page_set = JSONField(default=list, verbose_name=u'页的集合') # [page_json]
     redo_count =  models.PositiveSmallIntegerField(default=1, verbose_name=u'任务重作数')
 
     class Meta:
-        verbose_name = u"逐字校对"
-        verbose_name_plural = u"逐字校对"
+        verbose_name = u"切分校对"
+        verbose_name_plural = u"切分校对"
 
     class Config:
         list_display_fields = ('number', 'result', 'created_at')
@@ -790,12 +787,22 @@ class PageTask(RTask):
         
         pagerect.pptask_count = pagerect.pptask_count + 1
         task_no = "%s_%s_%05X" % (self.number.split('_')[0], self.number.split('_')[1], self.task_id())
-        task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1, pagerect=pagerect,
+        task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1, pagerect=pagerect, priority=PriorityLevel.HIGH,
                                 status=TaskStatus.NOT_GOT,
                                 page_set=self.page_set, redo_count=pagerect.pptask_count)
         task.save()
         pagerect.save(update_fields=['pptask_count'])
-
+    
+    def create_new_pagetask_verify(self):
+        page_pid = self.page_set[0]['page_id']
+        pagerect = PageRect.objects.filter(page_id=page_pid).first()
+        if not PageVerifyTask.objects.filter(schedule=self.schedule, pagerect=pagerect).first():
+            task_no = "%s_%s_%05X" % (self.number.split('_')[0], self.number.split('_')[1], self.task_id())
+            task = PageVerifyTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1, pagerect=pagerect,
+                                    status=TaskStatus.NOT_GOT,
+                                    page_set=self.page_set, redo_count=pagerect.pptask_count)
+            task.save()
+    
 #暂不使用
 class AbsentTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='absent_tasks', on_delete=models.SET_NULL,

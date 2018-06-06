@@ -15,11 +15,10 @@ from tasks.task_controller import revoke_overdue_task_async, revoke_overdue_page
 from ccapi.utils.task import redis_lock
 from django.utils import timezone
 from django.utils.timezone import localtime, now
-from rect.models import PageTask, TaskStatus
+from rect.models import PageTask, PageVerifyTask, TaskStatus
 
 TASK_MODELS = ('correct', 'verify_correct', 'judge', 'verify_judge', 'punct', 'verify_punct', 'lqpunct',
                'verify_lqpunct', 'correct_difficult', 'judge_difficult', 'mark', 'verify_mark')
-RECT_TASK_MODELS = ('pagetask',)
 
 def underscore_to_camelcase(word, lower_first=False):
     result = ''.join(char.capitalize() for char in word.split('_'))
@@ -82,6 +81,8 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
             return model.objects.filter(response=model.RESPONSE_UNPROCESSED, processor=None)
         elif model_name == 'pagetask':
             return PageTask.objects.filter(status__lt=TaskStatus.ABANDON)
+        elif model_name == 'pageverifytask':
+            return PageVerifyTask.objects.filter(status__lt=TaskStatus.ABANDON)
 
     def get_serializer_class(self):
         model_type = get_model_content_type(self.app_name, self.model_name)
@@ -109,8 +110,8 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
 
         if self.model_name in TASK_MODELS:
             self.queryset = self.query_set(self.model_name).order_by('-priority', 'id')
-        elif self.model_name == 'pagetask':
-            self.queryset = self.query_set(self.model_name).order_by('number')
+        elif self.model_name == 'pagetask' or self.model_name == 'pageverifytask' :
+            self.queryset = self.query_set(self.model_name).order_by('-priority','number')
         else:
             self.queryset = self.query_set(self.model_name).order_by('id')
         self.filter_fields = getattr(self.model.Config, 'filter_fields', ())
@@ -173,6 +174,13 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
                 conf = Configuration.objects.values('task_timeout').first()
                 task_timeout = conf['task_timeout']
                 revoke_overdue_pagetask_async(pk, schedule=task_timeout)
+        elif self.model_name == 'pageverifytask':
+            count = PageVerifyTask.objects.filter(pk=pk, owner=None, status__lt=TaskStatus.HANDLING)\
+            .update(owner=request.user, obtain_date=localtime(now()).date(), status=TaskStatus.HANDLING)
+            if count == 1:
+                conf = Configuration.objects.values('task_timeout').first()
+                task_timeout = conf['task_timeout']
+                revoke_overdue_pagetask_async(pk, schedule=task_timeout)
         if count == 1:
             return Response({"status": 0, "task_id": pk})
         else:
@@ -212,7 +220,7 @@ class CommonHistoryAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
                 return model.objects.filter(typ=model.TYPE_CORRECT_DIFFICULT, picker=request.user)
             elif model_name =='judge_difficult':
                 return model.objects.filter(typ=model.TYPE_JUDGE_DIFFICULT, picker=request.user)
-        elif self.model_name == 'pagetask':
+        elif self.model_name == 'pagetask' or self.model_name == 'pageverifytask':
             return model.objects.filter(owner=request.user)
         else:
             return model.objects.filter(processor=request.user)
@@ -244,7 +252,7 @@ class CommonHistoryAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
 
         if self.model_name in TASK_MODELS:
             self.queryset = self.query_set(self.model_name, request).order_by('-priority', 'id')
-        elif self.model_name == 'pagetask':
+        elif self.model_name == 'pagetask' or self.model_name == 'pageverifytask':
             self.queryset = self.query_set(self.model_name, request).order_by('status', 'number')
         else:
             self.queryset = self.query_set(self.model_name, request).order_by('id')

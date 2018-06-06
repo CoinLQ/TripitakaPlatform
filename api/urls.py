@@ -6,8 +6,8 @@ from rest_framework import routers
 from tdata.views import PageViewSet
 from ccapi.views.rects import PageRectViewSet, RectViewSet, \
                         ScheduleViewSet
-from ccapi.views.tasks import CCTaskViewSet, ClassifyTaskViewSet, \
-                         PageTaskViewSet, DelTaskViewSet
+from ccapi.views.tasks import CCTaskViewSet, \
+                         PageTaskViewSet, PageVerifyTaskViewSet
 from jkapi.views.correct import CorrectTaskDetail, \
 CorrectSegList, CorrectSegUpdate, \
 FinishCorrectTask, ReturnCorrectTask, DoubtSegViewSet
@@ -28,10 +28,9 @@ router.register(r'rect', RectViewSet)
 router.register(r'schedule', ScheduleViewSet)
 
 router.register(r'cctask', CCTaskViewSet)
-router.register(r'classifytask', ClassifyTaskViewSet)
-router.register(r'pagetask', PageTaskViewSet)
-router.register(r'deltask', DelTaskViewSet)
 
+router.register(r'pagetask', PageTaskViewSet)
+router.register(r'pageverifytask', PageVerifyTaskViewSet)
 router.register(r'page', PageViewSet)
 
 router.register(r'lqsutra', LQSutraViewSet)

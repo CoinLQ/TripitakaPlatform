@@ -108,7 +108,7 @@ class VolumeAdmin(object):
 class RegenerateCorrectSegAction(BaseActionView):
 
     action_name = "regenerate_correctseg"
-    description = '重新生成文字校对任务的数据'
+    description = '重新生成文字校对任务的数据（新增页）'
     icon = 'fa fa-refresh'
 
     @filter_hook

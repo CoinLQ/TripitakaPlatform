@@ -36,6 +36,7 @@ class Tripitaka(models.Model):
     path3_name = models.CharField('存储层次3中文名', max_length=16, blank=True, default='')
     cut_ready = models.BooleanField(verbose_name='切分数据状态', default=False)
     bar_line_count = models.CharField('每栏文本行数', max_length=256, default='0')
+    use_original_cut = models.BooleanField(verbose_name='使用原始切分', default=False)
 
     class Meta:
         verbose_name = '实体藏'
@@ -53,6 +54,7 @@ class Volume(models.Model):
     class Meta:
         verbose_name = u"实体册"
         verbose_name_plural = u"实体册"
+        unique_together = (('tripitaka', 'vol_no'),)
 
     def __str__(self):
         return '%s: 第%s册' % (self.tripitaka.name, self.vol_no)
@@ -128,6 +130,7 @@ class Reel(models.Model):
     column_ready = models.BooleanField(verbose_name='切列图状态', default=False)
     ocr_ready = models.BooleanField(verbose_name='OCR数据状态', default=False)
     correct_ready = models.BooleanField(verbose_name='是否有文字校对经文', default=False)
+    mark_ready = models.BooleanField(verbose_name='是否完成格式标注', default=False)
     used_in_collation = models.BooleanField(verbose_name='是否用于校勘', default=True)
 
     class Meta:

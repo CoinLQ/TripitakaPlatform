@@ -124,20 +124,20 @@ Vue.component('mark-list', {
             return '作译者';
         case 3: //序
             return '序';
-        case 4: //正文
-            return '正文';
+        case 4: //千字文
+            return '千字文';
         case 5: //跋
             return '跋';
-        case 6: //偈颂
-            return '偈颂';
-        case 7: //夹注小字
-            return '夹注小字';
-        case 8: //梵文
-            return '梵文';
-        case 9: //咒语
-            return '咒语';
-        case 10: //行间小字
+        case 6: //行间小字
             return '行间小字';
+        case 11: //偈颂
+            return '偈颂';
+        case 12: //夹注小字
+            return '夹注小字';
+        case 13: //梵文
+            return '梵文';
+        case 14: //咒语
+            return '咒语';
       }
     },
     deleteRow(index, rows) {
@@ -235,20 +235,21 @@ Vue.component('mark-doubt-list', {
             return '作译者';
         case 3: //序
             return '序';
-        case 4: //正文
-            return '正文';
+        case 4: //千字文
+            return '千字文';
         case 5: //跋
             return '跋';
-        case 6: //偈颂
-            return '偈颂';
-        case 7: //夹注小字
-            return '夹注小字';
-        case 8: //梵文
-            return '梵文';
-        case 9: //咒语
-            return '咒语';
-        case 10: //行间小字
+        case 6: //行间小字
             return '行间小字';
+        case 11: //偈颂
+            return '偈颂';
+        case 12: //夹注小字
+            return '夹注小字';
+        case 13: //梵文
+            return '梵文';
+        case 14: //咒语
+            return '咒语';
+
       }
     },
     deleteRow(index, rows) {

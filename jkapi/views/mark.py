@@ -27,7 +27,7 @@ class MarkTaskDetail(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
     
     def get(self, request, task_id, format=None):
-        base_text = re.compile('[pb\n]').sub("\n", self.task.reeltext.text)
+        base_text = re.compile('[pb]').sub("\n", self.task.reeltext.text)
         p_pos = self.task.reeltext.text.split('p')
         lf_postions = []
         for _n in p_pos:
@@ -78,7 +78,14 @@ class FinishMarkTask(APIView):
         mark_verify_task = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_MARK_VERIFY).first()
         if mark_verify_task and task.typ != Task.TYPE_MARK_VERIFY and mark_verify_task.status > Task.STATUS_READY:
             return Response({'task_id': mark_verify_task.id, 'msg': '审定工作已开始！禁止提交。'}, status=status.HTTP_423_LOCKED)
-    
+
+        if task.typ == Task.TYPE_MARK_VERIFY:
+            if task.status == Task.STATUS_FINISHED:
+                if not request.user.is_admin:
+                    return Response({'task_id': task.id, 'msg': '无权限重复提交审定工作！'}, status=status.HTTP_423_LOCKED)
+                else:
+                    task.mark.publisher = None
+                    task.mark.save(update_fields=['publisher'])
         
         marks = request.data['marks']
         if len(list(filter(lambda x: x['typ'] ==2, marks))) > 0:
@@ -96,9 +103,9 @@ class FinishMarkTask(APIView):
         task.save(update_fields=['status', 'finished_at'])
 
         if task.typ == Task.TYPE_MARK:
-            task = Task.objects.get(pk=task_id)
-            mark_submit(task)
-            #mark_submit_async(task_id)
+            mark_submit_async(task_id)
+        else:
+            mark_verify_submit_async(task_id)
 
         return Response({'task_id': task_id, 'status': task.status})
        

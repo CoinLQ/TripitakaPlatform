@@ -123,17 +123,17 @@ def create_mark_tasks(batchtask, reel, mark_times, mark_verify_times):
         status=status, publisher=batchtask.publisher)
         task.save()
         if not task.mark:
-            mark = Mark(reel=reel, reeltext=task.reeltext,  publisher=batchtask.publisher, task=task)
+            mark = Mark(reel=reel, reeltext=task.reeltext, task=task)
             mark.save()
 
     # 标点审定任务只有一次
     if mark_verify_times:
         task = Task(batchtask=batchtask, typ=Task.TYPE_MARK_VERIFY, reel=reel,
-        reeltext=reelcorrecttext, result='[]', task_no=task_no,
+        reeltext=reelcorrecttext, result='[]',
         status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
         task.save()
         if not task.mark:
-            mark = Mark(reel=reel, reeltext=task.reeltext,  publisher=batchtask.publisher, task=task)
+            mark = Mark(reel=reel, reeltext=task.reeltext, task=task)
             mark.save()
 
 
@@ -485,6 +485,7 @@ def publish_correct_result(task):
         # 基础标点审定任务
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
 
+    return 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra
     batchtask = task.batchtask
@@ -651,29 +652,28 @@ def correct_update(task):
 
 def mark_submit(task):
     print('mark_submit')
-    generate_correct_result(task)
-    # 检查一组的几个文字校对任务是否都已完成
+    # 检查一组的几个格式标注任务是否都已完成
     mark_tasks = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_MARK).order_by('task_no')
     all_finished = all([_task.status == Task.STATUS_FINISHED for _task in mark_tasks])
     task_count = len(mark_tasks)
     # 如果都已完成
     if all_finished:
         if task_count == 1:
-            # 系统暂不支持单一校对，如果只有一个校对任务，不进行后续的任务任务。
+            # 系统暂不支持单一格式标注。
             pass
         elif task_count >= 2:
-            # 查到文字校对审定任务
+            # 查到格式标注审定任务
             mark_verify_task = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_MARK_VERIFY).first()
             if mark_verify_task is None:
                 return 
             if mark_verify_task.status > Task.STATUS_READY:
                 # 已被领取的任务，不再重新发布
                 return
-            # 比较一组的两个字校对任务的结果, 清理原有MarkUnit数据
+            # 比较一组的两个格式标注任务的结果, 清理原有MarkUnit数据
             main_mark = mark_verify_task.mark
             MarkUnit.objects.filter(mark=main_mark).delete()
 
-            # 文字校对审定任务设为待领取
+            # 格式标注审定任务设为待领取
             mark_verify_task.status = Task.STATUS_READY
             task_ids = mark_tasks.values_list('id', flat=True)
             
@@ -700,14 +700,58 @@ def mark_submit(task):
             MarkUnit.objects.bulk_create(base_units)
             mark_verify_task.save(update_fields=['status'])
 
+def mark_verify_submit(task):
+    print('mark_verify_submit')
+    if task.mark.publisher:
+        print('already submitted.')
+        return
+    task.mark.publisher = task.picker
+    task.mark.save(update_fields=['publisher'])
+    reel = task.reel
+    reel.mark_ready = True
+    reel.save(update_fields=['mark_ready'])
+    # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
+    lqsutra = reel.sutra.lqsutra
+    batchtask = task.batchtask
+    if not lqsutra:
+        print('no lqsutra')
+        logging.error('no lqsutra')
+        return None
+    judge_tasks = list(Task.objects.filter(batchtask=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE))
+    if len(judge_tasks) == 0:
+        print('no judge task')
+        return
+    base_sutra = judge_tasks[0].base_reel.sutra
+    judge_task_not_ready = (judge_tasks[0].status == Task.STATUS_NOT_READY)
+    if is_sutra_ready_for_judge(lqsutra):
+        if judge_task_not_ready: # 第一次创建校勘判取任务的数据
+            create_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
+            return
+        else: # 已经创建过校勘判取任务的数据
+            if all([t.status == Task.STATUS_READY for t in judge_tasks]): # 都还没被领取
+                # 尝试将校勘判取任务的状态改为STATUS_NOT_READY
+                count = Task.objects.filter(batchtask=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
+                status=Task.STATUS_READY).update(status=Task.STATUS_NOT_READY)
+                if count == len(judge_tasks):
+                    task_ids = [t.id for t in judge_tasks]
+                    DiffSegResult.objects.filter(task_id__in=task_ids).delete()
+                    ReelDiff.objects.filter(lqsutra=lqsutra).delete()
+                    create_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
+                    return
+                else: # 在上面代码运行时间内，有校勘判取任务被领取
+                    Task.objects.filter(batchtask=task.batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
+                    status=Task.STATUS_NOT_READY).update(status=Task.STATUS_READY)
+            # 已有校勘判取任务被领取，需要复制已有的判取结果
+            create_new_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
+
 def new_base_pos(pos, correctseg):
     if correctseg.tag in [CorrectSeg.TAG_DIFF, CorrectSeg.TAG_EQUAL]:
         pos += len(correctseg.text1)
     return pos
 
-def regenerate_correctseg(reel):
+def regenerate_correctseg(reel, initial_updated_pages):
     '''
-    由于卷中某些页有增加或更新等原因，需要重新生成此卷的文字校对任务的CorrectSeg数据
+    由于卷中某些页有增加或更新，需要重新生成此卷的文字校对任务的CorrectSeg数据
     '''
     print('regenerate_correctseg: ', reel.sutra.sid, reel.reel_no)
     if reel.sutra.sid.startswith('CB') or reel.sutra.sid.startswith('GL'): # 不对CBETA, GL生成任务
@@ -762,42 +806,42 @@ def regenerate_correctseg(reel):
                 correctseg.selected_text = None
             elif correctseg.tag == CorrectSeg.TAG_EQUAL:
                 correctseg.selected_text = correctseg.text1
-        # 将已做的结果复制到新生成的CorrectSeg中
-        i_old = 0
-        i = 0
-        length_old = len(correctsegs_old)
-        length = len(correctsegs)
-        pos_old = 0
-        pos = 0
-        while i_old < length_old and i < length:
-            correctseg_old = correctsegs_old[i_old]
-            correctseg = correctsegs[i]
-            if pos_old == pos:
-                if correctseg_old.tag == CorrectSeg.TAG_DIFF:
-                    if correctseg_old.text1 == correctseg.text1:
-                        correctseg.selected_text = correctseg_old.selected_text
-                elif correctseg_old.tag == CorrectSeg.TAG_EQUAL:
-                    if correctseg_old.text1 == correctseg.text1:
-                        correctseg.selected_text = correctseg_old.selected_text
-                pos_old = new_base_pos(pos_old, correctseg_old)
-                pos = new_base_pos(pos, correctseg)
-                i_old += 1
-                i += 1
-            elif pos_old < pos:
-                pos_old = new_base_pos(pos_old, correctseg_old)
-                i_old += 1
-            else:
-                pos = new_base_pos(pos, correctseg)
-                i += 1
-        CorrectSeg.objects.filter(task=task).delete()
-        for correctseg in correctsegs:
+        page_no = 0
+        seg_count = 0
+        updated_pages = []
+        if initial_updated_pages:
+            updated_pages = initial_updated_pages
+        else:
+            for correctseg in correctsegs_old:
+                if correctseg.page_no != page_no:
+                    if page_no != 0 and seg_count == 0:
+                        updated_pages.append(page_no)
+                    page_no = correctseg.page_no
+                    seg_count = 0
+                if correctseg.tag in [CorrectSeg.TAG_DIFF, CorrectSeg.TAG_EQUAL]:
+                    seg_count += 1
+            if seg_count == 0:
+                updated_pages.append(page_no)
+        print('updated_pages:', updated_pages)
+        correctsegs_new = []
+        for correctseg in correctsegs_old:
+            if correctseg.tag != CorrectSeg.TAG_P and correctseg.page_no in updated_pages:
+                continue
+            correctsegs_new.append(correctseg)
+            if correctseg.tag == CorrectSeg.TAG_P:
+                page_no = correctseg.page_no + 1
+                if page_no in updated_pages:
+                    for seg in correctsegs:
+                        if seg.page_no == page_no and seg.tag != CorrectSeg.TAG_P:
+                            correctsegs_new.append(seg)
+        for correctseg in correctsegs_new:
             correctseg.task = task
             correctseg.id = None
-        CorrectSeg.objects.bulk_create(correctsegs)
+        CorrectSeg.objects.filter(task=task).delete()
+        CorrectSeg.objects.bulk_create(correctsegs_new)
     Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT, picker=None).update(status=Task.STATUS_READY)
     Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT).exclude(picker=None).update(status=Task.STATUS_PROCESSING)
     print('regenerate_correctseg done:', reel.sutra.sid, reel.reel_no)
-
 
 def judge_submit(task):
     '''
@@ -1089,7 +1133,7 @@ def regenerate_correctseg_async(reel_id_lst_json):
     for reel_id in reel_id_lst:
         try:
             reel = Reel.objects.get(id=reel_id)
-            regenerate_correctseg(reel)
+            regenerate_correctseg(reel, [])
         except:
             pass
 

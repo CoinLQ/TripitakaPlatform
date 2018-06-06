@@ -54,6 +54,7 @@ class Volume(models.Model):
     class Meta:
         verbose_name = u"实体册"
         verbose_name_plural = u"实体册"
+        unique_together = (('tripitaka', 'vol_no'),)
 
     def __str__(self):
         return '%s: 第%s册' % (self.tripitaka.name, self.vol_no)
@@ -129,6 +130,7 @@ class Reel(models.Model):
     column_ready = models.BooleanField(verbose_name='切列图状态', default=False)
     ocr_ready = models.BooleanField(verbose_name='OCR数据状态', default=False)
     correct_ready = models.BooleanField(verbose_name='是否有文字校对经文', default=False)
+    mark_ready = models.BooleanField(verbose_name='是否完成格式标注', default=False)
     used_in_collation = models.BooleanField(verbose_name='是否用于校勘', default=True)
 
     class Meta:

@@ -112,13 +112,13 @@ b, i, u, small, big, strike {
                     <span @click="markedTextContent(1)" ><i></i>标题</span>
                     <span @click="markedTextContent(2)" ><i></i>作译者</span>
                     <span @click="markedTextContent(3)" ><i></i>序</span>
-                    <span @click="markedTextContent(4)" ><i></i>正文</span>
+                    <span @click="markedTextContent(4)" ><i></i>千字文</span>
                     <span @click="markedTextContent(5)" ><i></i>跋</span>
-                    <span @click="markedTextContent(6)" ><i></i>偈颂</span>
-                    <span @click="markedTextContent(7)" ><i></i>夹注小字</span>
-                    <span @click="markedTextContent(8)" ><i></i>梵文</span>
-                    <span @click="markedTextContent(9)" ><i></i>咒语</span>
-                    <span @click="markedTextContent(10)" ><i></i>行间小字</span>
+                    <span @click="markedTextContent(6)" ><i></i>行间小字</span>
+                    <span @click="markedTextContent(11)" ><i></i>偈颂</span>
+                    <span @click="markedTextContent(12)" ><i></i>夹注小字</span>
+                    <span @click="markedTextContent(13)" ><i></i>梵文</span>
+                    <span @click="markedTextContent(14)" ><i></i>咒语</span>
                 </div>
                 
             </div>
@@ -163,7 +163,10 @@ var app = new Vue({
         vm.marks = response.data.marks.sort(function(a,b) { return a.start - b.start});;
         vm.lf_postions = response.data.lf_postions;
         vm.image_urls = response.data.image_urls;
-        vm.loadImage();
+        try {
+            vm.loadImage();
+        } catch (err) {
+        }
       });
     },
     watch: {
@@ -352,20 +355,20 @@ var app = new Vue({
                     return '<font style="background-color: green">';
                 case 3: //序
                     return '<font style="background-color: blue">';
-                case 4: //正文
+                case 4: //千字文
                     return '<font style="background-color: grey">';
                 case 5: //跋
                     return '<font style="background-color: yellow">';
-                case 6: //偈颂
-                    return '<b style="color: grey">';
-                case 7: //夹注小字
-                    return '<i style="color: blue;">';
-                case 8: //梵文
-                    return '<u style="color: red;">';
-                case 9: //咒语
-                    return '<big style="color: green;">';
-                case 10: //行间小字
+                case 6: //行间小字
                     return '<small style="color: blue;">';
+                case 11: //偈颂
+                    return '<b style="color: grey">';
+                case 12: //夹注小字
+                    return '<i style="color: blue;">';
+                case 13: //梵文
+                    return '<u style="color: red;">';
+                case 14: //咒语
+                    return '<big style="color: green;">';
 
             }
         },
@@ -377,20 +380,21 @@ var app = new Vue({
                     return '</font>';
                 case 3: //序
                     return '</font>';
-                case 4: //正文
+                case 4: //千字文
                     return '</font>';
                 case 5: //跋
                     return '</font>';
-                case 6: //偈颂
-                    return '</b>';
-                case 7: //夹注小字
-                    return '</i>';
-                case 8: //梵文
-                    return '</u>';
-                case 9: //咒语
-                    return '</big>';
-                case 10: //行间小字
+                case 6: //行间小字
                     return '</small>';
+                case 11: //偈颂
+                    return '</b>';
+                case 12: //夹注小字
+                    return '</i>';
+                case 13: //梵文
+                    return '</u>';
+                case 14: //咒语
+                    return '</big>';
+
             }
         },
         userSelection() {
@@ -458,7 +462,7 @@ var app = new Vue({
                     }
                 })
             }
-            if (endPos ==0 && focusNode.className.includes('biaoji')) {
+            if (endPos ==0 && focusNode.className && focusNode.className.includes('biaoji')) {
                 endPos = contentPs.length - 1;
                 focusNode = contentPs[endPos].lastChild;
                 end = focusNode.textContent.length;

@@ -27,7 +27,7 @@ class MarkTaskDetail(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
     
     def get(self, request, task_id, format=None):
-        base_text = re.compile('[pb\n]').sub("\n", self.task.reeltext.text)
+        base_text = re.compile('[pb]').sub("\n", self.task.reeltext.text)
         p_pos = self.task.reeltext.text.split('p')
         lf_postions = []
         for _n in p_pos:
@@ -96,9 +96,9 @@ class FinishMarkTask(APIView):
         task.save(update_fields=['status', 'finished_at'])
 
         if task.typ == Task.TYPE_MARK:
-            task = Task.objects.get(pk=task_id)
-            mark_submit(task)
-            #mark_submit_async(task_id)
+            mark_submit_async(task_id)
+        else:
+            mark_verify_submit_async(task_id)
 
         return Response({'task_id': task_id, 'status': task.status})
        

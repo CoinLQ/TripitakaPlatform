@@ -122,17 +122,17 @@ def create_mark_tasks(batchtask, reel, mark_times, mark_verify_times):
         status=status, publisher=batchtask.publisher)
         task.save()
         if not task.mark:
-            mark = Mark(reel=reel, reeltext=task.reeltext,  publisher=batchtask.publisher, task=task)
+            mark = Mark(reel=reel, reeltext=task.reeltext, task=task)
             mark.save()
 
     # 标点审定任务只有一次
     if mark_verify_times:
         task = Task(batchtask=batchtask, typ=Task.TYPE_MARK_VERIFY, reel=reel,
-        reeltext=reelcorrecttext, result='[]', task_no=task_no,
+        reeltext=reelcorrecttext, result='[]',
         status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
         task.save()
         if not task.mark:
-            mark = Mark(reel=reel, reeltext=task.reeltext,  publisher=batchtask.publisher, task=task)
+            mark = Mark(reel=reel, reeltext=task.reeltext, task=task)
             mark.save()
 
 
@@ -484,6 +484,7 @@ def publish_correct_result(task):
         # 基础标点审定任务
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
 
+    return 
     # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
     lqsutra = sutra.lqsutra
     batchtask = task.batchtask
@@ -650,29 +651,28 @@ def correct_update(task):
 
 def mark_submit(task):
     print('mark_submit')
-    generate_correct_result(task)
-    # 检查一组的几个文字校对任务是否都已完成
+    # 检查一组的几个格式标注任务是否都已完成
     mark_tasks = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_MARK).order_by('task_no')
     all_finished = all([_task.status == Task.STATUS_FINISHED for _task in mark_tasks])
     task_count = len(mark_tasks)
     # 如果都已完成
     if all_finished:
         if task_count == 1:
-            # 系统暂不支持单一校对，如果只有一个校对任务，不进行后续的任务任务。
+            # 系统暂不支持单一格式标注。
             pass
         elif task_count >= 2:
-            # 查到文字校对审定任务
+            # 查到格式标注审定任务
             mark_verify_task = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_MARK_VERIFY).first()
             if mark_verify_task is None:
                 return 
             if mark_verify_task.status > Task.STATUS_READY:
                 # 已被领取的任务，不再重新发布
                 return
-            # 比较一组的两个字校对任务的结果, 清理原有MarkUnit数据
+            # 比较一组的两个格式标注任务的结果, 清理原有MarkUnit数据
             main_mark = mark_verify_task.mark
             MarkUnit.objects.filter(mark=main_mark).delete()
 
-            # 文字校对审定任务设为待领取
+            # 格式标注审定任务设为待领取
             mark_verify_task.status = Task.STATUS_READY
             task_ids = mark_tasks.values_list('id', flat=True)
             
@@ -698,6 +698,48 @@ def mark_submit(task):
             MarkUnit.objects.bulk_create(doubt_units)
             MarkUnit.objects.bulk_create(base_units)
             mark_verify_task.save(update_fields=['status'])
+
+def mark_verify_submit(task):
+    print('mark_verify_submit')
+    task.mark.publisher = task.picker
+    task.mark.save(update_fields=['publisher'])
+    reel = task.reel
+    reel.mark_ready = True
+    reel.save(update_fields=['mark_ready'])
+    # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
+    lqsutra = reel.sutra.lqsutra
+    batchtask = task.batchtask
+    if not lqsutra:
+        print('no lqsutra')
+        logging.error('no lqsutra')
+        return None
+    judge_tasks = list(Task.objects.filter(batchtask=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE))
+    if len(judge_tasks) == 0:
+        print('no judge task')
+        return
+    base_sutra = judge_tasks[0].base_reel.sutra
+    judge_task_not_ready = (judge_tasks[0].status == Task.STATUS_NOT_READY)
+    if is_sutra_ready_for_judge(lqsutra):
+        if judge_task_not_ready: # 第一次创建校勘判取任务的数据
+            create_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
+            return
+        else: # 已经创建过校勘判取任务的数据
+            if all([t.status == Task.STATUS_READY for t in judge_tasks]): # 都还没被领取
+                # 尝试将校勘判取任务的状态改为STATUS_NOT_READY
+                count = Task.objects.filter(batchtask=batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
+                status=Task.STATUS_READY).update(status=Task.STATUS_NOT_READY)
+                if count == len(judge_tasks):
+                    task_ids = [t.id for t in judge_tasks]
+                    DiffSegResult.objects.filter(task_id__in=task_ids).delete()
+                    ReelDiff.objects.filter(lqsutra=lqsutra).delete()
+                    create_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
+                    return
+                else: # 在上面代码运行时间内，有校勘判取任务被领取
+                    Task.objects.filter(batchtask=task.batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
+                    status=Task.STATUS_NOT_READY).update(status=Task.STATUS_READY)
+            # 已有校勘判取任务被领取，需要复制已有的判取结果
+            if text_changed:
+                create_new_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
 
 def new_base_pos(pos, correctseg):
     if correctseg.tag in [CorrectSeg.TAG_DIFF, CorrectSeg.TAG_EQUAL]:

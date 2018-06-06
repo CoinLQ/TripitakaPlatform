@@ -315,12 +315,29 @@ def get_multireeltext(sutra, variant_manager=None):
     for reel in queryset.order_by('reel_no'):
         if not reel.used_in_collation:
             continue
-        reelcorrecttext = ReelCorrectText.objects.filter(reel_id=reel.id).order_by('-id').first()
-        if reelcorrecttext:
-            body = reelcorrecttext.body
-            if variant_manager:
-                body = variant_manager.replace_variant(body)
-            multireeltext.add_reeltext(reel, body, reelcorrecttext.head)
+        mark = Mark.objects.filter(reel=reel).exclude(publisher=None).order_by('-id').first()
+        if mark is None:
+            continue
+        reelcorrecttext = mark.reeltext
+        reel_text = reelcorrecttext.text
+        if variant_manager:
+            reel_text = variant_manager.replace_variant(reel_text)
+        start = 0
+        end = 0
+        for markunit in MarkUnit.objects.filter(mark=mark).order_by('start'):
+            if not markunit.in_body():
+                end = markunit.start
+                if start < end and reel_text[start:end] not in ['p\n', 'b\n', '\n']:
+                    # print('markunit.start, markunit.end, ', markunit.start, markunit.end)
+                    # print('start, end, ', start, end)
+                    # print('head: ', reel_text[:start])
+                    # print('body: ', reel_text[start:end])
+                    multireeltext.add_reeltext(reel, reel_text[start:end], reel_text[:start])
+                start = markunit.end
+                end = markunit.end
+        end = len(reel_text)
+        if start < end and reel_text[start:end] not in ['p\n', 'b\n', '\n']:
+            multireeltext.add_reeltext(reel, reel_text[start:end], reel_text[:start])
     return multireeltext
 
 class ReelText(object):
@@ -564,6 +581,6 @@ def is_sutra_ready_for_judge(lqsutra):
     sutra_lst = list(lqsutra.sutra_set.all())
     for sutra in sutra_lst:
         for reel in sutra.reel_set.all():
-            if reel.ocr_ready and reel.used_in_collation and (not reel.correct_ready):
+            if reel.used_in_collation and (not reel.mark_ready):
                 return False
     return True

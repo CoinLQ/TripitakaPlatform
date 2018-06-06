@@ -701,6 +701,9 @@ def mark_submit(task):
 
 def mark_verify_submit(task):
     print('mark_verify_submit')
+    if task.mark.publisher:
+        print('already submitted.')
+        return
     task.mark.publisher = task.picker
     task.mark.save(update_fields=['publisher'])
     reel = task.reel
@@ -738,8 +741,7 @@ def mark_verify_submit(task):
                     Task.objects.filter(batchtask=task.batchtask, lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
                     status=Task.STATUS_NOT_READY).update(status=Task.STATUS_READY)
             # 已有校勘判取任务被领取，需要复制已有的判取结果
-            if text_changed:
-                create_new_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
+            create_new_data_for_judge_tasks(batchtask, lqsutra, base_sutra, lqsutra.total_reels)
 
 def new_base_pos(pos, correctseg):
     if correctseg.tag in [CorrectSeg.TAG_DIFF, CorrectSeg.TAG_EQUAL]:

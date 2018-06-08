@@ -424,7 +424,7 @@
             17
         ]
     }
-}
+},
 {
     "model": "jwt_auth.staff",
     "pk": 4,

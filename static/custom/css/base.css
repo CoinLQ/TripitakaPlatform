@@ -383,9 +383,6 @@ transform: translateX(10px);
 opacity: 0;
 }
 
-.cmd-block {
-}
-
 .content-container {
     margin-left: 0px;
     margin-right: 0px;
@@ -395,9 +392,8 @@ opacity: 0;
 }
 
 .current {
-    border: thin;
-    background-color: red;
-    color: white;
+    border: 2px solid red;
+    line-height: 40px;
 }
 
 .scale-op {

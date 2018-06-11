@@ -359,38 +359,36 @@ input[type="number"]{
     height: 30px;
     text-align: center;
     line-height: 26px;
-    border: 1px solid #ccc;
+    border: 1px solid #27a9e3;
     border-radius: 100%;
     font-size: 14px;
     cursor: pointer;
-}
-
-.pager span:first-child {
     border-color: #27a9e3;
     color: #27a9e3;
 }
 
+.pager span:first-child {
+    
+}
+
+#main {
+    overflow:hidden;
+}
+
+.el-tabs__header {
+    margin: 0;
+}
+
 .pager span:nth-child(2) {
-    height: 30px;
+    height: 32px;
     padding: 0 10px;
     width: auto;
     line-height: 30px;
     border-radius: 18px;
+    border-color: #777;
+    color: #777;
 }
 
-.btns span {
-    display: inline-block;
-    width: 68px;
-    height: 32px;
-    border-radius: 18px;
-    text-align: center;
-    line-height: 30px;
-    border: 1px solid #abafb2;
-    font-size: 16px;
-    cursor: pointer;
-    color: #2e363f;
-    position: relative;
-}
 
 .btns button {
     display: inline-block;
@@ -790,7 +788,7 @@ table {
 }
 
 .correct .left {
-    width: 42%;
+    width: 50%;
     border: 1px solid #ccc;
     border-radius: 5px;
     box-sizing: border-box;
@@ -809,7 +807,7 @@ table {
 }
 
 .correct .right {
-    width: 57%;
+    width: 49%;
     border: 1px solid #ccc;
     border-radius: 5px;
     box-sizing: border-box;
@@ -852,28 +850,133 @@ table {
     background: url(../imgs/icon16.png) no-repeat;
 }
 
-.correct .right .hd .btns span {
-    width: 86px;
+.correct .el-tabs--bottom .el-tabs__header.is-bottom {
+    margin-bottom: 0;
+    margin-top: 0px;
+}
+
+#pane-seg_check_tab, #pane-doubt_tab {
+    max-height: 350;
+    overflow-y: auto;
+}
+.doubt-table thead {
+    border-bottom: 2px solid lightgray;
+}
+.correct .el-tabs__content {
+    overflow: hidden;
+    position: relative;
+    border-top: 1px solid black;
+}
+
+.correct .right .hd span i {
+    top: 5px;
+    display: block;
+    position: relative;
+    background-position: center;
+    background-size: cover;
+    width: 20px;
+    height: 20px;
 }
 
 .correct .right .hd .btns {
     display: inline-block;
 }
 
-.correct .right .hd .btns .store {
-    margin-right: 0;
-}
-
-.correct .right .hd .help {
+.correct .right .hd .btns span {
     display: inline-block;
-    background: url(../imgs/icon17.png) no-repeat;
-    width: 28px;
-    height: 28px;
-    position: relative;
-    top: 8px;
+    width: auto;
+    border-radius: 18px;
+    text-align: center;
+    line-height: 30px;
+    border: 1px solid #fff;
+    font-size: 16px;
     cursor: pointer;
+    color: #2e363f;
+    position: relative;
 }
 
+.correct .right .hd span i.jtleft {
+    background-image: url(../imgs/correct/jtleft_normal.png);
+}
+
+.correct .right .hd span i.jtleft:hover {
+    background-image: url(../imgs/correct/jtleft_over.png);
+}
+
+.correct .right .hd span i.jtright {
+    background-image: url(../imgs/correct/jtright_normal.png);
+}
+
+.correct .right .hd span i.jtright:hover {
+    background-image: url(../imgs/correct/jtright_over.png);
+}
+
+.correct .right .hd span i.hh {
+    background-image: url(../imgs/correct/hh_normal.png);
+}
+
+.correct .right .hd span i.hh:hover {
+    border: 1px solid #fff;
+}
+.correct .right .hd span i.nohh {
+    background-image: url(../imgs/correct/nohh_normal.png);
+}
+
+.correct .right .hd span i.nohh:hover {
+    border: 1px solid #fff;
+}
+
+.correct .right .hd span i.kw {
+    background-image: url(../imgs/correct/kw_normal.png);
+}
+.correct .right .hd span i.kw:hover {
+    border: 1px solid #fff;
+}
+.correct .right .hd span i.nokw {
+    background-image: url(../imgs/correct/nokw_normal.png);
+}
+.correct .right .hd span i.nokw:hover {
+    border: 1px solid #fff;
+}
+
+.correct .right .hd span i.sc {
+    background-image: url(../imgs/correct/sc_normal.png);
+    width: 40px;
+    height: 20px;
+}
+.correct .right .hd span i.sc:hover {
+    background-image: url(../imgs/correct/sc_over.png);
+}
+.correct .right .hd span i.cy {
+    background-image: url(../imgs/correct/cy_normal.png);
+}
+.correct .right .hd span i.cy:hover {
+    background-image: url(../imgs/correct/cy_over.png);
+}
+.correct .right .hd span i.jc {
+    background-image: url(../imgs/correct/jc_normal.png);
+}
+.correct .right .hd span i.jc:hover {
+    background-image: url(../imgs/correct/jc_over.png);
+}
+.correct .right .hd span i.ok {
+    background-image: url(../imgs/correct/ok_normal.png);
+}
+.correct .right .hd span i.ok:hover {
+    background-image: url(../imgs/correct/ok_over.png);
+}
+.correct .right .hd span i.help {
+    background-image: url(../imgs/correct/help_normal.png);
+}
+.correct .right .hd span i.help:hover {
+    background-image: url(../imgs/correct/help_over.png);
+}
+.correct .right .hd span i.tui {
+    background-image: url(../imgs/correct/tui_normal.png);
+}
+.correct .right .hd span i.tui:hover {
+    background-image: url(../imgs/correct/tui_over.png);
+}
 .correct .right .diff-text-pane {
     border-bottom: 1px solid #ccc;
 }
@@ -893,8 +996,7 @@ table {
     border-bottom: 1px dashed #ccc;
     font-size: 24px;
     padding-bottom: 2px;
-    margin-bottom: 10px;
-    line-height: 30px;
+    line-height: 35px;
 }
 
 .correct .correct-dialog {
@@ -916,6 +1018,7 @@ table {
     width: 72px;
     text-align: right;
     margin-right: 5px;
+    font-weight: normal;
 }
 
 .correct .correct-dialog .item dd {
@@ -940,6 +1043,7 @@ table {
     line-height: 36px;
     background: #f5f5f5;
     cursor: pointer;
+    font-weight: 700;
 }
 
 .correct .right .doubt-lists {
@@ -992,4 +1096,36 @@ table {
 .doubt-table td em {
     color: #27a9e3;
     cursor: pointer;
+}
+
+
+#hintbox{
+    display:none;
+    position: absolute;
+    font-size: 12 px;
+    background-color: #fff;
+    color: #ccc;
+    border: 1px solid #ccc;
+    padding: 0px 10px;
+    border-radius:5px;
+    line-height: 28px;
+    width: 80px;
+}   
+
+#hintbox:before {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    content: " ";
+    -webkit-transform: rotate(135deg);
+    -ms-transform: rotate(135deg);
+    transform: rotate(225deg);
+    border: 1px solid transparent;
+    background-color: #fff;
+    top: -6px;
+    left: 50%;
+    margin-left: -6px;
+    border-top: none;
+    border-left: none;
+    box-shadow: 1px 1px 1px 0 rgba(0, 0, 0, .3);
 }

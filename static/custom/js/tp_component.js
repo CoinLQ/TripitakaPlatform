@@ -14,10 +14,11 @@ Vue.component('doubt-list', {
     <td>{{item.id}}</td>
     <td>{{item.doubt_text}}</td>
     <td>{{item.doubt_comment}}</td>
-    <td><em  v-if="task_typ!=11" @click.native.prevent="deleteRow(index, doubts)">移除</em>
-    <em v-else v-show="!scope.row.processed" @click.native.prevent="processRow(index, doubts)">完成处理</em></td>
+    <td><em v-if="task_typ!=11" @click="deleteRow(index, doubts)">移除</em>
+    <em v-else v-show="!scope.row.processed" @click="processRow(index, doubts)">完成处理</em></td>
   </tr>
 </tbody>
+</table>
 `,
   data() {
     return {}

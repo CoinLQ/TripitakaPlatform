@@ -380,15 +380,14 @@
       <el-col :span="6">
         <div class="tpd-left-content">
           <div class="tpd-left-input">
-            <div class="input-group">
-              <el-input placeholder="请输入经名" v-model="searchword" class="input-with-select">
-                <el-select v-model="selectTripi" slot="prepend" placeholder="藏经名称">
-                  <el-option v-for="item in tripitaka_table" :label="item.name" :value="item.name"></el-option>
-                </el-select>
-                <el-button slot="append" icon="el-icon-search"></el-button>
-              </el-input>
+            <div style="color:black;font-size: 20px" class="input-group" >
+              <b>${tripitaka_title}</b>
             </div>
           </div>
+          <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+            <el-menu-item index="1">卷</el-menu-item>
+            <el-menu-item index="2">册</el-menu-item>
+          </el-menu>
           <div class="tpd-left-main">
             <div class="sutra-tree tpd-tree" id="sutra-tree">
               <el-tree :data="sutra_list" :props="tree_props" :default-expanded-keys='expandlist' node-key="id"
@@ -505,7 +504,7 @@
         <!-- 反馈 @贤抚-->
       </el-col>
     </el-row>
-
+    
   </div>
 
 {% endblock %}
@@ -516,12 +515,14 @@
       delimiters: ['${', '}'],
       data: {
         selectTripi: '',
+        activeIndex: '1',
+        select_type:1,
         reel_page_list: [],
         imageURL: '',
         sutra_text: '',
         sutra_name: '',
         sutra_text_list: [''],
-
+        tripitaka_title:'大藏经',
         sutra_list: [],
         tree_props: {
           children: 'reel_set',
@@ -598,6 +599,14 @@
         selectTripi: function (val, oldValue) {
           this.handleCommand(val);
         },
+        select_type: function (val, oldValue) {
+          console.log(val);
+          if (val == 1){
+            this.fetchSutraList();
+          }else if (val == 2){
+            this.fetchSutraList();
+          }
+        },
         searchword: function (value, oldValue) {
           if (oldValue != value) {
             this.sutralistpage = 1;
@@ -617,23 +626,13 @@
         }
       },
       created: function () {
+        
         var vm = this;
-        //获得藏 列表
-        axios.get('/api/tripitaka/').then(function (response) {
-          vm.tripitaka_table = response.data.results;
-          if (vm.tripitaka_table.length > 0) {
-            vm.cur_tripitaka = vm.tripitaka_table[0];
-            //vm.tripitaka_first=vm.tripitaka_table[0]['name'];
-            //vm.tripitaka_first_code=vm.tripitaka_table[0]['code'];
-            // for (var i=0;i<vm.tripitaka_table.length;i++)
-            //   vm.tripitaka_list.push(vm.tripitaka_table[i]['name']);
-          }
-        });
-
-        setTimeout(function () {
-          vm.fetchSutraList();
-        }, 500);
-
+        var code = window.sessionStorage.getItem('code');
+        var name = window.sessionStorage.getItem('name');
+        vm.tripitaka_title = name;
+        vm.cur_tripitaka = {'code':code,'name':name};
+        vm.fetchSutraList();
       },
 
       methods: {
@@ -648,6 +647,10 @@
 
           this.fetchSutraList();
         },
+        handleSelect(key, keyPath) {
+          // console.log(key, keyPath);
+          this.select_type = key;
+        },
         switchchange (val) {
           var vm = this;
           console.log(vm.showCutData);
@@ -656,42 +659,74 @@
         fetchSutraList: function () {
           var vm = this;
           var url = '/api/sutra/?page=' + this.sutralistpage;
-          if (this.searchword.length > 0) {
-            url += '&search=' + this.searchword;
-          }
-          //下面注释的不要删除，现在测试数据少，注释为了不对藏过滤。真正用要去掉注释的
-          if (vm.cur_tripitaka) {
-            url += '&tcode=' + vm.cur_tripitaka.code;
-          }
-          axios.get(url).then(function (response) {
-            //console.log("sutracount:",response.data.count);
-            vm.sutra_list = response.data.results;
-            vm.sutra_page_count = Math.ceil(response.data.count / 30);//这里的三
-            sutracount = vm.sutra_list.length;
-            vm.volume_count = 1;
-            vm.curvolume = 65535;
-            vm.volumepage_count = 1;
-            vm.curvolumepage = 65535;
-            for (var i = 0; i < sutracount; i++) {
-              reelcount = vm.sutra_list[i].reel_set.length;
-              if (vm.volume_count < vm.sutra_list[i].reel_set[reelcount - 1].end_vol)
-                vm.volume_count = vm.sutra_list[i].reel_set[reelcount - 1].end_vol;
-              if (vm.curvolume > vm.sutra_list[i].reel_set[0].start_vol && vm.sutra_list[i].reel_set[0].start_vol > 0)
-                vm.curvolume = vm.sutra_list[i].reel_set[0].start_vol;
-              if (vm.volumepage_count < vm.sutra_list[i].reel_set[reelcount - 1].end_vol_page)
-                vm.volumepage_count = vm.sutra_list[i].reel_set[reelcount - 1].end_vol_page;
-              if (vm.curvolumepage > vm.sutra_list[i].reel_set[0].start_vol_page && vm.sutra_list[i].reel_set[0].start_vol_page > 0)
-                vm.curvolumepage = vm.sutra_list[i].reel_set[0].start_vol_page;
+          if (vm.select_type == 1){
+            if (this.searchword.length > 0) {
+              url += '&search=' + this.searchword;
             }
-            vm.volume_min = vm.curvolume;
-            vm.volumepage_min = vm.curvolumepage;
-          });
+            //下面注释的不要删除，现在测试数据少，注释为了不对藏过滤。真正用要去掉注释的
+            if (vm.cur_tripitaka) {
+              url += '&tcode=' + vm.cur_tripitaka.code;
+            }
+            axios.get(url).then(function (response) {
+              //console.log("sutracount:",response.data.count);
+              vm.sutra_list = response.data.results;
+              vm.sutra_page_count = Math.ceil(response.data.count / 30);//这里的三
+              sutracount = vm.sutra_list.length;
+              vm.volume_count = 1;fetchSutraList
+              vm.curvolume = 65535;
+              vm.volumepage_count = 1;
+              vm.curvolumepage = 65535;
+              for (var i = 0; i < sutracount; i++) {
+                reelcount = vm.sutra_list[i].reel_set.length;
+                if (vm.volume_count < vm.sutra_list[i].reel_set[reelcount - 1].end_vol)
+                  vm.volume_count = vm.sutra_list[i].reel_set[reelcount - 1].end_vol;
+                if (vm.curvolume > vm.sutra_list[i].reel_set[0].start_vol && vm.sutra_list[i].reel_set[0].start_vol > 0)
+                  vm.curvolume = vm.sutra_list[i].reel_set[0].start_vol;
+                if (vm.volumepage_count < vm.sutra_list[i].reel_set[reelcount - 1].end_vol_page)
+                  vm.volumepage_count = vm.sutra_list[i].reel_set[reelcount - 1].end_vol_page;
+                if (vm.curvolumepage > vm.sutra_list[i].reel_set[0].start_vol_page && vm.sutra_list[i].reel_set[0].start_vol_page > 0)
+                  vm.curvolumepage = vm.sutra_list[i].reel_set[0].start_vol_page;
+              }
+              vm.volume_min = vm.curvolume;
+              vm.volumepage_min = vm.curvolumepage;
+            });
+          }else if (vm.select_type == 2){
+            //根据藏获得册信息
+            url = '/api/volume/?page=' + this.sutralistpage;
+            if (this.searchword.length > 0) {
+              url += '&search=' + this.searchword;
+            }
+            //下面注释的不要删除，现在测试数据少，注释为了不对藏过滤。真正用要去掉注释的
+            if (vm.cur_tripitaka) {
+              url += '&tcode=' + vm.cur_tripitaka.code;
+            }
+            axios.get(url).then(function(response) {
+              //vm.volume_count = response.data.results.length;
+              vm.sutra_list = response.data.results;
+              vm.sutra_page_count = Math.ceil(response.data.count / 30);//这里的三
+              sutracount = vm.sutra_list.length;
+              vm.volume_count = 1;fetchSutraList
+              vm.curvolume = 65535;
+              vm.volumepage_count = 1;
+              vm.curvolumepage = 65535;
+              for (var i = 0; i < sutracount; i++) {
+                reelcount = vm.sutra_list[i].reel_set.length;
+                if (vm.volume_count < vm.sutra_list[i].reel_set[reelcount - 1].end_vol)
+                  vm.volume_count = vm.sutra_list[i].reel_set[reelcount - 1].end_vol;
+                if (vm.curvolume > vm.sutra_list[i].reel_set[0].start_vol && vm.sutra_list[i].reel_set[0].start_vol > 0)
+                  vm.curvolume = vm.sutra_list[i].reel_set[0].start_vol;
+                if (vm.volumepage_count < vm.sutra_list[i].reel_set[reelcount - 1].end_vol_page)
+                  vm.volumepage_count = vm.sutra_list[i].reel_set[reelcount - 1].end_vol_page;
+                if (vm.curvolumepage > vm.sutra_list[i].reel_set[0].start_vol_page && vm.sutra_list[i].reel_set[0].start_vol_page > 0)
+                  vm.curvolumepage = vm.sutra_list[i].reel_set[0].start_vol_page;
+              }
+              vm.volume_min = vm.curvolume;
+              vm.volumepage_min = vm.curvolumepage;
+            });
+          }
+          
 
-          //根据藏获得册信息
-          // url = '/api/volume/';
-          // axios.get(url).then(function(response) {
-          //   //vm.volume_count = response.data.results.length;
-          // });
+          
         },
         myinput: function () {
           this.curreelpage = parseInt(this.curreelpage);
@@ -801,9 +836,14 @@
           if (this.curReelNode) {
             //a=this.curReelNode.__vue__.getNodeKey();
             console.log('node key', this.curReelNode, this.expandlist);
-            if (this.curReelNode.parentNode && this.curReelNode.parentNode.parentNode)
+            try {
+              if (this.curReelNode.parentNode && this.curReelNode.parentNode.parentNode)
               console.log(this.curReelNode.parentNode.parentNode.__vue__, this.curReelNode.__vue__.expanded);
-            this.curReelNode.parentNode.parentNode.__vue__.expanded = true;
+                this.curReelNode.parentNode.parentNode.__vue__.expanded = true;
+            } catch (error) {
+              console.log('node error:'+error);
+            }
+            
           }
           if (s != null) {
             for (var i = 0; i < s.$parent.$el.childNodes[1].childNodes.length; i++) {
@@ -819,6 +859,8 @@
           }//if
 
           var vm = this;
+          console.log('++++++++++++++++++++'+data.reel_no);
+          console.log('-----------------'+JSON.stringify(data));
           axios.get('/api/sutra_text/' + data.reel_no + '/').then(function (response) {
             vm.sutra_text = response.data.sutra;
             vm.reel_page_list = response.data.pageurls.split('|');

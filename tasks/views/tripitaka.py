@@ -5,3 +5,6 @@ def index(request):
 
 def correct_feedback(request, pk):
     return render(request, 'tasks/correct_feedback.html', {'correct_fb_id': pk})
+
+def ebook(request):
+    return render(request, 'tasks/ebook.html')

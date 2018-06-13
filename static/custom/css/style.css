@@ -785,6 +785,7 @@ table {
 
 .correct-in {
     margin: 15px;
+    width: 100%;
 }
 
 .correct .left {
@@ -807,7 +808,7 @@ table {
 }
 
 .correct .right {
-    width: 49%;
+    width: 48%;
     border: 1px solid #ccc;
     border-radius: 5px;
     box-sizing: border-box;
@@ -865,7 +866,7 @@ table {
 .correct .el-tabs__content {
     overflow: hidden;
     position: relative;
-    border-top: 1px solid black;
+    border-top: 1px solid lightgray;
 }
 
 .correct .right .hd span i {

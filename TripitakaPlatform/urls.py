@@ -24,18 +24,18 @@ from tasks.views.mark import *
 from tasks.views import lqtripitaka
 from tasks.views import tripitaka
 from tools.views import *
-from tdata.views import email_vericode
+# from tdata.views import email_vericode
 import xadmin
 import tdata
- 
+
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('backend/', admin.site.urls),
     path('manage/', xadmin.site.urls),
     url(r'^auth/', include("jwt_auth.urls", namespace="api-auth")),
     url(r'^api/', include('api.urls')),
-    url(r'^auth/api-vericode/', email_vericode),
-    url(r'^activate/(?P<token>[0-9a-zA-Z@.*$]+)/$', tdata.views.active_user, name='index'),
+   # url(r'^auth/api-vericode/', email_vericode),
+   #  url(r'^activate/(?P<token>[0-9a-zA-Z@.*$]+)/$', tdata.views.active_user, name='index'),
     path('correct/<int:task_id>/', do_correct_task, name='do_correct_task'),
     path('verify_correct/<int:task_id>/', do_correct_task, name='do_correct_verify_task'),
     path('correct_difficult/<int:task_id>/', do_correct_task, name='do_correct_task'),
@@ -48,7 +48,8 @@ urlpatterns = [
     path('lqpunct/<int:task_id>/', do_punct_task, name='do_lqpunct_task'),
     path('verify_lqpunct/<int:task_id>/', do_punct_task, name='do_lqpunct_verify_task'),
     path('lqtripitaka/', lqtripitaka.index, name='lqtripitaka_index'),
-    path('tripitaka/', tripitaka.index, name='tripitaka_index'),
+    path('tripitaka/<tcode>/', tripitaka.index, name='tripitaka_index'),
+    path('tripitakareel/<int:reelid>/', tripitaka.reel, name='tripitaka_reel'),
     path('ebook/', tripitaka.ebook, name='tripitaka_ebook'),
     path('do_generate_task/', lqtripitaka.do_generate_task, name='lqtripitaka_index'),
     path('mark/<int:task_id>/', do_mark_task, name='do_mark_task'),

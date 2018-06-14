@@ -35,9 +35,9 @@
             <div class="hd clearfix cmd-block">
               <div class="left-tool fl">
                 <div class="btns">
-                  <span @click="nextPopup({shiftKey: true})" ><i class="jtleft"></i></span>
+                  <span @click="nextPopup({shiftKey: true})" title="上一条异文"><i class="jtleft"></i></span>
                   <span><em   title="异文">{{progress_text}}</em></span>
-                  <span @click="nextPopup({})"><i class="jtright"></i></span>
+                  <span @click="nextPopup({})" title="下一条异文"><i class="jtright"></i></span>
                   <span @click="display_newline =!display_newline"><i title="换行符" :class="hh_class"></i></span>
                   <span @click="display_space =!display_space"><i  title="空位符" :class="kw_class"></i></span>
                  
@@ -49,7 +49,7 @@
                     <span @click="RemoveLine"><i  :title="remove_btn_text" class="sc"></i></span>
                     <span @click="openDoubtForm"><i  title="存疑" class="cy"></i></span>
                     <span :disabled="premitSubmit" @click="checkLinefeed"><i  title="检查" class="jc"></i></span>
-                    <span @click="returnTask"><i  title="退回" class="tui"></i></span>
+                    <span @click="returnTask"><i  title="退回任务" class="tui"></i></span>
                     <span :disabled="premitSubmit" @click="finishTask"><i  title="完成" class="ok"></i></span>
                     <span ><i title="帮助" class="help"></i></span>
                 </div>
@@ -84,23 +84,21 @@
               <el-tabs v-model="activeTabName" tab-position="bottom" @tab-click="handleTagClick">
                   <el-tab-pane name="doubt_tab">
                     <template slot="label">
-                    <div class="hd" > 存疑列表
+                    <div class="hd"> 存疑列表
                     <el-button type="danger" size="mini" round>{{doubt_count}}</el-button>
                     </div>
                     </template>
                     <div is="doubt-list" v-show="display_doubt && doubts.length !=0" :doubts.sync="doubts" :task_id="sharedata.task_id" :task_typ="sharedata.task_typ" :current_doubt.sync="current_doubt"></div>
                   </el-tab-pane>
                   <el-tab-pane name="seg_check_tab" >
-                    <div slot="label" class="hd" >需要检查行数的栏</div>
+                    <template slot="label">
+                        <div class="hd"> 总行数有疑的栏位
+                            <el-button type="danger" size="mini" round>{{need_check_all_segs.length}}</el-button>
+                        </div>
+                    </template>
                     <table v-show="display_check" class="doubt-table">
-                        <thead v-show="segs_need_fix_linefeed.length !=0 || segs_need_check.length != 0">
-                          <th>待检查文本内容</th>
-                        </thead>
                         <tbody>
-                            <tr v-for="seg in segs_need_fix_linefeed">
-                                <td :seg="seg" @click="selectSeg(seg)">{{ seg.selected_text }}</td>
-                            </tr>
-                            <tr v-for="seg in segs_need_check">
+                            <tr v-for="seg in need_check_all_segs">
                                 <td :seg="seg" @click="selectSeg(seg)">{{ seg.selected_text }}</td>
                             </tr>
                         </tbody>
@@ -203,6 +201,9 @@
         if (this.sharedata.task_typ == 2) { return "二校" }
         return "OCR"
       },
+      need_check_all_segs: function() {
+        return this.segs_need_check + this.segs_need_fix_linefeed
+      },
       progress_text: function() {
         let done_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
         let tag2_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.tag == 2; });
@@ -276,13 +277,14 @@
       document.addEventListener('keydown', this.handleDocumentTab);
       document.addEventListener('compositionstart', this.handleComposition);
       document.addEventListener('compositionend', this.handleComposition);
-      this.handleChange();
+      window.addEventListener('resize', this.handleChange);
     },
     destroyed: function(){
       document.removeEventListener('click', this.handleDocumentClick);
       document.removeEventListener('keydown', this.handleDocumentTab);
       document.removeEventListener('compositionstart', this.handleComposition);
       document.removeEventListener('compositionend', this.handleComposition);
+      window.removeEventListener('resize', this.handleChange);
     },
     methods: {
       handleTagClick: function(tab, event){
@@ -403,10 +405,6 @@
         range = userSelection.getRangeAt(0),
         orig_seg = this.current_seg;
         
-        // console.log(range.startOffset);
-        // console.log(range.startContainer);
-        // console.log(range.cloneContents().textContent);
-        
         if (seg) {
           this.page_no = seg.page_no;
           this.line_no = seg.line_no;
@@ -488,6 +486,9 @@
           evt.preventDefault()
         }
         let empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
+        if (empty_segs.length == 0 ){
+            empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.tag == 2; });
+        }
         let segid = this.current_seg.id || this.segid;
         if (evt.shiftKey){
           seg = _.findLast(empty_segs, function(o) { return o.id < segid; });

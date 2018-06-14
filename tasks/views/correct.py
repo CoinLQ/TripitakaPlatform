@@ -21,7 +21,7 @@ def do_correct_task(request, task_id):
         page = int(request.GET.get('page', 0))
     except:
         page = 0
-    return render(request, 'tasks/do_do_correct_task.html', {'task': task, 'page': page})
+    return render(request, 'tasks/do_correct_task.html', {'task': task, 'page': page})
 
 def process_abnormal_line_count(request, task_id):
     return redirect('/')

@@ -10,12 +10,12 @@ Vue.component('doubt-list', {
   <th>操作</th>
 </thead>
 <tbody>
-  <tr v-for="(item, index) in doubts">
+  <tr v-for="(item, index) in doubts" @click="handleCurrentChange(item)" v-show="!item.processed">
     <td>{{item.id}}</td>
     <td>{{item.doubt_text}}</td>
     <td>{{item.doubt_comment}}</td>
-    <td><em v-if="task_typ!=11" @click="deleteRow(index, doubts)">移除</em>
-    <em v-else v-show="!scope.row.processed" @click="processRow(index, doubts)">完成处理</em></td>
+    <td><em v-if="task_typ!=2" @click="deleteRow(index, doubts)">移除</em>
+    <em v-else v-show="!item.processed" @click="processRow(index, doubts)">完成处理</em></td>
   </tr>
 </tbody>
 </table>

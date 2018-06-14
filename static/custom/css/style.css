@@ -358,18 +358,51 @@ input[type="number"]{
     width: 30px;
     height: 30px;
     text-align: center;
-    line-height: 26px;
+    line-height: 30px;
     border: 1px solid #27a9e3;
-    border-radius: 100%;
     font-size: 14px;
     cursor: pointer;
     border-color: #27a9e3;
     color: #27a9e3;
+
 }
 
-.pager span:first-child {
-    
+.correct-in .pager span {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    line-height: 30px;
+    border: 1px solid #27a9e3;
+    font-size: 14px;
+    cursor: pointer;
+    border-color: #777;
+    color: #777;
+    margin-left: -6px;
 }
+
+    
+.correct-in .pager span:first-child {
+    border-bottom-left-radius: 100%;
+    border-top-left-radius: 100%; 
+}
+
+.correct-in .pager span:first-child:hover {
+    border-color: #27a9e3;
+    color: #27a9e3;
+}
+
+.correct-in .pager span:nth-child(3) {
+    border-bottom-right-radius: 100%;
+    border-top-right-radius: 100%; 
+}
+
+.correct-in .pager span:nth-child(3):hover {
+    border-color: #27a9e3;
+    color: #27a9e3;
+}
+
+
 
 #main {
     overflow:hidden;
@@ -380,15 +413,12 @@ input[type="number"]{
 }
 
 .pager span:nth-child(2) {
-    height: 32px;
+    height: 30px;
     padding: 0 10px;
     width: auto;
     line-height: 30px;
-    border-radius: 18px;
-    border-color: #777;
-    color: #777;
+    border-left: none;
 }
-
 
 .btns button {
     display: inline-block;
@@ -785,7 +815,7 @@ table {
 
 .correct-in {
     margin: 15px;
-    width: 100%;
+    width: calc(100% - 30px);
 }
 
 .correct .left {
@@ -870,13 +900,13 @@ table {
 }
 
 .correct .right .hd span i {
-    top: 5px;
+    top: 8px;
     display: block;
     position: relative;
     background-position: center;
     background-size: cover;
-    width: 20px;
-    height: 20px;
+    width: 25px;
+    height: 25px;
 }
 
 .correct .right .hd .btns {
@@ -1020,6 +1050,7 @@ table {
     text-align: right;
     margin-right: 5px;
     font-weight: normal;
+    font-size: 14px;
 }
 
 .correct .correct-dialog .item dd {
@@ -1040,11 +1071,12 @@ table {
     display: inline-block;
     width: 250px;
     padding: 0 5px;
-    height: 36px;
+    min-height: 36px;
     line-height: 36px;
     background: #f5f5f5;
     cursor: pointer;
-    font-weight: 700;
+    font-weight: 100;
+    white-space: normal;
 }
 
 .correct .right .doubt-lists {
@@ -1078,7 +1110,7 @@ table {
     background-color: #fff;
     text-align: center;
     font-size: 16px;
-    line-height: 48px;
+    line-height: 40px;
     color: #333;
     font-weight: normal;
     border-bottom: 1px solid #ededed;
@@ -1092,6 +1124,10 @@ table {
     font-size: 16px;
     padding: 5px 3px;
     font-size: 14px;
+}
+
+.doubt-table td:nth-child(2) {
+    cursor: pointer;
 }
 
 .doubt-table td em {

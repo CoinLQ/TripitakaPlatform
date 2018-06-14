@@ -33,8 +33,8 @@ class BatchTask(models.Model):
     description = models.TextField('描述', blank=True)
 
     class Meta:
-        verbose_name = '批次任务'
-        verbose_name_plural = '批次任务'
+        verbose_name = '任务批次'
+        verbose_name_plural = '任务批次'
 
     @property
     def batch_no(self):
@@ -210,6 +210,66 @@ class Task(models.Model):
             ratio = '%.1f%%' % (selected * 100 / total)
             return ratio
     realtime_progress.fget.short_description = '进度'
+
+class CorrectTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '文字校对'
+        verbose_name_plural = '文字校对'
+
+class CorrectVerifyTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '文字校对审定'
+        verbose_name_plural = '文字校对审定'
+
+class CorrectDifficultTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '文字校对难字'
+        verbose_name_plural = '文字校对难字'
+
+class JudgeTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '校勘判取'
+        verbose_name_plural = '校勘判取'
+
+class JudgeVerifyTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '校勘判取审定'
+        verbose_name_plural = '校勘判取审定'
+
+class JudgeDifficultTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '校勘判取难字'
+        verbose_name_plural = '校勘判取难字'
+
+class LQPunctTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '定本标点'
+        verbose_name_plural = '定本标点'
+
+class LQPunctVerifyTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '定本标点审定'
+        verbose_name_plural = '定本标点审定'
+
+class MarkTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '格式标注'
+        verbose_name_plural = '格式标注'
+
+class MarkVerifyTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '格式标注审定'
+        verbose_name_plural = '格式标注审定'
 
 class CorrectSeg(models.Model):
     TAG_EQUAL = 1
@@ -567,7 +627,6 @@ class CorrectFeedback(FeedbackBase):
     @property
     def sutra_name(self):
         return self.correct_text.reel.sutra.name
-
     sutra_name.fget.short_description = '经名'
 
     @property
@@ -575,7 +634,6 @@ class CorrectFeedback(FeedbackBase):
         reel = self.correct_text.reel
         if reel:
             return reel.reel_no
-
     reel_no.fget.short_description = '第几卷'
 
 

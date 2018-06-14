@@ -388,7 +388,7 @@ def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
     print('wget ', cut_url)
     try:
         with urllib.request.urlopen(cut_url) as f:
-            print('fetch done: %s, page: %s' % (reel, vol_page))
+            print('fetch done: %s, %d, page: %s' % (reel.sutra.sid, reel.reel_no, vol_page))
             data = f.read()
     except:
        print('no data: ', cut_url)

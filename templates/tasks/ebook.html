@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}藏经版本浏览{% endblock %}
+{% block content %}
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <title>Insert title here</title>
+
+    <style>
+      
+    </style>
+  </head>
+
+  <div id="volume">
+    <el-row>
+        <el-col :span="32">
+            <div class="tpd-left-content">
+              <!-- <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+                <el-menu-item index="1">大藏经</el-menu-item>
+              </el-menu> -->
+              <div class="blank-row">
+                <tr>
+                  <br>
+                </tr>
+              </div>
+              <div v-for="item in items" class="col-sm-2 col-md-2 col-lg-2 ">
+                  <div class="thumbnail">
+                    <a href="/tripitaka" :title="item.name">
+                      <img class="lazy" @click="storeTriValue(item.code,item.name)" :src="item.image" width="300" height="300" data-src="item.image" alt="LQS Sutra">
+
+                    </a>
+                    <div class="caption" align="center">
+                      <h3>
+                          <span :title="item.name"  @click="storeTriValue(item.code,item.name)"><a href="/tripitaka">${ item.name }<br></a></span>
+                      </h3>
+                    </div>
+                  </div>
+              </div>
+            </div>
+        </el-col>
+        
+    </el-row>
+  </div>
+
+  <footer width="100%" align="center">
+        <div width="100%" align="center">
+          <p>
+          大藏经版本: 2018-06-06
+          </p>
+        </div>
+  </footer>
+  
+{% endblock %}
+{% block foot_script %}
+  <script>
+    
+    var app = new Vue({
+      el: '#volume',
+      delimiters: ['${', '}'],
+      data: {
+        activeIndex: '1',
+        select_type: 1,
+        tripitaka_table: [],
+        items: [{image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""}, 
+                {image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""}, 
+                {image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""},
+                {image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""},
+                {image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""}, 
+                {image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""},
+                {image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""},
+                ],
+      }, 
+      watch:{
+        select_type: function (val, oldValue) {
+          console.log(val);
+          if (val == 1){
+            this.items= [{image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""}, 
+                        {image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""}, 
+                        {image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""},
+                        {image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""},
+                        {image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""}, 
+                        {image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""},
+                        {image:"{{ static('custom/imgs/HN_face.jpg') }}",name:"",code:""},
+                        ]
+          }else if (val == 2){
+            this.items = [{image:'https://static.bootcss.com/www/assets/img/codeguide.png?1507601668481'},
+                          {image:'https://static.bootcss.com/www/assets/img/codeguide.png?1507601668481'},
+                          {image:'https://static.bootcss.com/www/assets/img/codeguide.png?1507601668481'},
+                          {image:'https://static.bootcss.com/www/assets/img/codeguide.png?1507601668481'},
+                          {image:'https://static.bootcss.com/www/assets/img/codeguide.png?1507601668481'},
+                          {image:'https://static.bootcss.com/www/assets/img/codeguide.png?1507601668481'},
+                          {image:'https://static.bootcss.com/www/assets/img/codeguide.png?1507601668481'},
+                          ]
+          }
+        },
+      },   
+      created: function () {
+        var vm = this;
+        //获得藏 列表
+        axios.get('/api/tripitaka/').then(function (response) {
+          vm.tripitaka_table = response.data.results;
+          if (vm.tripitaka_table.length > 0) {
+            vm.items = [];
+            for (table in vm.tripitaka_table){
+              var name = vm.tripitaka_table[table]['name'];
+              var code = vm.tripitaka_table[table]['code'];
+              var image = "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/"+code+"_face.jpg";
+              var images_null = ['GL','JX-CEBTA','JX','LC','PL','QD','QL','SX','YG'];
+              var images_face = ['FS','QS','SZ','YB','ZC','ZH'];
+              if (images_face.indexOf(code) != -1){
+                //pass
+              }else{
+                image = "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/HN_face.jpg";;
+              }
+              var item = {image:image,name:name,code:code};
+              vm.items.push(item);
+              
+            }
+            //vm.tripitaka_first=vm.tripitaka_table[0]['name'];
+            //vm.tripitaka_first_code=vm.tripitaka_table[0]['code'];
+            // for (var i=0;i<vm.tripitaka_table.length;i++)
+            //   vm.tripitaka_list.push(vm.tripitaka_table[i]['name']);
+          }
+        });
+        //获得藏封面 缺省为："{{ static('custom/imgs/HN_face.jpg') }}"
+        
+        setTimeout(function () {
+          //vm.fetchSutraList();
+        }, 500);
+
+      },
+      methods:{
+        handleSelect(key, keyPath) {
+          // console.log(key, keyPath);
+          this.select_type = key;
+        },
+        storeTriValue(code, name){
+          window.sessionStorage.setItem('code',code);
+          window.sessionStorage.setItem('name',name);
+        }
+      }
+    });
+  </script>
+{% endblock %}

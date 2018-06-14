@@ -333,8 +333,8 @@ class Configuration(models.Model):
     task_timeout = models.IntegerField('校勘任务自动回收时间（秒）', default=86400*7)
 
     class Meta:
-        verbose_name = '配置'
-        verbose_name_plural = '配置'
+        verbose_name = '系统配置'
+        verbose_name_plural = '系统配置'
 
     def __str__(self):
         return '当前配置'

@@ -313,9 +313,7 @@ class TaskAdmin(object):
             return ''
     task_link.allow_tags = True
     task_link.short_description = '查看任务'
-    list_display = ['batchtask', 'tripitaka_name', 'sutra_name', 'lqsutra_name', 'base_reel_name',
-                    'reel_no', 'typ', 'priority', 'task_no', 'realtime_progress', 'status',
-                    'publisher', 'created_at', 'picker', 'picked_at', 'finished_at', 'task_link', 'modify']
+    base_list_display = []
     list_display_links = ("modify",)
     list_filter = ['typ', 'batchtask', 'picker', 'status', 'task_no']
     search_fields = ['reel__sutra__tripitaka__name', 'reel__sutra__tripitaka__code',
@@ -327,6 +325,17 @@ class TaskAdmin(object):
                ReclaimSelectedTasksAction, RemindSelectedTasksAction,
                SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,
                UpdateTaskResultAction]
+
+    def get_list_display(self):
+        if self.model_name in ['correcttask', 'correctverifytask', 'correctdifficulttask',
+                               'marktask', 'markverifytask']:
+            return ['batchtask', 'tripitaka_name', 'sutra_name',
+                    'reel_no', 'priority', 'task_no', 'realtime_progress', 'status',
+                    'publisher', 'created_at', 'picker', 'picked_at', 'finished_at', 'task_link', 'modify']
+        else:
+            return ['batchtask', 'lqsutra_name',
+                    'reel_no', 'typ', 'priority', 'task_no', 'realtime_progress', 'status',
+                    'publisher', 'created_at', 'picker', 'picked_at', 'finished_at', 'task_link', 'modify']
 
 @xadmin.sites.register(BatchTask)
 class BatchTaskAdmin(object):

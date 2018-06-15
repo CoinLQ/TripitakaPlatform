@@ -12,6 +12,19 @@
         margin-left: 80px;
       }
 
+      #tripitaka .scale-op {
+        position: relative;
+        right: -451px;
+        z-index: 2;
+        top: 37px;
+      }
+
+      #page-canvas {
+        top: -36px;
+        position: relative;
+        z-index: 1;
+      }
+
       .col-md-9_col-xs-9 {
         float: left;
         margin-left: 10px;
@@ -97,6 +110,14 @@
         width: 100%;
       }
 
+      #tripitaka .el-aside {
+        overflow: auto;
+      }
+
+      #tripitaka .el-main {
+        overflow: hidden;
+      }
+
       #tripitaka .tpd-header-input {
         width: 20%;
         display: inline-block;
@@ -105,7 +126,7 @@
       #tripitaka .tpd-left-input {
         box-sizing: border-box;
         width: 100%;
-        padding: 20px;
+        padding: 5px;
         border-bottom: 1px solid #ddd;
       }
 
@@ -157,35 +178,28 @@
         padding: 20px;
         height: calc(100%);
         line-height: 26px;
-        overflow-y: auto;
       }
 
       #tripitaka .tpd-right .tpd-right-header {
         display: block;
-        padding: 15px;
+        padding: 10px;
         border-bottom: 1px solid #ddd;
       }
 
-      #tripitaka .tpd-right .tpd-right-breadcrumb {
+      #tripitaka .tpd-right .el-breadcrumb {
         width: 40%;
         display: inline-block;
       }
 
       #tripitaka .tpd-right .tpd-right-btngroup {
-        width: 100%;
+        width: 50%;
         display: inline-block;
         text-align: right;
       }
 
-      #tripitaka .tpd-right .tpd-right-btngroup .cut-switch {
+      #tripitaka .tpd-right .tpd-right-btngroup .cut-box {
         display: inline-block;
         margin-left: 10px;
-        vertical-align: middle;
-      }
-
-      #tripitaka .tpd-right .tpd-right-btngroup .cut-switch-text {
-        display: inline-block;
-        color: #409eff;
         vertical-align: middle;
       }
 
@@ -265,9 +279,10 @@
       #tripitaka .el-tabs__item {
         border: 1px solid #ddd;
         width: 80px;
-        border-top-left-radius: 20px;
-        border-top-right-radius: 20px;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
         text-align: center;
+        padding: 0;
       }
 
       #tripitaka .el-tabs__item.is-active {
@@ -372,6 +387,10 @@
       .text-center {
         padding: 6px 10px;
       }
+
+      body {
+        overflow: auto;
+      }
     </style>
   </head>
 
@@ -379,134 +398,139 @@
     <el-row>
       <el-col :span="6">
         <div class="tpd-left-content">
-          <div class="tpd-left-input">
-            <div style="color:black;font-size: 20px" class="input-group" >
-              <b>${tripitaka_title}</b>
-            </div>
-          </div>
-          <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
-            <el-menu-item index="1">卷</el-menu-item>
-            <el-menu-item index="2">册</el-menu-item>
-          </el-menu>
           <div class="tpd-left-main">
-            <div class="sutra-tree tpd-tree" id="sutra-tree">
-              <el-tree :data="sutra_list" :props="tree_props" :default-expanded-keys='expandlist' node-key="id"
-                       @node-click="clickSutraTreeNode"></el-tree>
-            </div>
-            <div class="row">
-              <div class="text-center">
-
-                <input type="number" class="sutra-page-input" v-model="sutralistpage"/> / ${ sutra_page_count }
-              </div>
-            </div>
+            <el-tabs v-model="viewtype" @tab-click="tabClick">
+              <el-tab-pane label="按卷浏览" name="r">
+                <div class="tpd-left-input">
+                  <div class="input-group">
+                    <el-input placeholder="请输入经名" v-model="searchword" class="input-with-select">
+                      <el-button slot="append" icon="el-icon-search"></el-button>
+                    </el-input>
+                  </div>
+                </div>
+                <div class="sutra-tree tpd-tree" id="sutra-tree">
+                  <el-tree :data="sutra_list" :props="tree_props" :default-expanded-keys='expandlist' node-key="id"
+                           @node-click="clickSutraTreeNode"></el-tree>
+                </div>
+                <div class="row">
+                  <div v-if="sutra_page_count>1" class="text-center">
+                    <input type="number" class="sutra-page-input" v-model="sutralistpage"/> / ${ sutra_page_count }
+                  </div>
+                </div>
+              </el-tab-pane>
+              <el-tab-pane label="按册浏览" name="v">
+                <div class="sutra-tree tpd-tree" id="sutra-tree">
+                  <el-tree :data="volume_list" :props="volume_props" :default-expanded-keys='expandlist' node-key="id"
+                           @node-click="clickVolumeTreeNode"></el-tree>
+                </div>
+                <div class="row">
+                  <div v-if="volume_page_count>1" class="text-center">
+                    <input type="number" class="sutra-page-input" v-model="volumepage"/> / ${ volume_page_count }
+                  </div>
+                </div>
+              </el-tab-pane>
+            </el-tabs>
           </div>
         </div>
       </el-col>
       <el-col :span="18">
-        <div class="tpd-right">
+        <el-row class="tpd-right">
           <div class="tpd-right-header">
-            <el-breadcrumb separator="/">
+            <el-breadcrumb v-if="viewtype=='r'" separator="/">
               <el-breadcrumb-item>${cur_tripitaka.name}</el-breadcrumb-item>
-              <el-breadcrumb-item>${sutra_name}</el-breadcrumb-item>
-              <el-breadcrumb-item>第${reel_no}卷</el-breadcrumb-item>
-              <el-breadcrumb-item>第${curreelpage}页</el-breadcrumb-item>
+              <el-breadcrumb-item v-if="sutra_name!=''">${sutra_name}</el-breadcrumb-item>
+              <el-breadcrumb-item v-if="reel_no>0">第${reel_no}卷</el-breadcrumb-item>
+              <el-breadcrumb-item v-if="reel_no>0">第${curreelpage}页</el-breadcrumb-item>
             </el-breadcrumb>
-
-            <div class="tpd-right-btngroup">
-              <div class="tpd-pagination">
-                <el-pagination
-                    @current-change="handleCurrentChange"
-                    :current-page.sync="curreelpage"
-                    :page-size="1"
-                    layout="total, prev, next, jumper"
-                    :total="reelpage_count">
-                </el-pagination>
-              </div>
-              <div class="cut-switch">
-                <el-switch @change="switchchange" v-model="showCutData" active-text="切分框"></el-switch>
-              </div>
-            </div>
+            <el-breadcrumb v-else separator="/">
+              <el-breadcrumb-item>${cur_tripitaka.name}</el-breadcrumb-item>
+              <el-breadcrumb-item v-if="volume_no>0">第${volume_no}冊</el-breadcrumb-item>
+              <el-breadcrumb-item v-if="volume_no>0">第${curreelpage}页</el-breadcrumb-item>
+            </el-breadcrumb>
           </div>
           <el-row>
-            <el-col :span="16">
-              <div class="sutra-image" id="sutra-image">
-
-                <canvas id="page-canvas"></canvas>
-              </div>
-            </el-col>
-            <el-col :span="8">
-              <!-- 改为带标号 @贤抚-->
-              <div class="sutra-text" @mouseup="userSelectionChanged">
-                <ul>
-                  <li v-for="item in text_list">
-                    <span v-for="s in item" :position="s.no">${ s.char }</span>
-                  </li>
-                </ul>
-              </div>
-              <!-- 改为带标号 @贤抚-->
-            </el-col>
-            <el-col :span="8">
-
-            </el-col>
-            <el-col :span="16">
-
-            </el-col>
+            <el-container>
+              <el-main>
+                <div class='scale-op'>
+                  <el-button-group>
+                    <el-button plain size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
+                    <el-button plain size="mini" round>${ scale_rate }</el-button>
+                    <el-button plain size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
+                  </el-button-group>
+                  <div class="block" style="display:none;width: 30%;margin-left: 50px;">
+                    <span class="demonstration">图片大小</span>
+                    <el-slider
+                        v-model="scale"
+                        :step="1"
+                        :max="5"
+                        :min="1"
+                        show-stops>
+                    </el-slider>
+                  </div>
+                </div>
+                <el-container direction="horizontal">
+                  <el-aside width="600" style="height: calc(100% - 178px) !important;">
+                    <div style="height: calc(100% - 140px) !important; width:calc(30%-40px) !important;">
+                      <div>
+                        <canvas id="page-canvas"></canvas>
+                      </div>
+                    </div>
+                  </el-aside>
+                  <div style="left:900; bottom:0; position:absolute;z-index:100;" class="cut-box">
+                    <el-select v-model="chose_txt_type">
+                      <el-option
+                          v-for="item in txt_type"
+                          :key="item.value"
+                          :label="item.label"
+                          :value="item.value">
+                      </el-option>
+                    </el-select>
+                  </div>
+                  <div style="left:398; bottom:0; position:absolute;z-index:100;" class="cut-box">
+                    <el-checkbox v-model="final_cut">审定切分框</el-checkbox>
+                    <el-checkbox v-model="ocr_cut">OCR切分框</el-checkbox>
+                  </div>
+                  <el-main>
+                    <div style="font-size: 16px; color: #606266;">
+                      <div class="diff-text-pane" @scroll="handleScroll" @mouseup="userSelectionChanged">
+                        <ul v-if="show_verify">
+                          <li v-for="item in cur_page.page_data[chose_txt_type]">
+                            <span v-for="s in item" :position="s.no">${ s.char }</span>
+                          </li>
+                        </ul>
+                        <p v-else v-for="line in cur_page.page_data[chose_txt_type]" v-html="line"></p>
+                      </div>
+                    </div>
+                  </el-main>
+                </el-container>
+              </el-main>
+            </el-container>
           </el-row>
-        </div>
-
-        <div class="row">
-          <div class="col-md-9_col-xs-9" id="col-md-9_col-xs-9">
-            <div class="el-pagination">
-              <div class="el-pagination__rightwrapper"></div>
-              <button type="button" v-on:click="prevvolume" class="el-icon el-icon-arrow-left" class="btn-prev"
-                      :class="{ disabled: (curvolume <= volume_min) }">
-              </button>
-              <span class="el-pagination__jump">
-                <div class="el-input el-pagination__editor is-in-pagination">
-                  <input v-on:input='inputvolume' v-model="curvolume" autocomplete="off" type="number" rows="2" min="1"
-                         validateevent="true" class="el-input__inner">
-                </div>/ ${ volume_count }册</span>
-              <ul class="el-pager"></ul>
-              <button type="button" v-on:click="nextvolume" class="el-icon el-icon-arrow-right" class="btn-next"
-                      :class="{ disabled: (curvolume == volume_count) }">
-              </button>
-
-            </div>
+        </el-row>
+        <el-row style="text-align:center;">
+          <div class="tpd-pagination" style="margin-top:-42px">
+            <el-pagination
+                @current-change="handleCurrentChange"
+                :current-page.sync="curreelpage"
+                :page-size="1"
+                layout=" prev, jumper, next"
+                :total="reelpage_count">
+            </el-pagination>
           </div>
-
-          <div class="col-md-10_col-xs-10" id="col-md-10_col-xs-10">
-            <div class="el-pagination">
-              <div class="el-pagination__rightwrapper"></div>
-              <button type="button" v-on:click="prevvolumepage" class="el-icon el-icon-arrow-left" class="btn-prev"
-                      :class="{ disabled: (curvolumepage <= volumepage_min) }">
-              </button>
-              <span class="el-pagination__jump">
-              <div class="el-input el-pagination__editor is-in-pagination">
-                <input v-on:input='inputvolumepage' v-model="curvolumepage" autocomplete="off" type="number" rows="2"
-                       min="1" validateevent="true" class="el-input__inner">
-              </div>/ ${ volumepage_count }页(册)</span>
-              <ul class="el-pager"></ul>
-              <button type="button" v-on:click="nextvolumepage" class="el-icon el-icon-arrow-right" class="btn-next"
-                      :class="{ disabled: (curvolumepage == volumepage_count) }">
-              </button>
-              <!-- 反馈 @贤抚-->
-              <ul class="popup-menu" v-show="sharedata.popupMenuShown" :style="popupMenuStyle">
-                <li>
-                  <button style="background: #808080" @click="correctFeedback()">文字反馈</button>
-                </li>
-              </ul>
-              <!-- 反馈 @贤抚-->
-            </div>
-          </div>
-        </div>
+        </el-row>
+        <!-- 反馈 @贤抚-->
+        <ul class="popup-menu" v-show="sharedata.popupMenuShown" :style="popupMenuStyle">
+          <li>
+            <button style="background: #808080" @click="correctFeedback()">文字反馈</button>
+          </li>
+        </ul>
+        <!-- 反馈 @贤抚-->
         <!-- 反馈 @贤抚-->
         <div is="correct-feedback-dialog" :sharedata="sharedata" v-if="sharedata.correctFeedbackDialogVisible"></div>
         <!-- 反馈 @贤抚-->
       </el-col>
     </el-row>
-    
   </div>
-
 {% endblock %}
 {% block foot_script %}
   <script>
@@ -514,15 +538,12 @@
       el: '#tripitaka',
       delimiters: ['${', '}'],
       data: {
-        selectTripi: '',
-        activeIndex: '1',
-        select_type:1,
-        reel_page_list: [],
-        imageURL: '',
-        sutra_text: '',
+        //藏列表 显示
+        tcode: '{{ tcode }}',
+        reel_id: {{ reel_id }},
+        cur_tripitaka: {},
+        tripitaka_table: [],
         sutra_name: '',
-        sutra_text_list: [''],
-        tripitaka_title:'大藏经',
         sutra_list: [],
         tree_props: {
           children: 'reel_set',
@@ -543,36 +564,70 @@
         searchword: '',
         sutralistpage: 1,//经的翻页
         sutra_page_count: 1,//经列表页数
-        page_cut_Info_list: [],
-        //curReelIndex:0,//当前页经列表选择的卷索引
         curReelNode: null,//记录当前的卷节点
-
-        //藏列表 显示
-        cur_tripitaka: {},
-        //tripitaka_first:'',
-        //tripitaka_first_code:'',
-        tripitaka_table: [],
-        //tripitaka_list:[],
-
+        //浏览模式
+        viewtype: 'r',
         //卷页导航
-        reelvolumestartpage: 1,//卷的册级别起始页
         reelpage_count: 1,
         reel_no: 0,
         curreelpage: 1,
 
-        //册导航
-        volume_count: 1,
-        curvolume: 1,
-        volume_min: 1,
-
         //册页的导航
-        volumepage_count: 1,
-        curvolumepage: 1,
-        volumepage_min: 1,
+        volume_data: [],
+        volume_list: [],
+        volume_props: {
+          label: 'label',
+          children: 'children',
+          /*disabled: function (data, node) {
+           if (data.ocr_ready != undefined) {
+           return !data.ocr_ready;
+           }
+           return false;
+           },
+           label: function (data, node) {
+           if (data.reel_no == undefined) {
+           return data.name + '(' + data.total_reels + ')';
+           } else {
+           return '第' + data.reel_no + '卷';
+           }
+           },*/
+        },
+        volume_page_count: 1,
+        volume_no: -1,
+        volumepage: 1,
 
         //切分开关
-        showCutData: false,
-
+        final_cut: false,
+        ocr_cut: false,
+        show_verify: false,
+        txt_type: [
+          {
+            value: 'ocr_txt',
+            label: 'OCR文本'
+          },
+          {
+            value: 'first_correct_txt',
+            label: '一校文本'
+          },
+          {
+            value: 'second_correct_txt',
+            label: '二校文本'
+          },
+          {
+            value: 'verify_txt',
+            label: '审定文本'
+          },
+        ],
+        chose_txt_type: 'ocr_txt',
+        show_txt: '',
+        cur_page_pid: '',
+        cur_page: {
+          image_url: "",
+          page_data: [],
+          ocr_cuts: ["    "],
+        },
+        page_lst: [],
+        scale: 1,
         //展开数组
         expandlist: [],
 
@@ -593,27 +648,30 @@
         },
         text_list: [],
         //校对反馈所需数据
-
       },
       watch: {
-        selectTripi: function (val, oldValue) {
-          this.handleCommand(val);
-        },
-        select_type: function (val, oldValue) {
-          console.log(val);
-          if (val == 1){
-            this.fetchSutraList();
-          }else if (val == 2){
-            this.fetchSutraList();
+        chose_txt_type: function (val, oldVal) {
+          this.show_txt = this.cur_page.page_data[val];
+          if (val == 'verify_txt') {
+            this.show_verify = true;
+          }
+          else {
+            this.show_verify = false;
           }
         },
-        searchword: function (value, oldValue) {
-          if (oldValue != value) {
+        ocr_cut: function (val) {
+          this.setImg();
+        },
+        final_cut: function (val) {
+          this.setImg();
+        },
+        searchword: function (val, oldVal) {
+          if (oldVal != val) {
             this.sutralistpage = 1;
           }
           this.fetchSutraList();
         },
-        sutralistpage: function (value, oldValue) {
+        sutralistpage: function (val, oldVal) {
           if (this.sutralistpage <= 0) {
             this.sutralistpage = 1;
             return;
@@ -622,435 +680,243 @@
             this.sutralistpage = this.sutra_page_count;
             return;
           }
-          this.fetchSutraList();
+          this.Volume();
+        },
+        volumepage: function (val, oldVal) {
+          if (this.volumepage <= 0) {
+            this.volumepage = 1;
+            return;
+          }
+          if (this.volumepage > this.volume_page_count) {
+            this.volumepage = this.volume_page_count;
+            return;
+          }
+          this.fetchVolumeList();
+        },
+        scale: function (val, oldVal) {
+          if (val > 5) {
+            this.scale = 5;
+            return
+          }
+          if (val < 1) {
+            this.scale = 1;
+            return;
+          }
+          if (val != oldVal) {
+            this.setImg();
+          }
+        },
+        cur_page_pid: function (val, oldVal) {
+          var vm = this;
+          axios.get('/api/tripitaka_page/?pid=' + val).then(function (response) {
+            vm.cur_page = response.data.results[0];
+            vm.sharedata.reelcorrectid = vm.cur_page.page_data.reelcorrectid;
+            vm.setImg();
+          });
         }
       },
+      computed: {
+        scale_rate: function () {
+          return "1:" + this.scale
+        },
+      },
       created: function () {
-        
         var vm = this;
-        var code = window.sessionStorage.getItem('code');
-        var name = window.sessionStorage.getItem('name');
-        vm.tripitaka_title = name;
-        vm.cur_tripitaka = {'code':code,'name':name};
-        vm.fetchSutraList();
+        //获得藏 列表
+        axios.get('/api/tripitaka/?code=' + vm.tcode).then(function (response) {
+          if (response.data.results.length > 0) {
+            vm.cur_tripitaka = response.data.results[0];
+            vm.cur_page.image_url = "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/" + vm.tcode + "_face.jpg";
+          }
+        });
+        ;
+        if (vm.reel_id != -1) {
+          var url = '/api/sutra/{{ sutraid }}/';
+          axios.get(url).then(function (response) {
+            vm.sutra_list = [response.data];
+            vm.sutra_page_count = 1;
+            vm.sutracount = 1;
+            d = _.find(vm.sutra_list[0].reel_set, {'id': vm.reel_id});
+            vm.clickSutraTreeNode(d);
+          });
+          vm.fetchVolumeList();
+        }
+        else {
+          vm.fetchSutraList();
+          vm.fetchVolumeList();
+        }
+        ;
+        vm.setImg();
       },
 
       methods: {
-        handleCommand(command) {
-          this.$message('click on item ' + command);
-          for (var i = 0; i < this.tripitaka_table.length; i++) {
-            if (this.tripitaka_table[i]['name'] == command) {
-              this.cur_tripitaka = this.tripitaka_table[i];
-              break;
-            }
-          }
-
-          this.fetchSutraList();
-        },
-        handleSelect(key, keyPath) {
-          // console.log(key, keyPath);
-          this.select_type = key;
-        },
-        switchchange (val) {
+        getReelData: function (pk) {
           var vm = this;
-          console.log(vm.showCutData);
-          this._updatePage();
+          axios.get('/api/tripitaka_reel/?rid=' + pk).then(function (response) {
+            vm.page_lst = response.data.results;
+            vm.cur_page_pid = vm.page_lst[0].pid;
+            vm.reelpage_count = vm.page_lst.length;
+          });
+        },
+        getVolumeData(key){
+          var vm = this;
+          axios.get('/api/tripitaka_volume_page/?key=' + key).then(function (response) {
+            vm.page_lst = response.data.results;
+            vm.cur_page_pid = vm.page_lst[0].pid;
+            vm.reelpage_count = vm.page_lst.length;
+          });
+        },
+        draw_rect(context, cut_infos, scale){
+          for (var i = 0; i < cut_infos.length; i++) {
+            var x = cut_infos[i].x * scale;
+            var y = cut_infos[i].y * scale;
+            var w = cut_infos[i].w * scale;
+            var h = cut_infos[i].h * scale;
+            context.strokeRect(x, y, w, h);
+          }
+        },
+        setImg: function () {
+          var img_url = this.cur_page.image_url;
+          var between_cuts = this.cur_page.page_data['between_cuts'];
+          var add_cuts = this.cur_page.page_data['add_cuts'];
+          var cancel_cuts = this.cur_page.page_data['cancel_cuts'];
+          var canvas = document.getElementById("page-canvas");
+          var context = canvas.getContext("2d");
+          var x = this.x * this.scale;
+          var y = this.y * this.scale;
+          var w = this.w * this.scale;
+          var h = this.h * this.scale;
+          var vm = this;
+          //设置样式
+          var image = new Image();
+          image.onload = function () {
+            var scale = vm.scale * 0.5;
+            canvas.width = canvas.width;
+            canvas.height = image.height * scale;
+            canvas.width = image.width * scale;
+
+            x = ~~x;
+            y = ~~y;
+            w = ~~w;
+            h = ~~h;
+            context.scale(0.8, 0.8);
+            context.drawImage(image, 0, 0, image.width, image.height,
+                0, 0, image.width * scale, image.height * scale);
+            context.globalAlpha = 0.5;
+
+            if (vm.ocr_cut) {
+              context.lineWidth = 1;
+              context.strokeStyle = "#F5270B";
+              context.fillStyle = "#F5270B";
+              vm.draw_rect(context, vm.cur_page.page_data.ocr_cuts, scale)
+            }
+            if (vm.final_cut) {
+              context.lineWidth = 2;
+              context.strokeStyle = "#1df519";
+              context.fillStyle = "#1df519";
+              vm.draw_rect(context, vm.cur_page.page_data.final_cuts, scale);
+            }
+
+            //context.fillRect(x, y, w, h);
+
+            //let wrapper_h = this.$el.querySelector('.canvas-pane').clientHeight;
+            //let wrapper_w = this.$el.querySelector('.canvas-pane').clientWidth;
+            //let trans_y = y * 0.8 > (wrapper_h - 100) / 2 ? y * 0.8 - wrapper_h / 2 : 0;
+            //let trans_x = x * 0.8 > wrapper_w - 100 ? x * 0.8 - wrapper_w / 2 : 0;
+            //this.$el.querySelector('.canvas-pane').scrollTop = ~~trans_y;
+            //this.$el.querySelector('.canvas-pane').scrollLeft = ~~trans_x;
+
+          }.bind(this);
+          image.src = img_url;
+        },
+        handleScroll: function () {
+        },
+        switchchange(val)
+        {
+          var vm = this;
+          vm.setImg();
+        },
+
+        tabClick() {
+
         },
         fetchSutraList: function () {
           var vm = this;
           var url = '/api/sutra/?page=' + this.sutralistpage;
-          if (vm.select_type == 1){
-            if (this.searchword.length > 0) {
-              url += '&search=' + this.searchword;
-            }
-            //下面注释的不要删除，现在测试数据少，注释为了不对藏过滤。真正用要去掉注释的
-            if (vm.cur_tripitaka) {
-              url += '&tcode=' + vm.cur_tripitaka.code;
-            }
-            axios.get(url).then(function (response) {
-              //console.log("sutracount:",response.data.count);
-              vm.sutra_list = response.data.results;
-              vm.sutra_page_count = Math.ceil(response.data.count / 30);//这里的三
-              sutracount = vm.sutra_list.length;
-              vm.volume_count = 1;fetchSutraList
-              vm.curvolume = 65535;
-              vm.volumepage_count = 1;
-              vm.curvolumepage = 65535;
-              for (var i = 0; i < sutracount; i++) {
-                reelcount = vm.sutra_list[i].reel_set.length;
-                if (vm.volume_count < vm.sutra_list[i].reel_set[reelcount - 1].end_vol)
-                  vm.volume_count = vm.sutra_list[i].reel_set[reelcount - 1].end_vol;
-                if (vm.curvolume > vm.sutra_list[i].reel_set[0].start_vol && vm.sutra_list[i].reel_set[0].start_vol > 0)
-                  vm.curvolume = vm.sutra_list[i].reel_set[0].start_vol;
-                if (vm.volumepage_count < vm.sutra_list[i].reel_set[reelcount - 1].end_vol_page)
-                  vm.volumepage_count = vm.sutra_list[i].reel_set[reelcount - 1].end_vol_page;
-                if (vm.curvolumepage > vm.sutra_list[i].reel_set[0].start_vol_page && vm.sutra_list[i].reel_set[0].start_vol_page > 0)
-                  vm.curvolumepage = vm.sutra_list[i].reel_set[0].start_vol_page;
-              }
-              vm.volume_min = vm.curvolume;
-              vm.volumepage_min = vm.curvolumepage;
-            });
-          }else if (vm.select_type == 2){
-            //根据藏获得册信息
-            url = '/api/volume/?page=' + this.sutralistpage;
-            if (this.searchword.length > 0) {
-              url += '&search=' + this.searchword;
-            }
-            //下面注释的不要删除，现在测试数据少，注释为了不对藏过滤。真正用要去掉注释的
-            if (vm.cur_tripitaka) {
-              url += '&tcode=' + vm.cur_tripitaka.code;
-            }
-            axios.get(url).then(function(response) {
-              //vm.volume_count = response.data.results.length;
-              vm.sutra_list = response.data.results;
-              vm.sutra_page_count = Math.ceil(response.data.count / 30);//这里的三
-              sutracount = vm.sutra_list.length;
-              vm.volume_count = 1;fetchSutraList
-              vm.curvolume = 65535;
-              vm.volumepage_count = 1;
-              vm.curvolumepage = 65535;
-              for (var i = 0; i < sutracount; i++) {
-                reelcount = vm.sutra_list[i].reel_set.length;
-                if (vm.volume_count < vm.sutra_list[i].reel_set[reelcount - 1].end_vol)
-                  vm.volume_count = vm.sutra_list[i].reel_set[reelcount - 1].end_vol;
-                if (vm.curvolume > vm.sutra_list[i].reel_set[0].start_vol && vm.sutra_list[i].reel_set[0].start_vol > 0)
-                  vm.curvolume = vm.sutra_list[i].reel_set[0].start_vol;
-                if (vm.volumepage_count < vm.sutra_list[i].reel_set[reelcount - 1].end_vol_page)
-                  vm.volumepage_count = vm.sutra_list[i].reel_set[reelcount - 1].end_vol_page;
-                if (vm.curvolumepage > vm.sutra_list[i].reel_set[0].start_vol_page && vm.sutra_list[i].reel_set[0].start_vol_page > 0)
-                  vm.curvolumepage = vm.sutra_list[i].reel_set[0].start_vol_page;
-              }
-              vm.volume_min = vm.curvolume;
-              vm.volumepage_min = vm.curvolumepage;
-            });
+          if (this.searchword.length > 0) {
+            url += '&search=' + this.searchword;
           }
-          
-
-          
-        },
-        myinput: function () {
-          this.curreelpage = parseInt(this.curreelpage);
-          console.log(this.curreelpage);
-          this.curvolumepage = this.curreelpage + this.reelvolumestartpage - 1;
-          this._updatePage();
-          return false;
-        },
-        inputvolume: function () {
-          this._updatePage();
-          return false;
-        },
-        inputvolumepage: function () {
-          if (this.curvolumepage >= this.reelvolumestartpage)
-            this.curreelpage = this.curvolumepage - this.reelvolumestartpage + 1;
-          this._updatePage();
-          return false;
-        },
-        handleCurrentChange: function (val) {
-          this.curvolumepage = this.curreelpage + this.reelvolumestartpage;
-          this._updatePage();
-        },
-
-        nextvolume: function () {
-          //console.log(this.volume_count);
-          if (this.curvolume < this.volume_count) {
-            ++this.curvolume;
+          if (vm.cur_tripitaka) {
+            url += '&tcode=' + vm.tcode;
           }
-          this._updatePage();
-        },
-        prevvolume: function () {
-          if (this.curvolume > this.volume_min) {
-            --this.curvolume;
-          }
-          this._updatePage();
-          return false;
-        },
-        nextvolumepage: function () {
-          //console.log('nextvolumepage',this.volumepage_count);
-
-          if (this.curvolumepage < this.volumepage_count) {
-            ++this.curvolumepage;
-            this.curreelpage = this.curvolumepage - this.reelvolumestartpage + 1;
-
-            this._changeReelORSutra('nextpage');
-          }
-          this._updatePage();
-        },
-        prevvolumepage: function () {
-          if (this.curvolumepage > this.volumepage_min) {
-            --this.curvolumepage;
-            this.curreelpage = this.curvolumepage - this.reelvolumestartpage + 1;
-            this._changeReelORSutra('prepage');
-          }
-          this._updatePage();
-          return false;
-        },
-        selTripitaka: function (data) {
-          debugger;
-          var vm = this;
-          for (var i = 0; i < vm.tripitaka_table.length; i++) {
-            //console.log('|', data.target.text,'|', vm.tripitaka_table[i]['name'])
-            if (vm.tripitaka_table[i]['name'] == data.target.text.replace(/(^\s*)|(\s*$)/g, '')) {
-              //vm.tripitaka_first_code = vm.tripitaka_table[i]['code'];
-              //vm.tripitaka_first = vm.tripitaka_table[i]['name'];
-              vm.cur_tripitaka = vm.tripitaka_table[i];
-              //console.log('break;');
-              break;
-            }
-          }
-
-          this.fetchSutraList();
-        },
-        _updatePage: function () {
-          var vm = this;
-          vm.imageURL = vm.reel_page_list[vm.curreelpage - 1];
-          vm._showSutraPage();
-        },
-        //根据册、页的翻转反推卷，经的变化
-        _changeReelORSutra: function (type) {
-          //先考虑册页的变化
-          //1条件 当前卷页大于 当前卷最大页了。
-          console.log(this.curReelNode);
-          //if (type =='nextpage' &&  this.curvolumepage-this.reelvolumestartpage+1 > this.reelpage_count )
-          if (type == 'nextpage' && this.curreelpage > this.reelpage_count) {
-            //获得下一个卷。
-            if (this.curReelNode != null && this.curReelNode.nextSibling) {
-              this.curReelNode = this.curReelNode.nextSibling;
-              data = this.curReelNode.__vue__._props.node.data;
-              this.clickSutraTreeNode(data, null, null);
-            }
-          }
-          else if (type = 'prepage' && this.curreelpage == 0) {
-            console.log('s', this.curReelNode.previousSibling);
-            //前一卷
-            if (this.curReelNode != null && this.curReelNode.previousSibling) {
-              this.curReelNode = this.curReelNode.previousSibling;
-              data = this.curReelNode.__vue__._props.node.data;
-              this.clickSutraTreeNode(data, null, null);
-            }
-          }
-        },
-        //鼠标点击的事件，data,s是一个有效的值。如果是自己调用的是undefine
-        clickSutraTreeNode: function (data, n, s) {
-          //鼠标点击将记录那个节点
-          //this.curReelNode=null;//晴空
-          if (this.curReelNode) {
-            //a=this.curReelNode.__vue__.getNodeKey();
-            console.log('node key', this.curReelNode, this.expandlist);
-            try {
-              if (this.curReelNode.parentNode && this.curReelNode.parentNode.parentNode)
-              console.log(this.curReelNode.parentNode.parentNode.__vue__, this.curReelNode.__vue__.expanded);
-                this.curReelNode.parentNode.parentNode.__vue__.expanded = true;
-            } catch (error) {
-              console.log('node error:'+error);
-            }
-            
-          }
-          if (s != null) {
-            for (var i = 0; i < s.$parent.$el.childNodes[1].childNodes.length; i++) {
-              var myvue = s.$parent.$el.childNodes[1].childNodes[i].__vue__;
-              if (myvue) {
-                var mynode = myvue._props.node;
-                if (mynode && mynode.data == data) {
-                  this.curReelNode = s.$parent.$el.childNodes[1].childNodes[i];
-                  break;
-                }//if
-              }//if
-            }//for
-          }//if
-
-          var vm = this;
-          console.log('++++++++++++++++++++'+data.reel_no);
-          console.log('-----------------'+JSON.stringify(data));
-          axios.get('/api/sutra_text/' + data.reel_no + '/').then(function (response) {
-            vm.sutra_text = response.data.sutra;
-            vm.reel_page_list = response.data.pageurls.split('|');
-            vm.reelpage_count = vm.reel_page_list.length;
-            //console.log(response.data.cut_Info_list);
-            vm.page_cut_Info_list = response.data.cut_Info_list;
-            vm.reel_no = data.reel_no;
-            vm.sutra_name = response.data.sutra_name;
-            vm._showSutraText();
-            vm.curreelpage = 1;
-            vm._updatePage();
-            //console.log(data.end_vol,data.end_vol_page);
-            vm.curvolume = data.start_vol;
-            vm.curvolumepage = data.start_vol_page;
-            vm.reelvolumestartpage = vm.curvolumepage;
-
-            vm.sharedata.reelcorrectid = response.data.reelcorrectid;
+          axios.get(url).then(function (response) {
+            vm.sutra_list = response.data.results;
+            vm.sutra_page_count = Math.ceil(response.data.count / 30);
+            vm.sutracount = vm.sutra_list.length;
           });
         },
-        _showSutraText: function () {
+        fetchVolumeList: function () {
           var vm = this;
-          //转化 sutra_text 为  sutra_text_list
-          vm.sutra_text_list.splice(0, vm.sutra_text_list.length);
-          var nFrom = 0;
-          var nFond = vm.sutra_text.indexOf('\n');
-          var nNum = 0;
-          var str = '';
-          while (nFond != -1) {
-            str = vm.sutra_text.substr(nFrom, nFond - nFrom)
-            if (str == 'p') {
-              nNum += 1;
-              str = str + nNum.toString();
-            }
-            vm.sutra_text_list.push(str);
-            nFrom = nFond + 1;
-            nFond = vm.sutra_text.indexOf('\n', nFrom);
-          }
-          vm.sutra_text_list.push(vm.sutra_text.substr(nFrom, vm.sutra_text_list.length - 1));
-          //文本带位置编号 @贤抚
-          var char_no = 0;
-          var text_list = vm.sutra_text_list;
-          for (var i = 0; i < text_list.length; i++) {
-            var str_line = text_list[i];
-            var tmp_line = [];
-            if (str_line[0] != 'p' && str_line[0] != 'b') {
-              for (var j = 0; j < str_line.length; j++) {
-                tmp_line.push({'char': str_line[j], 'no': char_no});
-                char_no += 1;
-              }
-              text_list[i] = tmp_line;
-            }
-          }
-          vm.text_list = text_list;
-          //文本带位置编号 @贤抚
-        },
-        _showSutraPage: function () {
-          var canvas = document.getElementById("page-canvas");
-          var vm = this;
-          var context = canvas.getContext("2d");
-          var image = new Image();
-          image.onload = function () {
-            var width = this.$el.querySelector('.tpd-left-content').clientWidth * 2;
-            var height = width / image.width * image.height;
-            //console.log(image.width, image.height, width, height)
-            canvas.width = width;
-            canvas.height = height;
-            // context.clearRect(0, 0, width, height);
-            // context.drawImage(image, 0, 0, width, height);
-            // var xratio = width / image.width;
-            // var yratio = height / image.height;
-
-
-            /////////////////////////////////////////////////
-            var data = JSON.parse(vm.page_cut_Info_list[vm.curreelpage - 1]);
-            //console.log(data);
-            var sx = 0;
-            var sy = 0;
-            var sw = canvas.width;
-            var sh = canvas.height;
-            if ('min_x' in data) {
-              sx = data['min_x'] - 100;
-              sy = data['min_y'] - 100;
-              sw = data['max_x'] + 100 - sx;
-              sh = data['max_y'] + 100 - sy;
-              if (data['min_y'] < data['max_y'] * 2 / 3) {
-                if (sy > 200) {
-                  sy = 100;
-                }
-                sh = data['max_y'] + 100 - sy;
-              }
-            }
-            //canvas.width = canvas.width;
-            canvas.height = canvas.width / sw * sh;
-            //console.log(canvas.width, canvas.height)
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            context.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-            if (vm.showCutData) {
-              var xratio = canvas.width / sw;
-              var yratio = canvas.height / sh;
-              $.each(data['char_data'], function (k, v) {
-                var line_no = v['line_no'];
-                var char_no = v['char_no'];
-                var color = "#F5270B";
-                var x = v['x'] - sx;
-                var y = v['y'] - sy;
-                var w = v['w'];
-                var h = v['h'];
-                x = parseInt(x * xratio);
-                y = parseInt(y * yratio);
-                w = parseInt(w * xratio);
-                h = parseInt(h * yratio);
-
-                var to_draw = false;
-
-                if ('added' in v) {
-                  context.font = "10px SimSun";
-                  context.fillText(v['ch'], x + w, y + h / 2);
-
-                  //设置样式
-                  context.lineWidth = 1;
-                  context.strokeStyle = color;
-                  context.stroke();
-                  color = 'ForestGreen';
-                  to_draw = true;
-                } else if ('old_char' in v) {
-                  color = 'blue';
-                  to_draw = true;
-                } else {
-                  to_draw = true;
-                }
-
-                color = '#ff00ff';
-
-                if (to_draw) {
-                  context.beginPath();
-                  context.moveTo(x, y);
-                  context.lineTo(x + w, y);
-                  context.lineTo(x + w, y + h);
-                  context.lineTo(x, y + h);
-                  context.lineTo(x, y);
-                  //设置样式
-                  context.lineWidth = 1;
-                  context.strokeStyle = color;
-                  context.stroke();
-                }
-              });
-              /////////////////////////////////////////////////
-            }
-
-          }.bind(this);
-          image.src = vm.imageURL;
+          var url = '/api/tripitaka_volume/' + vm.tcode + '/?page=' + this.volumepage;
+          axios.get(url).then(function (response) {
+            vm.volume_list = response.data.result;
+            vm.volume_page_count = Math.ceil(response.data.count / 30);
+            vm.volumetotal = vm.volume_list.length;
+          });
         },
 
-        _isRealNum: function (val) {
-          // isNaN()函数 把空串 空格 以及NUll 按照0来处理 所以先去除
-          if (val === "" || val == null) {
-            return false;
+        handleCurrentChange: function (val) {
+          this.cur_page_pid = this.page_lst[val - 1].pid
+        },
+        //鼠标点击的事件，data,s是一个有效的值。如果是自己调用的是undefine
+        clickSutraTreeNode: function (data) {
+          //鼠标点击将记录那个节点
+          if (data.reel_no) {
+            this.getReelData(data.id);
+            this.reel_no = data.reel_no
           }
-          if (!isNaN(val)) {
-            return true;
-          } else {
-            return false;
+          else {
+            this.sutra_name = data.name
+          }
+          var vm = this;
+          vm.curReelNode = data;
+        },
+        clickVolumeTreeNode: function (data, n, s) {
+          if (data.children[0]) {
+
+          }
+          else {
+            this.getVolumeData(data.key);
+            this.volume_no = data.label;
           }
         },
 
         userSelectionChanged: function () {
           //选择文本事件 @贤抚
           var vm = this;
-          setTimeout(function () {
-            var selection = window.getSelection();
-            var text = window.getSelection().toString();
-            if (text.length == 0) {
-              vm.sharedata.popupMenuShown = false;
-            } else {
-              var seg_position = parseInt(selection.anchorNode.parentElement.getAttribute('position'));
-              vm.sharedata.selection_start = seg_position;
-              vm.sharedata.popupMenuShown = true;
-              vm.sharedata.original_text = text;
-              var range = selection.getRangeAt(0);
-              var rect = range.getBoundingClientRect();
-              vm.popupMenuStyle.left = rect.left;
-              vm.popupMenuStyle.top = rect.bottom;
-            }
-          }, 10);
+          if (vm.chose_txt_type == "verify_txt") {
+            setTimeout(function () {
+              var selection = window.getSelection();
+              var text = window.getSelection().toString();
+              if (text.length == 0) {
+                vm.sharedata.popupMenuShown = false;
+              } else {
+                var seg_position = parseInt(selection.anchorNode.parentElement.getAttribute('position'));
+                vm.sharedata.selection_start = seg_position;
+                vm.sharedata.popupMenuShown = true;
+                vm.sharedata.original_text = text;
+                var range = selection.getRangeAt(0);
+                var rect = range.getBoundingClientRect();
+                vm.popupMenuStyle.left = rect.left;
+                vm.popupMenuStyle.top = rect.bottom;
+              }
+            }, 10);
+          }
         },
         correctFeedback: function () {
           this.sharedata.correctFeedbackDialogVisible = true;
         },
       },
-
     });
   </script>
 {% endblock %}

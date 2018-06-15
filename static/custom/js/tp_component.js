@@ -301,24 +301,36 @@ Vue.component('correct-feedback-list', {
           label="反馈意见"
           width="220">
         </el-table-column>
-        <el-table-column
+        <el-table-column v-if="processor"
+          prop="processor"
+          label="处理人"
+          width="220">
+        </el-table-column>
+        <el-table-column v-if="processor==0 && !processed"
           fixed="right"
           label="操作"
           width="120">
           <template slot-scope="scope">
-            <el-button v-if="processor==0 && !processed"
-              @click="processFb(2)"
+            <el-button
+              @click="processfb(2)"
               type="text"
               size="media">
               同意
             </el-button>
-            <el-button v-if="processor==0 && !processed"
-              @click="processFb(3)"
+            <el-button
+              @click="processfb(3)"
               type="text"
               size="media">
               拒绝
             </el-button>
           </template>
+        </el-table-column>
+        
+        <el-table-column v-else 
+          prop="response"
+          fixed="right" 
+          label="处理意见" 
+          width="120">
         </el-table-column>
       </el-table>
     `,
@@ -326,7 +338,7 @@ Vue.component('correct-feedback-list', {
     return { processed:false }
   },
   methods: {
-    processFb(re_type) {
+    processfb(re_type) {
       axios.patch('/api/correctfeedback/' + this.fb_id + '/', {
         'response': re_type,
       }).then(function (response) {

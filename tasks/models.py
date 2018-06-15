@@ -307,7 +307,7 @@ class ReelCorrectText(models.Model):
     BODY_END_PATTERN = re.compile('卷第[一二三四五六七八九十百]*$')
     SEPARATORS_PATTERN = re.compile('[pb\n]')
 
-    reel = models.ForeignKey(Reel, related_name='reel_correct_texts' ,verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False)
+    reel = models.ForeignKey(Reel, related_name='reel_correct_texts', verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False)
     text = SutraTextField('经文', blank=True) # 文字校对或文字校对审定后得到的经文
     head = SutraTextField('经文正文前文本', blank=True, default='')
     body = SutraTextField('经文正文', blank=True, default='')

@@ -233,7 +233,7 @@ class Page(models.Model):
     status = models.PositiveSmallIntegerField(db_index=True, verbose_name=u'操作类型',
                                               choices=PageStatus.CHOICES, default=PageStatus.INITIAL)
     bar_info = JSONField(verbose_name='栏列图信息', default=dict)
-    text = SutraTextField('经文', blank=True) # 文字校对后的经文
+    text = SutraTextField('经文', blank=True) # 文字审定后的经文
     cut_info = models.TextField('切分信息')
     cut_updated_at = models.DateTimeField('更新时间', null=True)
     cut_add_count = models.SmallIntegerField('切分信息增加字数', default=0)

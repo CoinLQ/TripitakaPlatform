@@ -122,7 +122,9 @@ def create_mark_tasks(batchtask, reel, mark_times, mark_verify_times):
         reeltext=reelcorrecttext, result=task_marks, task_no=task_no,
         status=status, publisher=batchtask.publisher)
         task.save()
-        if not task.mark:
+        try:
+            task.mark
+        except Mark.DoesNotExist:
             mark = Mark(reel=reel, reeltext=task.reeltext, task=task)
             mark.save()
 
@@ -132,7 +134,9 @@ def create_mark_tasks(batchtask, reel, mark_times, mark_verify_times):
         reeltext=reelcorrecttext, result='[]',
         status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
         task.save()
-        if not task.mark:
+        try:
+            task.mark
+        except Mark.DoesNotExist:
             mark = Mark(reel=reel, reeltext=task.reeltext, task=task)
             mark.save()
 

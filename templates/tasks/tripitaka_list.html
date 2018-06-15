@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}藏经版本浏览{% endblock %}
+{% block content %}
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <title>Insert title here</title>
+
+    <style>
+
+    </style>
+  </head>
+
+  <div id="volume">
+    <el-row>
+      <el-col :span="32">
+        <div class="tpd-left-content">
+          <div v-for="item in items" class="col-sm-2 col-md-2 col-lg-2">
+            <a :href="item.url">
+              <div @click="goto(item.code)" class="thumbnail">
+                <img class="lazy" :src="item.image" width="300" height="300"
+                     data-src="item.image" alt="LQS Sutra">
+
+                <div class="caption" align="center">
+                  <h3>
+                    <span :title="item.name">${ item.name }<br></span>
+                  </h3>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </el-col>
+
+    </el-row>
+  </div>
+{% endblock %}
+{% block foot_script %}
+  <script>
+
+    var app = new Vue({
+      el: '#volume',
+      delimiters: ['${', '}'],
+      data: {
+        to_rul: "",
+        items: [
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/FS_face.jpg", name: "房山石经", code: "FS", url:"/tripitaka/FS/"},
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/GL_face.jpg", name: "高丽再雕", code: "GL", url:"/tripitaka/GL/"},
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/JX_face.jpg", name: "嘉兴藏", code: "JX", url:"/tripitaka/JX/"},
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/GL_face.jpg", name: "高丽初雕", code: "LC", url:"/tripitaka/LC/"},
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/nocover.png", name: "毗卢藏", code: "PL", url:"/tripitaka/PL/"},
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/QD_face.jpg", name: "契丹藏", code: "QD", url:"/tripitaka/QD/"},
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/QL_face.jpg", name: "乾隆大藏经", code: "QL", url:"/tripitaka/QL/"},
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/QS_face.jpg", name: "碛砂藏", code: "QS", url:"/tripitaka/QS/"},
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/nocover.png", name: "思溪藏", code: "SX", url:"/tripitaka/SX/"},
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/nocover.png", name: "宋藏遗珍", code: "SZ", url:"/tripitaka/SZ/"},
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/YB_face.jpg", name: "永乐北藏", code: "YB", url:"/tripitaka/YB/"},
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/YG_face.jpg", name: "元官藏", code: "YG", url:"/tripitaka/YG/"},
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/ZC_face.jpg", name: "赵城金藏", code: "ZC", url:"/tripitaka/ZC/"},
+          {image: "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/ZH_face.jpg", name: "中华大藏经", code: "ZH", url:"/tripitaka/ZH/"},
+
+        ],
+      },
+      watch: {},
+      created: function () {
+
+      },
+      methods: {
+        goto(code){
+          this.to_url = '/tripitaka/' + 'code';
+        }
+      }
+    });
+  </script>
+{% endblock %}

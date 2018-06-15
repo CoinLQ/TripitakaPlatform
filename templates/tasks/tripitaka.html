@@ -476,7 +476,7 @@
                       </div>
                     </div>
                   </el-aside>
-                  <div style="left:900; bottom:0; position:absolute;z-index:100;" class="cut-box">
+                  <div style="left:900; bottom:-23px; position:absolute;z-index:100;">
                     <el-select v-model="chose_txt_type">
                       <el-option
                           v-for="item in txt_type"
@@ -486,13 +486,13 @@
                       </el-option>
                     </el-select>
                   </div>
-                  <div style="left:398; bottom:0; position:absolute;z-index:100;" class="cut-box">
+                  <div style="left:398; bottom:0; position:absolute;z-index:100;">
                     <el-checkbox v-model="final_cut">审定切分框</el-checkbox>
                     <el-checkbox v-model="ocr_cut">OCR切分框</el-checkbox>
                   </div>
-                  <el-main>
-                    <div style="font-size: 16px; color: #606266;">
-                      <div class="diff-text-pane" @scroll="handleScroll" @mouseup="userSelectionChanged">
+                  <el-main style="height: calc(100% - 178px) !important; overflow: auto">
+                    <div style="font-size: 16px; color: #606266; ">
+                      <div class="diff-text-pane" @mouseup="userSelectionChanged">
                         <ul v-if="show_verify">
                           <li v-for="item in cur_page.page_data[chose_txt_type]">
                             <span v-for="s in item" :position="s.no">${ s.char }</span>

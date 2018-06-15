@@ -47,6 +47,7 @@ urlpatterns = [
     path('lqtripitaka/', lqtripitaka.index, name='lqtripitaka_index'),
     path('tripitaka/<tcode>/', tripitaka.index, name='tripitaka_index'),
     path('tripitakareel/<int:reelid>/', tripitaka.reel, name='tripitaka_reel'),
+    path('tripitaka/', tripitaka.tripitakalist, name='tripitaka_list'),
     path('ebook/', tripitaka.ebook, name='tripitaka_ebook'),
     path('do_generate_task/', lqtripitaka.do_generate_task, name='lqtripitaka_index'),
     path('mark/<int:task_id>/', do_mark_task, name='do_mark_task'),
@@ -66,5 +67,5 @@ urlpatterns = [
 urlpatterns += [
     # 通用页面URL映射，必须放在最后
     url(r'^api/v1', include('api.common_urls',
-                             namespace='common_api')),
+                            namespace='common_api')),
 ]

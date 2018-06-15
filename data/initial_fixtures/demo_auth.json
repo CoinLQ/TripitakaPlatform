@@ -66,28 +66,28 @@
     "model": "jwt_auth.role",
     "pk": 10,
     "fields": {
-        "name": "\u7f6e\u4fe1\u5207\u5206\u6821\u5bf9\u5458"
+        "name": "格式标注审定员"
     }
 },
 {
     "model": "jwt_auth.role",
     "pk": 11,
     "fields": {
-        "name": "\u805a\u7c7b\u5207\u5206\u6821\u5bf9\u5458"
+        "name": "格式标注员"
     }
 },
 {
     "model": "jwt_auth.role",
     "pk": 12,
     "fields": {
-        "name": "\u67e5\u6f0f\u5207\u5206\u6821\u5bf9\u5458"
+        "name": "切分校对审定员"
     }
 },
 {
     "model": "jwt_auth.role",
     "pk": 13,
     "fields": {
-        "name": "\u9010\u5b57\u5207\u5206\u6821\u5bf9\u5458"
+        "name": "切分校对员"
     }
 },
 {
@@ -261,10 +261,10 @@
     "model": "jwt_auth.menu",
     "pk": 10,
     "fields": {
-        "name": "\u7f6e\u4fe1\u5207\u5206\u6821\u5bf9\u5458",
+        "name": "格式标注审定员",
         "menu_paths": [
-            "/jiaodui/confidence",
-            "/mytask/confidence"
+            "/collate_tasks/verify_mark",
+            "/collate_history/verify_mark"
         ],
         "is_active": true
     }
@@ -273,10 +273,10 @@
     "model": "jwt_auth.menu",
     "pk": 11,
     "fields": {
-        "name": "\u805a\u7c7b\u5207\u5206\u6821\u5bf9\u5458",
+        "name": "格式标注员",
         "menu_paths": [
-            "/jiaodui/classify",
-            "/mytask/classify"
+            "/collate_tasks/mark",
+            "/collate_history/mark"
         ],
         "is_active": true
     }
@@ -285,10 +285,10 @@
     "model": "jwt_auth.menu",
     "pk": 12,
     "fields": {
-        "name": "\u67e5\u6f0f\u5207\u5206\u6821\u5bf9\u5458",
+        "name": "切分校对审定员",
         "menu_paths": [
-            "/jiaodui/checkabsence",
-            "/mytask/checkabsence"
+            "/collate_tasks/pageverifytask",
+            "/collate_history/pageverifytask"
         ],
         "is_active": true
     }
@@ -297,10 +297,10 @@
     "model": "jwt_auth.menu",
     "pk": 13,
     "fields": {
-        "name": "\u9010\u5b57\u5207\u5206\u6821\u5bf9\u5458",
+        "name": "切分校对员",
         "menu_paths": [
-            "/collate_tasks/page_rects",
-            "/collate_history/page_rects"
+            "/collate_tasks/pagetask",
+            "/collate_history/pagetask"
         ],
         "is_active": true
     }
@@ -427,32 +427,6 @@
 },
 {
     "model": "jwt_auth.staff",
-    "pk": 3,
-    "fields": {
-        "password": "pbkdf2_sha256$100000$XyLMrRBG5OUq$ub0Cmf8sLTENfOttONN+5gtLIEoSI4xF0IjnCLwpW0c=",
-        "last_login": "2018-03-01T11:42:00Z",
-        "username": "xianchao",
-        "email": "xianchao@longquan.org",
-        "is_active": true,
-        "is_superuser": false,
-        "is_admin": false,
-        "introduce_by": "",
-        "date_joined": "2018-03-01T11:50:38.932Z",
-        "roles": [
-            3,
-            6,
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            17
-        ]
-    }
-},
-{
-    "model": "jwt_auth.staff",
     "pk": 4,
     "fields": {
         "password": "pbkdf2_sha256$100000$Fm4kHpW606lW$GVr/8gCL5OVzFXcGLVp8cc9LvKbO2ScD2f1B4qWYhzs=",
@@ -472,8 +446,11 @@
             11,
             12,
             13,
-            14,
-            17
+            17,
+            18,
+            19,
+            20
+        
         ]
     }
 },
@@ -598,7 +575,7 @@
     "model": "jwt_auth.permission",
     "pk": 10,
     "fields": {
-        "name": "\u7f6e\u4fe1\u5207\u5206\u6821\u5bf9\u5458\u6743\u9650",
+        "name": "格式标注审定员权限",
         "menu": 10,
         "is_active": true,
         "resources": [],
@@ -611,7 +588,7 @@
     "model": "jwt_auth.permission",
     "pk": 11,
     "fields": {
-        "name": "\u805a\u7c7b\u5207\u5206\u6821\u5bf9\u5458\u6743\u9650",
+        "name": "格式标注员权限",
         "menu": 11,
         "is_active": true,
         "resources": [],
@@ -624,7 +601,7 @@
     "model": "jwt_auth.permission",
     "pk": 12,
     "fields": {
-        "name": "\u67e5\u6f0f\u5207\u5206\u6821\u5bf9\u5458\u6743\u9650",
+        "name": "切分校对审定员权限",
         "menu": 12,
         "is_active": true,
         "resources": [],
@@ -637,7 +614,7 @@
     "model": "jwt_auth.permission",
     "pk": 13,
     "fields": {
-        "name": "\u9010\u5b57\u5207\u5206\u6821\u5bf9\u5458\u6743\u9650",
+        "name": "切分校对员权限",
         "menu": 13,
         "is_active": true,
         "resources": [],

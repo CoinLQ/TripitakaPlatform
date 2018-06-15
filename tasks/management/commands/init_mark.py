@@ -33,18 +33,22 @@ def create_mark_task(sid, reel_no, batchtask):
         task_no=task_no, status=Task.STATUS_READY,
         publisher=batchtask.publisher)
         task.save()
-        mark = Mark(reel=reel, reeltext=reel_correct_text,  publisher=batchtask.publisher, task=task)
+        mark = Mark(reel=reel, reeltext=reel_correct_text, task=task)
         mark.save()
     task = Task(batchtask=batchtask, typ=Task.TYPE_MARK_VERIFY, reel=reel,
     reeltext=reel_correct_text,
     task_no=0, status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
     task.save()
-    mark = Mark(reel=reel, reeltext=reel_correct_text,  publisher=batchtask.publisher, task=task)
+    mark = Mark(reel=reel, reeltext=reel_correct_text, task=task)
     mark.save()
     
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        # from tasks.reeldiff_processor import get_multireeltext
+        # sutra = Sutra.objects.get(sid='GL000790')
+        # get_multireeltext(sutra)
+        # return 
         print('initmark start')
         BASE_DIR = settings.BASE_DIR
         admin = get_or_create_admin()
@@ -64,25 +68,15 @@ class Command(BaseCommand):
         batchtask.save()
 
         # 格式标注
-        Task.objects.filter(batchtask=batchtask, typ=Task.TYPE_MARK).delete()
-
-        task1 = Task(batchtask=batchtask, typ=Task.TYPE_MARK, reel=huayan_cb_1,
-        reeltext=reelcorrecttext, result=markuation_json,
-        task_no=1, status=Task.STATUS_READY, publisher=admin)
-        task1.save()
-        task2 = Task(batchtask=batchtask, typ=Task.TYPE_MARK, reel=huayan_cb_1,
-        reeltext=reelcorrecttext, result=markuation_json,
-        task_no=2, status=Task.STATUS_READY, publisher=admin)
-        task2.save()
-        task3 = Task(batchtask=batchtask, typ=Task.TYPE_MARK_VERIFY, reel=huayan_cb_1,
-        reeltext=reelcorrecttext, result=markuation_json,
-        task_no=0, status=Task.STATUS_NOT_READY, publisher=admin)
-        task3.save()
-
         save_reel_with_correct_text(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
         save_reel_with_correct_text(lqsutra, 'ZH000860', 1, 12, 1, 12, '12')
         save_reel_with_correct_text(lqsutra, 'QL000870', 1, 24, 1, 17, '24')
         create_mark_task('YB000860', 1, batchtask)
         create_mark_task('ZH000860', 1, batchtask)
         create_mark_task('QL000870', 1, batchtask)
+        create_mark_task('CB002780', 1, batchtask)
+        create_mark_task('GL000790', 1, batchtask)
+        reel_lst = [(lqsutra, 1)]
+        from tasks.task_controller import create_tasks_for_batchtask
+        create_tasks_for_batchtask(batchtask, reel_lst, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0)
         print('initmark done')

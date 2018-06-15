@@ -8,8 +8,7 @@ from django.template.response import TemplateResponse
 from django.template import loader
 
 from tdata.models import *
-from tasks.models import Task, CorrectFeedback, JudgeFeedback, LQPunctFeedback, \
-AbnormalLineCountTask
+from tasks.models import *
 from rect.models import *
 from jwt_auth.models import Staff
 from tasks.task_controller import correct_update_async, regenerate_correctseg_async
@@ -108,7 +107,7 @@ class VolumeAdmin(object):
 class RegenerateCorrectSegAction(BaseActionView):
 
     action_name = "regenerate_correctseg"
-    description = '重新生成文字校对任务的数据'
+    description = '重新生成文字校对任务的数据（新增页）'
     icon = 'fa fa-refresh'
 
     @filter_hook
@@ -146,7 +145,7 @@ class ReelAdmin(object):
                      '=reel_no', 'remark']  # 可以搜索的字段
     list_filter = ['sutra__sid', 'sutra__name', 'ocr_ready', 'correct_ready']
     ordering = ['id', 'reel_no']  # 按照倒序排列
-    fields = ('sutra', 'reel_no', 'remark',
+    fields = ('remark',
               'start_vol', 'start_vol_page', 'end_vol', 'end_vol_page')
     list_display_links = ('sutra_name')
     actions = [RegenerateCorrectSegAction]
@@ -239,6 +238,9 @@ class SetPriorityActionBase(BaseActionView):
     @filter_hook
     def do_action(self, queryset):
         n = queryset.update(priority=self.priority)
+        if queryset.model is BatchTask:
+            for batchtask in queryset:
+                Task.objects.filter(batchtask=batchtask).update(priority=self.priority)
         if n:
             self.message_user("成功将%(count)d个任务%(description)s。" % {
                 "count": n,
@@ -297,7 +299,7 @@ class GeneTaskPlugin(BaseAdminPlugin):
 
 site.register_plugin(GeneTaskPlugin, ListAdminView)
 
-@xadmin.sites.register(Task)
+#@xadmin.sites.register(Task)
 class TaskAdmin(object):
     def modify(self, instance):
         return '修改'
@@ -325,6 +327,206 @@ class TaskAdmin(object):
                ReclaimSelectedTasksAction, RemindSelectedTasksAction,
                SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,
                UpdateTaskResultAction]
+
+@xadmin.sites.register(BatchTask)
+class BatchTaskAdmin(object):
+    list_display = ("id",
+                    "batch_no",
+                    "dataRange","priority",
+                    "CORRECT_finished","CORRECT_VERIFY_finished",
+                    "JUDGE_finished","JUDGE_VERIFY_finished",
+                    "PUNCT_finished","PUNCT_VERIFY_finished",
+                    "MARK_finished","MARK_VERIFY_finished",
+                    "publisher", 
+                    "created_at",
+                     )
+    list_display_links = ("id")
+    list_filter = ( "publisher", )
+    #search_fields = [ "created_at"]    
+    #list_editable = ("priority",)
+    #date_hierarchy = 'created_at'  # 详细时间分层筛选
+    relfield_style = "fk-select"
+    fields = ('priority',)
+    remove_permissions = ['add']
+
+    actions = [SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,]
+    
+    def __any_finished(self,obj,typ):
+        FINISHED_count =  len( Task.objects.filter(batchtask=obj, typ=typ, status=4) )
+        ALL_count =  len( Task.objects.filter(batchtask=obj, typ=typ))
+        strRet = ""
+        if ( ALL_count !=0 ):
+            strRet = '%d/%d(%d%%)' % (FINISHED_count,ALL_count,int(100*FINISHED_count/ALL_count))                          
+        return strRet
+    
+    #文字校对任务完成情况
+    def CORRECT_finished(self, obj):                                              
+        return self.__any_finished(obj,1)
+    
+    CORRECT_finished.short_description = u'文字校对进度'
+    CORRECT_finished.allow_tags = True
+    
+    #文字校对任务完成情况
+    def CORRECT_VERIFY_finished(self, obj):                                              
+        return self.__any_finished(obj,2)
+
+    CORRECT_VERIFY_finished.short_description = u'文字校对审定进度'
+    CORRECT_VERIFY_finished.allow_tags = True            
+    #校勘判取任务完成情况
+    def JUDGE_finished(self, obj):                                              
+        return self.__any_finished(obj,3)    
+
+    JUDGE_finished.short_description = u'校勘判取进度'
+    JUDGE_finished.allow_tags = True
+
+    #校勘审定任务完成情况
+    def JUDGE_VERIFY_finished(self, obj):                                              
+        return self.__any_finished(obj,4)    
+
+    JUDGE_VERIFY_finished.short_description = u'校勘审定进度'
+    JUDGE_VERIFY_finished.allow_tags = True
+
+    #标点任务完成情况
+    def PUNCT_finished(self, obj):                                              
+        return self.__any_finished(obj,5)    
+
+    PUNCT_finished.short_description = u'标点进度'
+    PUNCT_finished.allow_tags = True
+
+    #标点任务完成情况
+    def PUNCT_VERIFY_finished(self, obj):                                              
+        return self.__any_finished(obj,6)    
+
+    PUNCT_VERIFY_finished.short_description = u'标点审定进度'
+    PUNCT_VERIFY_finished.allow_tags = True
+
+    #格式标注任务完成情况
+    def MARK_finished(self, obj):
+        return self.__any_finished(obj,9)
+
+    MARK_finished.short_description = u'格式标注进度'
+    MARK_finished.allow_tags = True
+
+      #格式标注任务完成情况
+    def MARK_VERIFY_finished(self, obj):                                              
+        return self.__any_finished(obj,10)    
+
+    MARK_VERIFY_finished.short_description = u'格式标注审定进度'
+    MARK_VERIFY_finished.allow_tags = True               
+
+    #按照校勘判取任务判断
+    def dataRange(self, obj):
+        mydataRange={}    
+        t_tasks =  Task.objects.filter( batchtask= obj).order_by('reel','typ')#t_tasks =  Task.objects.filter( batchtask= obj , typ = 3 ,task_no=2  ).order_by('lqreel')
+        strRet=''       
+        if len( t_tasks) >0 :
+            #构建去重复数据的数组                      
+            for t in t_tasks:
+                if t and t.reel and t.reel.sutra :
+                    reel_no=t.reel.reel_no                   
+                    if ( mydataRange.get(t.reel.sutra.name) == None ):#新经
+                        newPageDict={}
+                        mydataRange[t.reel.sutra.name] = newPageDict#初始化
+                    curPageDict=mydataRange[t.reel.sutra.name]
+                    curPageDict[reel_no]=reel_no
+            strRet=''
+
+            #循环判断
+            for key in mydataRange :
+                curPageDict=mydataRange[key]                
+                index = -1
+                indexBegin = -1         
+                n = len(curPageDict) - 1
+                i=0
+                for subkey in curPageDict:#                    
+                    if (subkey - index != 1 ) : #不连续 
+                        if ( index != indexBegin ):
+                            strRet += "-"+str(index) #先把前面连续的输出了
+                        if (i == 0):
+                            strRet += key + "("+str(subkey)                            
+                        else:    
+                            strRet += "/"+str(subkey)
+                        indexBegin = subkey
+                    if ( i == n ):
+                        if ( subkey -index == 1):
+                            strRet += "-"+str(subkey)
+                        strRet += ")"
+                    index=subkey
+                    i+=1
+        return strRet    
+    #end   dataRange                 
+    
+    dataRange.short_description = u'数据范围'
+    dataRange.allow_tags = True
+
+    def batch_no(self, obj):
+        return '%d%02d%02d%02d%02d' % (obj.created_at.year,
+                obj.created_at.month, obj.created_at.day, obj.created_at.hour,
+                obj.created_at.minute)
+
+    batch_no.short_description = u'批次号'
+    batch_no.allow_tags = True
+
+@xadmin.sites.register(CorrectTask)
+class CorrectTaskAdmin(TaskAdmin):
+    def queryset(self):
+        return self.model.objects.filter(typ=Task.TYPE_CORRECT)
+
+@xadmin.sites.register(CorrectVerifyTask)
+class CorrectVerifyTaskAdmin(TaskAdmin):
+    def queryset(self):
+        return self.model.objects.filter(typ=Task.TYPE_CORRECT_VERIFY)
+
+@xadmin.sites.register(CorrectDifficultTask)
+class CorrectDifficultTaskAdmin(TaskAdmin):
+    def queryset(self):
+        return self.model.objects.filter(typ=Task.TYPE_CORRECT_DIFFICULT)
+
+@xadmin.sites.register(JudgeTask)
+class JudgeTaskAdmin(TaskAdmin):
+    def queryset(self):
+        return self.model.objects.filter(typ=Task.TYPE_JUDGE)
+
+@xadmin.sites.register(JudgeVerifyTask)
+class JudgeVerifyTaskAdmin(TaskAdmin):
+    def queryset(self):
+        return self.model.objects.filter(typ=Task.TYPE_JUDGE_VERIFY)
+
+@xadmin.sites.register(JudgeDifficultTask)
+class JudgeDifficultTaskAdmin(TaskAdmin):
+    def queryset(self):
+        return self.model.objects.filter(typ=Task.TYPE_JUDGE_DIFFICULT)
+
+@xadmin.sites.register(LQPunctTask)
+class LQPunctTaskAdmin(TaskAdmin):
+    def queryset(self):
+        return self.model.objects.filter(typ=Task.TYPE_LQPUNCT)
+
+@xadmin.sites.register(LQPunctVerifyTask)
+class LQPunctVerifyTaskAdmin(TaskAdmin):
+    def queryset(self):
+        return self.model.objects.filter(typ=Task.TYPE_LQPUNCT_VERIFY)
+
+@xadmin.sites.register(MarkTask)
+class MarkTaskAdmin(TaskAdmin):
+    def queryset(self):
+        return self.model.objects.filter(typ=Task.TYPE_MARK)
+
+@xadmin.sites.register(MarkVerifyTask)
+class MarkVerifyTaskAdmin(TaskAdmin):
+    def queryset(self):
+        return self.model.objects.filter(typ=Task.TYPE_MARK_VERIFY)
+
+@xadmin.sites.register(CorrectFeedback)
+class  CorrectFeedbackAdmin:
+    def task_link(self, instance):
+        return '<a target="_blank" href="/correctfeedback/%d/">查看</a>' % instance.id
+    task_link.allow_tags = True
+    task_link.short_description = '查看'
+    list_display = ['sutra_name', 'reel_no', 'fb_user', 'created_at',
+                    'fb_comment', 'processor', 'processed_at', 'response', 'task_link']
+    list_display_links = [''] # 不显示修改的链接
+    remove_permissions = ['add']
 
 @xadmin.sites.register(JudgeFeedback)
 class JudgeFeedbackAdmin:
@@ -363,30 +565,8 @@ class AbnormalLineCountTaskAdmin:
 #####################################################################################
 # 切分数据配置
 
-
-@xadmin.sites.register(Reel_Task_Statistical)
-class Reel_Task_StatisticalAdmin(object):
-    def resume_pptask(self, instance):
-        task_header = "%s_%s" % (
-            instance.schedule.schedule_no, instance.reel_id)
-        count = PageTask.objects.filter(
-            number__regex=r'^' + task_header + r'.*', status=TaskStatus.NOT_READY).count()
-        if count > 0:
-            return """<a class='btn btn-success' href='/xadmin/rect/reel_pptask/open/?schedule_no=%s&reel_id=%s&pk=%s'>%s</a>""" % (instance.schedule.schedule_no,  instance.reel_id, instance.pk,  u"打开逐字校对")
-        return '已打开'
-    resume_pptask.short_description = "打开逐字校对"
-    resume_pptask.allow_tags = True
-    resume_pptask.is_column = True
-
-    list_display = ('schedule', 'reel', 'amount_of_pptasks',
-                    'completed_pptasks', 'updated_at', )
-    list_display_links = ('completed_cctasks', 'reel')
-    search_fields = ('amount_of_cctasks', 'completed_cctasks')
-    list_filter = ('completed_cctasks',)
-
-
 # 1
-@xadmin.sites.register(Schedule)
+# @xadmin.sites.register(Schedule)
 class ScheduleAdmin(object):
     browser_details = {'name': {'title': u'置信度阀值预览', 'load_url': 'detail2'}}
 
@@ -410,71 +590,7 @@ class ScheduleAdmin(object):
     relfield_style = "fk-select"
     reversion_enable = True
     style_fields = {'reels': 'm2m_transfer'}
-
-# 2目前不需要显示
-# @xadmin.sites.register(Schedule_Task_Statistical)
-# class Schedule_Task_StatisticalAdmin(object):
-#     list_display = ('schedule', 'amount_of_cctasks', 'completed_cctasks', 'amount_of_classifytasks',
-#         'completed_classifytasks', 'amount_of_absenttasks', 'completed_absenttasks', 'amount_of_pptasks',
-#         'completed_pptasks', 'amount_of_vdeltasks', 'completed_vdeltasks', 'amount_of_reviewtasks',
-#         'completed_reviewtasks', 'remark', 'updated_at')
-#     list_display_links = ('completed_cctasks',)
-#     search_fields = ('amount_of_cctasks',)
-#     list_editable = ('remark',)
-#     list_filter = ('completed_cctasks',)
-
-# 3
-
-
-@xadmin.sites.register(CCTask)
-class CCTaskAdmin(object):
-    list_display = ("number", "schedule", "ttype", "status",
-                    "update_date", "rect_set", "owner")
-    list_display_links = ("number",)
-    list_filter = ("number", 'update_date')
-    search_fields = ["owner__email", "status"]
-    list_editable = ('owner', "status")
-    date_hierarchy = 'update_date'  # 详细时间分层筛选
-    relfield_style = "fk-select"
-
-
-@xadmin.sites.register(CharClassifyPlan)
-class CharClassifyPlanAdmin(object):
-
-    browser_details = {'ch': {'title': u'聚类字块详情页', 'load_url': 'detail2'}}
-
-    list_display = ("schedule", "ch", "total_cnt",
-                    "needcheck_cnt", "wcc_threshold", )
-    list_display_links = ("total_cnt",)
-    list_filter = ("ch", 'total_cnt')
-    search_fields = ["ch", "total_cnt"]
-    list_editable = ('wcc_threshold',)
-    date_hierarchy = 'wcc_threshold'  # 详细时间分层筛选
-    relfield_style = "fk-select"
-
-
-@xadmin.sites.register(ClassifyTask)
-class ClassifyTaskAdmin(object):
-    list_display = ("number", "schedule", "ttype", "status",
-                    "update_date", "rect_set", "owner")
-    list_display_links = ("number",)
-    list_filter = ("number", 'update_date')
-    search_fields = ["owner__email", "status"]
-    list_editable = ('owner', "status")
-    date_hierarchy = 'update_date'  # 详细时间分层筛选
-    relfield_style = "fk-select"
-
-
-@xadmin.sites.register(DelTask)
-class DelTaskAdmin(object):
-    list_display = ("number", "schedule", "ttype", "status",
-                    "update_date", "rect_set", "owner")
-    list_display_links = ("number",)
-    list_filter = ("number", 'update_date')
-    search_fields = ["owner__email", "status"]
-    list_editable = ('owner', "status")
-    date_hierarchy = 'update_date'  # 详细时间分层筛选
-    relfield_style = "fk-select"
+    model_icon = 'fa fa-calendar'
 
 
 @xadmin.sites.register(PageTask)
@@ -487,10 +603,10 @@ class PageTaskAdmin(object):
     list_editable = ('owner', "status")
     date_hierarchy = 'update_date'  # 详细时间分层筛选
     relfield_style = "fk-select"
+    model_icon = 'fa fa-edit'
 
-
-@xadmin.sites.register(AbsentTask)
-class AbsentTaskAdmin(object):
+@xadmin.sites.register(PageVerifyTask)
+class PageVerifyTaskAdmin(object):
     list_display = ("number", "schedule", "ttype", "status",
                     "update_date", "page_set", "owner")
     list_display_links = ("number",)
@@ -499,28 +615,7 @@ class AbsentTaskAdmin(object):
     list_editable = ('owner', "status")
     date_hierarchy = 'update_date'  # 详细时间分层筛选
     relfield_style = "fk-select"
-
-# @xadmin.sites.register(Permission)
-# class PermissionAdmin(object):
-#     list_display = ('id', 'name', 'menu', 'get_roles', 'is_active')
-#     fields = ('is_active', 'roles', 'menu')
-
-#     def get_roles(self, obj):
-#         return ",".join([r.name for r in obj.roles.all()])
-
-# @xadmin.sites.register(Resource)
-# class ResourceAdmin(object):
-#     pass
-
-# @xadmin.sites.register(Role)
-# class RoleAdmin(object):
-#     list_display = ('id', 'name')
-
-
-# @xadmin.sites.register(Menu)
-# class MenuAdmin(object):
-#     list_display = ('id', 'name', 'menu_paths', 'is_active')
-#     fields = ('menu_paths', 'is_active' )
+    model_icon = 'fa fa-edit'
 
 
 #####################################################################################
@@ -528,35 +623,71 @@ class AbsentTaskAdmin(object):
 
 class GlobalSetting(object):
     site_title = '龙泉大藏经'  # 设置头标题
-    site_footer = '北京 龙泉寺-AIITC.inc'  # 设置脚标题
+    site_footer = '北京龙泉寺·人工智能与信息技术中心'  # 设置脚标题
 
-    def rect_data_menu(self):
+    def collation_menu(self):
         return [{
-                # 'perm': self.get_model_perm(Reel_Task_Statistical, 'view'),
-                'title': u'藏经切分管理',
-                'icon': 'fa fa-cut',
+                'perm': self.get_model_perm(Task, 'view'),
+                'title': u'藏经校勘管理',
+                'icon': 'fa fa-pencil-square-o',
                 'menus': (
-                    {'title': u'总体进度', 'url': self.get_model_url(
-                        Reel_Task_Statistical, 'changelist'), 'icon': 'fa fa-tasks', },
-                    {'title': u'切分计划',  'url': self.get_model_url(
-                        Schedule, 'changelist'), 'icon': 'fa fa-calendar', },
-                    {'title': u'置信校对',  'url': self.get_model_url(
-                        CCTask, 'changelist'), 'icon': 'fa fa-edit', },
-                    {'title': u'聚类校对',  'url': self.get_model_url(
-                        ClassifyTask, 'changelist'), 'icon': 'fa fa-edit', },
-                    {'title': u'查漏校对',  'url': self.get_model_url(
-                        AbsentTask, 'changelist'), 'icon': 'fa fa-edit', },
-                    {'title': u'逐字校对',  'url': self.get_model_url(
-                        PageTask, 'changelist'), 'icon': 'fa fa-edit', },
-                    {'title': u'删框审定',  'url': self.get_model_url(
-                        DelTask, 'changelist'), 'icon': 'fa fa-stethoscope', },
-                    {'title': u'反馈检查',   'icon': 'fa fa-ban', },
-                    {'title': u'聚类阈值',  'url': self.get_model_url(
-                        CharClassifyPlan, 'changelist'),   'icon': 'fa fa-circle'},
+                    {'title': u'系统设置', 'url': self.get_model_url(
+                        Configuration, 'changelist'), 'icon': 'fa fa-cog', },
+                    {'title': u'任务批次',  'url': self.get_model_url(
+                        BatchTask, 'changelist'), 'icon': 'fa fa-tasks', },
+                    {'title': u'文字校对',  'url': self.get_model_url(
+                        CorrectTask, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'文字校对审定',  'url': self.get_model_url(
+                        CorrectVerifyTask, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'文字校对难字处理',  'url': self.get_model_url(
+                        CorrectDifficultTask, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'文字校对反馈',  'url': self.get_model_url(
+                        CorrectFeedback, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'异常行数检查',  'url': self.get_model_url(
+                        AbnormalLineCountTask, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'切分校对',  'url': self.get_model_url(
+                        PageTask, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'切分校对审定',  'url': self.get_model_url(
+                        PageVerifyTask, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'格式标注',  'url': self.get_model_url(
+                        MarkTask, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'格式标注审定',  'url': self.get_model_url(
+                        MarkVerifyTask, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'校勘判取',  'url': self.get_model_url(
+                        JudgeTask, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'校勘判取审定',  'url': self.get_model_url(
+                        JudgeVerifyTask, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'校勘判取难字处理',  'url': self.get_model_url(
+                        JudgeDifficultTask, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'校勘判取反馈',  'url': self.get_model_url(
+                        JudgeFeedback, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'定本标点',  'url': self.get_model_url(
+                        LQPunctTask, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'定本标点审定',  'url': self.get_model_url(
+                        LQPunctVerifyTask, 'changelist'),
+                        'icon': 'fa fa-tasks', },
+                    {'title': u'定本标点反馈',  'url': self.get_model_url(
+                        LQPunctFeedback, 'changelist'),
+                        'icon': 'fa fa-tasks', },
                 )}, ]
 
     def data_mana_menu(self):
         return [{
+                'perm': self.get_model_perm(LQSutra, 'view'),
                 'title': u'藏经数据管理',
                 'icon': 'fa fa-cloud',
                 'menus': (
@@ -570,18 +701,16 @@ class GlobalSetting(object):
                         Sutra, 'changelist'), 'icon': 'fa fa-book', },
                     {'title': u'实体卷',  'url': self.get_model_url(
                         Reel, 'changelist'), 'icon': 'fa fa-book', },
-                    {'title': u'配置',  'url': self.get_model_url(
-                        Configuration, 'changelist'), 'icon': 'fa fa-cog', },
                 )}, ]
 
     def user_mana_menu(self):
         return [{
-                # 'perm': self.get_model_perm(LQSutra, 'view'),
+                'perm': self.get_model_perm(Staff, 'view'),
                 'title': u'用户中心',
-                'icon': 'fa fa-book',
+                'icon': 'fa fa-user',
                 'menus': (
-                    {'title': u'用户维护', 'url': self.get_model_url(
-                        Staff, 'changelist'), 'icon': 'fa fa-book', },
+                    {'title': u'用户管理', 'url': self.get_model_url(
+                        Staff, 'changelist'), 'icon': 'fa fa-user', },
                     # {'title': u'角色维护', 'url': self.get_model_url(Role, 'changelist'),'icon':'fa fa-book',},
                     # {'title': u'菜单管理', 'url': self.get_model_url(Menu, 'changelist'),'icon':'fa fa-book',},
                     # {'title': u'权限管理', 'url': self.get_model_url(Permission, 'changelist'),'icon':'fa fa-book',},
@@ -589,7 +718,7 @@ class GlobalSetting(object):
 
     def get_site_menu(self):
         menus = []
-        menus.extend(self.rect_data_menu())
+        menus.extend(self.collation_menu())
         menus.extend(self.data_mana_menu())
         menus.extend(self.user_mana_menu())
         return menus

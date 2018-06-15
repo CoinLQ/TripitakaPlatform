@@ -34,24 +34,25 @@
           <div class="diff-text-pane">
             <div class="hd clearfix cmd-block">
               <div class="left-tool fl">
-                <span>异文</span>
-                <div class="pager">
-                  <span @click="nextPopup({shiftKey: true})" ><</span>
-                  <span><em>{{progress_text}}</em></span>
-                  <span @click="nextPopup({})">></span>
-                </div>
-                <span class="newline" @click="display_newline =!display_newline">换行</span>
-                <span class="del" @click="display_space =!display_space">空位</span>
-              </div>
-              <div class="right-tool fr">
                 <div class="btns">
-                  <span @click="RemoveLine">{{remove_btn_text}}</span>
-                  <span :disabled="premitSubmit" @click="checkLinefeed">检查</span>
-                  <span class="store" @click="openDoubtForm">存疑</span>
-                  <span :disabled="premitSubmit" @click="finishTask">完成</span>
-                  <span @click="returnTask">返回任务</span>
+                  <span @click="nextPopup({shiftKey: true})" title="上一条异文"><i class="jtleft"></i></span>
+                  <span><em   title="异文">{{progress_text}}</em></span>
+                  <span @click="nextPopup({})" title="下一条异文"><i class="jtright"></i></span>
+                  <span @click="display_newline =!display_newline"><i title="换行符" :class="hh_class"></i></span>
+                  <span @click="display_space =!display_space"><i  title="空位符" :class="kw_class"></i></span>
+                 
+                  <div id="hintbox"></div>
                 </div>
-                <span class="help"></span>
+              </div>
+              <div class="left-tool fr">
+                <div class="btns">
+                    <span @click="RemoveLine"><i  :title="remove_btn_text" class="sc"></i></span>
+                    <span @click="openDoubtForm"><i  title="存疑" class="cy"></i></span>
+                    <span :disabled="premitSubmit" @click="checkLinefeed"><i  title="检查" class="jc"></i></span>
+                    <span @click="returnTask"><i  title="退回任务" class="tui"></i></span>
+                    <span :disabled="premitSubmit" @click="finishTask"><i  title="完成" class="ok"></i></span>
+                    <span ><i title="帮助" class="help"></i></span>
+                </div>
               </div>
             </div>
             <div class="bd">
@@ -80,28 +81,28 @@
           
           
           <div class="doubt-lists">
-              <el-tabs v-model="activeTabName">
+              <el-tabs v-model="activeTabName" tab-position="bottom" @tab-click="handleTagClick">
                   <el-tab-pane name="doubt_tab">
                     <template slot="label">
-                    <div class="hd"> 存疑列表</div>
-                    <el-button v-if="doubt_count==100" type="danger" size="mini" round>{{doubt_count}}</el-button>
-                    </template>
-                    <div is="doubt-list" :doubts.sync="doubts" :task_id="sharedata.task_id" :task_typ="sharedata.task_typ" :current_doubt.sync="current_doubt"></div>
-                  </el-tab-pane>
-                  <el-tab-pane label="需要检查行数的栏" name="seg_check_tab">
-                      <template slot="label">
-                        <div class="hd"> 需要检查行数的栏</div>
-                          
-                      </template>
-                    <div v-if="segs_need_fix_linefeed.length == 0 && segs_need_check.length == 0">
-                      没有需要检查的
+                    <div class="hd"> 存疑列表
+                    <el-button type="danger" size="mini" round>{{doubt_count}}</el-button>
                     </div>
-                    <ul v-for="seg in segs_need_fix_linefeed">
-                      <li :seg="seg" @click="selectSeg(seg)">{{ seg.selected_text }}</li>
-                    </ul>
-                    <ul v-for="seg in segs_need_check">
-                      <li :seg="seg" @click="selectSeg(seg)">{{ seg.selected_text }}</li>
-                    </ul>
+                    </template>
+                    <div is="doubt-list" v-show="display_doubt && doubts.length !=0" :doubts.sync="doubts" :task_id="sharedata.task_id" :task_typ="sharedata.task_typ" :current_doubt.sync="current_doubt"></div>
+                  </el-tab-pane>
+                  <el-tab-pane name="seg_check_tab" >
+                    <template slot="label">
+                        <div class="hd"> 总行数有疑的栏位
+                            <el-button type="danger" size="mini" round>{{need_check_all_segs.length}}</el-button>
+                        </div>
+                    </template>
+                    <table v-show="display_check" class="doubt-table">
+                        <tbody>
+                            <tr v-for="seg in need_check_all_segs">
+                                <td :seg="seg" @click="selectSeg(seg)">{{ seg.selected_text }}</td>
+                            </tr>
+                        </tbody>
+                      </table>
                   </el-tab-pane>
                 </el-tabs>
 
@@ -145,6 +146,8 @@
       result: '',
       display_space: true,
       display_newline: false,
+      display_doubt: false,
+      display_check: false,
       correct_task_count: 2,
       current_seg: {},
       selected_text:'',
@@ -168,14 +171,13 @@
       },
       current_doubt: {},
       doubts: [],
-      activeNames: ["1"],
       scale: 1,
       img_url: '',
       x: 0,
       y: 0,
       w: 0,
       h: 0,
-      activeTabName: 'doubt_tab',
+      activeTabName: '',
       segs_need_fix_linefeed: [],
       segs_need_check: []
     },
@@ -199,15 +201,26 @@
         if (this.sharedata.task_typ == 2) { return "二校" }
         return "OCR"
       },
+      need_check_all_segs: function() {
+        return this.segs_need_check + this.segs_need_fix_linefeed
+      },
       progress_text: function() {
         let done_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
-        return done_segs.length + " / " + _.filter(this.sharedata.correctsegs, function(o) { return o.tag == 2; }).length
+        let tag2_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.tag == 2; });
+        let n = _.findIndex(tag2_segs, function(o) { return o.id == this.current_seg.id; }.bind(this)) + 1;
+        return n + " / " + tag2_segs.length
       },
       remove_btn_text: function() {
         if (this.current_seg && this.current_seg.selected_text == '') {
           return '整行恢复'
         } 
         return '整行删除'
+      },
+      hh_class: function() {
+        return this.display_newline ? 'hh' : 'nohh';
+      },
+      kw_class: function() {
+        return this.display_space ? 'kw' : 'nokw';
       }
     },
     watch: {
@@ -225,6 +238,9 @@
           }
         },
         deep: true
+      },
+      doubts: function(val, oldVal) {
+        this.handleChange()
       },
       scale: function (val, oldVal) {
         if (val > 5){
@@ -261,15 +277,26 @@
       document.addEventListener('keydown', this.handleDocumentTab);
       document.addEventListener('compositionstart', this.handleComposition);
       document.addEventListener('compositionend', this.handleComposition);
-      this.handleChange();
+      window.addEventListener('resize', this.handleChange);
     },
     destroyed: function(){
       document.removeEventListener('click', this.handleDocumentClick);
       document.removeEventListener('keydown', this.handleDocumentTab);
       document.removeEventListener('compositionstart', this.handleComposition);
       document.removeEventListener('compositionend', this.handleComposition);
+      window.removeEventListener('resize', this.handleChange);
     },
     methods: {
+      handleTagClick: function(tab, event){
+        if ( tab.paneName == "seg_check_tab") {
+          if (!this.display_doubt) { this.display_check = !this.display_check} 
+          else { this.display_check = true; this.display_doubt = false }
+        } else if (tab.paneName == "doubt_tab") {
+          if (!this.display_check) { this.display_doubt = !this.display_doubt} 
+          else { this.display_doubt = true; this.display_check =false; }
+        }
+        this.handleChange();
+      },
       handleComposition: function (event) {
         var isChrome = !!window.chrome && !!window.chrome.webstore;
             if (event.type === 'compositionstart') {
@@ -324,12 +351,24 @@
         });
       },
       handleChange() {
-        // let totalHeight = this.$el.querySelector('.canvas-pane').clientHeight - this.$el.querySelector('div.diff-text-pane-top').clientHeight
-        // if (this.activeNames.length == 0) {
-        //   this.$el.querySelector('div.diff-text-pane').style.height = totalHeight- 16;
-        // } else {
-        //   this.$el.querySelector('div.diff-text-pane').style.height = totalHeight - 253;
-        // }
+        var totalheight = this.$el.querySelector('.correct-in .left.fl').clientHeight;
+        var topblock = this.$el.querySelector('.cmd-block').clientHeight;
+        var bottomblock = this.$el.querySelector('.el-tabs').clientHeight;
+        if (!this.display_doubt && !this.display_check) {
+            bottomblock = 48;
+            this.$el.querySelector('.correct .right .bd').style.height = totalheight - topblock - bottomblock -2;
+            this.$el.querySelector('.doubt-lists').style.height = bottomblock;
+        } else {
+            this.$nextTick(function() {
+              var bottomblock = this.$el.querySelector('.el-tabs').clientHeight;
+              if (bottomblock > 400) {
+                bottomblock = 400;
+                this.$el.querySelector('.doubt-lists').style.overflowY = 'scroll';
+              }
+              this.$el.querySelector('.correct .right .bd').style.height = totalheight - topblock - bottomblock -2;
+              this.$el.querySelector('.doubt-lists').style.height = bottomblock;
+            }.bind(this))
+        }
       },
       spanContent: function(content) {
         if (!content) {
@@ -365,10 +404,6 @@
         var userSelection = this.userSelection(),
         range = userSelection.getRangeAt(0),
         orig_seg = this.current_seg;
-        
-        // console.log(range.startOffset);
-        // console.log(range.startContainer);
-        // console.log(range.cloneContents().textContent);
         
         if (seg) {
           this.page_no = seg.page_no;
@@ -445,21 +480,15 @@
         }
       },
       handleScroll: function(){
-        // this.scrolled = this.$el.querySelector('div.diff-text-pane').scrollTop >20;
-        // if (this.scrolled) {
-        //   this.$el.querySelector('.cmd-block').style.position='fixed';
-        //   this.$el.querySelector('.cmd-block').style.width="41%"
-        // } else {
-        //   this.$el.querySelector('.cmd-block').style.position='inherit';
-        //   this.$el.querySelector('.cmd-block').style.width="110%"
-        // }
-        
       },
       nextPopup: function(evt) {
         if (evt.preventDefault) {
           evt.preventDefault()
         }
         let empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.selected_text == null; });
+        if (empty_segs.length == 0 ){
+            empty_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.tag == 2; });
+        }
         let segid = this.current_seg.id || this.segid;
         if (evt.shiftKey){
           seg = _.findLast(empty_segs, function(o) { return o.id < segid; });
@@ -591,8 +620,6 @@
           vm.h = v['h'];
           vm.setImg();
         });
-
-        
       },
       selectText: function(seg, index, no, evt) {
         evt.preventDefault();
@@ -719,7 +746,6 @@
           }
         }
         seg.selected_text = e.target.innerText;
-        //console.log(startNode, startOffset, focusNode, focusOffset )
         this.updateCorrectSeg(seg);
         this.$nextTick(function() {
 
@@ -895,11 +921,18 @@
         this.textSelection(seg);
       },
       checkLinefeed: function() {
+        if (this.premitSubmit) {
+          return ;
+        }
         this.checkPBLinefeed();
         this.checkLineCount();
+        this.handleChange();
         return ;
       },
       finishTask: function() {
+        if (this.premitSubmit) {
+          return ;
+        }
         var vm = this;
         axios.post('/api/correct/' + this.sharedata.task_id + '/finish/')
         .then(function(response) {

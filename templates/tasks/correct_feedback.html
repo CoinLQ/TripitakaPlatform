@@ -38,14 +38,13 @@
       </div>
       <div class="diff-text-pane" @scroll="handleScroll">
         <div class="reel-text-region-o">
-          <div class="reel-text-compare changed spn">
+          <div class="changed spn">
             <p v-for="line in cut_data.page_txt" class="changed" v-html="line"></p>
           </div>
         </div>
       </div>
       <div is="correct-feedback-list" :cut_data="[cut_data]" :fb_id="cut_data.fb_id" :processor.async="cut_data.processor"></div>
     </div>
-
   </div>
 {% endblock %}
 {% block foot_script %}

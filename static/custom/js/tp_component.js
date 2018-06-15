@@ -10,14 +10,15 @@ Vue.component('doubt-list', {
   <th>操作</th>
 </thead>
 <tbody>
-  <tr v-for="(item, index) in doubts">
+  <tr v-for="(item, index) in doubts" @click="handleCurrentChange(item)" v-show="!item.processed">
     <td>{{item.id}}</td>
     <td>{{item.doubt_text}}</td>
     <td>{{item.doubt_comment}}</td>
-    <td><em  v-if="task_typ!=11" @click.native.prevent="deleteRow(index, doubts)">移除</em>
-    <em v-else v-show="!scope.row.processed" @click.native.prevent="processRow(index, doubts)">完成处理</em></td>
+    <td><em v-if="task_typ!=2" @click="deleteRow(index, doubts)">移除</em>
+    <em v-else v-show="!item.processed" @click="processRow(index, doubts)">完成处理</em></td>
   </tr>
 </tbody>
+</table>
 `,
   data() {
     return {}
@@ -124,20 +125,20 @@ Vue.component('mark-list', {
             return '作译者';
         case 3: //序
             return '序';
-        case 4: //正文
-            return '正文';
+        case 4: //千字文
+            return '千字文';
         case 5: //跋
             return '跋';
-        case 6: //偈颂
-            return '偈颂';
-        case 7: //夹注小字
-            return '夹注小字';
-        case 8: //梵文
-            return '梵文';
-        case 9: //咒语
-            return '咒语';
-        case 10: //行间小字
+        case 6: //行间小字
             return '行间小字';
+        case 11: //偈颂
+            return '偈颂';
+        case 12: //夹注小字
+            return '夹注小字';
+        case 13: //梵文
+            return '梵文';
+        case 14: //咒语
+            return '咒语';
       }
     },
     deleteRow(index, rows) {
@@ -235,20 +236,21 @@ Vue.component('mark-doubt-list', {
             return '作译者';
         case 3: //序
             return '序';
-        case 4: //正文
-            return '正文';
+        case 4: //千字文
+            return '千字文';
         case 5: //跋
             return '跋';
-        case 6: //偈颂
-            return '偈颂';
-        case 7: //夹注小字
-            return '夹注小字';
-        case 8: //梵文
-            return '梵文';
-        case 9: //咒语
-            return '咒语';
-        case 10: //行间小字
+        case 6: //行间小字
             return '行间小字';
+        case 11: //偈颂
+            return '偈颂';
+        case 12: //夹注小字
+            return '夹注小字';
+        case 13: //梵文
+            return '梵文';
+        case 14: //咒语
+            return '咒语';
+
       }
     },
     deleteRow(index, rows) {
@@ -299,24 +301,36 @@ Vue.component('correct-feedback-list', {
           label="反馈意见"
           width="220">
         </el-table-column>
-        <el-table-column
+        <el-table-column v-if="processor"
+          prop="processor"
+          label="处理人"
+          width="220">
+        </el-table-column>
+        <el-table-column v-if="processor==0 && !processed"
           fixed="right"
           label="操作"
           width="120">
           <template slot-scope="scope">
-            <el-button v-if="processor==0 && !processed"
-              @click="processFb(2)"
+            <el-button
+              @click="processfb(2)"
               type="text"
               size="media">
               同意
             </el-button>
-            <el-button v-if="processor==0 && !processed"
-              @click="processFb(3)"
+            <el-button
+              @click="processfb(3)"
               type="text"
               size="media">
               拒绝
             </el-button>
           </template>
+        </el-table-column>
+        
+        <el-table-column v-else 
+          prop="response"
+          fixed="right" 
+          label="处理意见" 
+          width="120">
         </el-table-column>
       </el-table>
     `,
@@ -324,7 +338,7 @@ Vue.component('correct-feedback-list', {
     return { processed:false }
   },
   methods: {
-    processFb(re_type) {
+    processfb(re_type) {
       axios.patch('/api/correctfeedback/' + this.fb_id + '/', {
         'response': re_type,
       }).then(function (response) {

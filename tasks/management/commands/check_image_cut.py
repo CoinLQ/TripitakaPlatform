@@ -30,9 +30,16 @@ class Command(BaseCommand):
                     print('%s_%03d: image not exists.' % (sutra.sid, reel.reel_no), url, r.status_code)
                 cut_url = url.replace('jpg', 'cut')
                 try:
-                    r = requests.head(cut_url)
+                    r = requests.get(cut_url)
                     if r.status_code != 200:
                         print('%s_%03d: cut not exists.' % (sutra.sid, reel.reel_no), url, r.status_code)
+                    else:
+                        try:
+                            cut_json = json.loads(r.content)
+                            if not cut_json.get('char_data', []):
+                                print('%s_%03d: no char data.' % (sutra.sid, reel.reel_no), url)
+                        except:
+                            print('%s_%03d: not json format.' % (sutra.sid, reel.reel_no), url)
                 except:
                     print('%s_%03d: check cut exception.' % (sutra.sid, reel.reel_no), url, r.status_code)
 

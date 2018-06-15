@@ -51,7 +51,7 @@ class GeneTaskView(CommAdminView):
             'tasks/gene_task.html'
             ], context)
 
-site.register_view(r'^tasks/task/gene_task/$', GeneTaskView, name='gene_task')
+site.register_view(r'^tasks/gene_task/$', GeneTaskView, name='gene_task')
 site.register_view(r'^rect/pagerects/$',PPDetailView, name='pp_detail')
 site.register_view(r'^rect/schedule/detail2/$',CCDetailView, name='cc_detail')
 site.register_view(r'^rect/charclassifyplan/detail2/$',ClassifyDetailView, name='cp_detail')

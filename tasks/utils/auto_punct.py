@@ -1,4 +1,5 @@
 import os, json
+import traceback
 import requests
 from requests.exceptions import RequestException
 
@@ -11,10 +12,12 @@ class AutoPunct:
         try:
             r = requests.post(cls.AUTO_PUNCT_URL, json=payload, timeout=60)
             response = r.json()
-            return response[0][0]
+            return response[0]['pred']
         except RequestException:
+            traceback.print_exc()
             return None
         except ValueError:
+            traceback.print_exc()
             return None
     
     PUNCT_CHARACTERS = '：，。；、！“”‘’？\n'

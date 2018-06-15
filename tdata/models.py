@@ -36,6 +36,7 @@ class Tripitaka(models.Model):
     path3_name = models.CharField('存储层次3中文名', max_length=16, blank=True, default='')
     cut_ready = models.BooleanField(verbose_name='切分数据状态', default=False)
     bar_line_count = models.CharField('每栏文本行数', max_length=256, default='0')
+    use_original_cut = models.BooleanField(verbose_name='使用原始切分', default=False)
 
     class Meta:
         verbose_name = '实体藏'
@@ -53,6 +54,7 @@ class Volume(models.Model):
     class Meta:
         verbose_name = u"实体册"
         verbose_name_plural = u"实体册"
+        unique_together = (('tripitaka', 'vol_no'),)
 
     def __str__(self):
         return '%s: 第%s册' % (self.tripitaka.name, self.vol_no)
@@ -90,7 +92,7 @@ class Sutra(models.Model):
         verbose_name_plural = '实体经'
 
     def __str__(self):
-        return '%s:%s' % (self.tripitaka, self.name)
+        return '%s / %s' % (self.tripitaka, self.name)
 
 class LQReel(models.Model):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', on_delete=models.CASCADE, editable=False)
@@ -128,6 +130,7 @@ class Reel(models.Model):
     column_ready = models.BooleanField(verbose_name='切列图状态', default=False)
     ocr_ready = models.BooleanField(verbose_name='OCR数据状态', default=False)
     correct_ready = models.BooleanField(verbose_name='是否有文字校对经文', default=False)
+    mark_ready = models.BooleanField(verbose_name='是否完成格式标注', default=False)
     used_in_collation = models.BooleanField(verbose_name='是否用于校勘', default=True)
 
     class Meta:
@@ -141,7 +144,7 @@ class Reel(models.Model):
         return u"第%s卷" %(self.reel_no,)
 
     def __str__(self):
-        return '%s第%d卷' % (self.sutra, self.reel_no)
+        return '%s / 第%d卷' % (self.sutra, self.reel_no)
 
     def url_prefix(self):
         tcode = self.sutra.sid[0:2]
@@ -230,7 +233,7 @@ class Page(models.Model):
     status = models.PositiveSmallIntegerField(db_index=True, verbose_name=u'操作类型',
                                               choices=PageStatus.CHOICES, default=PageStatus.INITIAL)
     bar_info = JSONField(verbose_name='栏列图信息', default=dict)
-    text = SutraTextField('经文', blank=True) # 文字校对后的经文
+    text = SutraTextField('经文', blank=True) # 文字审定后的经文
     cut_info = models.TextField('切分信息')
     cut_updated_at = models.DateTimeField('更新时间', null=True)
     cut_add_count = models.SmallIntegerField('切分信息增加字数', default=0)
@@ -245,7 +248,7 @@ class Page(models.Model):
         verbose_name_plural = '实体藏经页'
 
     def __str__(self):
-        return '%s第%s页' % (self.reel, self.reel_page_no)
+        return '%s / 第%s页' % (self.reel, self.reel_page_no)
 
     @property
     def s3_uri(self):
@@ -330,8 +333,8 @@ class Configuration(models.Model):
     task_timeout = models.IntegerField('校勘任务自动回收时间（秒）', default=86400*7)
 
     class Meta:
-        verbose_name = '配置'
-        verbose_name_plural = '配置'
+        verbose_name = '系统配置'
+        verbose_name_plural = '系统配置'
 
     def __str__(self):
         return '当前配置'

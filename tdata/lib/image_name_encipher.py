@@ -29,8 +29,8 @@ def get_image_url(reel, vol_page):
     url = settings.PAGE_IMAGE_URL_PREFIX + signed_path
     return url
 
-def get_cut_url(reel, vol_page):
-    path = '%s%d.cut' % (reel.url_prefix(), vol_page)
+def get_cut_url(reel, vol_page, suffix='cut'):
+    path = '%s%d.%s' % (reel.url_prefix(), vol_page, suffix)
     signed_path = get_signed_path(path)
     url = settings.PAGE_IMAGE_URL_PREFIX + signed_path
     return url

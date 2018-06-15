@@ -26,7 +26,7 @@ from tasks.views import tripitaka
 from tools.views import *
 import xadmin
 import tdata
- 
+
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('backend/', admin.site.urls),
@@ -45,7 +45,8 @@ urlpatterns = [
     path('lqpunct/<int:task_id>/', do_punct_task, name='do_lqpunct_task'),
     path('verify_lqpunct/<int:task_id>/', do_punct_task, name='do_lqpunct_verify_task'),
     path('lqtripitaka/', lqtripitaka.index, name='lqtripitaka_index'),
-    path('tripitaka/', tripitaka.index, name='tripitaka_index'),
+    path('tripitaka/<tcode>/', tripitaka.index, name='tripitaka_index'),
+    path('tripitakareel/<int:reelid>/', tripitaka.reel, name='tripitaka_reel'),
     path('ebook/', tripitaka.ebook, name='tripitaka_ebook'),
     path('do_generate_task/', lqtripitaka.do_generate_task, name='lqtripitaka_index'),
     path('mark/<int:task_id>/', do_mark_task, name='do_mark_task'),

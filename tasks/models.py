@@ -32,6 +32,10 @@ class BatchTask(models.Model):
     verbose_name='发布用户')
     description = models.TextField('描述', blank=True)
 
+    class Meta:
+        verbose_name = '任务批次'
+        verbose_name_plural = '任务批次'
+
     @property
     def batch_no(self):
         return '%d%02d%02d%02d%02d' % (self.created_at.year,
@@ -59,8 +63,8 @@ class Task(models.Model):
         (TYPE_CORRECT_VERIFY, '文字校对审定'),
         (TYPE_JUDGE, '校勘判取'),
         (TYPE_JUDGE_VERIFY, '校勘判取审定'),
-        (TYPE_PUNCT, '基础标点'),
-        (TYPE_PUNCT_VERIFY, '基础标点审定'),
+        # (TYPE_PUNCT, '基础标点'),
+        # (TYPE_PUNCT_VERIFY, '基础标点审定'),
         (TYPE_LQPUNCT, '定本标点'),
         (TYPE_LQPUNCT_VERIFY, '定本标点审定'),
         (TYPE_MARK, '格式标注'),
@@ -103,8 +107,8 @@ class Task(models.Model):
         TYPE_JUDGE: 'judge',
         TYPE_JUDGE_VERIFY: 'verify_judge',
         TYPE_JUDGE_DIFFICULT: 'judge_difficult',
-        TYPE_PUNCT: 'punct',
-        TYPE_PUNCT_VERIFY: 'verify_punct',
+        # TYPE_PUNCT: 'punct',
+        # TYPE_PUNCT_VERIFY: 'verify_punct',
         TYPE_LQPUNCT: 'lqpunct',
         TYPE_LQPUNCT_VERIFY: 'verify_lqpunct',
         TYPE_MARK: 'mark',
@@ -207,6 +211,66 @@ class Task(models.Model):
             return ratio
     realtime_progress.fget.short_description = '进度'
 
+class CorrectTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '文字校对'
+        verbose_name_plural = '文字校对'
+
+class CorrectVerifyTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '文字校对审定'
+        verbose_name_plural = '文字校对审定'
+
+class CorrectDifficultTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '文字校对难字'
+        verbose_name_plural = '文字校对难字'
+
+class JudgeTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '校勘判取'
+        verbose_name_plural = '校勘判取'
+
+class JudgeVerifyTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '校勘判取审定'
+        verbose_name_plural = '校勘判取审定'
+
+class JudgeDifficultTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '校勘判取难字'
+        verbose_name_plural = '校勘判取难字'
+
+class LQPunctTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '定本标点'
+        verbose_name_plural = '定本标点'
+
+class LQPunctVerifyTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '定本标点审定'
+        verbose_name_plural = '定本标点审定'
+
+class MarkTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '格式标注'
+        verbose_name_plural = '格式标注'
+
+class MarkVerifyTask(Task):
+    class Meta:
+        proxy = True
+        verbose_name = '格式标注审定'
+        verbose_name_plural = '格式标注审定'
+
 class CorrectSeg(models.Model):
     TAG_EQUAL = 1
     TAG_DIFF = 2
@@ -243,7 +307,7 @@ class ReelCorrectText(models.Model):
     BODY_END_PATTERN = re.compile('卷第[一二三四五六七八九十百]*$')
     SEPARATORS_PATTERN = re.compile('[pb\n]')
 
-    reel = models.ForeignKey(Reel, related_name='reel_correct_texts' ,verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False)
+    reel = models.ForeignKey(Reel, related_name='reel_correct_texts', verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False)
     text = SutraTextField('经文', blank=True) # 文字校对或文字校对审定后得到的经文
     head = SutraTextField('经文正文前文本', blank=True, default='')
     body = SutraTextField('经文正文', blank=True, default='')
@@ -480,7 +544,7 @@ class Mark(models.Model):
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE)
     reeltext = models.ForeignKey(ReelCorrectText, verbose_name='实体藏经卷经文', on_delete=models.CASCADE)
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始格式标注结果，不任务和为null表示格式标注格式标注审定任务的结果
-    publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, verbose_name='发布用户')
+    publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, blank=True, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', blank=True, null=True)
 
 class MarkUnit(models.Model):
@@ -492,12 +556,39 @@ class MarkUnit(models.Model):
         (TYPE_MARK_DOUBT, '存疑标注'),
         (TYPE_MARK_FEEDBACK, '标注反馈'),
     )
+
+    MARK_TYPE_TITLE = 1
+    MARK_TYPE_AUTHOR = 2
+    MARK_TYPE_PREFACE = 3
+    MARK_TYPE_QIANZIWEN = 4
+    MARK_TYPE_POSTSCRIPT = 5
+    MARK_TYPE_BETWEEN_LINES = 6
+    MARK_TYPE_GATHA = 11
+    MARK_TYPE_JIAZHU = 12
+    MARK_TYPE_SANSKRIT = 13
+    MARK_TYPE_INCANTATION = 14
+    MARK_TYPE_CHOICES = (
+        (MARK_TYPE_TITLE, '标题'),
+        (MARK_TYPE_AUTHOR, '作译者'),
+        (MARK_TYPE_PREFACE, '序'),
+        (MARK_TYPE_QIANZIWEN, '千字文'),
+        (MARK_TYPE_POSTSCRIPT, '跋'),
+        (MARK_TYPE_BETWEEN_LINES, '行间小字'),
+        (MARK_TYPE_GATHA, '偈颂'),
+        (MARK_TYPE_JIAZHU, '夹注小字'),
+        (MARK_TYPE_SANSKRIT, '梵文'),
+        (MARK_TYPE_INCANTATION, '咒语'),
+    )
+
     mark = models.ForeignKey(Mark, on_delete=models.CASCADE)
     typ = models.SmallIntegerField('类型',  choices=TYPE_CHOICES, default=1)
-    mark_typ = models.SmallIntegerField('标注类型', default=1)
+    mark_typ = models.SmallIntegerField('标注类型', choices=MARK_TYPE_CHOICES, default=1)
     start = models.IntegerField('起始字index', default=0)
     end = models.IntegerField('结束字下一个index', default=0)
     text = models.TextField('文本', default='')
+
+    def in_body(self):
+        return (self.mark_typ > 10)
 
 ####
 class FeedbackBase(models.Model):
@@ -536,7 +627,6 @@ class CorrectFeedback(FeedbackBase):
     @property
     def sutra_name(self):
         return self.correct_text.reel.sutra.name
-
     sutra_name.fget.short_description = '经名'
 
     @property
@@ -544,7 +634,6 @@ class CorrectFeedback(FeedbackBase):
         reel = self.correct_text.reel
         if reel:
             return reel.reel_no
-
     reel_no.fget.short_description = '第几卷'
 
 

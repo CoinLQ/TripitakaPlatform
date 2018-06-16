@@ -471,12 +471,15 @@ def publish_correct_result(task):
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
 
         # 格式标注数据
+        # TODO: fix
+        Mark.objects.filter(reel=task.reel).update(reeltext=reel_correct_text)
         for mark_task in Task.objects.filter(reel=task.reel, status=Task.STATUS_NOT_READY, typ__in=[Task.TYPE_MARK, Task.TYPE_MARK_VERIFY]):
             mark = Mark(reel=task.reel, reeltext=reel_correct_text, task=mark_task)
             mark.save()
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK, status=Task.STATUS_NOT_READY)\
         .update(reeltext=reel_correct_text, result='[]', status=Task.STATUS_READY)
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
+        Task.objects.filter(reel=task.reel, typ__in=[Task.TYPE_MARK, Task.TYPE_MARK_VERIFY]).update(reeltext=reel_correct_text)
 
 CORRECT_RESULT_FILTER = re.compile('[ 　ac-oq-zA-Z0-9.?\-",/，。、：]')
 MULTI_LINEFEED = re.compile('\n\n+')

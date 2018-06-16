@@ -797,9 +797,9 @@
         },
         setImg: function () {
           var img_url = this.cur_page.image_url;
-          var between_cuts = this.cur_page.page_data['between_cuts'];
-          var add_cuts = this.cur_page.page_data['add_cuts'];
-          var cancel_cuts = this.cur_page.page_data['cancel_cuts'];
+          //var between_cuts = this.cur_page.page_data['between_cuts'];
+          //var add_cuts = this.cur_page.page_data['add_cuts'];
+          //var cancel_cuts = this.cur_page.page_data['cancel_cuts'];
           var canvas = document.getElementById("page-canvas");
           var context = canvas.getContext("2d");
           var x = this.x * this.scale;
@@ -892,7 +892,7 @@
           if(this.curreelpage>this.reelpage_count){
             this.curreelpage = this.reelpage_count;
           }
-          this.cur_page_pid = this.page_lst[this.curreelpage - 1].pid
+          this.cur_page_pid = this.page_lst[this.curreelpage - 1].pid;
         },
         prevpage(){
           this.curreelpage -= 1;

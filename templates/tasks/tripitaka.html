@@ -757,6 +757,8 @@
             vm.sutra_list = response.data.results;
             vm.sutra_page_count = 1;
             vm.sutracount = 1;
+            vm.sutra_page_count = Math.ceil(response.data.count / 30);
+            vm.sutracount = vm.sutra_list.length;
             vm.expandlist.push(vm.sutra_list[0].id);
             vm.checkedlist.push(vm.sutra_list[0].reel_set[0].id);
             vm.clickSutraTreeNode(vm.sutra_list[0]);

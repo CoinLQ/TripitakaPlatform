@@ -421,10 +421,10 @@ def rebuild_reel_pagerects(reel):
         Rect.objects.filter(page_pid=page.pk).all().delete()
         page.pagerects.all().delete()
 
-        cut_info_dict = json.loads(page.cut_info)
-        pagerect = PageRect(page=page, reel=page.reel, rect_set=cut_info_dict['char_data'])
-        pagerect.save()
         try:
+            cut_info_dict = json.loads(page.cut_info)
+            pagerect = PageRect(page=page, reel=page.reel, rect_set=cut_info_dict['char_data'])
+            pagerect.save()
             pagerect.rebuild_rect()
         except:
             traceback.print_exc()

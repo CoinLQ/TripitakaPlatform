@@ -15,18 +15,15 @@
     <el-row>
       <el-col :span="32">
         <div class="tpd-left-content">
-          <div v-for="item in items" class="col-sm-2 col-md-2 col-lg-2">
+          <div style="float:left; padding:10; border:1px solid; margin:10px" v-for="item in items">
             <a :href="item.url">
-              <div @click="goto(item.code)" class="thumbnail">
-                <img class="lazy" :src="item.image" width="300" height="300"
+                <img class="lazy" :src="item.image" width="220" height="300"
                      data-src="item.image" alt="LQS Sutra">
-
                 <div class="caption" align="center">
                   <h3>
                     <span :title="item.name">${ item.name }<br></span>
                   </h3>
                 </div>
-              </div>
             </a>
           </div>
         </div>

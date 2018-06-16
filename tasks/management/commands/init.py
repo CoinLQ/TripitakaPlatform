@@ -74,8 +74,19 @@ class Command(BaseCommand):
             lqsutra = LQSutra(sid='LQ003100', name='大方廣佛華嚴經', total_reels=60)
             lqsutra.save()
 
-        save_reel(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
         save_reel(lqsutra, 'QL000870', 1, 24, 1, 17, '24')
+        save_reel(lqsutra, 'ZH000860', 1, 12, 1, 12, '12')
+        save_reel(lqsutra, 'QS000810', 1, 21, 449, 461, '21')
+        save_reel(lqsutra, 'ZC000780', 1, 10, 21, 48, '10')
+        save_reel(lqsutra, 'SX000770', 1, 956, 2, 38, '956')
+        save_reel(lqsutra, 'PL000810', 1, 1114, 2, 25, '1114')
+        save_reel(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
+        save_reel(lqsutra, 'QL000870', 2, 24, 18, 31, '24')
+        save_reel(lqsutra, 'ZH000860', 2, 12, 13, 24, '12')
+        save_reel(lqsutra, 'QS000810', 2, 21, 461, 472, '21')
+        save_reel(lqsutra, 'ZC000780', 2, 10, 49, 79, '10')
+        save_reel(lqsutra, 'SX000770', 2, 957, 2, 36, '957')
+        save_reel(lqsutra, 'YB000860', 2, 27, 25, 45, '27')
 
         # create BatchTask
         batchtask = BatchTask(priority=2, publisher=admin)

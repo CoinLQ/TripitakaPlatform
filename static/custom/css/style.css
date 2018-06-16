@@ -163,20 +163,21 @@ input[type="number"]{
 }
 
 .labelformat .left {
-    height: 80%;
+    height: 90%;
 }
 
 .labelformat .tools {
     width: 100%;
-    height: 7%;
+    line-height: 50px;
     border: 1px solid #ccc;
-    border-top: 0;
-    border-radius: 0 0 5px 5px;
+    border-bottom: 0;
+    border-radius: 5px 5px 0 0;
     text-align: right;
 }
 
 .labelformat .pager, .labelformat .btns {
     display: inline-block;
+    margin: 0;
     margin-right: 10px;
 }
 
@@ -230,9 +231,9 @@ input[type="number"]{
 .labelformat .right .bd .box li {
     color: #333;
     border-bottom: 1px dashed #ccc;
-    font-size: 22px;
+    font-size: 20px;
     padding-bottom: 5px;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
 }
 
 .labelformat .right .hd {
@@ -241,7 +242,7 @@ input[type="number"]{
 }
 
 .labelformat .right .hd span {
-    width: 97%;
+    width: 120px;
     box-sizing: border-box;
     display: block;
     cursor: pointer;
@@ -353,21 +354,34 @@ input[type="number"]{
 }
 
 /*公共样式*/
-.pager span {
+.btns span {
     display: inline-block;
-    width: 30px;
+    width: 48px;
+    height: 30px;
+    text-align: center;
+    line-height: 30px;
+    border: 1px solid #abafb2;
+    font-size: 14px;
+    cursor: pointer;
+    color: #abafb2;
+    border-radius: 18px;
+}
+
+/*公共样式*/
+.btns span:hover {
+    display: inline-block;
+    width: 48px;
     height: 30px;
     text-align: center;
     line-height: 30px;
     border: 1px solid #27a9e3;
     font-size: 14px;
     cursor: pointer;
-    border-color: #27a9e3;
     color: #27a9e3;
-
+    border-radius: 18px;
 }
 
-.correct-in .pager span {
+.tools .pager span, .correct-in .pager span {
     display: inline-block;
     width: 30px;
     height: 30px;
@@ -382,22 +396,22 @@ input[type="number"]{
 }
 
     
-.correct-in .pager span:first-child {
+.tools .pager span:first-child, .correct-in .pager span:first-child {
     border-bottom-left-radius: 100%;
     border-top-left-radius: 100%; 
 }
 
-.correct-in .pager span:first-child:hover {
+.tools .pager span:first-child:hover, .correct-in .pager span:first-child:hover {
     border-color: #27a9e3;
     color: #27a9e3;
 }
 
-.correct-in .pager span:nth-child(3) {
+.tools .pager span:nth-child(3), .correct-in .pager span:nth-child(3) {
     border-bottom-right-radius: 100%;
     border-top-right-radius: 100%; 
 }
 
-.correct-in .pager span:nth-child(3):hover {
+.tools .pager span:nth-child(3):hover, .correct-in .pager span:nth-child(3):hover {
     border-color: #27a9e3;
     color: #27a9e3;
 }
@@ -418,6 +432,7 @@ input[type="number"]{
     width: auto;
     line-height: 30px;
     border-left: none;
+    border-right: none;
 }
 
 .btns button {

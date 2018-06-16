@@ -328,10 +328,6 @@ def get_multireeltext(sutra, variant_manager=None):
             if not markunit.in_body():
                 end = markunit.start
                 if start < end and reel_text[start:end] not in ['p\n', 'b\n', '\n']:
-                    # print('markunit.start, markunit.end, ', markunit.start, markunit.end)
-                    # print('start, end, ', start, end)
-                    # print('head: ', reel_text[:start])
-                    # print('body: ', reel_text[start:end])
                     multireeltext.add_reeltext(reel, reel_text[start:end], reel_text[:start])
                 start = markunit.end
                 end = markunit.end

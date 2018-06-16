@@ -542,7 +542,7 @@ class LQPunct(models.Model):
 
 class Mark(models.Model):
     reel = models.ForeignKey(Reel, on_delete=models.CASCADE)
-    reeltext = models.ForeignKey(ReelCorrectText, verbose_name='实体藏经卷经文', on_delete=models.CASCADE)
+    reeltext = models.ForeignKey(ReelCorrectText, verbose_name='实体藏经卷经文', on_delete=models.CASCADE, blank=True, null=True)
     task = models.OneToOneField(Task, verbose_name='发布任务', on_delete=models.SET_NULL, blank=True, null=True) # Task=null表示原始格式标注结果，不任务和为null表示格式标注格式标注审定任务的结果
     publisher = models.ForeignKey(Staff, on_delete=models.SET_NULL, blank=True, null=True, verbose_name='发布用户')
     created_at = models.DateTimeField('创建时间', blank=True, null=True)

@@ -490,14 +490,8 @@ class Schedule(models.Model, ModelDiffMixin):
         schedule.refresh_from_db()
         schedule.reels.add(reel)
         schedule.reels.update(cut_ready=True)
-
-        # NOTICE: 实际这里不必执行，多重关联这时并未创建成功。
-        # 在数据库层用存储过程在关联表记录创建后，创建卷任务。
-        # 为逻辑必要，留此函数
-        # tasks = []
-        # for reel in self.reels.all():
-        #     tasks.append(Reel_Task_Statistical(schedule=self, reel=reel))
-        # Reel_Task_Statistical.objects.bulk_create(tasks)
+        Schedule_Task_Statistical(schedule=schedule).save()
+        Reel_Task_Statistical.gen_pptask_by_plan_sync()
 
     class Meta:
         verbose_name = u"切分计划"
@@ -559,10 +553,8 @@ class Reel_Task_Statistical(models.Model):
         verbose_name_plural = u"总体进度"
         ordering = ('schedule', '-updated_at')
 
-    #@shared_task
-    @background(schedule=60)
-    @email_if_fails
-    def gen_pptask_by_plan():
+    @classmethod
+    def gen_pptask_by_plan_sync(cls):
         with transaction.atomic():
             for stask in Schedule_Task_Statistical.objects.filter(amount_of_pptasks=-1):
                 # 逐卷创建任务
@@ -581,6 +573,11 @@ class Reel_Task_Statistical(models.Model):
                     stask.amount_of_pptasks = count * 2
                     stask.save(update_fields=['amount_of_pptasks'])
 
+    #@shared_task
+    @background(schedule=60)
+    @email_if_fails
+    def gen_pptask_by_plan():
+        Reel_Task_Statistical.gen_pptask_by_plan_sync()
 
     @shared_task
     @email_if_fails
@@ -1181,21 +1178,21 @@ def allocateTasks(schedule, reel, type):
 
 
 
-@receiver(post_save, sender=Schedule)
-@disable_for_create_cut_task
-def post_schedule_create_pretables(sender, instance, created, **kwargs):
-    if created:
-        Schedule_Task_Statistical(schedule=instance).save()
-        # Schedule刚被创建，就建立聚类字符准备表，创建逐字校对的任务，任务为未就绪状态
-        # CharClassifyPlan.create_charplan.s(instance.pk.hex).apply_async(countdown=20)
-        Reel_Task_Statistical.gen_pptask_by_plan()
-    else:
-        # update
-        if (instance.has_changed) and ( 'status' in instance.changed_fields):
-            before, now = instance.get_field_diff('status')
-            if now == ScheduleStatus.ACTIVE and before == ScheduleStatus.NOT_ACTIVE:
-                # Schedule被激活，创建置信校对的任务
-                # Reel_Task_Statistical.gen_cctask_by_plan.delay()
-                # 暂不生成置信校对任务
-                pass
+# @receiver(post_save, sender=Schedule)
+# @disable_for_create_cut_task
+# def post_schedule_create_pretables(sender, instance, created, **kwargs):
+#     if created:
+#         Schedule_Task_Statistical(schedule=instance).save()
+#         # Schedule刚被创建，就建立聚类字符准备表，创建逐字校对的任务，任务为未就绪状态
+#         # CharClassifyPlan.create_charplan.s(instance.pk.hex).apply_async(countdown=20)
+#         Reel_Task_Statistical.gen_pptask_by_plan()
+#     else:
+#         # update
+#         if (instance.has_changed) and ( 'status' in instance.changed_fields):
+#             before, now = instance.get_field_diff('status')
+#             if now == ScheduleStatus.ACTIVE and before == ScheduleStatus.NOT_ACTIVE:
+#                 # Schedule被激活，创建置信校对的任务
+#                 # Reel_Task_Statistical.gen_cctask_by_plan.delay()
+#                 # 暂不生成置信校对任务
+#                 pass
 

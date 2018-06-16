@@ -43,7 +43,7 @@ def create_data(lqsutra):
     save_reel_with_correct_text(lqsutra, 'QS000810', 1, 21, 449, 461, '21')
     save_reel_with_correct_text(lqsutra, 'ZC000780', 1, 10, 21, 48, '10')
     save_reel_with_correct_text(lqsutra, 'SX000770', 1, 956, 2, 38, '956')
-    save_reel_with_correct_text(lqsutra, 'PL000810', 1, 1114, 2, 25, '1114')
+    # save_reel_with_correct_text(lqsutra, 'PL000810', 1, 1114, 2, 25, '1114')
     save_reel_with_correct_text(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
     save_reel_with_correct_text(lqsutra, 'QL000870', 2, 24, 18, 31, '24')
     save_reel_with_correct_text(lqsutra, 'ZH000860', 2, 12, 13, 24, '12')

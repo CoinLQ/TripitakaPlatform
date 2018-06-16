@@ -98,20 +98,20 @@ class Command(BaseCommand):
         batchtask.save()
 
         # 标点
-        Task.objects.filter(batchtask=batchtask, typ=Task.TYPE_PUNCT).delete()
+        # Task.objects.filter(batchtask=batchtask, typ=Task.TYPE_PUNCT).delete()
 
-        task1 = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
-        reeltext=reelcorrecttext, result=punctuation_json,
-        task_no=1, status=Task.STATUS_READY, publisher=admin)
-        task1.save()
-        task2 = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
-        reeltext=reelcorrecttext, result=punctuation_json,
-        task_no=2, status=Task.STATUS_READY, publisher=admin)
-        task2.save()
-        task3 = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=huayan_cb_1,
-        reeltext=reelcorrecttext, result=punctuation_json,
-        task_no=0, status=Task.STATUS_NOT_READY, publisher=admin)
-        task3.save()
+        # task1 = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
+        # reeltext=reelcorrecttext, result=punctuation_json,
+        # task_no=1, status=Task.STATUS_READY, publisher=admin)
+        # task1.save()
+        # task2 = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT, reel=huayan_cb_1,
+        # reeltext=reelcorrecttext, result=punctuation_json,
+        # task_no=2, status=Task.STATUS_READY, publisher=admin)
+        # task2.save()
+        # task3 = Task(batchtask=batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=huayan_cb_1,
+        # reeltext=reelcorrecttext, result=punctuation_json,
+        # task_no=0, status=Task.STATUS_NOT_READY, publisher=admin)
+        # task3.save()
 
         #save_reel_with_correct_text(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
         #save_reel_with_correct_text(lqsutra, 'ZH000860', 1, 12, 1, 12, '12')

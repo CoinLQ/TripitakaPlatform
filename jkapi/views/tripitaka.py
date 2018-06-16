@@ -211,7 +211,9 @@ class TripitakaReelData(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         queryset = Page.objects.all()
         reel = Reel.objects.get(id=int(self.request.query_params.get('rid', None)))
-        queryset = queryset.filter(reel=reel)
+        queryset = queryset.filter(reel=reel).order_by('reel_page_no')
+        # if queryset is None:
+        #     for p_no in range(reel.start_vol_page, reel.end_vol_page+1):
         return queryset
 
 
@@ -224,7 +226,7 @@ class TripitakaVolumePage(viewsets.ReadOnlyModelViewSet):
         queryset = Page.objects.all()
         data = self.request.query_params
         key = data.get('key')
-        queryset = queryset.filter(page_code__contains=key)
+        queryset = queryset.filter(page_code__contains=key).order_by('reel_page_no')
         return queryset
 
 class TripitakaPageData(viewsets.ReadOnlyModelViewSet):

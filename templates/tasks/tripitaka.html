@@ -19,6 +19,12 @@
         top: 37px;
       }
 
+      #tripitaka .el-icon-arrow-left{
+        margin-right:10px;
+      }#tripitaka .el-icon-arrow-right{
+        margin-left:10px;
+      }
+
       #page-canvas {
         top: -36px;
         position: relative;
@@ -420,7 +426,7 @@
               </el-tab-pane>
               <el-tab-pane label="按册浏览" name="v">
                 <div class="sutra-tree tpd-tree" id="sutra-tree">
-                  <el-tree :data="volume_list" :props="volume_props" :default-expanded-keys='expandlist' node-key="id"
+                  <el-tree :data="volume_list" :props="volume_props" :default-expanded-keys='expandlist' :default-checked-keys="checkedlist" node-key="id"
                            @node-click="clickVolumeTreeNode"></el-tree>
                 </div>
                 <div class="row">
@@ -476,7 +482,7 @@
                       </div>
                     </div>
                   </el-aside>
-                  <div style="left:900; bottom:0; position:absolute;z-index:100;" class="cut-box">
+                  <div style="left:900; bottom:-23px; position:absolute;z-index:100;">
                     <el-select v-model="chose_txt_type">
                       <el-option
                           v-for="item in txt_type"
@@ -486,13 +492,13 @@
                       </el-option>
                     </el-select>
                   </div>
-                  <div style="left:398; bottom:0; position:absolute;z-index:100;" class="cut-box">
+                  <div style="left:398; bottom:0; position:absolute;z-index:100;">
                     <el-checkbox v-model="final_cut">审定切分框</el-checkbox>
                     <el-checkbox v-model="ocr_cut">OCR切分框</el-checkbox>
                   </div>
-                  <el-main>
-                    <div style="font-size: 16px; color: #606266;">
-                      <div class="diff-text-pane" @scroll="handleScroll" @mouseup="userSelectionChanged">
+                  <el-main style="height: calc(100% - 178px) !important; overflow: auto">
+                    <div style="font-size: 16px; color: #606266; ">
+                      <div class="diff-text-pane" @mouseup="userSelectionChanged">
                         <ul v-if="show_verify">
                           <li v-for="item in cur_page.page_data[chose_txt_type]">
                             <span v-for="s in item" :position="s.no">${ s.char }</span>
@@ -509,13 +515,10 @@
         </el-row>
         <el-row style="text-align:center;">
           <div class="tpd-pagination" style="margin-top:-42px">
-            <el-pagination
-                @current-change="handleCurrentChange"
-                :current-page.sync="curreelpage"
-                :page-size="1"
-                layout=" prev, jumper, next"
-                :total="reelpage_count">
-            </el-pagination>
+            <div v-if="reelpage_count>1" class="text-center">
+              <el-button round size="small" class="el-icon-arrow-left" @click="prevpage"></el-button><input type="number" style="width:40" v-model="curreelpage"/> / ${ reelpage_count }
+              <el-button size="small" @click="handleCurrentChange" round>GO</el-button><el-button round size="small" class="el-icon-arrow-right" @click="nextpage"></el-button>
+            </div>
           </div>
         </el-row>
         <!-- 反馈 @贤抚-->
@@ -630,6 +633,7 @@
         scale: 1,
         //展开数组
         expandlist: [],
+        checkedlist: [],
 
         //校对反馈所需数据
         sharedata: {
@@ -659,6 +663,9 @@
             this.show_verify = false;
           }
         },
+        //curreelpage: function (val, oldVal) {
+          //this.cur_page_pid = this.page_lst[val - 1].pid
+        //},
         ocr_cut: function (val) {
           this.setImg();
         },
@@ -736,19 +743,32 @@
             vm.sutra_list = [response.data];
             vm.sutra_page_count = 1;
             vm.sutracount = 1;
+            vm.expandlist.push(vm.sutra_list[0].id);
+            vm.checkedlist.push(vm.reel_id);
+            vm.clickSutraTreeNode(vm.sutra_list[0]);
             d = _.find(vm.sutra_list[0].reel_set, {'id': vm.reel_id});
             vm.clickSutraTreeNode(d);
           });
           vm.fetchVolumeList();
         }
         else {
-          vm.fetchSutraList();
+          var url = '/api/sutra/?tcode='+vm.tcode;
+          axios.get(url).then(function (response) {
+            vm.sutra_list = response.data.results;
+            vm.sutra_page_count = 1;
+            vm.sutracount = 1;
+            vm.sutra_page_count = Math.ceil(response.data.count / 30);
+            vm.sutracount = vm.sutra_list.length;
+            vm.expandlist.push(vm.sutra_list[0].id);
+            vm.checkedlist.push(vm.sutra_list[0].reel_set[0].id);
+            vm.clickSutraTreeNode(vm.sutra_list[0]);
+            d = _.find(vm.sutra_list[0].reel_set, {'id': vm.sutra_list[0].reel_set[0].id});
+            vm.clickSutraTreeNode(d);
+          });
           vm.fetchVolumeList();
-        }
-        ;
+        };
         vm.setImg();
       },
-
       methods: {
         getReelData: function (pk) {
           var vm = this;
@@ -865,8 +885,22 @@
           });
         },
 
-        handleCurrentChange: function (val) {
-          this.cur_page_pid = this.page_lst[val - 1].pid
+        handleCurrentChange: function () {
+          if(this.curreelpage<1){
+            this.curreelpage = 1;
+          }
+          if(this.curreelpage>this.reelpage_count){
+            this.curreelpage = this.reelpage_count;
+          }
+          this.cur_page_pid = this.page_lst[this.curreelpage - 1].pid
+        },
+        prevpage(){
+          this.curreelpage -= 1;
+          this.handleCurrentChange();
+        },
+        nextpage(){
+          this.curreelpage += 1;
+          this.handleCurrentChange();
         },
         //鼠标点击的事件，data,s是一个有效的值。如果是自己调用的是undefine
         clickSutraTreeNode: function (data) {

@@ -44,7 +44,7 @@ float: left;
     background-color: #f8f8f9;
 } */
 .canvas-pane {
-    box-shadow: 0px 0px 1px 1px #363E4E;
+    box-shadow: 0px 0px 1px 1px #C6C6C6;
     height: 100%;
     overflow: scroll;
 }
@@ -176,19 +176,16 @@ ul.diffseg-region {
     padding: 2px;
 }
 .diffseg-tag-white {
-    /* display: inline-block; */
     background: red;
     width: 4px;
     padding: 2px;
 }
 .diffseg-tag-white-judged {
-    /* display: inline-block; */
     background: red;
     width: 4px;
     padding: 2px;
 }
 .diffseg-tag-white-notext {
-    /* display: inline-block; */
     background: red;
     width: 4px;
     padding: 2px;
@@ -630,7 +627,7 @@ input[type="number"]{
     text-align: left;
 }
 .tc{
-  text-align: center;
+    text-align: center;
 }
 .tr{
     text-align: right;

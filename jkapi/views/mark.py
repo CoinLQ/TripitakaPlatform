@@ -28,6 +28,7 @@ class MarkTaskDetail(APIView):
     
     def get(self, request, task_id, format=None):
         base_text = re.compile('[pb]').sub("\n", self.task.reeltext.text)
+        base_text = self.task.reeltext.text
         p_pos = self.task.reeltext.text.split('p')
         lf_postions = []
         for _n in p_pos:

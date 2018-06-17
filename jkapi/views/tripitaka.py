@@ -51,17 +51,17 @@ class TripitakaViewSet(viewsets.ReadOnlyModelViewSet):
             queryset =queryset.filter(code=tcode)
         return queryset
 
-#TODO 下面的函数需要优化返回值  page 
+#TODO 下面的函数需要优化返回值  page
 class SutraText(APIView):
     # test http://api.lqdzj.cn/api/sutra_text/231/
     def get(self, request, s_id, format=None):
         #根据卷ID 获得页号 和页数
         reel = Reel.objects.get(id = s_id)
-        reelPages = Page.objects.filter(reel = reel).order_by("reel_page_no")          
+        reelPages = Page.objects.filter(reel = reel).order_by("reel_page_no")
         strURLRet=''
         cut_Info_list=[]
-        
-        for p in reelPages:   
+
+        for p in reelPages:
             image_url = get_image_url(reel, p.reel_page_no)
             cut_Info_list.append(p.cut_info)
             strURLRet= image_url+'|'
@@ -74,16 +74,16 @@ class SutraText(APIView):
         except:
             reel_ocr_text = ReelOCRText.objects.get(reel_id=int(s_id))
             text = reel_ocr_text.text
-        
+
         response = {
             'sutra': text,
             'pageurls':strURLRet,
             'cut_Info_list':cut_Info_list,
             'sutra_name': str(reel.sutra.name),
             'reelcorrectid': reelcorrectid,
-            #'punct_lst': punctuation,            
+            #'punct_lst': punctuation,
         }
-        return Response(response)    
+        return Response(response)
 
 
 class RedoPageRect(APIView):
@@ -92,7 +92,7 @@ class RedoPageRect(APIView):
     def post(self, request, s_id, format=None):
         # 审定任务已开始，提交将失效
         reel = Reel.objects.get(id = s_id)
-        reelPages = Page.objects.filter(reel = reel).order_by("reel_page_no").all() 
+        reelPages = Page.objects.filter(reel = reel).order_by("reel_page_no").all()
         pagerect= PageRect.objects.filter(page_id=reelPages[request.data['page_no']-1].pk).first()
         pagetasks = PageTask.objects.filter(pagerect=pagerect).all()
         for task in pagetasks:
@@ -210,7 +210,7 @@ class TripitakaReelData(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         reel = Reel.objects.get(id=int(self.request.query_params.get('rid', None)))
-        queryset = Page.objects.filter(reel=reel).order_by('reel_page_no')
+        queryset = queryset.filter(reel=reel).order_by('reel_page_no')
         return queryset
 
 class TripitakaVolumePage(viewsets.ReadOnlyModelViewSet):
@@ -222,7 +222,7 @@ class TripitakaVolumePage(viewsets.ReadOnlyModelViewSet):
         queryset = Page.objects.all()
         data = self.request.query_params
         key = data.get('key')
-        queryset = queryset.filter(page_code__contains=key)
+        queryset = queryset.filter(page_code__contains=key).order_by('page_no')
         return queryset
 
 class TripitakaPageData(viewsets.ReadOnlyModelViewSet):

@@ -2,22 +2,20 @@
 {% block title %}格式标注{% endblock %}
 {% block style %}
 <style type="text/css">
-/* .clearfix:after{content:".";display:block;height:0;clear:both;visibility:hidden}
-.clearfix{*+height:1%;} */
+
 #mark {
     overflow: hidden !important;
+    font-family: 'Microsoft YaHei', 'SimSun', 'sans-serif', 'Helvetica Neue', 'Helvetica';
 }
 .box { 
-    height: 60%;
+    height: 70%;
     scroll-behavior: auto;
     overflow-y: scroll;
 }
 .inner-box { 
     padding: 10px 20px;
     margin-top: 2%;
-    height: 39%;
-    scroll-behavior: unset;
-    overflow-y: scroll;
+    height: 29%;
 }
 .v-cmd-block {
     border: 1px solid #ebebeb;
@@ -57,6 +55,46 @@ b, i, u, small, big, strike {
     margin-left: 0px;
     margin-top: 5px;
 }
+
+.mark-title {
+    margin-left: 2em;
+    font-size: 24px;
+    font-weight: 300;
+}
+
+.mark-author {
+    font-family: 'FangSong', 'SimSun', 'sans-serif', 'Helvetica Neue', 'Helvetica';
+    float: right;
+    font-size: 16px;
+}
+
+.mark-preface, .mark-postface {
+    font-family: 'FangSong', 'SimSun', 'sans-serif', 'Helvetica Neue', 'Helvetica';
+    font-size: 20px;
+}
+
+.mark-qzw {
+    margin-left: 2em;
+    font-size: 24px;
+    font-weight: 300;
+    color: #27a9e3;
+}
+
+.mark-inserter {
+    font-size: 16px;
+    color: #27a9e3;
+}
+
+.mark-linesmall {
+    font-size: 16px;
+    margin-left: 4em;
+}
+
+.mark-jisong {
+    font-family: 'FangSong', 'SimSun', 'sans-serif', 'Helvetica Neue', 'Helvetica';
+    font-size: 20px;
+    margin-left: 2em;
+}
 </style>
 {% endblock %}
 {% block content %}
@@ -64,11 +102,7 @@ b, i, u, small, big, strike {
         {% raw %}
         <div class="labelformat-in clearfix">
             <div class="left-con fl">
-                <div class="left">
-                    <div class="left-in canvas-pane">
-                            <canvas id="page-canvas"></canvas>
-                    </div>
-                </div>
+
                 <div class="tools">
                     <div class="pager">
                         <span @click="scale -=1">-</span>
@@ -76,8 +110,13 @@ b, i, u, small, big, strike {
                         <span @click="scale +=1">+</span>
                     </div>
                     <div class="btns">
-                        <span class="store" @click="saveTask()">暂存</span>
-                        <span  @click="submitTask()">完成</span>
+                        <span @click="saveTask()">暂存</span>
+                        <span @click="submitTask()">完成</span>
+                    </div>
+                </div>
+                <div class="left">
+                    <div class="left-in canvas-pane">
+                            <canvas id="page-canvas"></canvas>
                     </div>
                 </div>
             </div>
@@ -117,8 +156,8 @@ b, i, u, small, big, strike {
                     <span @click="markedTextContent(6)" ><i></i>行间小字</span>
                     <span @click="markedTextContent(11)" ><i></i>偈颂</span>
                     <span @click="markedTextContent(12)" ><i></i>夹注小字</span>
-                    <span @click="markedTextContent(13)" ><i></i>梵文</span>
-                    <span @click="markedTextContent(14)" ><i></i>咒语</span>
+                    <span v-show="false" @click="markedTextContent(13)" ><i></i>梵文</span>
+                    <span v-show="false" @click="markedTextContent(14)" ><i></i>咒语</span>
                 </div>
                 
             </div>
@@ -153,6 +192,10 @@ var app = new Vue({
         scale: 1,
         line_no: 1,
         current_char_no: 1,
+        x: 0,
+        y: 0,
+        w: 0,
+        h: 0
         
     },
     created: function() {
@@ -196,6 +239,9 @@ var app = new Vue({
             }
         },
         page_no: function (val, oldVal) {
+            this.loadImage();
+        },
+        line_no: function (val, oldVal) {
             this.loadImage();
         },
         current_doubt_mark: function(val, oldVal) {
@@ -279,7 +325,7 @@ var app = new Vue({
         var vm = this;
         axios.get(cut_url).then(function(response) {
           var char_data = response.data['char_data'];
-          v = _.find(char_data, function(v) { return v['line_no']  == vm.line_no && v['char_no'] == vm.current_char_no })
+          let v = _.find(char_data, function(v) { return v['line_no']  == vm.line_no && v['char_no'] == vm.current_char_no })
           // 结尾缺字
           if (!v) {
             v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no })
@@ -350,25 +396,25 @@ var app = new Vue({
         segFontDiv(mark_typ) {
             switch (mark_typ) {
                 case 1:  //标题
-                    return '<font style="background-color: red">';
+                    return '<font class="mark-title">';
                 case 2: //作译者
-                    return '<font style="background-color: green">';
+                    return '<font class="mark-author">';
                 case 3: //序
-                    return '<font style="background-color: blue">';
+                    return '<font class="mark-preface">';
                 case 4: //千字文
-                    return '<font style="background-color: grey">';
+                    return '<font class="mark-qzw">';
                 case 5: //跋
-                    return '<font style="background-color: yellow">';
+                    return '<font class="mark-postface">';
                 case 6: //行间小字
-                    return '<small style="color: blue;">';
+                    return '<small class="mark-linesmall">';
                 case 11: //偈颂
-                    return '<b style="color: grey">';
+                    return '<b class="mark-jisong">';
                 case 12: //夹注小字
-                    return '<i style="color: blue;">';
+                    return '<i class="mark-inserter">';
                 case 13: //梵文
-                    return '<u style="color: red;">';
+                    return '<u class="mark-fan">';
                 case 14: //咒语
-                    return '<big style="color: green;">';
+                    return '<big class="mark-mantras">';
 
             }
         },
@@ -444,11 +490,13 @@ var app = new Vue({
             var start = startOffset;
             var end = focusOffset;
             
+            //点击选择
             if (startNode == focusNode && startOffset == focusOffset) {
                 this.marked_start_pos = 0;
                 this.marked_end_pos = 0;
                 this.marked_text = "";
                 this.page_no = parseInt(this.getParentPTag(startNode).getAttribute("page-no"));
+                this.line_no = parseInt(this.getParentPTag(startNode).getAttribute("line-no"));
                 return;
             }
             for (var i=0; i < contentPs.length; i++){
@@ -467,7 +515,7 @@ var app = new Vue({
                 focusNode = contentPs[endPos].lastChild;
                 end = focusNode.textContent.length;
             }
-            
+            // 逆向选择，头尾调转
             if (startPos > endPos) { 
                 let tmpNode = startNode;
                 let tmpPos = startPos;
@@ -481,7 +529,7 @@ var app = new Vue({
             }
             
             
-
+            // 同区块空间，未跨区的情况
             if (startNode == focusNode)
             {
                 if(start > end) {
@@ -503,6 +551,7 @@ var app = new Vue({
                 
                 //this.marksegs.push({start:mark_start, end: mark_end, typ: 1, mark_typ: 1})
             } else if (startPos == endPos) {
+                //虽然不同区块，但处于同一个LI，同行的情况
                 let nodes = contentPs[startPos].childNodes;
                 let _start = 0, _end = 0
                 for (var i=0; i < nodes.length; i++){
@@ -540,7 +589,14 @@ var app = new Vue({
                 this.marked_end_pos = mark_end;
                 this.marked_text = head_text + content_text + tail_text;
             } 
+            else if (startNode.tagName == "LI" && startNode.contains(focusNode)) {
+                //鼠标双击后，产生的浏览器区块选择行为
+                this.marked_start_pos = parseInt(this.getParentPTag(startNode).getAttribute("data-position"));
+                this.marked_end_pos = this.marked_start_pos + startNode.textContent.length;
+                this.marked_text = startNode.textContent;
+            }
             else{
+                //更复合的，跨不同LI的大面积选择情况。
               var head_text =  startNode.data.substr(start, startNode.data.length-start);
               var content_text = '';
               var startMatch = false;
@@ -568,8 +624,8 @@ var app = new Vue({
               var mark_end = parseInt(this.getParentPTag(focusNode).getAttribute("data-position")) + offset + end;
               //this.marksegs.push({start:mark_start, end: mark_end, typ: 1, mark_typ: 1})
               this.marked_start_pos = mark_start;
-                this.marked_end_pos = mark_end;
-                this.marked_text = head_text + content_text + tail_text;
+              this.marked_end_pos = mark_end;
+              this.marked_text = head_text + content_text + tail_text;
             }
             
         },
@@ -582,11 +638,14 @@ var app = new Vue({
             this.getChoicePosition(startNode, startOffset, focusNode, focusOffset)
         },
         compiledBaseText() {
-            let content = '<li data-position="0" page-no="1">';
+            let content = '<li data-position="0" page-no="1" line-no="0">';
             let page_no = 1
+            let line_no = 0;
+            let text_content = "";
             for(var i=0; i< this.base_text.length; i++){
                 if (i >= this.lf_postions[page_no]) {
-                    page_no += 1
+                    page_no += 1;
+                    line_no = 0;
                 }
                 if (this.pos_list[i]){
                     _.forEach(this.pos_list[i], function(seg) {
@@ -599,8 +658,14 @@ var app = new Vue({
                 }
                 if (this.base_text[i] != "\n") {
                     content += this.base_text[i];
+                    text_content += this.base_text[i];
                 } else {
-                    content +='<br></li><li data-position="' + (i+1) + '" page-no="' + page_no + '">'
+                    if (text_content != "b") {
+                        line_no += 1;
+                    }
+                    
+                    text_content = "";
+                    content +='<br></li><li data-position="' + (i+1) + '" page-no="' + page_no + '" line-no="' + line_no +'">'
                 }
                 
             }

@@ -4,4 +4,4 @@
 ./manage.py init
 ./manage.py init_mark
 ./manage.py initjudge
-./manage.py create_cut_task
+./manage.py initpunct

@@ -405,10 +405,10 @@ def rebuild_reel_pagerects_for_s3(reel):
         page.pagerects.all().delete()
         cut_file = fetch_cut_file(reel, page.page_no, force_download=True)
         
-        cut_info_dict = json.loads(cut_file)
-        pagerect = PageRect(page=page, reel=page.reel, rect_set=cut_info_dict['char_data'])
-        pagerect.save()
         try:
+            cut_info_dict = json.loads(cut_file)
+            pagerect = PageRect(page=page, reel=page.reel, rect_set=cut_info_dict['char_data'])
+            pagerect.save()
             pagerect.rebuild_rect()
         except:
             traceback.print_exc()

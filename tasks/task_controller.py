@@ -119,16 +119,20 @@ def create_mark_tasks(batchtask, reel, mark_times, mark_verify_times):
         status = Task.STATUS_READY                
     for task_no in range(1, mark_times + 1):
         task = Task(batchtask=batchtask, typ=Task.TYPE_MARK, reel=reel,
-        reeltext=reelcorrecttext, result=task_marks, task_no=task_no,
+        result=task_marks, task_no=task_no,
         status=status, publisher=batchtask.publisher)
         task.save()
+        mark = Mark(reel=reel, reeltext=reelcorrecttext, task=task)
+        mark.save()
 
     # 标点审定任务只有一次
     if mark_verify_times:
         task = Task(batchtask=batchtask, typ=Task.TYPE_MARK_VERIFY, reel=reel,
-        reeltext=reelcorrecttext, result='[]',
+        result='[]',
         status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
         task.save()
+        mark = Mark(reel=reel, reeltext=reelcorrecttext, task=task)
+        mark.save()
 
 def create_lqpunct_tasks(batchtask, lqreel, lqpunct_times, lqpunct_verify_times):
     if lqpunct_times == 0:
@@ -459,27 +463,23 @@ def publish_correct_result(task):
             except:
                 pass
 
-        task_puncts = AutoPunct.get_puncts_str(clean_separators(reel_correct_text.text))
-        punct = Punct(reel=task.reel, reeltext=reel_correct_text, punctuation=task_puncts)
-        punct.save()
+        # # 基础标点任务
+        # task_puncts = AutoPunct.get_puncts_str(clean_separators(reel_correct_text.text))
+        # punct = Punct(reel=task.reel, reeltext=reel_correct_text, punctuation=task_puncts)
+        # punct.save()
 
-        # 基础标点任务
-        # 检查是否有未就绪的基础标点任务，如果有，状态设为READY
-        Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY)\
-        .update(reeltext=reel_correct_text, result='[]', status=Task.STATUS_READY)
-        # 基础标点审定任务
-        Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
+        # # 检查是否有未就绪的基础标点任务，如果有，状态设为READY
+        # Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT, status=Task.STATUS_NOT_READY)\
+        # .update(reeltext=reel_correct_text, result='[]', status=Task.STATUS_READY)
+        # # 基础标点审定任务
+        # Task.objects.filter(reel=task.reel, typ=Task.TYPE_PUNCT_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
 
         # 格式标注数据
-        # TODO: fix
         Mark.objects.filter(reel=task.reel).update(reeltext=reel_correct_text)
-        for mark_task in Task.objects.filter(reel=task.reel, status=Task.STATUS_NOT_READY, typ__in=[Task.TYPE_MARK, Task.TYPE_MARK_VERIFY]):
-            mark = Mark(reel=task.reel, reeltext=reel_correct_text, task=mark_task)
-            mark.save()
-        Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK, status=Task.STATUS_NOT_READY)\
-        .update(reeltext=reel_correct_text, result='[]', status=Task.STATUS_READY)
-        Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK_VERIFY, status=Task.STATUS_NOT_READY).update(reeltext=reel_correct_text)
-        Task.objects.filter(reel=task.reel, typ__in=[Task.TYPE_MARK, Task.TYPE_MARK_VERIFY]).update(reeltext=reel_correct_text)
+        Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK, status=Task.STATUS_NOT_READY).update(status=Task.STATUS_READY)
+        Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK, status=Task.STATUS_FINISHED).update(
+            status=Task.STATUS_READY, picker=None, picked_at=None)
+        Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK_VERIFY).exclude(status=Task.STATUS_NOT_READY).update(status=Task.STATUS_NOT_READY)
 
 CORRECT_RESULT_FILTER = re.compile('[ 　ac-oq-zA-Z0-9.?\-",/，。、：]')
 MULTI_LINEFEED = re.compile('\n\n+')

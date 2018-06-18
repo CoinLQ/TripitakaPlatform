@@ -1,0 +1,130 @@
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <title>注册激活成功</title>
+
+  <style>
+    body {
+      font-size: 16px;
+      margin: 0;
+      font-family: \5FAE\8F6F\96C5\9ED1;
+    }
+
+    #info {
+      text-align: center;
+      display: none
+    }
+
+    .info1 {
+      background: #a7d299;
+      width: 70px;
+      height: 77px;
+      border-radius: 50%;
+      padding-left: 17px;
+      padding-right: 13px;
+      padding-top: 23px;
+      margin: auto;
+      margin-top: 10%;
+    }
+
+    .info2 {
+      height: 25px;
+      width: 80%;
+      border-bottom: 8px solid #fff;
+      border-left: 8px solid #fff;
+      transform: rotate(-38deg);
+    }
+
+    .info3 {
+      padding-top: 30px;
+      padding-bottom: 10px;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    .tc2 {
+      background: #e45231;
+      color: #fff;
+      display: block;
+      width: 200px;
+      border-radius: 2px;
+      height: 36px;
+      line-height: 36px;
+      margin: auto;
+      margin-top: 20px;
+    }
+
+    .tc2:hover {
+      background: #3e3d3d;
+    }
+    
+    .title {
+      font-size: 22px
+    }
+
+    .txt {
+      padding-top: 20px;
+      line-height: 1.5em;
+      width: 250px;
+      font-size: 14px;
+      color: #888;
+    }
+
+    @media (max-width: 768px) {
+      #pwdload {
+        box-shadow: inherit;
+        width: auto;
+      }
+      #pwderr {
+        padding: 15px 0;
+      }
+      .btnpwd {
+        float: inherit;
+        text-align: center;
+        padding: 10px 0px;
+        width: 100%;
+      }
+      #info {
+        padding: 20px;
+      }
+      .tc2 {
+        width: 100%;
+      }
+    }
+
+    footer {
+      width: 100%;
+      height: 100px;
+      /* footer的高度一定要是固定值*/
+      position: absolute;
+      bottom: 0px;
+      left: 0px;
+      color: lightgray;
+    }
+  </style>
+</head>
+
+<!-- 验证成功 -->
+<div align='center'>
+  <div class="info1">
+    <div class="info2"></div>
+  </div>
+  <div class="info3">恭喜你，通过了</div>
+  <div class="load" id="go">
+    <a target="_blank" href="{{ url }}">
+      <span class="tc2">{{ message }}</span>
+    </a>
+  </div>
+
+</div>
+<footer>
+  <div align='center'>
+    <a>@龙泉大藏经校勘平台</a>
+  </div>
+</footer>
+
+</html>

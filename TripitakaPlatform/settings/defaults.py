@@ -327,10 +327,10 @@ CELERY_IMPORTS = (
 
 ## 系统邮箱设置
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.sina.cn'
+EMAIL_HOST = 'smtp.office365.com'
 EMAIL_PORT = 25
-EMAIL_HOST_USER = '17074810135@sina.cn'
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PW', '')
+EMAIL_HOST_USER = 'lqdzj@longquan.org'
+EMAIL_HOST_PASSWORD = 'rsexrxes@2018'# os.environ.get('EMAIL_PW', '')
 EMAIL_USE_TLS = True
 EMAIL_FROM = EMAIL_HOST_USER
 SERVER_EMAIL = EMAIL_HOST_USER
@@ -338,3 +338,6 @@ SERVER_EMAIL = EMAIL_HOST_USER
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 100000
 
 UPLOAD_COLUMN_IMAGE = True 
+
+FRONT_HOST = 'test.lqdzj.cn'
+PUBLIC_HOST = 'work.lqdzj.cn'

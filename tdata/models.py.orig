@@ -132,7 +132,6 @@ class Reel(models.Model):
     correct_ready = models.BooleanField(verbose_name='是否有文字校对经文', default=False)
     mark_ready = models.BooleanField(verbose_name='是否完成格式标注', default=False)
     used_in_collation = models.BooleanField(verbose_name='是否用于校勘', default=True)
-    bar_line_count = models.CharField('每栏文本行数', max_length=256, default='0')
 
     class Meta:
         verbose_name = '实体卷'
@@ -190,7 +189,7 @@ class Reel(models.Model):
 class ReelOCRText(models.Model):
     reel = models.OneToOneField(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, primary_key=True, editable=False)
     text = SutraTextField('经文', blank=True, default='') #按实际行加了换行符，换页标记为p\n
-    
+
     class Meta:
         verbose_name = '实体藏经卷OCR经文'
         verbose_name_plural = '实体藏经卷OCR经文'
@@ -339,17 +338,3 @@ class Configuration(models.Model):
 
     def __str__(self):
         return '当前配置'
-
-class EmailVerifycode(models.Model):
-    # 验证码
-    code = models.CharField(max_length=20, verbose_name=u"验证码")
-    email = models.EmailField(max_length=50, verbose_name=u"邮箱")
-    username = models.CharField(max_length=100, verbose_name=u"用户名",default='')
-    # 包含注册验证和找回验证
-    send_type = models.CharField(verbose_name=u"验证码类型", max_length=10, choices=(("register",u"注册"), ("forget",u"找回密码")))
-    send_time = models.DateTimeField(verbose_name=u"发送时间", default=timezone.now)
-    class Meta:
-        verbose_name = u"邮箱验证码"
-        verbose_name_plural = verbose_name
-    def __unicode__(self):
-        return '{0}({1})'.format(self.code, self.email)

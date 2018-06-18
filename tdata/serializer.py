@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from tdata.models import Page, LQSutra, LQReel, Sutra,Reel,Tripitaka,Volume, ReelOCRText
+from tdata.models import Page, LQSutra, LQReel, Sutra,Reel,Tripitaka,Volume, ReelOCRText,EmailVerifycode
+from TripitakaPlatform import email_send
 from tasks.models import Task, ReelCorrectText
 import tdata.lib.image_name_encipher as encipher
 import json
@@ -150,3 +151,26 @@ class TripitakaPageSerializer(serializers.ModelSerializer):
             'ocr_cuts': ocr_cuts,
             'reelcorrectid': reelcorrectid,
         }
+
+class EmailVerifycodeSerializer(serializers.ModelSerializer):
+    class Meta:
+       model = EmailVerifycode
+       fields = '__all__'
+
+    def create(self, validated_data):
+        try:
+            email = validated_data['email']
+        except Exception as e:
+            email = ''
+        try:
+            send_type = validated_data['send_type']
+        except Exception as e:
+            send_type = ''
+        try:
+            username = validated_data['username']
+        except Exception as e:
+            username = ''
+        
+        email_send.send_verifycode_email(email=email, send_type=send_type, username=username)
+        emailVerifycode = EmailVerifycode.objects.get(email=email,send_type=send_type, username=username)
+        return emailVerifycode

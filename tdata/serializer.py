@@ -90,7 +90,7 @@ class TripitakaPageSerializer(serializers.ModelSerializer):
         fields = ['image_url', 'page_data']
 
     def get_image_url(self, obj):
-        return encipher.get_image_url(obj.reel, obj.reel_page_no)
+        return encipher.get_image_url(obj.reel, obj.page_no)
 
     def get_page_data(self, obj):
         try:

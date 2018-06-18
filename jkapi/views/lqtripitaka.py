@@ -17,7 +17,7 @@ class LQSutraResultsSetPagination(pagination.PageNumberPagination):
     page_size = 30
 
 class LQSutraViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = LQSutra.objects.all()
+    queryset = LQSutra.objects.order_by('id')
     serializer_class = LQSutraSerializer
     pagination_class = LQSutraResultsSetPagination
     filter_backends = (filters.SearchFilter,)

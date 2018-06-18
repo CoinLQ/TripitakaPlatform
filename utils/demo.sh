@@ -1,7 +1,7 @@
 #!/bin/bash
-./utils/prepare_data.sh
+./utils/fast_prepare_data.sh
 
 ./manage.py init
+./manage.py init_mark
 ./manage.py initjudge
-./manage.py initpunct
 ./manage.py create_cut_task

@@ -43,7 +43,7 @@ def create_data(lqsutra):
     save_reel_with_correct_text(lqsutra, 'QS000810', 1, 21, 449, 461, '21')
     save_reel_with_correct_text(lqsutra, 'ZC000780', 1, 10, 21, 48, '10')
     save_reel_with_correct_text(lqsutra, 'SX000770', 1, 956, 2, 38, '956')
-    save_reel_with_correct_text(lqsutra, 'PL000810', 1, 1114, 2, 25, '1114')
+    # save_reel_with_correct_text(lqsutra, 'PL000810', 1, 1114, 2, 25, '1114')
     save_reel_with_correct_text(lqsutra, 'YB000860', 1, 27, 1, 23, '27')
     save_reel_with_correct_text(lqsutra, 'QL000870', 2, 24, 18, 31, '24')
     save_reel_with_correct_text(lqsutra, 'ZH000860', 2, 12, 13, 24, '12')
@@ -53,7 +53,6 @@ def create_data(lqsutra):
     save_reel_with_correct_text(lqsutra, 'SX000770', 2, 957, 2, 36, '957')
     save_reel_with_correct_text(lqsutra, 'YB000860', 2, 27, 25, 45, '27')
 
-
 class Command(BaseCommand):
     def handle(self, *args, **options):
         print('initjudge start')
@@ -62,6 +61,7 @@ class Command(BaseCommand):
 
         # get LQSutra
         lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
+        Reel.objects.filter(sutra__lqsutra=lqsutra, reel_no__gt=2).update(used_in_collation=False)
         create_data(lqsutra)
         # create BatchTask
         batchtask = BatchTask(priority=2, publisher=admin)
@@ -76,8 +76,24 @@ class Command(BaseCommand):
         for reel_no in range(1, 3):
             base_reel = Reel.objects.get(sutra=base_sutra, reel_no=reel_no)
             lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
+            for reel in Reel.objects.filter(sutra__lqsutra=lqsutra, reel_no=reel_no):
+                reel_correct_text = ReelCorrectText.objects.filter(reel=reel).first()
+                if reel_correct_text is None:
+                    reel.used_in_collation = False
+                    reel.save(update_fields=['used_in_collation'])
+                    continue
+                reel.mark_ready = True
+                reel.save(update_fields=['mark_ready'])
+                create_mark_tasks(batchtask, reel, 2, 1)
+                Task.objects.filter(reel=reel, typ__in=[Task.TYPE_MARK, Task.TYPE_MARK_VERIFY])\
+                .update(status=Task.STATUS_FINISHED, picker=admin, picked_at=timezone.now())
+                for task in Task.objects.filter(reel=reel, typ__in=[Task.TYPE_MARK, Task.TYPE_MARK_VERIFY]):
+                    mark = Mark(reel=task.reel, reeltext=reel_correct_text, task=task)
+                    if task.typ == Task.TYPE_MARK_VERIFY:
+                        mark.publisher = admin
+                    mark.save()
             create_judge_tasks(batchtask, lqreel, base_reel, 2, 1)
-        judge_tasks = create_data_for_judge_tasks(batchtask, lqsutra, base_sutra, 2)
+        judge_tasks = create_data_for_judge_tasks(lqsutra, base_sutra, 2)
 
         set_result = True
         if set_result:

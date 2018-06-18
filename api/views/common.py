@@ -278,9 +278,10 @@ class CommonHistoryAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
     
     def detail_task(self, request, pk):
         task = Task.objects.get(pk=pk)
-        if task.typ in [1, 2, 5, 6]:
-            desc = "%s / %s / 第%d卷" % (task.reel.sutra.tripitaka.name, task.reel.sutra.name, task.reel.reel_no)
-        else:
+        if task.typ in [Task.TYPE_JUDGE, Task.TYPE_JUDGE_VERIFY, Task.TYPE_JUDGE_DIFFICULT,
+                        Task.TYPE_LQPUNCT, Task.TYPE_LQPUNCT_VERIFY]:
             desc = "%s / 第%d卷" % (task.lqreel.lqsutra.name, task.lqreel.reel_no)
+        else:
+            desc = "%s / %s / 第%d卷" % (task.reel.sutra.tripitaka.name, task.reel.sutra.name, task.reel.reel_no)
 
         return Response({"status": 0, "task_id": pk, "title": desc})

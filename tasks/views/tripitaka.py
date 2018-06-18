@@ -9,6 +9,10 @@ def correct_feedback(request, pk):
 
 def ebook(request):
     return render(request, 'tasks/ebook.html')
+
 def reel(request, reelid):
     reel = Reel.objects.get(id=reelid)
     return render(request, 'tasks/tripitaka.html', {'reel_id': reelid, 'tcode': reel.sutra.tripitaka.code, 'sutraid': reel.sutra_id})
+
+def tripitakalist(request):
+    return render(request, 'tasks/tripitaka_list.html')

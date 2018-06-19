@@ -16,4 +16,4 @@ class Migration(migrations.Migration):
             name='reeltext',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='tasks.ReelCorrectText', verbose_name='实体藏经卷经文'),
         ),
-]
+    ]

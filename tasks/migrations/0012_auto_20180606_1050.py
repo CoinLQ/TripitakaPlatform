@@ -26,4 +26,4 @@ class Migration(migrations.Migration):
             name='mark_typ',
             field=models.SmallIntegerField(choices=[(1, '标题'), (2, '作译者'), (3, '序'), (4, '千字文'), (5, '跋'), (6, '行间小字'), (11, '偈颂'), (12, '夹注小字'), (13, '梵文'), (14, '咒语')], default=1, verbose_name='标注类型'),
         ),
-]
+    ]

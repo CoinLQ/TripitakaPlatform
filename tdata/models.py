@@ -132,7 +132,6 @@ class Reel(models.Model):
     correct_ready = models.BooleanField(verbose_name='是否有文字校对经文', default=False)
     mark_ready = models.BooleanField(verbose_name='是否完成格式标注', default=False)
     used_in_collation = models.BooleanField(verbose_name='是否用于校勘', default=True)
-    bar_line_count = models.CharField('每栏文本行数', max_length=256, default='0')
 
     class Meta:
         verbose_name = '实体卷'
@@ -190,7 +189,7 @@ class Reel(models.Model):
 class ReelOCRText(models.Model):
     reel = models.OneToOneField(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, primary_key=True, editable=False)
     text = SutraTextField('经文', blank=True, default='') #按实际行加了换行符，换页标记为p\n
-    
+
     class Meta:
         verbose_name = '实体藏经卷OCR经文'
         verbose_name_plural = '实体藏经卷OCR经文'

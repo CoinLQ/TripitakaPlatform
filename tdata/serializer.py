@@ -171,6 +171,6 @@ class EmailVerifycodeSerializer(serializers.ModelSerializer):
         except Exception as e:
             username = ''
         
-        email_send.send_verifycode_email(email=email, send_type=send_type, username=username)
-        emailVerifycode = EmailVerifycode.objects.get(email=email,send_type=send_type, username=username)
+        if email_send.send_verifycode_email(email=email, send_type=send_type, username=username):
+            emailVerifycode = EmailVerifycode.objects.get(email=email,send_type=send_type, username=username)
         return emailVerifycode

@@ -59,8 +59,8 @@ def send_verifycode_email(email, send_type, username):
         active_url = "http://" + '/'.join([host_url, miwen])
         # 发送邮件
         from_email = EMAIL_FROM
-        tolist = []
-        cclist = [email]
+        tolist = [email]
+        cclist = []
         try:
             if SendMultiEmail(from_email, tolist, cclist, active_url, username):
                 return True
@@ -72,11 +72,9 @@ def send_verifycode_email(email, send_type, username):
         email_title = "找回您的密码"
         email_body = "龙泉大藏经校勘平台用户您好，\n您已发起用户重置密码请求，您的本次操作验证码为：{0}。如果不是您本人操作，请忽略此邮件！\n阿弥陀佛！".format(
             code)
-
         # 发送邮件
         try:
-            send_status = send_mail(
-                email_title, email_body, EMAIL_FROM, [email])
+            send_status = send_mail(email_title, email_body, EMAIL_FROM, [email])
         except Exception as e:
             return False
         if send_status:

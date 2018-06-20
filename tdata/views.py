@@ -41,11 +41,16 @@ def active_user(request, token):
     email = mingwen[:-6]
     #验证激活码
     try:
-        email_record = EmailVerifycode.objects.get(email=email)
+        email_record = EmailVerifycode.objects.get(email=email, send_type = 'register')
         if email_record.code == code and email_record.email == email:
             staff = Staff.objects.get(email=email)
             staff.is_active = True
             staff.save()
+            #删除激活码
+            try:
+                EmailVerifycode.objects.filter(email=email, send_type = 'register').delete()  
+            except Exception as e:
+                pass
             if DEBUG:
                 host_url = "http://" +  FRONT_HOST 
             else:
@@ -53,9 +58,9 @@ def active_user(request, token):
             active_url = '/'.join([host_url + "/activate", miwen])
             return render(request, 'active_success.html', {'message': '激活成功请登录', 'url': host_url})
         else:
-            return render(request, 'active_fail.html', {'message': '激活未能成功。', 'url': request.path})
+            return render(request, 'active_fail.html', {'message': '激活未能成功，请联系管理员。', 'url': request.path})
     except Exception as e:
-        return render(request, 'active_fail.html', {'message': '激活出现异常:'+str(e), 'url': request.path})
+        return render(request, 'active_fail.html', {'message': '激活链接过期或错误。', 'url': request.path})
 
 #加密
 

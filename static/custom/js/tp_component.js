@@ -65,50 +65,25 @@ Vue.component('doubt-list', {
 });
 
 
-
 Vue.component('mark-list', {
   props: ['marks', 'task_id', 'current_mark'],
   template: `
-        <el-table
-        :data="marks"
-        :cell-style="{height: '20px'}"
-        highlight-current-row
-        @current-change="handleCurrentChange"
-        style="width: 100%"
-        max-height="200">
-        <el-table-column
-          prop="start"
-          label="标记起点"
-          >
-        </el-table-column>
-        <el-table-column
-          prop="end"
-          label="标记终点"
-          >
-        </el-table-column>
-        <el-table-column
-          prop="mark_typ"
-          label="标记类型"
-          >
-          <template slot-scope="scope">
-            <span >{{ typeStr(scope.row.mark_typ) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          fixed="right"
-          label="操作"
-          width="120">
-          <template slot-scope="scope">
-            <el-button 
-              @click.native.prevent="deleteRow(scope.$index, marks)"
-              type="text"
-              size="small">
-              移除
-            </el-button>
-
-          </template>
-        </el-table-column>
-      </el-table>
+  <table class="doubt-table">
+    <thead>
+      <th>标记起点</th>
+      <th>标记终点</th>
+      <th>标记类型</th>
+      <th>操作</th>
+    </thead>
+    <tbody>
+      <tr v-for="(item, index) in marks" @click="handleCurrentChange(item)" v-show="!item.processed">
+        <td>{{item.start}}</td>
+        <td>{{item.end}}</td>
+        <td>{{typeStr(item.mark_typ)}}</td>
+        <td><em @click="deleteRow(index, marks)">移除</em></td>
+      </tr>
+    </tbody>
+  </table>
     `,
   data() {
     return {}
@@ -145,25 +120,7 @@ Vue.component('mark-list', {
       this.$delete(this.marks, index)
       this.$emit('update:marks', this.marks);
     },
-    processRow(index, rows) {
-      rows[index].processed = true;
-      axios.put('/api/mark_seg/' + this.task_id + '/' + rows[index].id + '/', {
-        task: this.task_id,
-        processed: true
-      }).then(function (response) {
-        this.$emit('update:marks', this.marks);
-      }.bind(this))
-          .catch(function (error) {
-            console.log(error)
-          });
-    },
     loadMarkSeg(){
-      // axios.get('/api/mark_seg/' + this.task_id + '/list/?task=' + this.task_id).then(function (response) {
-      //   this.$emit('update:marks', _.reverse(response.data.models))
-      // }.bind(this))
-      //     .catch(function (error) {
-      //       console.log(error)
-      //     });
     }
   },
   mounted() {
@@ -171,55 +128,25 @@ Vue.component('mark-list', {
   }
 })
 
-
 Vue.component('mark-doubt-list', {
   props: ['marks', 'task_id', 'current_mark', 'accept-this'],
   template: `
-        <el-table
-        :data="marks"
-        :cell-style="{height: '20px'}"
-        highlight-current-row
-        @current-change="handleCurrentChange"
-        style="width: 100%"
-        max-height="200">
-        <el-table-column
-          prop="start"
-          label="标记起点"
-          >
-        </el-table-column>
-        <el-table-column
-          prop="end"
-          label="标记终点"
-          >
-        </el-table-column>
-        <el-table-column
-          prop="mark_typ"
-          label="标记类型"
-          width="100">
-          <template slot-scope="scope">
-            <span >{{ typeStr(scope.row.mark_typ) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          fixed="right"
-          label="操作"
-          width="120">
-          <template slot-scope="scope">
-            <el-button 
-              @click.native.prevent="deleteRow(scope.$index, marks)"
-              type="text"
-              size="small">
-              移除
-            </el-button>
-            <el-button 
-              @click.native.prevent="processRow(scope.$index, marks)"
-              type="text"
-              size="small">
-              接受
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+  <table class="doubt-table">
+  <thead>
+    <th>标记起点</th>
+    <th>标记终点</th>
+    <th>标记类型</th>
+    <th>操作</th>
+  </thead>
+  <tbody>
+    <tr v-for="(item, index) in marks" @click="handleCurrentChange(item)" v-show="!item.processed">
+      <td>{{item.start}}</td>
+      <td>{{item.end}}</td>
+      <td>{{typeStr(item.mark_typ)}}</td>
+      <td><em @click="deleteRow(index, marks)">移除</em>&nbsp;<em @click="processRow(index, marks)">接受</em></td>
+    </tr>
+  </tbody>
+</table>
     `,
   data() {
     return {}
@@ -264,18 +191,14 @@ Vue.component('mark-doubt-list', {
       this.deleteRow(index, rows)
     },
     loadMarkSeg(){
-      // axios.get('/api/mark_seg/' + this.task_id + '/list/?task=' + this.task_id).then(function (response) {
-      //   this.$emit('update:marks', _.reverse(response.data.models))
-      // }.bind(this))
-      //     .catch(function (error) {
-      //       console.log(error)
-      //     });
+
     }
   },
   mounted() {
     this.loadMarkSeg();
   }
 });
+
 
 Vue.component('correct-feedback-list', {
   props: ['cut_data', 'fb_id', 'processor'],

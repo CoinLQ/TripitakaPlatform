@@ -1095,7 +1095,7 @@ table {
     white-space: normal;
 }
 
-.correct .right .doubt-lists {
+.labelformat .right .doubt-lists, .correct .right .doubt-lists {
     border-top: lightgrey 1px solid;
 }
 .correct .right .doubt-lists .hd {
@@ -1103,15 +1103,21 @@ table {
     position: relative;
     font-size: 16px;
 }
-.correct .right .doubt-lists .el-tabs__item {
+.labelformat .right .doubt-lists .hd {
+    padding: 0 0 0 40px;
+    position: relative;
+    font-size: 16px;
+    display: inline;
+}
+.labelformat .right .doubt-lists .el-tabs__item, .correct .right .doubt-lists .el-tabs__item {
     height: 48px;
     line-height: 48px;
 }
 
-.correct .right .doubt-lists .el-table td, .correct .right .doubt-lists .el-table th {
+.right .doubt-lists .el-table td, .right .doubt-lists .el-table th {
     padding: 4px 0;
 }
-.correct .right .doubt-lists .hd:before {
+ .correct .right .doubt-lists .hd:before {
     content: "";
     position: absolute;
     top: 13px;
@@ -1121,7 +1127,16 @@ table {
     background: url(../imgs/icon18.png) no-repeat;
     background-size: 24px 24px;
 }
-
+.labelformat .right .doubt-lists .hd:before {
+    content: "";
+    position: absolute;
+    top: 0px;
+    left: 10px;
+    width: 24px;
+    height: 24px;
+    background: url(../imgs/icon18.png) no-repeat;
+    background-size: 24px 24px;
+}
 .doubt-table th {
     background-color: #fff;
     text-align: center;
@@ -1149,6 +1164,9 @@ table {
 .doubt-table td em {
     color: #27a9e3;
     cursor: pointer;
+    border: 1px solid;
+    border-radius: 10px;
+    padding: 2px 6px;
 }
 
 

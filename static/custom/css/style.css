@@ -93,6 +93,7 @@ input[type="number"]{
     background: #fff;
     border-radius: 10px;
     position: relative;
+    overflow: auto;
 }
 
 .punct-in {

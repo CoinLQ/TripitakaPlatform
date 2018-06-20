@@ -210,7 +210,7 @@ class TripitakaReelData(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         reel = Reel.objects.get(id=int(self.request.query_params.get('rid', None)))
-        queryset = queryset.filter(reel=reel).order_by('reel_page_no')
+        queryset = Page.filter(reel=reel).order_by('page_no')
         return queryset
 
 class TripitakaVolumePage(viewsets.ReadOnlyModelViewSet):

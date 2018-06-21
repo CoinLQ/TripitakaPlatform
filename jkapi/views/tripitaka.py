@@ -18,10 +18,8 @@ import tdata.lib.image_name_encipher as encipher
 import json, re
 import boto3
 
-
 class SutraResultsSetPagination(pagination.PageNumberPagination):
     page_size = 30
-
 
 class SutraViewSet(viewsets.ReadOnlyModelViewSet):
     # http://api.lqdzj.cn/api/sutra/?page=1&search=大方廣佛華嚴經&tcode=YB
@@ -38,10 +36,8 @@ class SutraViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(tripitaka__code=tcode)
         return queryset
 
-
 class TripitakaResultsSetPagination(pagination.PageNumberPagination):
     page_size = 30
-
 
 class TripitakaViewSet(viewsets.ReadOnlyModelViewSet):
     # http://api.lqdzj.cn/api/tripitaka/
@@ -56,8 +52,6 @@ class TripitakaViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(code=tcode)
         return queryset
 
-
-# TODO 下面的函数需要优化返回值  page
 class SutraText(APIView):
     # test http://api.lqdzj.cn/api/sutra_text/231/
     def get(self, request, s_id, format=None):
@@ -91,7 +85,6 @@ class SutraText(APIView):
         }
         return Response(response)
 
-
 class RedoPageRect(APIView):
     # test http://api.lqdzj.cn/api/redo_pagerect/231/
     def post(self, request, s_id, format=None):
@@ -112,9 +105,7 @@ class RedoPageRect(APIView):
         else:
             pass
             # Schedule.create_reels_pptasks(reel)
-
         return Response({'status': 'null'})
-
 
 class CorrectFeedbackViewset(generics.ListAPIView):
     queryset = CorrectFeedback.objects.all()
@@ -130,7 +121,6 @@ class CorrectFeedbackViewset(generics.ListAPIView):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response({'errors': "未校对，不能反馈！"})
-
 
 class CorrectFeedbackDetailViewset(APIView):
     queryset = CorrectFeedback.objects.all()
@@ -210,23 +200,6 @@ class CorrectFeedbackDetailViewset(APIView):
             return Response('提交成功!')
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# class TripitakaReelData(viewsets.ReadOnlyModelViewSet):
-#     queryset = Page.objects.all()
-#     serializer_class = TripitakaPageListSerializer
-#     pagination_class = SutraResultsSetPagination
-#
-#     def get_queryset(self):
-#         # queryset = Page.objects.all()
-#         reel = Reel.objects.get(id=int(self.request.query_params.get('rid', None)))
-#         queryset = reel.page_set.all().order_by('reel_page_no')
-#         if not queryset:
-#             img_lst = []
-#             for page_no in range(reel.start_vol_page, reel.end_vol_page + 1):
-#                 img_lst.append({'pid': encipher.get_image_url(reel, page_no)})
-#             return img_lst
-#         else:
-#             return queryset
-
 class TripitakaReelData(APIView):
     def get(self, request, rid, format=None):
         reel = Reel.objects.get(id=int(rid))
@@ -252,7 +225,6 @@ class TripitakaVolumePage(APIView):
             image_url = settings.PAGE_IMAGE_URL_PREFIX + '/' + signed_path
             result_lst.append({'image_url': image_url, 'page_code': page_code})
         return Response({'results': result_lst})
-
 
 class TripitakaPageData(viewsets.ReadOnlyModelViewSet):
     queryset = Page.objects.all()

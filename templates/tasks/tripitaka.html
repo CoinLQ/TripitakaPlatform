@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
     <title>Insert title here</title>
-
     <style>
       .col-md-10_col-xs-10 {
         float: left;
@@ -401,7 +400,6 @@
       }
     </style>
   </head>
-
   <div id="tripitaka">
     <el-row>
       <el-col :span="6">
@@ -787,8 +785,7 @@
             }
             ;
             vm.setImg();
-          }
-          ,
+          },
           methods: {
             tabClick()
             {
@@ -805,8 +802,7 @@
                 vm.cur_page_pid = vm.page_lst[0];
                 vm.reelpage_count = response.data.results.length;
               });
-            }
-            ,
+            },
             draw_rect(context, cut_infos, scale)
             {
               for (var i = 0; i < cut_infos.length; i++) {
@@ -816,8 +812,7 @@
                 var h = cut_infos[i].h * scale;
                 context.strokeRect(x, y, w, h);
               }
-            }
-            ,
+            },
             setImg: function () {
               var img_url = this.cur_page.image_url;
               //var between_cuts = this.cur_page.page_data['between_cuts'];
@@ -871,17 +866,14 @@
 
               }.bind(this);
               image.src = img_url;
-            }
-            ,
+            },
             handleScroll: function () {
-            }
-            ,
+            },
             switchchange(val)
             {
               var vm = this;
               vm.setImg();
-            }
-            ,
+            },
             fetchSutraList: function () {
               var vm = this;
               var url = '/api/sutra/?page=' + this.sutralistpage;
@@ -896,8 +888,7 @@
                 vm.sutra_page_count = Math.ceil(response.data.count / 30);
                 vm.sutracount = vm.sutra_list.length;
               });
-            }
-            ,
+            },
             fetchVolumeList: function () {
               var vm = this;
               var url = '/api/tripitaka_volume/' + vm.tcode + '/?page=' + this.volumepage;
@@ -906,8 +897,7 @@
                 vm.volume_page_count = Math.ceil(response.data.count / 30);
                 vm.volumetotal = vm.volume_list.length;
               });
-            }
-            ,
+            },
             handleCurrentChange: function () {
               if (this.curreelpage < 1) {
                 this.curreelpage = 1;
@@ -989,8 +979,7 @@
                 vm.curReelNode = data;
                 vm.curreelpage = 1;
               }
-            }
-            ,
+            },
 
             userSelectionChanged: function () {
               //选择文本事件 @贤抚
@@ -1013,15 +1002,11 @@
                   }
                 }, 10);
               }
-            }
-            ,
+            },
             correctFeedback: function () {
               this.sharedata.correctFeedbackDialogVisible = true;
-            }
-            ,
-          }
-          ,
-        })
-        ;
+            },
+          },
+        });
   </script>
 {% endblock %}

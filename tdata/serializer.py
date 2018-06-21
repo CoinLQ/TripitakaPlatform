@@ -77,20 +77,21 @@ def gen_signed_key(code):
     return signed_key
 
 class TripitakaPageListSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Page
-        fields = ['pid']
+        fields = ['image_url', 'page_code']
+
+    def get_image_url(self, obj):
+        return obj['image_url']
 
 class TripitakaPageSerializer(serializers.ModelSerializer):
-    image_url = serializers.SerializerMethodField()
     page_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Page
-        fields = ['image_url', 'page_data']
-
-    def get_image_url(self, obj):
-        return encipher.get_image_url(obj.reel, obj.page_no)
+        fields = ['page_data']
 
     def get_page_data(self, obj):
         try:
@@ -100,6 +101,7 @@ class TripitakaPageSerializer(serializers.ModelSerializer):
             ocr_cuts = cut_dict['char_data']
         except Exception as e:
             ocr_txt = ['无OCR文本……']
+            ocr_cuts = []
         try:
             task = Task.objects.filter(typ=1, task_no=1, reel=obj.reel)
             first_correct_txt = task.result.split('\n')

@@ -5,41 +5,42 @@ from rest_framework import pagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from tdata.models import Sutra,ReelOCRText,Reel,Tripitaka
+from tdata.models import Sutra, ReelOCRText, Reel, Tripitaka
 from tasks.models import ReelCorrectText, Punct, Page, CorrectFeedback
-from tdata.serializer import SutraSerializer,TripitakaSerializer, TripitakaPageSerializer,TripitakaPageListSerializer
+from tdata.serializer import SutraSerializer, TripitakaSerializer, TripitakaPageSerializer, TripitakaPageListSerializer
 from tdata.lib.image_name_encipher import get_image_url
 from tasks.common import clean_separators, extract_line_separators
 from rect.models import *
 from jkapi.serializers import CorrectFeedbackSerializer
 from jkapi.permissions import CanSubmitFeedbackOrReadOnly
 import math
-
+import tdata.lib.image_name_encipher as encipher
 import json, re
+import boto3
 
 class SutraResultsSetPagination(pagination.PageNumberPagination):
     page_size = 30
 
 class SutraViewSet(viewsets.ReadOnlyModelViewSet):
-    #http://api.lqdzj.cn/api/sutra/?page=1&search=大方廣佛華嚴經&tcode=YB
+    # http://api.lqdzj.cn/api/sutra/?page=1&search=大方廣佛華嚴經&tcode=YB
     queryset = Sutra.objects.all()
     serializer_class = SutraSerializer
     pagination_class = SutraResultsSetPagination
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name', )
+    search_fields = ('name',)
 
     def get_queryset(self):
         queryset = Sutra.objects.all()
         tcode = self.request.query_params.get('tcode', None)
         if tcode is not None:
-            queryset =queryset.filter(tripitaka__code=tcode)
+            queryset = queryset.filter(tripitaka__code=tcode)
         return queryset
 
 class TripitakaResultsSetPagination(pagination.PageNumberPagination):
     page_size = 30
 
 class TripitakaViewSet(viewsets.ReadOnlyModelViewSet):
-    #http://api.lqdzj.cn/api/tripitaka/
+    # http://api.lqdzj.cn/api/tripitaka/
     queryset = Tripitaka.objects.all()
     serializer_class = TripitakaSerializer
     pagination_class = TripitakaResultsSetPagination
@@ -48,25 +49,24 @@ class TripitakaViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = Tripitaka.objects.all()
         tcode = self.request.query_params.get('code', None)
         if tcode is not None:
-            queryset =queryset.filter(code=tcode)
+            queryset = queryset.filter(code=tcode)
         return queryset
 
-#TODO 下面的函数需要优化返回值  page
 class SutraText(APIView):
     # test http://api.lqdzj.cn/api/sutra_text/231/
     def get(self, request, s_id, format=None):
-        #根据卷ID 获得页号 和页数
-        reel = Reel.objects.get(id = s_id)
-        reelPages = Page.objects.filter(reel = reel).order_by("reel_page_no")
-        strURLRet=''
-        cut_Info_list=[]
+        # 根据卷ID 获得页号 和页数
+        reel = Reel.objects.get(id=s_id)
+        reelPages = Page.objects.filter(reel=reel).order_by("reel_page_no")
+        strURLRet = ''
+        cut_Info_list = []
 
         for p in reelPages:
             image_url = get_image_url(reel, p.reel_page_no)
             cut_Info_list.append(p.cut_info)
-            strURLRet= image_url+'|'
-        reel_ocr_text=None
-        reelcorrectid=-1
+            strURLRet = image_url + '|'
+        reel_ocr_text = None
+        reelcorrectid = -1
         try:
             reel_ocr_text = ReelCorrectText.objects.get(reel_id=int(s_id))
             reelcorrectid = reel_ocr_text.id
@@ -77,23 +77,21 @@ class SutraText(APIView):
 
         response = {
             'sutra': text,
-            'pageurls':strURLRet,
-            'cut_Info_list':cut_Info_list,
+            'pageurls': strURLRet,
+            'cut_Info_list': cut_Info_list,
             'sutra_name': str(reel.sutra.name),
             'reelcorrectid': reelcorrectid,
-            #'punct_lst': punctuation,
+            # 'punct_lst': punctuation,
         }
         return Response(response)
 
-
 class RedoPageRect(APIView):
-
     # test http://api.lqdzj.cn/api/redo_pagerect/231/
     def post(self, request, s_id, format=None):
         # 审定任务已开始，提交将失效
-        reel = Reel.objects.get(id = s_id)
-        reelPages = Page.objects.filter(reel = reel).order_by("reel_page_no").all()
-        pagerect= PageRect.objects.filter(page_id=reelPages[request.data['page_no']-1].pk).first()
+        reel = Reel.objects.get(id=s_id)
+        reelPages = Page.objects.filter(reel=reel).order_by("reel_page_no").all()
+        pagerect = PageRect.objects.filter(page_id=reelPages[request.data['page_no'] - 1].pk).first()
         pagetasks = PageTask.objects.filter(pagerect=pagerect).all()
         for task in pagetasks:
             if task.status < TaskStatus.COMPLETED:
@@ -107,7 +105,6 @@ class RedoPageRect(APIView):
         else:
             pass
             # Schedule.create_reels_pptasks(reel)
-
         return Response({'status': 'null'})
 
 class CorrectFeedbackViewset(generics.ListAPIView):
@@ -136,7 +133,7 @@ class CorrectFeedbackDetailViewset(APIView):
         whole_text = correct_text.text
         page_txt_list = whole_text.split('p')
         for p_no, i in enumerate(page_txt_list):
-            for line_no, k in enumerate(i.replace('b','').split('\n')):
+            for line_no, k in enumerate(i.replace('b', '').split('\n')):
                 for char_no, l in enumerate(k):
                     text_list.append((p_no, 0, line_no, char_no, l))
         original_txt_info = text_list[correct_fb.position]
@@ -145,17 +142,17 @@ class CorrectFeedbackDetailViewset(APIView):
         line_no = original_txt_info[2]
         char_no = original_txt_info[3]
         reel = correct_text.reel
-        page = reel.page_set.all()[p_no-1]
+        page = reel.page_set.all()[p_no - 1]
         image_url = get_image_url(reel, page.reel_page_no)
         cut_list = []
-        cid = 'c{0}{1}{2:02d}n{3:02d}'.format(p_no, b_no, line_no, char_no+1)#切分信息中字符从1开始计数
+        cid = 'c{0}{1}{2:02d}n{3:02d}'.format(p_no, b_no, line_no, char_no + 1)  # 切分信息中字符从1开始计数
         page_cuts = json.loads(page.cut_info)['char_data']
         for c_no, cut in enumerate(page_cuts):
             if cut['char_id'] == cid:
-                cut_list = page_cuts[c_no: c_no+len(correct_fb.original_text)]
+                cut_list = page_cuts[c_no: c_no + len(correct_fb.original_text)]
         page_lines = page_txt_list[p_no].split('\n')
         fb_line = page_lines[line_no]
-        page_lines[line_no] = fb_line[:char_no] +'<span class="difftext confirmed">'+fb_line[char_no]+'</span>'+fb_line[char_no+1:]
+        page_lines[line_no] = fb_line[:char_no] + '<span class="difftext confirmed">' + fb_line[char_no] + '</span>' + fb_line[char_no + 1:]
         if correct_fb.processor:
             processor = correct_fb.processor
         else:
@@ -190,40 +187,44 @@ class CorrectFeedbackDetailViewset(APIView):
                 for t in ori_whole_txt:
                     if pos < correctfb.position:
                         head_txt += t
-                    if t not in ['b','p','\n']:
+                    if t not in ['b', 'p', '\n']:
                         pos += 1
                     if correctfb.position <= pos <= correctfb.position + len(correctfb.original_text) - 1:
                         pass
                     if pos > correctfb.position + len(correctfb.original_text):
                         tail_txt += t
                 new_correct_text = ReelCorrectText(reel=correct_text.reel, publisher=request.user)
-                new_correct_text.set_text(head_txt+correctfb.fb_text+tail_txt)
+                new_correct_text.set_text(head_txt + correctfb.fb_text + tail_txt)
                 new_correct_text.save()
             serializer.save()
             return Response('提交成功!')
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class TripitakaReelData(viewsets.ReadOnlyModelViewSet):
-    queryset = Page.objects.all()
-    serializer_class = TripitakaPageListSerializer
-    pagination_class = SutraResultsSetPagination
+class TripitakaReelData(APIView):
+    def get(self, request, rid, format=None):
+        reel = Reel.objects.get(id=int(rid))
+        img_lst = []
+        for page_no in range(reel.start_vol_page, reel.end_vol_page + 1):
+            img_lst.append({'image_url': encipher.get_image_url(reel, page_no), 'page_code': "%s_%s_%d" % (reel.sutra.tripitaka.code, reel.path_str(), page_no)})
+        return Response({'results': img_lst})
 
-    def get_queryset(self):
-        reel = Reel.objects.get(id=int(self.request.query_params.get('rid', None)))
-        queryset = Page.filter(reel=reel).order_by('page_no')
-        return queryset
+s3c = boto3.client('s3')
 
-class TripitakaVolumePage(viewsets.ReadOnlyModelViewSet):
-    queryset = Page.objects.all()
-    serializer_class = TripitakaPageListSerializer
-    pagination_class = SutraResultsSetPagination
-
-    def get_queryset(self):
-        queryset = Page.objects.all()
-        data = self.request.query_params
-        key = data.get('key')
-        queryset = queryset.filter(page_code__contains=key).order_by('page_no')
-        return queryset
+class TripitakaVolumePage(APIView):
+    def get(self, request, key, format=None):
+        result_lst = []
+        v_code_url = 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/vcode/' + key.split('_')[0] + '/' + key + '.txt'
+        try:
+            page_code_lst = json.loads(urllib.request.urlopen(v_code_url).readlines()[0])
+        except Exception as e:
+            page_code_lst = []
+        for page_code in page_code_lst:
+            ks = page_code.split('_')
+            path = ("{}/" * (len(ks) - 1)).format(*ks[:-1]) + page_code + '.jpg'
+            signed_path = get_signed_path(path)
+            image_url = settings.PAGE_IMAGE_URL_PREFIX + '/' + signed_path
+            result_lst.append({'image_url': image_url, 'page_code': page_code})
+        return Response({'results': result_lst})
 
 class TripitakaPageData(viewsets.ReadOnlyModelViewSet):
     queryset = Page.objects.all()
@@ -233,8 +234,8 @@ class TripitakaPageData(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         queryset = Page.objects.all()
         data = self.request.query_params
-        pid = data.get('pid')
-        queryset = queryset.filter(pid=pid)
+        page_code = data.get('pid')
+        queryset = queryset.filter(page_code=page_code)
         return queryset
 
 def get_path_list(t_code):
@@ -244,18 +245,21 @@ def get_path_list(t_code):
         path_list = Reel.objects.distinct('path1', 'path2', 'path3').exclude(path1='').values('path1', 'path2', 'path3').all().order_by('path1', 'path2', 'path3', 'reel_no')
     return path_list
 
+
 def str_2_int(n):
     if n.isdigit():
         return int(n)
     else:
         return 0
 
+
 def list_2_tree(path_list):
     path_list = list(path_list)
     for no, i in enumerate(path_list):
         path_list[no] = list(i.values())
-    path_list = sorted(path_list, key=lambda X:[str_2_int(X[0]), str_2_int(X[1]), str_2_int(X[2])])
+    path_list = sorted(path_list, key=lambda X: [str_2_int(X[0]), str_2_int(X[1]), str_2_int(X[2])])
     return path_list
+
 
 def gene_children(parent_key, lst):
     tree = {}
@@ -277,21 +281,22 @@ def gene_children(parent_key, lst):
             tmp_result[no]['children'] = gene_children(p['key'], p_list)
     return tmp_result
 
+
 class TripitakaVolumeList(APIView):
     def get(self, request, t_code, format=None):
         page_no = int(request.query_params['page'])
         result = gene_children(t_code, list_2_tree(get_path_list(t_code)))
         count = len(result)
-        max_page = math.ceil(count/30)
+        max_page = math.ceil(count / 30)
         if page_no > max_page:
             page_no = max_page
         elif page_no < 1:
             page_no = 1
-        start = 30*(page_no - 1)
-        if page_no*30 > count:
+        start = 30 * (page_no - 1)
+        if page_no * 30 > count:
             end = count
         else:
-            end = page_no*30
+            end = page_no * 30
         return Response({
             'result': result[start:end],
             'count': count

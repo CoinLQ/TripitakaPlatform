@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
     <title>Insert title here</title>
-
     <style>
       .col-md-10_col-xs-10 {
         float: left;
@@ -19,10 +18,12 @@
         top: 37px;
       }
 
-      #tripitaka .el-icon-arrow-left{
-        margin-right:10px;
-      }#tripitaka .el-icon-arrow-right{
-        margin-left:10px;
+      #tripitaka .el-icon-arrow-left {
+        margin-right: 10px;
+      }
+
+      #tripitaka .el-icon-arrow-right {
+        margin-left: 10px;
       }
 
       #page-canvas {
@@ -399,7 +400,6 @@
       }
     </style>
   </head>
-
   <div id="tripitaka">
     <el-row>
       <el-col :span="6">
@@ -420,18 +420,24 @@
                 </div>
                 <div class="row">
                   <div v-if="sutra_page_count>1" class="text-center">
-                    <input type="number" class="sutra-page-input" v-model="sutralistpage"/> / ${ sutra_page_count }
+                    <el-button round size="small" class="el-icon-arrow-left" @click="prevsutra"></el-button>
+                    <input type="number" class="sutra-page-input" v-model.number="sutralistpage"/> / ${ sutra_page_count }
+                    <el-button size="small" @click="handleSPageChange" round>GO</el-button>
+                    <el-button round size="small" class="el-icon-arrow-right" @click="nextsutra"></el-button>
                   </div>
                 </div>
               </el-tab-pane>
               <el-tab-pane label="按册浏览" name="v">
                 <div class="sutra-tree tpd-tree" id="sutra-tree">
-                  <el-tree :data="volume_list" :props="volume_props" :default-expanded-keys='expandlist' :default-checked-keys="checkedlist" node-key="id"
+                  <el-tree :data="volume_list" :props="volume_props"
                            @node-click="clickVolumeTreeNode"></el-tree>
                 </div>
                 <div class="row">
                   <div v-if="volume_page_count>1" class="text-center">
-                    <input type="number" class="sutra-page-input" v-model="volumepage"/> / ${ volume_page_count }
+                    <el-button round size="small" class="el-icon-arrow-left" @click="prevv"></el-button>
+                    <input type="number" class="sutra-page-input" v-model.number="volumepage"/> / ${ volume_page_count }
+                    <el-button size="small" @click="handleVPageChange" round>GO</el-button>
+                    <el-button round size="small" class="el-icon-arrow-right" @click="nextv"></el-button>
                   </div>
                 </div>
               </el-tab-pane>
@@ -483,7 +489,7 @@
                     </div>
                   </el-aside>
                   <div style="left:900; bottom:-23px; position:absolute;z-index:100;">
-                    <el-select v-model="chose_txt_type">
+                    <el-select :disabled="cur_page.page_data.reelcorrectid==-1" v-model="chose_txt_type">
                       <el-option
                           v-for="item in txt_type"
                           :key="item.value"
@@ -493,8 +499,9 @@
                     </el-select>
                   </div>
                   <div style="left:398; bottom:0; position:absolute;z-index:100;">
-                    <el-checkbox v-model="final_cut">审定切分框</el-checkbox>
-                    <el-checkbox v-model="ocr_cut">OCR切分框</el-checkbox>
+                    <el-checkbox :disabled="cur_page.page_data.reelcorrectid==-1" v-model="final_cut">审定切分框
+                    </el-checkbox>
+                    <el-checkbox :disabled="cur_page.page_data.reelcorrectid==-1" v-model="ocr_cut">OCR切分框</el-checkbox>
                   </div>
                   <el-main style="height: calc(100% - 178px) !important; overflow: auto">
                     <div style="font-size: 16px; color: #606266; ">
@@ -516,8 +523,10 @@
         <el-row style="text-align:center;">
           <div class="tpd-pagination" style="margin-top:-42px">
             <div v-if="reelpage_count>1" class="text-center">
-              <el-button round size="small" class="el-icon-arrow-left" @click="prevpage"></el-button><input type="number" style="width:40" v-model="curreelpage"/> / ${ reelpage_count }
-              <el-button size="small" @click="handleCurrentChange" round>GO</el-button><el-button round size="small" class="el-icon-arrow-right" @click="nextpage"></el-button>
+              <el-button round size="small" class="el-icon-arrow-left" @click="prevpage"></el-button>
+              <input type="number" style="width:40" v-model.number="curreelpage"/> / ${ reelpage_count }
+              <el-button size="small" @click="handleCurrentChange" round>GO</el-button>
+              <el-button round size="small" class="el-icon-arrow-right" @click="nextpage"></el-button>
             </div>
           </div>
         </el-row>
@@ -538,419 +547,466 @@
 {% block foot_script %}
   <script>
     var app = new Vue({
-      el: '#tripitaka',
-      delimiters: ['${', '}'],
-      data: {
-        //藏列表 显示
-        tcode: '{{ tcode }}',
-        reel_id: {{ reel_id }},
-        cur_tripitaka: {},
-        tripitaka_table: [],
-        sutra_name: '',
-        sutra_list: [],
-        tree_props: {
-          children: 'reel_set',
-          disabled: function (data, node) {
-            if (data.ocr_ready != undefined) {
-              return !data.ocr_ready;
-            }
-            return false;
-          },
-          label: function (data, node) {
-            if (data.reel_no == undefined) {
-              return data.name + '(' + data.total_reels + ')';
-            } else {
-              return '第' + data.reel_no + '卷';
-            }
-          },
-        },
-        searchword: '',
-        sutralistpage: 1,//经的翻页
-        sutra_page_count: 1,//经列表页数
-        curReelNode: null,//记录当前的卷节点
-        //浏览模式
-        viewtype: 'r',
-        //卷页导航
-        reelpage_count: 1,
-        reel_no: 0,
-        curreelpage: 1,
+          el: '#tripitaka',
+          delimiters: ['${', '}'],
+          data: {
+            //藏列表 显示
+            tcode: '{{ tcode }}',
+            reel_id: {{ reel_id }},
+            cur_tripitaka: {},
+            tripitaka_table: [],
+            sutra_name: '',
+            sutra_list: [],
+            tree_props: {
+              children: 'reel_set',
+              disabled: function (data, node) {
+                if (data.ocr_ready != undefined) {
+                  return !data.ocr_ready;
+                }
+                return false;
+              },
+              label: function (data, node) {
+                if (data.reel_no == undefined) {
+                  return data.name + '(' + data.total_reels + ')';
+                } else {
+                  return '第' + data.reel_no + '卷';
+                }
+              },
+            },
+            searchword: '',
+            sutralistpage: 1,//经的翻页
+            sutra_page_count: 1,//经列表页数
+            curReelNode: null,//记录当前的卷节点
+            //浏览模式
+            viewtype: 'r',
+            //卷页导航
+            reelpage_count: 1,
+            reel_no: 0,
+            curreelpage: 1,
 
-        //册页的导航
-        volume_data: [],
-        volume_list: [],
-        volume_props: {
-          label: 'label',
-          children: 'children',
-          /*disabled: function (data, node) {
-           if (data.ocr_ready != undefined) {
-           return !data.ocr_ready;
-           }
-           return false;
-           },
-           label: function (data, node) {
-           if (data.reel_no == undefined) {
-           return data.name + '(' + data.total_reels + ')';
-           } else {
-           return '第' + data.reel_no + '卷';
-           }
-           },*/
-        },
-        volume_page_count: 1,
-        volume_no: -1,
-        volumepage: 1,
-
-        //切分开关
-        final_cut: false,
-        ocr_cut: false,
-        show_verify: false,
-        txt_type: [
-          {
-            value: 'ocr_txt',
-            label: 'OCR文本'
-          },
-          {
-            value: 'first_correct_txt',
-            label: '一校文本'
-          },
-          {
-            value: 'second_correct_txt',
-            label: '二校文本'
-          },
-          {
-            value: 'verify_txt',
-            label: '审定文本'
-          },
-        ],
-        chose_txt_type: 'ocr_txt',
-        show_txt: '',
-        cur_page_pid: '',
-        cur_page: {
-          image_url: "",
-          page_data: [],
-          ocr_cuts: ["    "],
-        },
-        page_lst: [],
-        scale: 1,
-        //展开数组
-        expandlist: [],
-        checkedlist: [],
-
-        //校对反馈所需数据
-        sharedata: {
-          selection_start: 0,
-          selection_end: 0,
-          correctFeedbackDialogVisible: false,
-          original_text: '',
-          fb_text: '',
-          fb_comment: '',
-          reelcorrectid: -1,
-          popupMenuShown: false,
-        },
-        popupMenuStyle: {
-          left: 1,
-          top: 1
-        },
-        text_list: [],
-        //校对反馈所需数据
-      },
-      watch: {
-        chose_txt_type: function (val, oldVal) {
-          this.show_txt = this.cur_page.page_data[val];
-          if (val == 'verify_txt') {
-            this.show_verify = true;
-          }
-          else {
-            this.show_verify = false;
-          }
-        },
-        //curreelpage: function (val, oldVal) {
-          //this.cur_page_pid = this.page_lst[val - 1].pid
-        //},
-        ocr_cut: function (val) {
-          this.setImg();
-        },
-        final_cut: function (val) {
-          this.setImg();
-        },
-        searchword: function (val, oldVal) {
-          if (oldVal != val) {
-            this.sutralistpage = 1;
-          }
-          this.fetchSutraList();
-        },
-        sutralistpage: function (val, oldVal) {
-          if (this.sutralistpage <= 0) {
-            this.sutralistpage = 1;
-            return;
-          }
-          if (this.sutralistpage > this.sutra_page_count) {
-            this.sutralistpage = this.sutra_page_count;
-            return;
-          }
-          this.Volume();
-        },
-        volumepage: function (val, oldVal) {
-          if (this.volumepage <= 0) {
-            this.volumepage = 1;
-            return;
-          }
-          if (this.volumepage > this.volume_page_count) {
-            this.volumepage = this.volume_page_count;
-            return;
-          }
-          this.fetchVolumeList();
-        },
-        scale: function (val, oldVal) {
-          if (val > 5) {
-            this.scale = 5;
-            return
-          }
-          if (val < 1) {
-            this.scale = 1;
-            return;
-          }
-          if (val != oldVal) {
-            this.setImg();
-          }
-        },
-        cur_page_pid: function (val, oldVal) {
-          var vm = this;
-          axios.get('/api/tripitaka_page/?pid=' + val).then(function (response) {
-            vm.cur_page = response.data.results[0];
-            vm.sharedata.reelcorrectid = vm.cur_page.page_data.reelcorrectid;
-            vm.setImg();
-          });
-        }
-      },
-      computed: {
-        scale_rate: function () {
-          return "1:" + this.scale
-        },
-      },
-      created: function () {
-        var vm = this;
-        //获得藏 列表
-        axios.get('/api/tripitaka/?code=' + vm.tcode).then(function (response) {
-          if (response.data.results.length > 0) {
-            vm.cur_tripitaka = response.data.results[0];
-            vm.cur_page.image_url = "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/" + vm.tcode + "_face.jpg";
-          }
-        });
-        ;
-        if (vm.reel_id != -1) {
-          var url = '/api/sutra/{{ sutraid }}/';
-          axios.get(url).then(function (response) {
-            vm.sutra_list = [response.data];
-            vm.sutra_page_count = 1;
-            vm.sutracount = 1;
-            vm.expandlist.push(vm.sutra_list[0].id);
-            vm.checkedlist.push(vm.reel_id);
-            vm.clickSutraTreeNode(vm.sutra_list[0]);
-            d = _.find(vm.sutra_list[0].reel_set, {'id': vm.reel_id});
-            vm.clickSutraTreeNode(d);
-          });
-          vm.fetchVolumeList();
-        }
-        else {
-          var url = '/api/sutra/?tcode='+vm.tcode;
-          axios.get(url).then(function (response) {
-            vm.sutra_list = response.data.results;
-            vm.sutra_page_count = 1;
-            vm.sutracount = 1;
-            vm.sutra_page_count = Math.ceil(response.data.count / 30);
-            vm.sutracount = vm.sutra_list.length;
-            vm.expandlist.push(vm.sutra_list[0].id);
-            vm.checkedlist.push(vm.sutra_list[0].reel_set[0].id);
-            vm.clickSutraTreeNode(vm.sutra_list[0]);
-            d = _.find(vm.sutra_list[0].reel_set, {'id': vm.sutra_list[0].reel_set[0].id});
-            vm.clickSutraTreeNode(d);
-          });
-          vm.fetchVolumeList();
-        };
-        vm.setImg();
-      },
-      methods: {
-        getReelData: function (pk) {
-          var vm = this;
-          axios.get('/api/tripitaka_reel/?rid=' + pk).then(function (response) {
-            vm.page_lst = response.data.results;
-            vm.cur_page_pid = vm.page_lst[0].pid;
-            vm.reelpage_count = vm.page_lst.length;
-          });
-        },
-        getVolumeData(key){
-          var vm = this;
-          axios.get('/api/tripitaka_volume_page/?key=' + key).then(function (response) {
-            vm.page_lst = response.data.results;
-            vm.cur_page_pid = vm.page_lst[0].pid;
-            vm.reelpage_count = vm.page_lst.length;
-          });
-        },
-        draw_rect(context, cut_infos, scale){
-          for (var i = 0; i < cut_infos.length; i++) {
-            var x = cut_infos[i].x * scale;
-            var y = cut_infos[i].y * scale;
-            var w = cut_infos[i].w * scale;
-            var h = cut_infos[i].h * scale;
-            context.strokeRect(x, y, w, h);
-          }
-        },
-        setImg: function () {
-          var img_url = this.cur_page.image_url;
-          //var between_cuts = this.cur_page.page_data['between_cuts'];
-          //var add_cuts = this.cur_page.page_data['add_cuts'];
-          //var cancel_cuts = this.cur_page.page_data['cancel_cuts'];
-          var canvas = document.getElementById("page-canvas");
-          var context = canvas.getContext("2d");
-          var x = this.x * this.scale;
-          var y = this.y * this.scale;
-          var w = this.w * this.scale;
-          var h = this.h * this.scale;
-          var vm = this;
-          //设置样式
-          var image = new Image();
-          image.onload = function () {
-            var scale = vm.scale * 0.5;
-            canvas.width = canvas.width;
-            canvas.height = image.height * scale;
-            canvas.width = image.width * scale;
-
-            x = ~~x;
-            y = ~~y;
-            w = ~~w;
-            h = ~~h;
-            context.scale(0.8, 0.8);
-            context.drawImage(image, 0, 0, image.width, image.height,
-                0, 0, image.width * scale, image.height * scale);
-            context.globalAlpha = 0.5;
-
-            if (vm.ocr_cut) {
-              context.lineWidth = 1;
-              context.strokeStyle = "#F5270B";
-              context.fillStyle = "#F5270B";
-              vm.draw_rect(context, vm.cur_page.page_data.ocr_cuts, scale)
-            }
-            if (vm.final_cut) {
-              context.lineWidth = 2;
-              context.strokeStyle = "#1df519";
-              context.fillStyle = "#1df519";
-              vm.draw_rect(context, vm.cur_page.page_data.final_cuts, scale);
-            }
-
-            //context.fillRect(x, y, w, h);
-
-            //let wrapper_h = this.$el.querySelector('.canvas-pane').clientHeight;
-            //let wrapper_w = this.$el.querySelector('.canvas-pane').clientWidth;
-            //let trans_y = y * 0.8 > (wrapper_h - 100) / 2 ? y * 0.8 - wrapper_h / 2 : 0;
-            //let trans_x = x * 0.8 > wrapper_w - 100 ? x * 0.8 - wrapper_w / 2 : 0;
-            //this.$el.querySelector('.canvas-pane').scrollTop = ~~trans_y;
-            //this.$el.querySelector('.canvas-pane').scrollLeft = ~~trans_x;
-
-          }.bind(this);
-          image.src = img_url;
-        },
-        handleScroll: function () {
-        },
-        switchchange(val)
-        {
-          var vm = this;
-          vm.setImg();
-        },
-
-        tabClick() {
-
-        },
-        fetchSutraList: function () {
-          var vm = this;
-          var url = '/api/sutra/?page=' + this.sutralistpage;
-          if (this.searchword.length > 0) {
-            url += '&search=' + this.searchword;
-          }
-          if (vm.cur_tripitaka) {
-            url += '&tcode=' + vm.tcode;
-          }
-          axios.get(url).then(function (response) {
-            vm.sutra_list = response.data.results;
-            vm.sutra_page_count = Math.ceil(response.data.count / 30);
-            vm.sutracount = vm.sutra_list.length;
-          });
-        },
-        fetchVolumeList: function () {
-          var vm = this;
-          var url = '/api/tripitaka_volume/' + vm.tcode + '/?page=' + this.volumepage;
-          axios.get(url).then(function (response) {
-            vm.volume_list = response.data.result;
-            vm.volume_page_count = Math.ceil(response.data.count / 30);
-            vm.volumetotal = vm.volume_list.length;
-          });
-        },
-
-        handleCurrentChange: function () {
-          if(this.curreelpage<1){
-            this.curreelpage = 1;
-          }
-          if(this.curreelpage>this.reelpage_count){
-            this.curreelpage = this.reelpage_count;
-          }
-          this.cur_page_pid = this.page_lst[this.curreelpage - 1].pid;
-        },
-        prevpage(){
-          this.curreelpage -= 1;
-          this.handleCurrentChange();
-        },
-        nextpage(){
-          this.curreelpage += 1;
-          this.handleCurrentChange();
-        },
-        //鼠标点击的事件，data,s是一个有效的值。如果是自己调用的是undefine
-        clickSutraTreeNode: function (data) {
-          //鼠标点击将记录那个节点
-          if (data.reel_no) {
-            this.getReelData(data.id);
-            this.reel_no = data.reel_no
-          }
-          else {
-            this.sutra_name = data.name
-          }
-          var vm = this;
-          vm.curReelNode = data;
-        },
-        clickVolumeTreeNode: function (data, n, s) {
-          if (data.children[0]) {
-
-          }
-          else {
-            this.getVolumeData(data.key);
-            this.volume_no = data.label;
-          }
-        },
-
-        userSelectionChanged: function () {
-          //选择文本事件 @贤抚
-          var vm = this;
-          if (vm.chose_txt_type == "verify_txt") {
-            setTimeout(function () {
-              var selection = window.getSelection();
-              var text = window.getSelection().toString();
-              if (text.length == 0) {
-                vm.sharedata.popupMenuShown = false;
-              } else {
-                var seg_position = parseInt(selection.anchorNode.parentElement.getAttribute('position'));
-                vm.sharedata.selection_start = seg_position;
-                vm.sharedata.popupMenuShown = true;
-                vm.sharedata.original_text = text;
-                var range = selection.getRangeAt(0);
-                var rect = range.getBoundingClientRect();
-                vm.popupMenuStyle.left = rect.left;
-                vm.popupMenuStyle.top = rect.bottom;
+            //册页的导航
+            volume_data: [],
+            volume_list: [],
+            volume_props: {
+              label: 'label',
+              children: 'children',
+              label: function (data, node) {
+                return '第' + data.label + '册';
               }
-            }, 10);
-          }
-        },
-        correctFeedback: function () {
-          this.sharedata.correctFeedbackDialogVisible = true;
-        },
-      },
-    });
+            },
+            volume_page_count: 1,
+            volume_no: -1,
+            volumepage: 1,
+
+            //切分开关
+            final_cut: false,
+            ocr_cut: false,
+            show_verify: false,
+            txt_type: [
+              {
+                value: 'ocr_txt',
+                label: 'OCR文本'
+              },
+              {
+                value: 'first_correct_txt',
+                label: '一校文本'
+              },
+              {
+                value: 'second_correct_txt',
+                label: '二校文本'
+              },
+              {
+                value: 'verify_txt',
+                label: '审定文本'
+              },
+            ],
+            chose_txt_type: 'ocr_txt',
+            show_txt: '',
+            cur_page_pid: '',
+            cur_page: {
+              image_url: "",
+              page_data: {
+                'ocr_txt': '',
+                'first_correct_txt': '',
+                'second_correct_txt': '',
+                'verify_txt': '',
+                'final_cuts': [],
+                'ocr_cuts': [],
+                'reelcorrectid': -1,
+              }
+            },
+            page_lst: [],
+            scale: 1,
+            //展开数组
+            expandlist: [],
+            checkedlist: [],
+
+            //校对反馈所需数据
+            sharedata: {
+              selection_start: 0,
+              selection_end: 0,
+              correctFeedbackDialogVisible: false,
+              original_text: '',
+              fb_text: '',
+              fb_comment: '',
+              reelcorrectid: -1,
+              popupMenuShown: false,
+            },
+            popupMenuStyle: {
+              left: 1,
+              top: 1
+            },
+            text_list: [],
+            //校对反馈所需数据
+          },
+          watch: {
+            chose_txt_type: function (val, oldVal) {
+              this.show_txt = this.cur_page.page_data[val];
+              if (val == 'verify_txt') {
+                this.show_verify = true;
+              }
+              else {
+                this.show_verify = false;
+              }
+            },
+            ocr_cut: function (val) {
+              this.setImg();
+            },
+            final_cut: function (val) {
+              this.setImg();
+            },
+            searchword: function (val, oldVal) {
+              if (oldVal != val) {
+                this.sutralistpage = 1;
+              }
+              this.fetchSutraList();
+            },
+            sutralistpage: function (val, oldVal) {
+              if (this.sutralistpage <= 0) {
+                this.sutralistpage = 1;
+                return;
+              }
+              if (this.sutralistpage > this.sutra_page_count) {
+                this.sutralistpage = this.sutra_page_count;
+                return;
+              }
+              this.fetchSutraList();
+            },
+            volumepage: function (val, oldVal) {
+              if (this.volumepage <= 0) {
+                this.volumepage = 1;
+                return;
+              }
+              if (this.volumepage > this.volume_page_count) {
+                this.volumepage = this.volume_page_count;
+                return;
+              }
+              this.fetchVolumeList();
+            },
+            scale: function (val, oldVal) {
+              if (val > 5) {
+                this.scale = 5;
+                return
+              }
+              if (val < 1) {
+                this.scale = 1;
+                return;
+              }
+              if (val != oldVal) {
+                this.setImg();
+              }
+            },
+            cur_page_pid: function (val, oldVal) {
+              var vm = this;
+              vm.cur_page.image_url = val.image_url;
+              vm.setImg();
+              axios.get('/api/tripitaka_page/?pid=' + val.page_code).then(function (response) {
+                if (response.data.results[0]) {
+                  vm.cur_page.page_data = response.data.results[0].page_data;
+                }
+                else {
+                  vm.cur_page.page_data = {
+                    'ocr_txt': '',
+                    'first_correct_txt': '',
+                    'second_correct_txt': '',
+                    'verify_txt': '',
+                    'final_cuts': [],
+                    'ocr_cuts': [],
+                    'reelcorrectid': -1,
+                  };
+                  vm.sharedata.reelcorrectid = vm.cur_page.page_data.reelcorrectid;
+                }
+              });
+            }
+          },
+          computed: {
+            scale_rate: function () {
+              return "1:" + this.scale
+            },
+          },
+          created: function () {
+            var vm = this;
+            //获得藏 列表
+            axios.get('/api/tripitaka/?code=' + vm.tcode).then(function (response) {
+              if (response.data.results.length > 0) {
+                vm.cur_tripitaka = response.data.results[0];
+                vm.cur_page.image_url = "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/cover/" + vm.tcode + "_face.jpg";
+              }
+            });
+            ;
+            if (vm.reel_id != -1) {
+              var url = '/api/sutra/{{ sutraid }}/';
+              axios.get(url).then(function (response) {
+                vm.sutra_list = [response.data];
+                vm.sutra_page_count = 1;
+                vm.sutracount = 1;
+                vm.expandlist.push(vm.sutra_list[0].id);
+                vm.checkedlist.push(vm.reel_id);
+                vm.clickSutraTreeNode(vm.sutra_list[0]);
+                d = _.find(vm.sutra_list[0].reel_set, {'id': vm.reel_id});
+                vm.clickSutraTreeNode(d);
+              });
+              vm.fetchVolumeList();
+            }
+            else {
+              var url = '/api/sutra/?tcode=' + vm.tcode;
+              axios.get(url).then(function (response) {
+                vm.sutra_list = response.data.results;
+                vm.sutra_page_count = 1;
+                vm.sutracount = 1;
+                vm.sutra_page_count = Math.ceil(response.data.count / 30);
+                vm.sutracount = vm.sutra_list.length;
+                vm.expandlist.push(vm.sutra_list[0].id);
+                vm.checkedlist.push(vm.sutra_list[0].reel_set[0].id);
+                vm.clickSutraTreeNode(vm.sutra_list[0]);
+                vm.clickSutraTreeNode(vm.sutra_list[0].reel_set[0]);
+              });
+              vm.fetchVolumeList();
+            }
+            ;
+            vm.setImg();
+          },
+          methods: {
+            tabClick()
+            {
+
+            },
+            getPageData: function (pk, tp) {
+              var vm = this;
+              var url = '/api/tripitaka_volume_page/' + pk +'/';
+              if (tp == 'r') {
+                url = '/api/tripitaka_reel/' + pk + '/';
+              }
+              axios.get(url).then(function (response) {
+                vm.page_lst = response.data.results;
+                vm.cur_page_pid = vm.page_lst[0];
+                vm.reelpage_count = response.data.results.length;
+              });
+            },
+            draw_rect(context, cut_infos, scale)
+            {
+              for (var i = 0; i < cut_infos.length; i++) {
+                var x = cut_infos[i].x * scale;
+                var y = cut_infos[i].y * scale;
+                var w = cut_infos[i].w * scale;
+                var h = cut_infos[i].h * scale;
+                context.strokeRect(x, y, w, h);
+              }
+            },
+            setImg: function () {
+              var img_url = this.cur_page.image_url;
+              //var between_cuts = this.cur_page.page_data['between_cuts'];
+              //var add_cuts = this.cur_page.page_data['add_cuts'];
+              //var cancel_cuts = this.cur_page.page_data['cancel_cuts'];
+              var canvas = document.getElementById("page-canvas");
+              var context = canvas.getContext("2d");
+              var x = this.x * this.scale;
+              var y = this.y * this.scale;
+              var w = this.w * this.scale;
+              var h = this.h * this.scale;
+              var vm = this;
+              //设置样式
+              var image = new Image();
+              image.onload = function () {
+                var scale = vm.scale * 0.5;
+                canvas.width = canvas.width;
+                canvas.height = image.height * scale;
+                canvas.width = image.width * scale;
+
+                x = ~~x;
+                y = ~~y;
+                w = ~~w;
+                h = ~~h;
+                context.scale(0.8, 0.8);
+                context.drawImage(image, 0, 0, image.width, image.height,
+                    0, 0, image.width * scale, image.height * scale);
+                context.globalAlpha = 0.5;
+
+                if (vm.ocr_cut) {
+                  context.lineWidth = 1;
+                  context.strokeStyle = "#F5270B";
+                  context.fillStyle = "#F5270B";
+                  vm.draw_rect(context, vm.cur_page.page_data.ocr_cuts, scale)
+                }
+                if (vm.final_cut) {
+                  context.lineWidth = 2;
+                  context.strokeStyle = "#1df519";
+                  context.fillStyle = "#1df519";
+                  vm.draw_rect(context, vm.cur_page.page_data.final_cuts, scale);
+                }
+
+                //context.fillRect(x, y, w, h);
+
+                //let wrapper_h = this.$el.querySelector('.canvas-pane').clientHeight;
+                //let wrapper_w = this.$el.querySelector('.canvas-pane').clientWidth;
+                //let trans_y = y * 0.8 > (wrapper_h - 100) / 2 ? y * 0.8 - wrapper_h / 2 : 0;
+                //let trans_x = x * 0.8 > wrapper_w - 100 ? x * 0.8 - wrapper_w / 2 : 0;
+                //this.$el.querySelector('.canvas-pane').scrollTop = ~~trans_y;
+                //this.$el.querySelector('.canvas-pane').scrollLeft = ~~trans_x;
+
+              }.bind(this);
+              image.src = img_url;
+            },
+            handleScroll: function () {
+            },
+            switchchange(val)
+            {
+              var vm = this;
+              vm.setImg();
+            },
+            fetchSutraList: function () {
+              var vm = this;
+              var url = '/api/sutra/?page=' + this.sutralistpage;
+              if (this.searchword.length > 0) {
+                url += '&search=' + this.searchword;
+              }
+              if (vm.cur_tripitaka) {
+                url += '&tcode=' + vm.tcode;
+              }
+              axios.get(url).then(function (response) {
+                vm.sutra_list = response.data.results;
+                vm.sutra_page_count = Math.ceil(response.data.count / 30);
+                vm.sutracount = vm.sutra_list.length;
+              });
+            },
+            fetchVolumeList: function () {
+              var vm = this;
+              var url = '/api/tripitaka_volume/' + vm.tcode + '/?page=' + this.volumepage;
+              axios.get(url).then(function (response) {
+                vm.volume_list = response.data.result;
+                vm.volume_page_count = Math.ceil(response.data.count / 30);
+                vm.volumetotal = vm.volume_list.length;
+              });
+            },
+            handleCurrentChange: function () {
+              if (this.curreelpage < 1) {
+                this.curreelpage = 1;
+              }
+              if (this.curreelpage > this.reelpage_count) {
+                this.curreelpage = this.reelpage_count;
+              }
+              this.cur_page_pid = this.page_lst[this.curreelpage - 1];
+            },
+            prevpage()
+            {
+              this.curreelpage -= 1;
+              this.handleCurrentChange();
+            },
+            nextpage()
+            {
+              this.curreelpage += 1;
+              this.handleCurrentChange();
+            },
+            handleSPageChange: function () {
+              if (this.sutralistpage < 1) {
+                this.sutralistpage = 1;
+              }
+              if (this.sutralistpage > this.sutra_page_count) {
+                this.sutralistpage = this.sutra_page_count;
+              }
+            },
+            prevsutra()
+            {
+              this.sutralistpage -= 1;
+              this.handleSPageChange();
+            },
+            nextsutra()
+            {
+              this.sutralistpage += 1;
+              this.handleSPageChange();
+            },
+            handleVPageChange: function () {
+              if (this.volumepage < 1) {
+                this.volumepage = 1;
+              }
+              if (this.volumepage > this.volume_page_count) {
+                this.volumepage = this.volume_page_count;
+              }
+            },
+            prevv()
+            {
+              this.volumepage -= 1;
+              this.handleSPageChange();
+            },
+            nextv()
+            {
+              this.volumepage += 1;
+              this.handleSPageChange();
+            },
+
+            //鼠标点击的事件，data,s是一个有效的值。如果是自己调用的是undefine
+            clickSutraTreeNode: function (data) {
+              //鼠标点击将记录那个节点
+              if (data.reel_no) {
+                this.getPageData(data.id, 'r');
+                this.reel_no = data.reel_no
+              }
+              else {
+                this.sutra_name = data.name
+              }
+              var vm = this;
+              vm.curReelNode = data;
+              vm.curreelpage = 1;
+            },
+            clickVolumeTreeNode: function (data) {
+              if (data.children[0]) {
+
+              }
+              else {
+                this.getPageData(data.key, 'v');
+                this.volume_no = data.label;
+                var vm = this;
+                vm.curReelNode = data;
+                vm.curreelpage = 1;
+              }
+            },
+
+            userSelectionChanged: function () {
+              //选择文本事件 @贤抚
+              var vm = this;
+              if (vm.chose_txt_type == "verify_txt") {
+                setTimeout(function () {
+                  var selection = window.getSelection();
+                  var text = window.getSelection().toString();
+                  if (text.length == 0) {
+                    vm.sharedata.popupMenuShown = false;
+                  } else {
+                    var seg_position = parseInt(selection.anchorNode.parentElement.getAttribute('position'));
+                    vm.sharedata.selection_start = seg_position;
+                    vm.sharedata.popupMenuShown = true;
+                    vm.sharedata.original_text = text;
+                    var range = selection.getRangeAt(0);
+                    var rect = range.getBoundingClientRect();
+                    vm.popupMenuStyle.left = rect.left;
+                    vm.popupMenuStyle.top = rect.bottom;
+                  }
+                }, 10);
+              }
+            },
+            correctFeedback: function () {
+              this.sharedata.correctFeedbackDialogVisible = true;
+            },
+          },
+        });
   </script>
 {% endblock %}

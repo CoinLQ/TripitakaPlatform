@@ -133,7 +133,7 @@ class Command(BaseCommand):
             Reel.objects.filter(sutra=huayan_cb).delete()
 
             # #创建经卷和经文对象
-            for reel_no in range(1, total_reels+1):
+            for reel_no in range(1, 3+1):
                 filename = reelfilename+'/%s.txt' % reel_no
                 with open(filename, 'r', encoding='utf-8') as f:
                     lines1 = f.readlines()

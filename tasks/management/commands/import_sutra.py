@@ -161,12 +161,13 @@ class Command(BaseCommand):
                     print('no sutra: ', line)
                     continue
 
-                vol_id = '%s_%d' % (sid[:2], start_vol)
-                if vol_id not in vol_to_page_count:
-                    vol_to_page_count[vol_id] = end_vol_page
-                else:
-                    if vol_to_page_count[vol_id] < end_vol_page:
+                if start_vol > 0:
+                    vol_id = '%s_%d' % (sid[:2], start_vol)
+                    if vol_id not in vol_to_page_count:
                         vol_to_page_count[vol_id] = end_vol_page
+                    else:
+                        if vol_to_page_count[vol_id] < end_vol_page:
+                            vol_to_page_count[vol_id] = end_vol_page
 
                 reel_str = '%s%03d' % (sid, reel_no)
                 if reel_str in exist_reels or reel_str in reel_str_set:

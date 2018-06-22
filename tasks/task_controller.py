@@ -212,6 +212,17 @@ def create_tasks_for_lqreels(lqreels_json,
                                judge_times, judge_verify_times, punct_times, punct_verify_times,
                                lqpunct_times, lqpunct_verify_times, mark_times, mark_verify_times)
 
+def set_reel_task_progress(reel, correct_times):
+    update_fields = []
+    for task_no in range(1, correct_times + 1):
+        key = 'correct_%d' % task_no
+        setattr(reel, key, False)
+        update_fields.append(key)
+    for key in ['correct_verify', 'mark_1', 'mark_2', 'mark_verify']:
+        setattr(reel, key, False)
+        update_fields.append(key)
+    reel.save(update_fields=update_fields)
+
 # 从龙泉大藏经来发布
 def create_tasks_for_batchtask(batchtask, reel_lst,
 correct_times = 2, correct_verify_times = 1,
@@ -263,6 +274,7 @@ mark_times = 0, mark_verify_times = 0):
                 create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
                 create_punct_tasks(batchtask, reel, punct_times, punct_verify_times)
                 create_mark_tasks(batchtask, reel, mark_times, mark_verify_times)
+                set_reel_task_progress(reel, correct_times)
         try:
             lqreel = LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
             base_reel = base_reel_lst[0]
@@ -337,6 +349,8 @@ mark_times = 0, mark_verify_times = 0):
             # TODO: 记录错误
             continue
         create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
+        create_mark_tasks(batchtask, reel, mark_times, mark_verify_times)
+        set_reel_task_progress(reel, correct_times)
 
 def calculate_abnormal_line_count(reel_correct_text):
     if reel_correct_text.task is None:
@@ -515,6 +529,9 @@ def correct_submit(task):
     '''
     print('correct_submit')
     generate_correct_result(task)
+    key = 'correct_%d' % task.task_no
+    setattr(task.reel, key, True)
+    task.reel.save(update_fields=[key])
     # 检查一组的几个文字校对任务是否都已完成
     correct_tasks = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_CORRECT).order_by('task_no')
     all_finished = all([correct_task.status == Task.STATUS_FINISHED for correct_task in correct_tasks])
@@ -564,6 +581,11 @@ def correct_submit(task):
             correct_verify_task.save(update_fields=['status'])
 
 def correct_verify_submit(task):
+    print('correct_verify_submit')
+    key = 'correct_verify'
+    setattr(task.reel, key, True)
+    task.reel.save(update_fields=[key])
+
     doubtseg = DoubtSeg.objects.filter(task=task).first()
     if doubtseg: # 有存疑，生成文字校对难字任务
         difficult_task = Task(batchtask=task.batchtask,
@@ -591,6 +613,10 @@ def correct_verify_submit(task):
 
 def correct_difficult_submit(task):
     print('correct_difficult_submit')
+    key = 'correct_difficult'
+    setattr(task.reel, key, True)
+    task.reel.save(update_fields=[key])
+
     doubtseg = DoubtSeg.objects.filter(task=task).filter(processed=False)
     if doubtseg:
         return
@@ -612,6 +638,10 @@ def correct_update(task):
 
 def mark_submit(task):
     print('mark_submit')
+    key = 'mark_%d' % task.task_no
+    setattr(task.reel, key, True)
+    task.reel.save(update_fields=[key])
+
     # 检查一组的几个格式标注任务是否都已完成
     mark_tasks = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_MARK).order_by('task_no')
     all_finished = all([_task.status == Task.STATUS_FINISHED for _task in mark_tasks])
@@ -665,6 +695,10 @@ def mark_verify_submit(task):
     if task.mark.publisher:
         print('already submitted.')
         return
+    key = 'mark_verify'
+    setattr(task.reel, key, True)
+    task.reel.save(update_fields=[key])
+
     task.mark.publisher = task.picker
     task.mark.save(update_fields=['publisher'])
     reel = task.reel
@@ -1110,7 +1144,10 @@ def revoke_overdue_task_async(task_id):
 
 @background(schedule=timedelta(days=7))
 def revoke_overdue_pagetask_async(task_id):
-    task = PageTask.objects.get(pk=task_id)
+    try:
+        task = PageTask.objects.get(pk=task_id)
+    except:
+        return
     if task.status == 5:
         print('pagetask %s is overdue, to be revoked.' % task_id)
         task.owner = None

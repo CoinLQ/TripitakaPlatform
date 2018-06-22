@@ -163,6 +163,9 @@ USE_L10N = True
 USE_TZ = False
 
 DATETIME_FORMAT = "%Y年%m月%d日 %H时%M分%S秒"
+from django.conf.locale.zh_Hans import formats as zh_formats
+zh_formats.DATETIME_FORMAT = "Y/m/d H:i"
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 

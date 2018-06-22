@@ -10,22 +10,20 @@ from django.template import loader
 from tdata.models import *
 from tasks.models import *
 from rect.models import *
-from jwt_auth.models import Staff
+from jwt_auth.models import Staff, UserManagement, UserAuthentication
+import dmXadmin.auth
 from tasks.task_controller import correct_update_async, regenerate_correctseg_async
 
 # 龙泉经目 LQSutra
 
 
 class LQSutraAdmin(object):
+    def modify(self, instance):
+        return '修改'
+    modify.short_description = '操作'
     list_display = ['sid', 'variant_code', 'name', 'author',
-                    'total_reels', 'remark', 'showSutra']  # 自定义显示这两个字段
-
-    def showSutra(self, obj):
-        return '<a href="/xadmin/tdata/sutra/?_p_lqsutra__id__in='+str(obj.id)+'">查看版本</a>'
-        # return '<a href="/xadmin/sutradata/sutra/?">查看版本</a>'
-    showSutra.short_description = u'操作'
-    showSutra.allow_tags = True
-
+                    'total_reels', 'remark', 'modify']  # 自定义显示这两个字段
+    list_display_links = ('modify',)
     search_fields = ['sid', 'name', 'author']
     list_filter = ['sid', 'name', 'author']
     ordering = ['sid', ]  # 按照倒序排列  -号是倒序
@@ -34,38 +32,23 @@ class LQSutraAdmin(object):
 
 
 class TripitakaAdmin(object):
-    list_display = ['id', 'name', 'code', 'operator', 'path1_char',
-                    'path1_name', 'path2_char', 'path2_name', 'path3_char', 'path3_name']
+    list_display = ['name', 'shortname', 'code', 'modify']
 
-    def operator(self, obj):
-        edit = '<a href="/xadmin/sutradata/tripitaka/' + \
-            str(obj.id)+'/update/">修改</a> '
-        dele = '<a href="/xadmin/sutradata/tripitaka/' + \
-            str(obj.id)+'/delete/">删除</a> '
-        return edit+dele
-    operator.short_description = u'操作'
-    operator.allow_tags = True
-    # search_fields = ['question_text','pub_date'] #可以搜索的字段
-    # list_filter = ['question_text','pub_date']
-    ordering = ['id', ]  # 按照倒序排列
-
+    def modify(self, instance):
+        return '修改'
+    modify.short_description = '操作'
+    list_display_links = ('modify',)
+    search_fields = ['name'] #可以搜索的字段
+    list_filter = ['name']
+    ordering = ['id', ]
 
 # 实体经  Sutra
 class SutraAdmin(object):
     list_display = ['tripitaka', 'name', 'total_reels', 'Real_reels', 'sid',
-                    'lqsutra_name', 'lqsutra_sid', 'remark', 'operator']  # 自定义显示这两个字段
+                    'lqsutra_name', 'lqsutra_sid', 'remark', 'modify']  # 自定义显示这两个字段
 
     def Real_reels(self, obj):
         return Reel.objects.filter(sutra=obj.id).count()
-
-    def operator(self, obj):
-        edit = '<a href="/xadmin/sutradata/sutra/' + \
-            str(obj.id)+'/update/">修改</a> '
-        dele = '<a href="/xadmin/sutradata/sutra/' + \
-            str(obj.id)+'/delete/">删除</a> '
-        return edit+dele
-    operator.short_description = u'操作'
-    operator.allow_tags = True
 
     def lqsutra_sid(self, obj):
         if obj == None:
@@ -83,26 +66,29 @@ class SutraAdmin(object):
     lqsutra_sid.short_description = u'龙泉编码'
     lqsutra_name.short_description = u'龙泉经名'
     Real_reels.short_description = u'实存卷数'
-    # tripitaka.short_description=u'藏'
     list_select_related = False
 
-    search_fields = ['name', 'tripitaka__name', 'tripitaka__code', 'lqsutra__id',
+    def modify(self, instance):
+        return '修改'
+    modify.short_description = '操作'
+    list_display_links = ('modify',)
+    search_fields = ['name', 'tripitaka__name', 'tripitaka__code',
                      'sid', 'total_reels', 'remark']  # 可以搜索的字段
     free_query_filter = True
-    list_filter = ['name', 'lqsutra__id', 'sid', 'remark']
-    list_display_links = ('name')
+    list_filter = ['name', 'sid']
     fields = ('tripitaka', 'sid', 'name', 'total_reels', 'remark')
     ordering = ['id', ]  # 按照倒序排列
 
 
 class VolumeAdmin(object):
-    list_display = ['tripitaka_name', 'vol_no', 'page_count']  # 自定义显示这两个字段
-
-    def tripitaka_name(self, obj):  # 藏名
-        t = Tripitaka.objects.get(code=obj.tripitaka.code)
-        s = t.__str__()
-        return t
-    tripitaka_name.short_description = u'藏名'
+    def modify(self, instance):
+        return '修改'
+    modify.short_description = '操作'
+    list_display_links = ('modify',)
+    list_display = ['tripitaka', 'vol_no', 'page_count', 'modify']  # 自定义显示这两个字段
+    search_fields = ['tripitaka__name', 'tripitaka__code', 'vol_no']  # 可以搜索的字段
+    list_filter = ['tripitaka__code']
+    ordering = ['id', ]
 
 class RegenerateCorrectSegAction(BaseActionView):
 
@@ -123,16 +109,12 @@ class RegenerateCorrectSegAction(BaseActionView):
             }, 'success')
 
 class ReelAdmin(object):
-    list_display = ['tripitaka_name', 'sutra_name', 'reel_no', 'longquan_Name', 'remark',
-                    'start_vol', 'start_vol_page', 'end_vol', 'end_vol_page',
-                    'image_ready', 'cut_ready', 'column_ready', 'ocr_ready', 'correct_ready']  # 自定义显示这两个字段
-
     def tripitaka_name(self, obj):  # 藏名
         t = Tripitaka.objects.get(code=obj.sutra.tripitaka.code)
         s = t.__str__()
         return t
 
-    def longquan_Name(self, obj):  # 龙泉经名
+    def longquan_name(self, obj):  # 龙泉经名
         return obj.sutra.lqsutra.name
 
     def sutra_name(self, obj):
@@ -140,29 +122,48 @@ class ReelAdmin(object):
 
     sutra_name.short_description = u'经名'
     tripitaka_name.short_description = u'藏名'
-    longquan_Name.short_description = u'龙泉经名'
+    longquan_name.short_description = u'龙泉经名'
+    def modify(self, instance):
+        return '修改'
+    modify.short_description = '操作'
+    list_display_links = ('modify',)
+    list_display = ['tripitaka_name', 'sutra_name', 'reel_no', 'longquan_name', 'remark',
+                    'start_vol', 'start_vol_page', 'end_vol', 'end_vol_page', 'ocr_ready',
+                    'modify']  # 自定义显示这两个字段
     search_fields = ['sutra__sid', 'sutra__name', 'sutra__tripitaka__name',  'sutra__tripitaka__code',
                      '=reel_no', 'remark']  # 可以搜索的字段
-    list_filter = ['sutra__sid', 'sutra__name', 'ocr_ready', 'correct_ready']
+    list_filter = ['sutra__sid', 'sutra__name', 'ocr_ready']
     ordering = ['id', 'reel_no']  # 按照倒序排列
     fields = ('remark',
               'start_vol', 'start_vol_page', 'end_vol', 'end_vol_page')
-    list_display_links = ('sutra_name')
+    use_related_menu = False
     actions = [RegenerateCorrectSegAction]
+
+class ReelTaskProgressAdmin:
+    list_display = ['sutra', 'reel_no', 'correct_1', 'correct_2', 'correct_3', 'correct_4', 'correct_verify', 'correct_difficult',
+                    'mark_1', 'mark_2', 'mark_verify', 'finished_cut_proportion']
+    search_fields = ['sutra__sid', 'sutra__name', 'sutra__tripitaka__name', 'sutra__tripitaka__code',
+                     '=reel_no']  # 可以搜索的字段
+    list_filter = ['correct_1', 'correct_2', 'correct_3', 'correct_4', 'correct_verify', 'correct_difficult',
+                    'mark_1', 'mark_2', 'mark_verify', 'sutra__sid', 'sutra__name', 'ocr_ready']
+    remove_permissions = ['delete', 'add', 'change']
+    list_display_links = ['null']
+    use_related_menu = False
 
 class ConfigurationAdmin:
     def modify(self, instance):
         return '修改'
     modify.short_description = '操作'
     list_display = ['task_timeout', 'modify']
-    list_display_links = ("modify",)
+    list_display_links = ('modify',)
     remove_permissions = ['add', 'delete']
 
 xadmin.site.register(LQSutra, LQSutraAdmin)
 xadmin.site.register(Tripitaka, TripitakaAdmin)
 xadmin.site.register(Volume, VolumeAdmin)
 xadmin.site.register(Sutra, SutraAdmin)
-xadmin.site.register(Reel, ReelAdmin)
+xadmin.site.register(ReelInfo, ReelAdmin)
+xadmin.site.register(ReelTaskProgress, ReelTaskProgressAdmin)
 xadmin.site.register(Configuration, ConfigurationAdmin)
 
 #####################################################################################
@@ -247,24 +248,20 @@ class SetPriorityActionBase(BaseActionView):
                 "description": self.description,
             }, 'success')
 
-
 class SetHighPriorityAction(SetPriorityActionBase):
     action_name = "set_high_priority"
     description = '设为高优先级'
     priority = 3
-
 
 class SetMiddlePriorityAction(SetPriorityActionBase):
     action_name = "set_middle_priority"
     description = '设为中优先级'
     priority = 2
 
-
 class SetLowPriorityAction(SetPriorityActionBase):
     action_name = "set_low_priority"
     description = '设为低优先级'
     priority = 1
-
 
 class UpdateTaskResultAction(BaseActionView):
 
@@ -299,7 +296,6 @@ class GeneTaskPlugin(BaseAdminPlugin):
 
 site.register_plugin(GeneTaskPlugin, ListAdminView)
 
-#@xadmin.sites.register(Task)
 class TaskAdmin(object):
     def modify(self, instance):
         return '修改'
@@ -314,7 +310,7 @@ class TaskAdmin(object):
     task_link.allow_tags = True
     task_link.short_description = '查看任务'
     base_list_display = []
-    list_display_links = ("modify",)
+    list_display_links = ('modify',)
     list_filter = ['typ', 'batchtask', 'picker', 'status', 'task_no']
     search_fields = ['reel__sutra__tripitaka__name', 'reel__sutra__tripitaka__code',
                      'reel__sutra__name', '=reel__reel_no', 'lqreel__lqsutra__name']
@@ -636,10 +632,9 @@ class GlobalSetting(object):
 
     def collation_menu(self):
         return [{
-                'perm': self.get_model_perm(Task, 'view'),
                 'title': u'藏经校勘管理',
                 'icon': 'fa fa-pencil-square-o',
-                'menus': (
+                'menus': [
                     {'title': u'系统设置', 'url': self.get_model_url(
                         Configuration, 'changelist'), 'icon': 'fa fa-cog', },
                     {'title': u'任务批次',  'url': self.get_model_url(
@@ -692,14 +687,13 @@ class GlobalSetting(object):
                     {'title': u'定本标点反馈',  'url': self.get_model_url(
                         LQPunctFeedback, 'changelist'),
                         'icon': 'fa fa-tasks', },
-                )}, ]
+        ]}, ]
 
     def data_mana_menu(self):
         return [{
-                'perm': self.get_model_perm(LQSutra, 'view'),
                 'title': u'藏经数据管理',
                 'icon': 'fa fa-cloud',
-                'menus': (
+                'menus': [
                     {'title': u'龙泉经目', 'url': self.get_model_url(
                         LQSutra, 'changelist'), 'icon': 'fa fa-book', },
                     {'title': u'实体藏',  'url': self.get_model_url(
@@ -709,27 +703,39 @@ class GlobalSetting(object):
                     {'title': u'实体经',  'url': self.get_model_url(
                         Sutra, 'changelist'), 'icon': 'fa fa-book', },
                     {'title': u'实体卷',  'url': self.get_model_url(
-                        Reel, 'changelist'), 'icon': 'fa fa-book', },
-                )}, ]
+                        ReelInfo, 'changelist'), 'icon': 'fa fa-book', },
+                    {'title': u'实体卷任务进度',  'url': self.get_model_url(
+                        ReelTaskProgress, 'changelist'), 'icon': 'fa fa-book', },
+        ]}, ]
 
     def user_mana_menu(self):
         return [{
-                'perm': self.get_model_perm(Staff, 'view'),
                 'title': u'用户中心',
                 'icon': 'fa fa-user',
-                'menus': (
+                'menus': [
                     {'title': u'用户管理', 'url': self.get_model_url(
-                        Staff, 'changelist'), 'icon': 'fa fa-user', },
+                        UserManagement, 'changelist'), 'icon': 'fa fa-user', },
+                    {'title': u'用户授权', 'url': self.get_model_url(
+                        UserAuthentication, 'changelist'), 'icon': 'fa fa-group', },
                     # {'title': u'角色维护', 'url': self.get_model_url(Role, 'changelist'),'icon':'fa fa-book',},
                     # {'title': u'菜单管理', 'url': self.get_model_url(Menu, 'changelist'),'icon':'fa fa-book',},
                     # {'title': u'权限管理', 'url': self.get_model_url(Permission, 'changelist'),'icon':'fa fa-book',},
-                )}, ]
+        ]}, ]
+
+    def add_nav_menu(self, menus, nav_menu):
+        need_admin = (lambda u: u.is_admin)
+        for menu in nav_menu:
+            menu['perm'] = need_admin
+            if 'menus' in menu:
+                for app_menu in menu['menus']:
+                    app_menu['perm'] = need_admin
+        menus.extend(nav_menu)
 
     def get_site_menu(self):
         menus = []
-        menus.extend(self.collation_menu())
-        menus.extend(self.data_mana_menu())
-        menus.extend(self.user_mana_menu())
+        self.add_nav_menu(menus, self.collation_menu())
+        self.add_nav_menu(menus, self.data_mana_menu())
+        self.add_nav_menu(menus, self.user_mana_menu())
         return menus
 
     menu_style = 'accordion'

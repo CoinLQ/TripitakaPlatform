@@ -751,6 +751,8 @@ class PageVerifyTask(RTask):
         rects = [rect.serialize_set for rect in Rect.objects.filter(page_pid=page.pk).all().order_by('line_no', 'char_no')]
         page.cut_info = json.dumps(rects)
         page.save(update_fields=['cut_info'])
+        page.reel.finished_cut_count = PageVerifyTask.objects.filter(pagerect__reel=reel, status=TaskStatus.COMPLETED).count()
+        page.reel.save(update_fields=['finished_cut_count'])
 
 class PageTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='page_tasks', on_delete=models.SET_NULL,

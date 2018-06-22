@@ -49,7 +49,6 @@ def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
                     if debug:
                         print('move: ', char_data['ch'], char_data['line_no'], char_data['char_no'], line_no, char_no)
                     if text1[i] != char_data['ch']:
-                        print('not equal: %s %s' % (text1[i], char_data['ch']))
                         raise ValueError('not equal: %s %s' % (text1[i], char_data['ch']))
                     char_data['line_no'] = line_no
                     char_data['char_no'] = char_no

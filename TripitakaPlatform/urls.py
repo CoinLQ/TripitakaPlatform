@@ -24,7 +24,7 @@ from tasks.views.mark import *
 from tasks.views import lqtripitaka
 from tasks.views import tripitaka
 from tools.views import *
-from tdata.views import email_vericode
+from tdata.views import email_vericode,reset_password,home_reset_password
 import xadmin
 import tdata
 
@@ -35,6 +35,8 @@ urlpatterns = [
     url(r'^auth/', include("jwt_auth.urls", namespace="api-auth")),
     url(r'^api/', include('api.urls')),
     url(r'^auth/api-vericode/', email_vericode),
+    url(r'^auth/api-resetpw/', reset_password),
+    url(r'^auth/home-resetpw/', home_reset_password),
     url(r'^activate/(?P<token>[0-9a-zA-Z@.*$]+)/$', tdata.views.active_user, name='index'),
     path('correct/<int:task_id>/', do_correct_task, name='do_correct_task'),
     path('verify_correct/<int:task_id>/', do_correct_task, name='do_correct_verify_task'),

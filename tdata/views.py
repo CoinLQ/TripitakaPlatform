@@ -9,6 +9,7 @@ from tdata.serializer import EmailVerifycodeSerializer
 from tdata.serializer import PageSerializer
 from django.http import HttpResponse
 from jwt_auth.models import Staff
+from jwt_auth.serializers import StaffSerializer
 from TripitakaPlatform.settings.defaults import *
 import base64
 
@@ -18,6 +19,39 @@ class PageViewSet(viewsets.ReadOnlyModelViewSet, mixins.ListModelMixin):
     serializer_class = PageSerializer
     permission_classes = []
 
+class ResetStaffView(mixins.CreateModelMixin,mixins.UpdateModelMixin, generics.GenericAPIView):
+    queryset = Staff.objects.all()
+    permission_classes = (permissions.AllowAny, )
+    serializer_class = StaffSerializer 
+
+    def put(self, request, *args, **kwargs):
+        params = request.data
+        email, verify_code, password = params['email'], params['vericode'], params['password']
+        codes = EmailVerifycode.objects.filter(email=email, code=verify_code)
+        if len(codes) > 0:
+            codes.delete()
+            staff = Staff.objects.get(email=email)
+            staff.set_password(password)
+            staff.save()
+            return Response({'status':0, 'msg':'成功'})
+        else:
+            return Response({'status':'-1', 'msg':'验证码错误'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+class HomeResetStaffView(mixins.CreateModelMixin,mixins.UpdateModelMixin, generics.GenericAPIView):
+    queryset = Staff.objects.all()
+    permission_classes = (permissions.AllowAny, )
+    serializer_class = StaffSerializer 
+
+    def put(self, request, *args, **kwargs):
+        params = request.data
+        email, password = params['email'],params['password']
+        try:
+            staff = Staff.objects.get(email=email)
+            staff.set_password(password)
+            staff.save()
+            return Response({'status':0, 'msg':'成功'})
+        except Exception as e:
+            return Response({'status':'-1', 'msg':'验证码错误'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
 class EmailVerifycodeView(mixins.CreateModelMixin, generics.GenericAPIView):
     queryset = EmailVerifycode.objects.all()
@@ -178,3 +212,5 @@ def miwenToOld(data2):
 
 
 email_vericode = EmailVerifycodeView.as_view()
+reset_password = ResetStaffView.as_view()
+home_reset_password = HomeResetStaffView.as_view()

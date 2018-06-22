@@ -30,8 +30,6 @@ class Command(BaseCommand):
                     filename = name[3:-4]
                     sid, reel_no_str = filename.split('_')
                     reel_no = int(reel_no_str)
-                    if reel_no > 3:
-                       continue 
                     try:
                         sutra = Sutra.objects.get(sid=sid)
                         reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)

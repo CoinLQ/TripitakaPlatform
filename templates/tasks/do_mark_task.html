@@ -5,7 +5,7 @@
 
 #mark {
     overflow: hidden !important;
-    font-family: 'Microsoft YaHei', 'SimSun', 'sans-serif', 'Helvetica Neue', 'Helvetica';
+    font-family: 'Microsoft YaHei', 'KaiXinSong', 'SimSun', 'sans-serif', 'Helvetica Neue', 'Helvetica';
 }
 .box { 
     height: 70%;
@@ -44,16 +44,19 @@ b, i, u, small, big, strike {
     display: inline;
     margin: 0;
 }
+.el-button.is-round {
+    margin-left: 2px;
+}
 .el-table td, .el-table th {
     padding: 4px 0;
 }
-.el-button--mini {
-    width: 98%;
-    padding: 12px 14px;
-}
+
 .el-button+.el-button {
     margin-left: 0px;
     margin-top: 5px;
+}
+.el-tabs--bottom .el-tabs__header.is-bottom {
+margin-top: 0px;
 }
 
 .mark-title {
@@ -63,13 +66,13 @@ b, i, u, small, big, strike {
 }
 
 .mark-author {
-    font-family: 'FangSong', 'SimSun', 'sans-serif', 'Helvetica Neue', 'Helvetica';
+    font-family: 'FangSong', 'KaiXinSong', 'SimSun', 'sans-serif', 'Helvetica Neue', 'Helvetica';
     float: right;
     font-size: 16px;
 }
 
 .mark-preface, .mark-postface {
-    font-family: 'FangSong', 'SimSun', 'sans-serif', 'Helvetica Neue', 'Helvetica';
+    font-family: 'FangSong', 'KaiXinSong', 'SimSun', 'sans-serif', 'Helvetica Neue', 'Helvetica';
     font-size: 20px;
 }
 
@@ -91,9 +94,13 @@ b, i, u, small, big, strike {
 }
 
 .mark-jisong {
-    font-family: 'FangSong', 'SimSun', 'sans-serif', 'Helvetica Neue', 'Helvetica';
+    font-family: 'FangSong', 'KaiXinSong', 'SimSun', 'sans-serif', 'Helvetica Neue', 'Helvetica';
     font-size: 20px;
     margin-left: 2em;
+}
+
+.current-mark {
+    border: red 2px solid !important;
 }
 </style>
 {% endblock %}
@@ -122,43 +129,43 @@ b, i, u, small, big, strike {
             </div>
             <div class="right fr clearfix">
                 <div class="bd fl">
-                    <div class="box ">
-                            <ul ref='textArea'  @mouseup="mouseMark" v-html="content_html">
-                                    <font>经文载入中...</font>
-                                    </ul>
-                        
+                    <div class="box">
+                        <ul ref='textArea'  @mouseup="mouseMark" v-html="content_html">
+                            <font>经文载入中...</font>
+                        </ul>
                     </div>
-                    <div class="inner-box">
-                            <el-collapse v-model="activeNames" @change="handleChange" class="biaoji">
-                                <el-collapse-item name="1">
-                                <template slot="title">
-                                <span ><i class="el-icon-date"></i> 标记列表</span>
-                                
+                    <div class="doubt-lists">
+                        <el-tabs v-model="activeTabName" tab-position="bottom" @tab-click="handleTagClick">
+                            <el-tab-pane label="标记列表" name="mark_tab">
+                                <template slot="label">
+                                        <div class="hd"> 标记列表</div><el-button type="danger" size="mini" round>{{marksegs.length}}</el-button>
+                                        
                                 </template>
-                                <div is="mark-list" :marks.sync="marksegs" :current_mark.sync="current_mark"></div>
-                                </el-collapse-item>
-                                <el-collapse-item v-if="sharedata.task_typ == 10" name="2">
-                                    <template slot="title">
-                                    <span ><i class="el-icon-date"></i> 存疑列表</span>
-                                    </template>
-                                    <div is="mark-doubt-list" :marks.sync="doubt_marks" v-on:accept="acceptThis" :current_mark.sync="current_doubt_mark"></div>
-                                </el-collapse-item>
-                            </el-collapse>
+                                
+                                <div is="mark-list"  v-show="display_mark && marksegs.length !=0" :marks.sync="marksegs" :current_mark.sync="current_mark"></div>
+                            </el-tab-pane>
+                            <el-tab-pane name="doubt_tab" v-if="sharedata.task_typ == 10">
+                                <template slot="label">
+                                        <div class="hd">存疑列表</div><el-button type="danger" size="mini" round>{{doubt_marks.length}}</el-button>
+                                        
+                                </template>
+                                <div is="mark-doubt-list"  v-show="display_doubt" :marks.sync="doubt_marks" v-on:accept="acceptThis" :current_mark.sync="current_doubt_mark"></div>
+                            </el-tab-pane>
+                        </el-tabs>
                     </div>
-                        
                 </div>
-                <div class="hd fl">
-                    <span @click="markedTextContent(1)" ><i></i>标题</span>
-                    <span @click="markedTextContent(2)" ><i></i>作译者</span>
-                    <span @click="markedTextContent(3)" ><i></i>序</span>
-                    <span @click="markedTextContent(4)" ><i></i>千字文</span>
-                    <span @click="markedTextContent(5)" ><i></i>跋</span>
-                    <span @click="markedTextContent(6)" ><i></i>行间小字</span>
-                    <span @click="markedTextContent(11)" ><i></i>偈颂</span>
-                    <span @click="markedTextContent(12)" ><i></i>夹注小字</span>
-                    <span v-show="false" @click="markedTextContent(13)" ><i></i>梵文</span>
-                    <span v-show="false" @click="markedTextContent(14)" ><i></i>咒语</span>
-                </div>
+                    <div class="hd fl">
+                        <span @click="markedTextContent(1)" ><i></i>标题</span>
+                        <span @click="markedTextContent(2)" ><i></i>作译者</span>
+                        <span @click="markedTextContent(3)" ><i></i>序</span>
+                        <span @click="markedTextContent(4)" ><i></i>千字文</span>
+                        <span @click="markedTextContent(5)" ><i></i>跋</span>
+                        <span @click="markedTextContent(6)" ><i></i>行间小字</span>
+                        <span @click="markedTextContent(11)" ><i></i>偈颂</span>
+                        <span @click="markedTextContent(12)" ><i></i>夹注小字</span>
+                        <span v-show="false" @click="markedTextContent(13)" ><i></i>梵文</span>
+                        <span v-show="false" @click="markedTextContent(14)" ><i></i>咒语</span>
+                    </div>
                 
             </div>
             {% endraw %}
@@ -170,7 +177,9 @@ b, i, u, small, big, strike {
 var app = new Vue({
     el: '#mark',
     data: {
-        activeNames: ["1"],
+        activeTabName: '',
+        display_mark: false,
+        display_doubt: false,
         current_mark: {},
         current_doubt_mark: {},
         base_text: "",
@@ -219,10 +228,14 @@ var app = new Vue({
         },
         marksegs: function(val, oldVal) {
             this.compiledBaseText();
+            this.handleChange();
+        },
+        doubt_marks: function(val, oldVal) {
+            this.handleChange();
         },
         current_mark: function (val, oldVal) {
             if (val) {
-                this.gotoCurrentMark();
+                this.gotoCurrentMark(val);
             }
         },
         scale: function (val, oldVal) {
@@ -245,6 +258,7 @@ var app = new Vue({
             this.loadImage();
         },
         current_doubt_mark: function(val, oldVal) {
+            this.gotoCurrentMark(val);
             this.compiledBaseText();
             this.$nextTick(function(){
                 if (val) {
@@ -280,6 +294,16 @@ var app = new Vue({
         
     },
     methods: {
+        handleTagClick: function(tab, event){
+            if ( tab.paneName == "mark_tab") {
+                this.display_doubt = false;
+                this.display_mark = !this.display_mark;
+            }else if (tab.paneName == "doubt_tab") {
+                this.display_mark =false;
+                this.display_doubt = !this.display_doubt;
+             }
+            this.handleChange();
+        },
         setImg: function() {
         var img_url = this.img_url;
         var x = this.x * this.scale;
@@ -382,16 +406,17 @@ var app = new Vue({
             this.marksegs.push(mark);
             this.marksegs = _.uniqWith(this.marksegs, _.isEqual).sort(function(a,b) { return a.start - b.start});
         },
-        gotoCurrentMark: function() {
-            let start = this.current_mark.start;
+        gotoCurrentMark: function(val) {
+            let start = val.start;
             var contentPs = this.$refs.textArea.getElementsByTagName("li");
             let p = _.findLast(contentPs, function(o) { return parseInt(o.getAttribute("data-position")) <= start;})
             var offset = this.$el.querySelector('div.box').scrollTop + p.getBoundingClientRect().top - 160;
             this.$el.querySelector('div.box').scrollTop = offset;
-        },
-        handleChange() {
-            let totalHeight = this.$el.querySelector('.left-con').clientHeight;
-            this.$el.querySelector('div.bd').style.height = totalHeight;
+            this.page_no = parseInt(p.getAttribute("page-no"));
+            this.line_no = parseInt(p.getAttribute("line-no"));
+            this.$nextTick(function(){
+                this.compiledBaseText();
+            }.bind(this));
         },
         segFontDiv(mark_typ) {
             switch (mark_typ) {
@@ -462,6 +487,26 @@ var app = new Vue({
             }    
             return node;
         },
+        handleChange() {
+        let totalheight = this.$el.querySelector('.left-con').clientHeight;
+        var bottomblock = this.$el.querySelector('.el-tabs').clientHeight;
+
+        if (!this.display_mark && !this.display_doubt) {
+            bottomblock = 48;
+            this.$el.querySelector('.labelformat .right .box').style.height = totalheight  - bottomblock -2;
+            this.$el.querySelector('.doubt-lists').style.height = bottomblock;
+        } else {
+            this.$nextTick(function() {
+              var bottomblock = this.$el.querySelector('.el-tabs').clientHeight;
+              if (bottomblock > 400) {
+                bottomblock = 400;
+                this.$el.querySelector('.doubt-lists').style.overflowY = 'scroll';
+              }
+              this.$el.querySelector('.labelformat .right .box').style.height = totalheight  - bottomblock -2;
+              this.$el.querySelector('.doubt-lists').style.height = bottomblock;
+            }.bind(this))
+        }
+      },
         headerOffset(pnode, currentNode) {
             let nodes = pnode.childNodes;
             let offset = 0;
@@ -665,7 +710,13 @@ var app = new Vue({
                     }
                     
                     text_content = "";
-                    content +='<br></li><li data-position="' + (i+1) + '" page-no="' + page_no + '" line-no="' + line_no +'">'
+                    if ((page_no == this.page_no) && (this.line_no == line_no)) {
+                        content +='<br></li><li class="current-mark" data-position="' + (i+1) + '" page-no="' + page_no + '" line-no="' + line_no +'">'
+                    } else {
+                        console.log(page_no, this.page_no, line_no, this.line_no)
+                        content +='<br></li><li data-position="' + (i+1) + '" page-no="' + page_no + '" line-no="' + line_no +'">'
+                    }
+                    
                 }
                 
             }

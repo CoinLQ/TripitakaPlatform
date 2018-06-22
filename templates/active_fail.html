@@ -1,0 +1,130 @@
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <title>注册激活失败</title>
+
+  <style>
+    body {
+      font-size: 16px;
+      margin: 0;
+      font-family: \5FAE\8F6F\96C5\9ED1;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    .tc3 {
+      background: #5cacf3;
+      color: #fff;
+      display: block;
+      width: 200px;
+      border-radius: 2px;
+      height: 36px;
+      line-height: 36px;
+      margin: auto;
+      margin-top: 20px;
+    }
+
+    .tc3:hover {
+      background: #3e3d3d;
+    }
+
+    
+
+    
+
+    
+
+    #pwdload {
+      background: #fff;
+      box-shadow: 0 2px 3px rgba(0, 0, 0, 0.175);
+      width: 400px;
+      height: 300px;
+      margin: auto;
+      margin-top: 10%;
+      padding: 20px;
+    }
+
+    .title {
+      font-size: 22px
+    }
+
+    .txt {
+      padding-top: 20px;
+      line-height: 1.5em;
+      width: 250px;
+      font-size: 14px;
+      color: #888;
+    }
+    .cl {
+      clear: both;
+    }
+
+    #pwderr {
+      color: #ff7171;
+      padding-top: 10px;
+      height: 20px;
+    }
+
+    .line {
+      width: 100%;
+      border: 0;
+      border-bottom: 2px solid #0188ff;
+      padding: 5px 0;
+      outline: 0;
+    }
+
+    @media (max-width: 768px) {
+      #pwdload {
+        box-shadow: inherit;
+        width: auto;
+      }
+      #pwderr {
+        padding: 15px 0;
+      }
+    }
+
+    footer {
+      width: 100%;
+      height: 100px;
+      /* footer的高度一定要是固定值*/
+      position: absolute;
+      bottom: 0px;
+      left: 0px;
+      color: lightgray;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 判断 -->
+  <div id="pwdload">
+    <div class="title">激活失败</div>
+    <div class="line">
+      <line class="line" id="line" />
+    </div>
+    <div class="txt">{{ message }}</div>
+    <div class="cl"></div>
+    
+    <div class="cl"></div>
+    <div id="pwderr" align='center'><img src="{{ static('custom/imgs/failed.png') }} " height="200" width="250"  alt="般若" /></div>
+    <!-- <div class="sub" id="go" align="center">
+      <a href="{{ url }}" align="center">
+        <span class="tc3">请重试</span>
+      </a>
+    </div> -->
+    <div>
+      
+    </div>
+  </div>
+</body>
+<footer>
+  <div align='center'>
+    <a>@龙泉大藏经校勘平台</a>
+  </div>
+</footer>
+
+</html>

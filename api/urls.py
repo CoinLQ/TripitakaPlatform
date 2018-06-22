@@ -37,9 +37,7 @@ router.register(r'lqsutra', LQSutraViewSet)
 
 router.register(r'sutra', SutraViewSet) 
 router.register(r'tripitaka', TripitakaViewSet) 
-router.register(r'tripitaka_reel', TripitakaReelData)
 router.register(r'tripitaka_page', TripitakaPageData)
-router.register(r'tripitaka_volume_page', TripitakaVolumePage)
 router.register(r'volume', VolumeViewSet)
 
 urlpatterns = [
@@ -71,6 +69,8 @@ urlpatterns = [
     url(r'^judgefeedback/mine/$', MyJudgeFeedbackList.as_view()),
     url(r'^sutra_text/(?P<s_id>[0-9]+)/$', SutraText.as_view()),
     url(r'^tripitaka_volume/(?P<t_code>[\w]+)/$', TripitakaVolumeList.as_view()),
+    url(r'^tripitaka_reel/(?P<rid>[0-9]+)/$', TripitakaReelData.as_view()),
+    url(r'^tripitaka_volume_page/(?P<key>[\w]+)/$', TripitakaVolumePage.as_view()),
     url(r'^redo_pagerect/(?P<s_id>[0-9]+)/$', RedoPageRect.as_view()),
     url(r'^lqpunctfeedback/$', LQPunctFeedbackList.as_view()),
     url(r'^lqpunctfeedback/(?P<pk>[0-9]+)/$', LQPunctFeedbackDetail.as_view()),

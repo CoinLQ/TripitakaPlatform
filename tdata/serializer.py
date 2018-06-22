@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from tdata.models import Page, LQSutra, LQReel, Sutra,Reel,Tripitaka,Volume, ReelOCRText
+from tdata.models import Page, LQSutra, LQReel, Sutra,Reel,Tripitaka,Volume, ReelOCRText,EmailVerifycode
+from TripitakaPlatform import email_send
 from tasks.models import Task, ReelCorrectText
 import tdata.lib.image_name_encipher as encipher
 import json
@@ -76,20 +77,21 @@ def gen_signed_key(code):
     return signed_key
 
 class TripitakaPageListSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Page
-        fields = ['pid']
+        fields = ['image_url', 'page_code']
+
+    def get_image_url(self, obj):
+        return obj['image_url']
 
 class TripitakaPageSerializer(serializers.ModelSerializer):
-    image_url = serializers.SerializerMethodField()
     page_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Page
-        fields = ['image_url', 'page_data']
-
-    def get_image_url(self, obj):
-        return encipher.get_image_url(obj.reel, obj.page_no)
+        fields = ['page_data']
 
     def get_page_data(self, obj):
         try:
@@ -99,6 +101,7 @@ class TripitakaPageSerializer(serializers.ModelSerializer):
             ocr_cuts = cut_dict['char_data']
         except Exception as e:
             ocr_txt = ['无OCR文本……']
+            ocr_cuts = []
         try:
             task = Task.objects.filter(typ=1, task_no=1, reel=obj.reel)
             first_correct_txt = task.result.split('\n')
@@ -150,3 +153,26 @@ class TripitakaPageSerializer(serializers.ModelSerializer):
             'ocr_cuts': ocr_cuts,
             'reelcorrectid': reelcorrectid,
         }
+
+class EmailVerifycodeSerializer(serializers.ModelSerializer):
+    class Meta:
+       model = EmailVerifycode
+       fields = '__all__'
+
+    def create(self, validated_data):
+        try:
+            email = validated_data['email']
+        except Exception as e:
+            email = ''
+        try:
+            send_type = validated_data['send_type']
+        except Exception as e:
+            send_type = ''
+        try:
+            username = validated_data['username']
+        except Exception as e:
+            username = ''
+        
+        if email_send.send_verifycode_email(email=email, send_type=send_type, username=username):
+            emailVerifycode = EmailVerifycode.objects.get(email=email,send_type=send_type, username=username)
+        return emailVerifycode

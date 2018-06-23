@@ -10,7 +10,7 @@ from tdata.serializer import PageSerializer
 from django.http import HttpResponse
 from jwt_auth.models import Staff
 from jwt_auth.serializers import StaffSerializer
-from TripitakaPlatform.settings.defaults import *
+from django.conf import settings
 import base64
 
 
@@ -101,10 +101,10 @@ def active_user(request, token):
                 EmailVerifycode.objects.filter(email=email, send_type = 'register').delete()  
             except Exception as e:
                 pass
-            if DEBUG:
-                host_url = "http://" +  FRONT_HOST 
+            if settings.DEBUG:
+                host_url = "http://" +  settings.FRONT_HOST 
             else:
-                host_url = "http://" +  PUBLIC_HOST 
+                host_url = "http://" +  settings.PUBLIC_HOST 
             active_url = '/'.join([host_url + "/activate", miwen])
             return render(request, 'active_success.html', {'message': '激活成功请登录', 'url': host_url})
         else:

@@ -44,14 +44,30 @@ class HomeResetStaffView(mixins.CreateModelMixin,mixins.UpdateModelMixin, generi
 
     def put(self, request, *args, **kwargs):
         params = request.data
-        email, password = params['email'],params['password']
+        send_type, email = params['send_type'], params['email']
         try:
-            staff = Staff.objects.get(email=email)
-            staff.set_password(password)
-            staff.save()
-            return Response({'status':0, 'msg':'成功'})
+            if send_type == 'base_info':
+                new_username, password = params['username'], params['password']
+                staff = Staff.objects.get(email=email)
+                if staff.check_password(password):
+                    staff.username = new_username
+                    staff.save()
+                    return Response({'status':0, 'msg':'成功'})
+                else:
+                    return Response({'status':'-1', 'msg':'密码错误，修改失败。'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            elif send_type == 'reset_pwd':
+                oldpassword, newpassword = params['oldpassword'], params['newpassword']
+                staff = Staff.objects.get(email=email)
+                if staff.check_password(oldpassword):
+                    staff.set_password(newpassword)
+                    staff.save()
+                    return Response({'status':0, 'msg':'成功'})
+                else:
+                    return Response({'status':'-1', 'msg':'修改失败，原密码不匹配。'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            else:
+                return Response({'status':'-1', 'msg':'错误的请求。'}, status=status.HTTP_406_NOT_ACCEPTABLE)
         except Exception as e:
-            return Response({'status':'-1', 'msg':'验证码错误'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response({'status':'-1', 'msg':'操作失败。'}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
 class EmailVerifycodeView(mixins.CreateModelMixin, generics.GenericAPIView):
     queryset = EmailVerifycode.objects.all()

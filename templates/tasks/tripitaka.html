@@ -15,7 +15,7 @@
         position: relative;
         right: -451px;
         z-index: 2;
-        top: 37px;
+        top: 30px;
       }
 
       #tripitaka .el-icon-arrow-left {
@@ -504,11 +504,12 @@
                     <el-checkbox :disabled="cur_page.page_data.reelcorrectid==-1" v-model="ocr_cut">OCR切分框</el-checkbox>
                   </div>
                   <el-main style="height: calc(100% - 178px) !important; overflow: auto">
-                    <div style="font-size: 16px; color: #606266; ">
+                    <div style="font-size: 16px; color: #606266;">
                       <div class="diff-text-pane" @mouseup="userSelectionChanged">
                         <ul v-if="show_verify">
                           <li v-for="item in cur_page.page_data[chose_txt_type]">
-                            <span v-for="s in item" :position="s.no">${ s.char }</span>
+                            <span v-if="s.char!='b'" v-for="s in item" :position="s.no">${ s.char }</span>
+                            <span v-else><br /></span>
                           </li>
                         </ul>
                         <p v-else v-for="line in cur_page.page_data[chose_txt_type]" v-html="line"></p>
@@ -734,8 +735,8 @@
                     'ocr_cuts': [],
                     'reelcorrectid': -1,
                   };
-                  vm.sharedata.reelcorrectid = vm.cur_page.page_data.reelcorrectid;
-                }
+                };
+                vm.sharedata.reelcorrectid = vm.cur_page.page_data.reelcorrectid;
               });
             }
           },

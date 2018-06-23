@@ -12,7 +12,8 @@ from tdata.lib.image_name_encipher import get_image_url
 from tasks.common import clean_separators, extract_line_separators
 from rect.models import *
 from jkapi.serializers import CorrectFeedbackSerializer
-from jkapi.permissions import CanSubmitFeedbackOrReadOnly
+from tasks.serializers import CorrectFeedbackSerializer as MyCorrectFeedbackSerializer
+from jkapi.permissions import CanSubmitFeedbackOrReadOnly, CanViewMyFeedback
 import math
 import tdata.lib.image_name_encipher as encipher
 import json, re
@@ -142,7 +143,7 @@ class CorrectFeedbackDetailViewset(APIView):
         line_no = original_txt_info[2]
         char_no = original_txt_info[3]
         reel = correct_text.reel
-        page = reel.page_set.all()[p_no - 1]
+        page = reel.page_set.all().order_by('reel_page_no')[p_no - 1]
         image_url = get_image_url(reel, page.reel_page_no)
         cut_list = []
         cid = 'c{0}{1}{2:02d}n{3:02d}'.format(p_no, b_no, line_no, char_no + 1)  # 切分信息中字符从1开始计数
@@ -155,9 +156,7 @@ class CorrectFeedbackDetailViewset(APIView):
         page_lines[line_no] = fb_line[:char_no] + '<span class="difftext confirmed">' + fb_line[char_no] + '</span>' + fb_line[char_no + 1:]
         if correct_fb.processor:
             processor = correct_fb.processor
-        else:
-            processor = 0
-        return Response({
+            return Response({
             'fb_id': correct_fb.id,
             'origin_text': correct_fb.original_text,
             'fb_text': correct_fb.fb_text,
@@ -168,6 +167,18 @@ class CorrectFeedbackDetailViewset(APIView):
             'processor': processor.email,
             'response': correct_fb.get_response_display()
         })
+        else:
+            return Response({
+                'fb_id': correct_fb.id,
+                'origin_text': correct_fb.original_text,
+                'fb_text': correct_fb.fb_text,
+                'fb_comment': correct_fb.fb_comment,
+                'cut_info': cut_list,
+                'page_txt': page_lines,
+                'image_url': image_url,
+                'processor': '',
+                'response': correct_fb.get_response_display()
+            })
 
     def patch(self, request, pk, format=None):
         correctfb = CorrectFeedback.objects.get(pk=pk)
@@ -180,25 +191,44 @@ class CorrectFeedbackDetailViewset(APIView):
         if serializer.is_valid():
             if data['response'] == 2:
                 correct_text = correctfb.correct_text
+                latest_reelcorrecttext = ReelCorrectText.objects.latest('created_at')
+                if correct_text.id != latest_reelcorrecttext.id:
+                    correct_text = latest_reelcorrecttext
                 ori_whole_txt = correct_text.text
                 head_txt = ''
                 tail_txt = ''
                 pos = 0
+                symbol_no = 0
                 for t in ori_whole_txt:
                     if pos < correctfb.position:
                         head_txt += t
+                        if t in ['b', 'p', '\n']:
+                            symbol_no += 1
                     if t not in ['b', 'p', '\n']:
                         pos += 1
                     if correctfb.position <= pos <= correctfb.position + len(correctfb.original_text) - 1:
                         pass
                     if pos > correctfb.position + len(correctfb.original_text):
                         tail_txt += t
+                tail_head = ori_whole_txt[correctfb.position+symbol_no+1]
+                if tail_head in ['b', 'p', '\n']:
+                    tail_txt = tail_head + tail_txt
                 new_correct_text = ReelCorrectText(reel=correct_text.reel, publisher=request.user)
                 new_correct_text.set_text(head_txt + correctfb.fb_text + tail_txt)
                 new_correct_text.save()
+                correctfb.new_correct_text = new_correct_text
             serializer.save()
             return Response('提交成功!')
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class MyCorrectFeedbackList(generics.ListAPIView):
+    serializer_class = MyCorrectFeedbackSerializer
+    permission_classes = (CanViewMyFeedback,)
+
+    def get_queryset(self):
+        queryset = CorrectFeedback.objects.filter(
+            fb_user=self.user).order_by('id')
+        return queryset
 
 class TripitakaReelData(APIView):
     def get(self, request, rid, format=None):

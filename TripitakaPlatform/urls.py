@@ -56,6 +56,7 @@ urlpatterns = [
     path('my_judgefeedback/<int:judgefeedback_id>/', lqtripitaka.view_judgefeedback, name='view_judgefeedback'),
     path('lqpunctfeedback/<int:lqpunctfeedback_id>/', lqtripitaka.process_lqpunctfeedback, name='process_lqpunctfeedback'),
     path('my_lqpunctfeedback/<int:lqpunctfeedback_id>/', lqtripitaka.view_lqpunctfeedback, name='view_lqpunctfeedback'),
+    path('my_correctfeedback/<int:correctfeedback_id>/', tripitaka.view_correctfeedback, name='view_correctfeedback'),
     path('abnormal_line_count/<int:task_id>/', process_abnormal_line_count, name='process_abnormal_line_count'),
 
     path('tools/cutfixed_pages/', cutfixed_pages, name='cutfixed_pages'),

@@ -16,6 +16,7 @@ from ccapi.utils.task import redis_lock
 from django.utils import timezone
 from django.utils.timezone import localtime, now
 from rect.models import PageTask, PageVerifyTask, TaskStatus
+from tasks.models import CorrectFeedback
 
 TASK_MODELS = ('correct', 'verify_correct', 'judge', 'verify_judge', 'punct', 'verify_punct', 'lqpunct',
                'verify_lqpunct', 'correct_difficult', 'judge_difficult', 'mark', 'verify_mark')
@@ -281,6 +282,9 @@ class CommonHistoryAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
         if task.typ in [Task.TYPE_JUDGE, Task.TYPE_JUDGE_VERIFY, Task.TYPE_JUDGE_DIFFICULT,
                         Task.TYPE_LQPUNCT, Task.TYPE_LQPUNCT_VERIFY]:
             desc = "%s / 第%d卷" % (task.lqreel.lqsutra.name, task.lqreel.reel_no)
+        elif self.kwargs['model_name'] == 'my_correctfeedback':
+            reel = CorrectFeedback.objects.get(id=1).correct_text.reel
+            desc = "%s / %s / 第%d卷" % (reel.sutra.tripitaka.name, reel.sutra.name, reel.reel_no)
         else:
             desc = "%s / %s / 第%d卷" % (task.reel.sutra.tripitaka.name, task.reel.sutra.name, task.reel.reel_no)
 

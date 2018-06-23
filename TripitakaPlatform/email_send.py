@@ -2,11 +2,10 @@ from random import Random  # 用于生成随机码
 from django.core.mail import send_mail  # 发送邮件模块
 from django.core.mail import EmailMultiAlternatives  # 导入邮件模块
 from tdata.models import EmailVerifycode  # 邮箱验证model
-from TripitakaPlatform.settings import EMAIL_FROM  # setting.py添加的的配置信息
 from rest_framework.authtoken.models import Token
 from django.conf.urls import url
 from jwt_auth.models import Staff
-from .settings.defaults import *
+from django.conf import settings
 import base64
 # 生成随机字符串
 
@@ -52,13 +51,13 @@ def send_verifycode_email(email, send_type, username):
         miwen = miwenToNew(miwen)
         mingwen = miwenToOld(miwen)
         mingwen = bianma(jiemi_key, mingwen)
-        if DEBUG:
-            host_url = FRONT_HOST + "/activate"
+        if settings.DEBUG:
+            host_url = settings.FRONT_HOST + "/activate"
         else:
-            host_url = PUBLIC_HOST + "/activate"
+            host_url = settings.PUBLIC_HOST + "/activate"
         active_url = "http://" + '/'.join([host_url, miwen])
         # 发送邮件
-        from_email = EMAIL_FROM
+        from_email = settings.EMAIL_FROM
         tolist = [email]
         cclist = []
         try:
@@ -74,7 +73,7 @@ def send_verifycode_email(email, send_type, username):
             code)
         # 发送邮件
         try:
-            send_status = send_mail(email_title, email_body, EMAIL_FROM, [email])
+            send_status = send_mail(email_title, email_body, settings.EMAIL_FROM, [email])
         except Exception as e:
             return False
         if send_status:

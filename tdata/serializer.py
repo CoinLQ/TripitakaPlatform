@@ -77,20 +77,21 @@ def gen_signed_key(code):
     return signed_key
 
 class TripitakaPageListSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Page
-        fields = ['pid']
+        fields = ['image_url', 'page_code']
+
+    def get_image_url(self, obj):
+        return obj['image_url']
 
 class TripitakaPageSerializer(serializers.ModelSerializer):
-    image_url = serializers.SerializerMethodField()
     page_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Page
-        fields = ['image_url', 'page_data']
-
-    def get_image_url(self, obj):
-        return encipher.get_image_url(obj.reel, obj.page_no)
+        fields = ['page_data']
 
     def get_page_data(self, obj):
         try:
@@ -100,6 +101,7 @@ class TripitakaPageSerializer(serializers.ModelSerializer):
             ocr_cuts = cut_dict['char_data']
         except Exception as e:
             ocr_txt = ['无OCR文本……']
+            ocr_cuts = []
         try:
             task = Task.objects.filter(typ=1, task_no=1, reel=obj.reel)
             first_correct_txt = task.result.split('\n')
@@ -119,10 +121,18 @@ class TripitakaPageSerializer(serializers.ModelSerializer):
             # TODO 改成最新的校对文本即可
             text_list = []
             page_txt_list = whole_text.split('p')
+            blank_no = 0
+            pos = 0
             for p_no, i in enumerate(page_txt_list):
-                for line_no, k in enumerate(i.replace('b', '').split('\n')):
+                i = i.split('\n')
+                for line_no, k in enumerate(i):
                     for char_no, l in enumerate(k):
-                        text_list.append([p_no, 0, line_no, char_no, l])
+                        if l == 'b':
+                            blank_no += 1
+                            text_list.append([p_no, 0, line_no, char_no, l, -1])
+                        else:
+                            text_list.append([p_no, 0, line_no, char_no, l, pos-blank_no])
+                        pos += 1
             verify_txt = []
             tmp = -1
             for t_no, t in enumerate(text_list):
@@ -130,7 +140,7 @@ class TripitakaPageSerializer(serializers.ModelSerializer):
                     if tmp != t[2]:
                         tmp = t[2]
                         verify_txt.append([])
-                    verify_txt[-1].append({'char': t[-1], 'no': t_no})
+                    verify_txt[-1].append({'char': t[-2], 'no': t[-1]})
             # page_txt = whole_text.split('p')[obj.reel_page_no]
             # verify_txt = whole_text.split('\n')
         except:

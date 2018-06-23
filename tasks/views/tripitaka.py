@@ -7,6 +7,9 @@ def index(request, tcode):
 def correct_feedback(request, pk):
     return render(request, 'tasks/correct_feedback.html', {'correct_fb_id': pk})
 
+def view_correctfeedback(request, correctfeedback_id):
+    return render(request, 'tasks/correct_feedback.html', {'correct_fb_id': correctfeedback_id})
+
 def ebook(request):
     return render(request, 'tasks/ebook.html')
 

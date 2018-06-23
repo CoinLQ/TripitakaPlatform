@@ -22,8 +22,8 @@ class SutraTextField(models.TextField):
         return self.to_python(value)
 
 class Tripitaka(models.Model):
-    code = models.CharField(verbose_name='实体藏经版本编码', max_length=2, blank=False, unique=True)
-    name = models.CharField(verbose_name='实体藏经名称', max_length=32, blank=False)
+    code = models.CharField(verbose_name='编码', max_length=2, blank=False, unique=True)
+    name = models.CharField(verbose_name='藏名', max_length=32, blank=False)
     shortname = models.CharField(verbose_name='简称（用于校勘记）', max_length=32, blank=False)
     ocr_with_nobar = models.BooleanField('识别所用的图片不分栏', default=True)
     bar_count = models.SmallIntegerField('识别所用的图片所用的分栏数', default=2)
@@ -46,7 +46,7 @@ class Tripitaka(models.Model):
         return '{} ({})'.format(self.name, self.code)
 
 class Volume(models.Model):
-    tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE)
+    tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE, verbose_name='藏名')
     vol_no = models.SmallIntegerField(verbose_name='册序号')
     page_count = models.IntegerField(verbose_name='册页数')
     remark = models.TextField('备注', default='')
@@ -60,10 +60,10 @@ class Volume(models.Model):
         return '%s: 第%s册' % (self.tripitaka.name, self.vol_no)
 
 class LQSutra(models.Model):
-    sid = models.CharField(verbose_name='龙泉经目经号编码', max_length=8, unique=True) #（为"LQ"+ 经序号 + 别本号）
+    sid = models.CharField(verbose_name='龙泉经号', max_length=8, unique=True) #（为"LQ"+ 经序号 + 别本号）
     code = models.CharField(verbose_name='龙泉经目编码', max_length=5, blank=False)
-    variant_code = models.CharField(verbose_name='龙泉经目别本编码', max_length=1, default='0')
-    name = models.CharField(verbose_name='龙泉经目名称', max_length=64, blank=False)
+    variant_code = models.CharField(verbose_name='别本号', max_length=1, default='0')
+    name = models.CharField(verbose_name='龙泉经名', max_length=64, blank=False)
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
     author = models.CharField(verbose_name='著译者', max_length=255, blank=True)
     remark = models.TextField('备注', blank=True, default='')
@@ -76,11 +76,11 @@ class LQSutra(models.Model):
         return '%s: %s' % (self.sid, self.name)
 
 class Sutra(models.Model):
-    sid = models.CharField(verbose_name='实体藏经|唯一经号编码', editable=True, max_length=8, unique=True)
-    tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE,verbose_name='藏')
+    sid = models.CharField(verbose_name='经编码', editable=True, max_length=8, unique=True)
+    tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE, verbose_name='藏名')
     code = models.CharField(verbose_name='实体经目编码', max_length=5, blank=False)
     variant_code = models.CharField(verbose_name='别本编码', max_length=1, default='0')
-    name = models.CharField(verbose_name='实体经目名称', max_length=64, blank=True)
+    name = models.CharField(verbose_name='经名', max_length=64, blank=True)
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', null=True,
     blank=True, on_delete=models.SET_NULL) #（为"LQ"+ 经序号 + 别本号）
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
@@ -115,12 +115,12 @@ class LQReel(models.Model):
             self.save(update_fields=['text_ready'])
 
 class Reel(models.Model):
-    sutra = models.ForeignKey(Sutra, verbose_name='实体藏经', on_delete=models.CASCADE, editable=False)
+    sutra = models.ForeignKey(Sutra, verbose_name='实体经', on_delete=models.CASCADE, editable=False)
     reel_no = models.SmallIntegerField('卷序号')
     start_vol = models.SmallIntegerField('起始册')
-    start_vol_page = models.SmallIntegerField('起始册的页序号')
+    start_vol_page = models.SmallIntegerField('起始页码')
     end_vol = models.SmallIntegerField('终止册')
-    end_vol_page = models.SmallIntegerField('终止册的页序号')
+    end_vol_page = models.SmallIntegerField('终止页码')
     path1 = models.CharField('存储层次1', max_length=16, default='', blank=True)
     path2 = models.CharField('存储层次2', max_length=16, default='', blank=True)
     path3 = models.CharField('存储层次3', max_length=16, default='', blank=True)
@@ -132,6 +132,16 @@ class Reel(models.Model):
     correct_ready = models.BooleanField(verbose_name='是否有文字校对经文', default=False)
     mark_ready = models.BooleanField(verbose_name='是否完成格式标注', default=False)
     used_in_collation = models.BooleanField(verbose_name='是否用于校勘', default=True)
+    correct_1 = models.NullBooleanField('文字校对校一') # True: 已完成；False: 未完成；None: 无任务。以下同。
+    correct_2 = models.NullBooleanField('文字校对校二')
+    correct_3 = models.NullBooleanField('文字校对校三')
+    correct_4 = models.NullBooleanField('文字校对校四')
+    correct_verify = models.NullBooleanField('文字校对审定')
+    correct_difficult = models.NullBooleanField('文字校对难字处理')
+    mark_1 = models.NullBooleanField('格式标注一')
+    mark_2 = models.NullBooleanField('格式标注二')
+    mark_verify = models.NullBooleanField('格式标注审定')
+    finished_cut_count = models.SmallIntegerField('切分完成的页数', default=0)
 
     class Meta:
         verbose_name = '实体卷'
@@ -142,6 +152,16 @@ class Reel(models.Model):
     @property
     def name(self):
         return u"第%s卷" %(self.reel_no,)
+
+    @property
+    def finished_cut_proportion(self):
+        page_count = self.end_vol_page - self.start_vol_page + 1
+        if page_count == 0:
+            proportion = 0
+        else:
+            proportion = (self.finished_cut_count * 1.0 / page_count)
+        return '%d%%' % (100 * proportion)
+    finished_cut_proportion.fget.short_description = '切分完成百分比'
 
     def __str__(self):
         return '%s / 第%d卷' % (self.sutra, self.reel_no)
@@ -185,6 +205,18 @@ class Reel(models.Model):
             reel1.end_vol_page >= reel2.start_vol_page:
             return True
         return False
+
+class ReelInfo(Reel):
+    class Meta:
+        proxy = True
+        verbose_name = '实体卷'
+        verbose_name_plural = '实体卷'
+
+class ReelTaskProgress(Reel):
+    class Meta:
+        proxy = True
+        verbose_name = '实体卷任务进度'
+        verbose_name_plural = '实体卷任务进度'
 
 class ReelOCRText(models.Model):
     reel = models.OneToOneField(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, primary_key=True, editable=False)

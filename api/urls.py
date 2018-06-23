@@ -20,7 +20,7 @@ from jkapi.views.tripitaka import SutraViewSet, SutraText,TripitakaViewSet, Redo
 from jkapi.views.punct_feedback import LQPunctFeedbackList, MyLQPunctFeedbackList, LQPunctFeedbackDetail, LQPunctFeedbackTask
 from jkapi.views.volumn import VolumeViewSet
 from jkapi.views.judge_feedback import JudgeFeedbackList, MyJudgeFeedbackList, JudgeFeedbackDetail, JudgeFeedbackTask
-from jkapi.views.tripitaka import CorrectFeedbackViewset, CorrectFeedbackDetailViewset, TripitakaPageData, TripitakaReelData, TripitakaVolumePage, TripitakaVolumeList
+from jkapi.views.tripitaka import CorrectFeedbackViewset, CorrectFeedbackDetailViewset, TripitakaPageData, TripitakaReelData, TripitakaVolumePage, TripitakaVolumeList, MyCorrectFeedbackList
 
 router = routers.DefaultRouter()
 router.register(r'pagerect', PageRectViewSet)
@@ -37,9 +37,7 @@ router.register(r'lqsutra', LQSutraViewSet)
 
 router.register(r'sutra', SutraViewSet) 
 router.register(r'tripitaka', TripitakaViewSet) 
-router.register(r'tripitaka_reel', TripitakaReelData)
 router.register(r'tripitaka_page', TripitakaPageData)
-router.register(r'tripitaka_volume_page', TripitakaVolumePage)
 router.register(r'volume', VolumeViewSet)
 
 urlpatterns = [
@@ -71,11 +69,14 @@ urlpatterns = [
     url(r'^judgefeedback/mine/$', MyJudgeFeedbackList.as_view()),
     url(r'^sutra_text/(?P<s_id>[0-9]+)/$', SutraText.as_view()),
     url(r'^tripitaka_volume/(?P<t_code>[\w]+)/$', TripitakaVolumeList.as_view()),
+    url(r'^tripitaka_reel/(?P<rid>[0-9]+)/$', TripitakaReelData.as_view()),
+    url(r'^tripitaka_volume_page/(?P<key>[\w]+)/$', TripitakaVolumePage.as_view()),
     url(r'^redo_pagerect/(?P<s_id>[0-9]+)/$', RedoPageRect.as_view()),
     url(r'^lqpunctfeedback/$', LQPunctFeedbackList.as_view()),
     url(r'^lqpunctfeedback/(?P<pk>[0-9]+)/$', LQPunctFeedbackDetail.as_view()),
     url(r'^lqpunctfeedback/(?P<pk>[0-9]+)/process/$', LQPunctFeedbackTask.as_view()),
     url(r'^lqpunctfeedback/mine/$', MyLQPunctFeedbackList.as_view()),
+    url(r'^correctfeedback/mine/$', MyCorrectFeedbackList.as_view()),
     url(r'^correctfeedback/$', CorrectFeedbackViewset.as_view()),
     url(r'^correctfeedback/(?P<pk>[0-9]+)/$', CorrectFeedbackDetailViewset.as_view()),
 ]

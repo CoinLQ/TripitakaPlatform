@@ -283,7 +283,7 @@ class CommonHistoryAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
                         Task.TYPE_LQPUNCT, Task.TYPE_LQPUNCT_VERIFY]:
             desc = "%s / 第%d卷" % (task.lqreel.lqsutra.name, task.lqreel.reel_no)
         elif self.kwargs['model_name'] == 'my_correctfeedback':
-            reel = CorrectFeedback.objects.get(id=1).correct_text.reel
+            reel = CorrectFeedback.objects.get(id=pk).correct_text.reel
             desc = "%s / %s / 第%d卷" % (reel.sutra.tripitaka.name, reel.sutra.name, reel.reel_no)
         else:
             desc = "%s / %s / 第%d卷" % (task.reel.sutra.tripitaka.name, task.reel.sutra.name, task.reel.reel_no)

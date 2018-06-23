@@ -151,6 +151,22 @@ class RoleCheck:
                 return True
         return False
 
+class UserAuthenticationChangeForm(forms.ModelForm):
+    is_admin = forms.TypedChoiceField(
+        label='是否管理员',
+        coerce=lambda x: x == 'True',
+        choices=((True, '是'), (False, '否')),
+        initial=True,
+        widget=forms.RadioSelect,
+    )
+
+    class Meta:
+        model = UserAuthentication
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(UserAuthenticationChangeForm, self).__init__(*args, **kwargs)
+
 class UserAuthenticationAdmin(object):
     def modify(self, instance):
         return '修改'
@@ -180,6 +196,10 @@ class UserAuthenticationAdmin(object):
     def queryset(self):
         qs = super(UserAuthenticationAdmin, self).queryset().filter(is_superuser=False)
         return qs
+
+    def get_model_form(self, **kwargs):
+        self.form = UserAuthenticationChangeForm
+        return super(UserAuthenticationAdmin, self).get_model_form(**kwargs)
 
 site.unregister(User)
 site.register(UserManagement, UserManagementAdmin)

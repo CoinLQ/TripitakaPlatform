@@ -4,6 +4,7 @@ from xadmin.sites import site
 from xadmin.views import BaseAdminPlugin, ListAdminView
 from xadmin.plugins.actions import BaseActionView
 from xadmin.views.base import filter_hook
+from xadmin.views.list import COL_LIST_VAR
 from django.template.response import TemplateResponse
 from django.template import loader
 
@@ -322,14 +323,13 @@ class TaskAdmin(object):
                SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,
                UpdateTaskResultAction]
 
-    def get_list_display(self):
-        if self.model_name in ['correcttask', 'correctverifytask', 'correctdifficulttask',
-                               'marktask', 'markverifytask']:
-            return ['batchtask', 'tripitaka_name', 'sutra_name',
+class TaskAdminForReel(TaskAdmin):
+    list_display = ['batchtask', 'tripitaka_name', 'sutra_name',
                     'reel_no', 'priority', 'task_no', 'realtime_progress', 'status',
                     'publisher', 'created_at', 'picker', 'picked_at', 'finished_at', 'task_link', 'modify']
-        else:
-            return ['batchtask', 'lqsutra_name',
+
+class TaskAdminForLQReel(TaskAdmin):
+    list_display = ['batchtask', 'lqsutra_name',
                     'reel_no', 'typ', 'priority', 'task_no', 'realtime_progress', 'status',
                     'publisher', 'created_at', 'picker', 'picked_at', 'finished_at', 'task_link', 'modify']
 
@@ -473,52 +473,52 @@ class BatchTaskAdmin(object):
     batch_no.allow_tags = True
 
 @xadmin.sites.register(CorrectTask)
-class CorrectTaskAdmin(TaskAdmin):
+class CorrectTaskAdmin(TaskAdminForReel):
     def queryset(self):
         return self.model.objects.filter(typ=Task.TYPE_CORRECT)
 
 @xadmin.sites.register(CorrectVerifyTask)
-class CorrectVerifyTaskAdmin(TaskAdmin):
+class CorrectVerifyTaskAdmin(TaskAdminForReel):
     def queryset(self):
         return self.model.objects.filter(typ=Task.TYPE_CORRECT_VERIFY)
 
 @xadmin.sites.register(CorrectDifficultTask)
-class CorrectDifficultTaskAdmin(TaskAdmin):
+class CorrectDifficultTaskAdmin(TaskAdminForReel):
     def queryset(self):
         return self.model.objects.filter(typ=Task.TYPE_CORRECT_DIFFICULT)
 
 @xadmin.sites.register(JudgeTask)
-class JudgeTaskAdmin(TaskAdmin):
+class JudgeTaskAdmin(TaskAdminForLQReel):
     def queryset(self):
         return self.model.objects.filter(typ=Task.TYPE_JUDGE)
 
 @xadmin.sites.register(JudgeVerifyTask)
-class JudgeVerifyTaskAdmin(TaskAdmin):
+class JudgeVerifyTaskAdmin(TaskAdminForLQReel):
     def queryset(self):
         return self.model.objects.filter(typ=Task.TYPE_JUDGE_VERIFY)
 
 @xadmin.sites.register(JudgeDifficultTask)
-class JudgeDifficultTaskAdmin(TaskAdmin):
+class JudgeDifficultTaskAdmin(TaskAdminForLQReel):
     def queryset(self):
         return self.model.objects.filter(typ=Task.TYPE_JUDGE_DIFFICULT)
 
 @xadmin.sites.register(LQPunctTask)
-class LQPunctTaskAdmin(TaskAdmin):
+class LQPunctTaskAdmin(TaskAdminForLQReel):
     def queryset(self):
         return self.model.objects.filter(typ=Task.TYPE_LQPUNCT)
 
 @xadmin.sites.register(LQPunctVerifyTask)
-class LQPunctVerifyTaskAdmin(TaskAdmin):
+class LQPunctVerifyTaskAdmin(TaskAdminForLQReel):
     def queryset(self):
         return self.model.objects.filter(typ=Task.TYPE_LQPUNCT_VERIFY)
 
 @xadmin.sites.register(MarkTask)
-class MarkTaskAdmin(TaskAdmin):
+class MarkTaskAdmin(TaskAdminForReel):
     def queryset(self):
         return self.model.objects.filter(typ=Task.TYPE_MARK)
 
 @xadmin.sites.register(MarkVerifyTask)
-class MarkVerifyTaskAdmin(TaskAdmin):
+class MarkVerifyTaskAdmin(TaskAdminForReel):
     def queryset(self):
         return self.model.objects.filter(typ=Task.TYPE_MARK_VERIFY)
 

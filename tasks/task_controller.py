@@ -1136,7 +1136,10 @@ def regenerate_correctseg_async(reel_id_lst_json):
 
 @background(schedule=timedelta(days=7))
 def revoke_overdue_task_async(task_id):
-    task = Task.objects.get(pk=task_id)
+    try:
+        task = Task.objects.get(pk=task_id)
+    except:
+        return
     if task.status == Task.STATUS_PROCESSING:
         print('task %s is overdue, to be revoked.' % task_id)
         task.picker = None

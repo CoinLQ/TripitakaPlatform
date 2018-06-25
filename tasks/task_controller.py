@@ -161,9 +161,9 @@ def get_correct_base_reel_lst(lqsutra, reel_no):
     base_sutra_lst = []
     sutra_to_body = {}
     base_reel_lst = []
-    # 先得到两个base_reel，CBETA和高丽藏
+    # 先得到base_reel，CBETA
     for s in lqsutra.sutra_set.all():
-        if s.sid.startswith('CB') or s.sid.startswith('GL'):
+        if s.sid.startswith('CB'):
             base_sutra_lst.append(s)
             if s.id not in sutra_to_body.keys():
                 sutra_to_body[s.id] = get_sutra_body(s)
@@ -243,10 +243,10 @@ mark_times = 0, mark_verify_times = 0):
             if sutra.tripitaka.cut_ready or sutra.sid.startswith('CB'):
                 sutra_lst.append(sutra)
 
-        # 先得到两个base_reel，CBETA和高丽藏
+        # 先得到base_reel，CBETA
         base_sutra_lst = []
         for sutra in sutra_lst:
-            if sutra.sid.startswith('CB') or sutra.sid.startswith('GL'):
+            if sutra.sid.startswith('CB'):
                 base_sutra_lst.append(sutra)
                 if sutra.id not in sutra_to_body:
                     sutra_to_body[sutra.id] = get_sutra_body(sutra)

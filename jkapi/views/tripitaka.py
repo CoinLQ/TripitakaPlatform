@@ -1,4 +1,3 @@
-import json
 from django.shortcuts import get_list_or_404
 from rest_framework import viewsets, generics, filters
 from rest_framework import pagination
@@ -14,10 +13,11 @@ from rect.models import *
 from jkapi.serializers import CorrectFeedbackSerializer
 from tasks.serializers import CorrectFeedbackSerializer as MyCorrectFeedbackSerializer
 from jkapi.permissions import CanSubmitFeedbackOrReadOnly, CanViewMyFeedback
-import math
 import tdata.lib.image_name_encipher as encipher
+import math
 import json, re
 import boto3
+from difflib import SequenceMatcher
 
 class SutraResultsSetPagination(pagination.PageNumberPagination):
     page_size = 30
@@ -121,7 +121,9 @@ class CorrectFeedbackViewset(generics.ListAPIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response({'errors': "未校对，不能反馈！"})
+            else:
+                return Response({'msg': "请填写有效数据！"}, status=status.HTTP_200_OK)
+        return Response({'msg': "未校对，不能反馈！"}, status=status.HTTP_200_OK)
 
 class CorrectFeedbackDetailViewset(APIView):
     queryset = CorrectFeedback.objects.all()
@@ -192,25 +194,34 @@ class CorrectFeedbackDetailViewset(APIView):
             if data['response'] == 2:
                 correct_text = correctfb.correct_text
                 latest_reelcorrecttext = ReelCorrectText.objects.latest('created_at')
+                ori_txt = correct_text.text
+                position = correctfb.position
                 if correct_text.id != latest_reelcorrecttext.id:
-                    correct_text = latest_reelcorrecttext
-                ori_whole_txt = correct_text.text
+                    ori_txt = latest_reelcorrecttext.text
+                    CLEAN_PATTERN = re.compile('[p b \n]')
+                    ori_text = CLEAN_PATTERN.sub('',correct_text.text)
+                    latest_text = CLEAN_PATTERN.sub('',latest_reelcorrecttext.text)
+                    s = SequenceMatcher(None, ori_text, latest_text)
+                    offset = sum([(d[4]-d[3]-d[2]+d[1])for d in list(s.get_opcodes()) if d[0] in ['delete', 'insert'] and d[1] <= correctfb.position])
+
+                    position = correctfb.position + offset
+
                 head_txt = ''
                 tail_txt = ''
                 pos = 0
                 symbol_no = 0
-                for t in ori_whole_txt:
-                    if pos < correctfb.position:
+                for t in ori_txt:
+                    if pos < position:
                         head_txt += t
                         if t in ['b', 'p', '\n']:
                             symbol_no += 1
                     if t not in ['b', 'p', '\n']:
                         pos += 1
-                    if correctfb.position <= pos <= correctfb.position + len(correctfb.original_text) - 1:
+                    if position <= pos <= position + len(correctfb.original_text) - 1:
                         pass
-                    if pos > correctfb.position + len(correctfb.original_text):
+                    if pos > position + len(correctfb.original_text):
                         tail_txt += t
-                tail_head = ori_whole_txt[correctfb.position+symbol_no+1]
+                tail_head = ori_txt[position+symbol_no+1]
                 if tail_head in ['b', 'p', '\n']:
                     tail_txt = tail_head + tail_txt
                 new_correct_text = ReelCorrectText(reel=correct_text.reel, publisher=request.user)
@@ -218,7 +229,7 @@ class CorrectFeedbackDetailViewset(APIView):
                 new_correct_text.save()
                 correctfb.new_correct_text = new_correct_text
             serializer.save()
-            return Response('提交成功!')
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class MyCorrectFeedbackList(generics.ListAPIView):

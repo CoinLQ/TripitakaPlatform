@@ -375,7 +375,8 @@ def get_char_region_cord(char_lst):
             if (y + h) > max_y:
                 max_y = y + h
     return min_x, min_y, max_x, max_y
-
+'''获取切片文字
+'''
 def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
     if reel.reel_no <= 0 or vol_page == 0:
         return ''
@@ -384,6 +385,7 @@ def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
         with open(cut_filename, 'r') as f:
             data = f.read()
             if data:
+                print(cut_filename,"exist")
                 return data
     cut_url = get_cut_url(reel, vol_page, suffix)
     logger.info('wget ', cut_url)
@@ -391,6 +393,7 @@ def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
         with urllib.request.urlopen(cut_url) as f:
             logger.info('fetch done: %s, %d, page: %s', reel.sutra.sid, reel.reel_no, vol_page)
             data = f.read()
+            print("downloaded",cut_url)
     except:
        logger.error('no data: %s', cut_url)
        return ''
@@ -398,6 +401,7 @@ def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
     if data:
         with open(cut_filename, 'wb') as fout:
             fout.write(data)
+            print("write file",cut_filename)
     return data
 
 def rebuild_reel_pagerects_for_s3(reel):
@@ -617,6 +621,7 @@ def get_reel_text(reel, force_download=False):
         data = fetch_cut_file(reel, vol_page, 'txt', force_download)
         if type(data) is bytes:
             data = data.decode()
+        print("reel text",vol_page,data)
         pages.append('p')
         pages.append(data)
     return '\n'.join(pages)

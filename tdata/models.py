@@ -173,17 +173,20 @@ class Reel(models.Model):
         s = '/%s/%s/%s_%s_' % (tcode, path, tcode, filename_str)
         return s
 
+    '''图片名前半部分：${tcode}_${path1}_${path2}_${path3}_'''
     def image_prefix(self):
         tcode = self.sutra.sid[0:2]
         filename_str = self.path_str()
         s = '%s_%s_' % (tcode, filename_str)
         return s
 
+    '''图片路径：${tcode}/${path1}/${path2}/${path3}/'''
     def image_path(self):
         prefix = self.image_prefix()
         path = prefix.replace('_', '/')
         return path
 
+    '''${path1}_${path2}_${path3}'''
     def path_str(self):
         path_lst = []
         if self.path1:

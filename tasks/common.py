@@ -377,7 +377,8 @@ def get_char_region_cord(char_lst):
             if (y + h) > max_y:
                 max_y = y + h
     return min_x, min_y, max_x, max_y
-
+'''获取切片文字
+'''
 def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
     '''获取切片文字
     '''

@@ -57,6 +57,10 @@ class Command(BaseCommand):
         lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
 
         # CBETA第1卷
+        #Tripitaka：某个版本大藏经
+        #Lqsutra：龙泉大藏经的经典信息
+        #Sutra:某个版本大藏经中的某一部经典。通过tripitaka_id关联到具体的大藏经。通过lqsutra_id关联到龙泉大藏经的经典。
+        #Reel:卷
         CB = Tripitaka.objects.get(code='CB')
         huayan_cb = Sutra.objects.get(sid='CB002780')
         huayan_cb_1 = Reel.objects.get(sutra=huayan_cb, reel_no=1)

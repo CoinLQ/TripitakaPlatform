@@ -25,10 +25,12 @@ def get_or_create_admin():
         admin.save()
     return admin
 
+'''create and save sutra/reel/ocr text if they do not exist'''
 def save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
     path1='', path2='', path3='', ocr_ready=True, correct_ready=True):
-    tcode = sid[:2]
+    tcode = sid[:2] #eg.YB000860
     tripitaka = Tripitaka.objects.get(code=tcode)
+    #create sutra if it does not exist
     try:
         sutra = Sutra.objects.get(sid=sid)
     except:
@@ -36,6 +38,7 @@ def save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
         name='大方廣佛華嚴經', lqsutra=lqsutra, total_reels=60)
         sutra.save()
 
+    #create reel if it does not exist
     try:
         reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
     except:
@@ -44,6 +47,8 @@ def save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
         path1=path1, path2=path2, path3=path3,
         ocr_ready=ocr_ready, correct_ready=correct_ready)
         reel.save()
+    
+    #create reel ocr text if it does not exist
     try:
         reel_ocr_text = ReelOCRText.objects.get(reel=reel)
     except:

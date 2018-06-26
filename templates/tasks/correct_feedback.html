@@ -43,7 +43,7 @@
           </div>
         </div>
       </div>
-      <div is="correct-feedback-list" :cut_data="[cut_data]" :fb_id="cut_data.fb_id" :processor.async="cut_data.processor"></div>
+      <div is="correct-feedback-list" :cut_data.async="process_data" :fb_id="cut_data.fb_id" :processor="cut_data.processor"></div>
     </div>
   </div>
 {% endblock %}
@@ -55,6 +55,7 @@
       data: {
         scrolled: false,
         cut_data: [],
+        process_data: [],
         scale: 1,
         img_url: '',
         x: 0,
@@ -90,6 +91,7 @@
         //+ vm.sharedata.task_id + '/')
             .then(function (response) {
               vm.cut_data = response.data;
+              vm.process_data = [response.data];
               vm.image_url = response.data.image_url;
               var p_txt = response.data.page_txt.join('\n');
               vm.p_txt = p_txt;

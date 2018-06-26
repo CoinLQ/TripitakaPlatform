@@ -679,6 +679,13 @@
           }.bind(this))
           return
         }
+        if ((evt.ctrlKey && evt.keyCode === 92) ||(evt.ctrlKey && evt.keyCode === 86) || (evt.ctrlKey && evt.keyCode === 67)){ 
+            this.$nextTick(function () {
+              
+             
+            }.bind(this))
+            return
+　　　　 } 
         if (evt.keyCode >= 32 && evt.keyCode <= 222 || evt.keyCode== 229) {
           evt.preventDefault()
           return

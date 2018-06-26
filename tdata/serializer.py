@@ -40,10 +40,17 @@ class SutraSerializer(serializers.ModelSerializer):
         read_only_fields = ('id','sid', 'name', 'total_reels', 'reel_set')        
 
 class TripitakaSerializer(serializers.ModelSerializer):    
+    withvol = serializers.SerializerMethodField()
     class Meta:
         model = Tripitaka
-        fields = ('code', 'name')
-        read_only_fields =('code', 'name')
+        fields = ('code', 'name', 'withvol')
+        read_only_fields =('code', 'name', 'withvol')
+
+    def get_withvol(self, obj):
+        if obj.code in ['GL', 'LC', 'JX']:
+            return False
+        else:
+            return True
 
 class VolumeSerializer(serializers.ModelSerializer):    
      class Meta:
@@ -100,20 +107,19 @@ class TripitakaPageSerializer(serializers.ModelSerializer):
             ocr_txt = get_page_text(cut_dict)
             ocr_cuts = cut_dict['char_data']
         except Exception as e:
-            ocr_txt = ['无OCR文本……']
+            ocr_txt = []
             ocr_cuts = []
         try:
             task = Task.objects.filter(typ=1, task_no=1, reel=obj.reel)
             first_correct_txt = task.result.split('\n')
         except:
-            first_correct_txt = ['无一校文本……']
+            first_correct_txt = []
         try:
             task = Task.objects.filter(typ=1, task_no=2, reel=obj.reel)
             second_correct_txt = task.result.split('\n')
         except:
-            second_correct_txt = ['无二校文本……']
+            second_correct_txt = []
         try:
-            # task = Task.objects.filter(typ=2, reel=obj.reel, status=4)[0]
             reelcorrects = ReelCorrectText.objects.filter(reel=obj.reel).order_by("created_at")
             reelcorrect = list(reelcorrects)[-1]
             reelcorrectid = reelcorrect.id
@@ -121,10 +127,18 @@ class TripitakaPageSerializer(serializers.ModelSerializer):
             # TODO 改成最新的校对文本即可
             text_list = []
             page_txt_list = whole_text.split('p')
+            blank_no = 0
+            pos = 0
             for p_no, i in enumerate(page_txt_list):
-                for line_no, k in enumerate(i.replace('b', '').split('\n')):
+                i = i.split('\n')
+                for line_no, k in enumerate(i):
                     for char_no, l in enumerate(k):
-                        text_list.append([p_no, 0, line_no, char_no, l])
+                        if l == 'b':
+                            blank_no += 1
+                            text_list.append([p_no, 0, line_no, char_no, l, -1])
+                        else:
+                            text_list.append([p_no, 0, line_no, char_no, l, pos-blank_no])
+                        pos += 1
             verify_txt = []
             tmp = -1
             for t_no, t in enumerate(text_list):
@@ -132,11 +146,11 @@ class TripitakaPageSerializer(serializers.ModelSerializer):
                     if tmp != t[2]:
                         tmp = t[2]
                         verify_txt.append([])
-                    verify_txt[-1].append({'char': t[-1], 'no': t_no})
+                    verify_txt[-1].append({'char': t[-2], 'no': t[-1]})
             # page_txt = whole_text.split('p')[obj.reel_page_no]
             # verify_txt = whole_text.split('\n')
         except:
-            verify_txt = ['无审定文本……']
+            verify_txt = []
             reelcorrectid = -1
 
         if obj.cut_info:

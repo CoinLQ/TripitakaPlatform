@@ -1534,7 +1534,12 @@ Vue.component('correct-feedback-dialog', {
                 'correct_text': this.sharedata.reelcorrectid,
                 'original_text': this.sharedata.original_text,
             }).then(function(response) {
-                alert('提交成功！');
+                if(response.status==200){
+                    alert(response.data.msg);
+                }
+                if(response.status==201){
+                    alert('提交成功！')
+                }
                 vm.sharedata.correctFeedbackDialogVisible = false;
                 vm.sharedata.popupMenuShown = false;
                 window.getSelection().removeAllRanges();

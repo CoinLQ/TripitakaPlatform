@@ -1000,16 +1000,18 @@
         //鼠标点击的事件，data,s是一个有效的值。如果是自己调用的是undefine
         clickSutraTreeNode: function (data) {
           //鼠标点击将记录那个节点
+          var vm = this;
           if (data.reel_no) {
-            this.getPageData(data.id, 'r');
-            this.reel_no = data.reel_no
+            vm.getPageData(data.id, 'r');
+            vm.reel_no = data.reel_no;
+            vm.curReelNode = data;
+            vm.curreelpage = 1;
           }
           else {
-            this.sutra_name = data.name
+            vm.sutra_name = data.name;
+            var s = _.find(vm.sutra_list, {'id': data.id});
+            s.reel_set = _.sortBy(s.reel_set, function(n){return n.reel_no})
           }
-          var vm = this;
-          vm.curReelNode = data;
-          vm.curreelpage = 1;
         },
         clickVolumeTreeNode: function (data) {
           if (data.children[0]) {

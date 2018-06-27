@@ -353,7 +353,9 @@ def get_accurate_cut(text1, text2, cut_json, pid):
     return char_lst, line_count, column_count, char_count_lst, add_count, wrong_count, confirm_count
 
 def get_char_region_cord(char_lst):
-    # 得到字框顶点中最小和最大的x, y
+    ''' 
+    得到字框顶点中最小和最大的x, y
+    '''
     min_x = 10000
     min_y = 10000
     max_x = 0
@@ -373,9 +375,10 @@ def get_char_region_cord(char_lst):
             if (y + h) > max_y:
                 max_y = y + h
     return min_x, min_y, max_x, max_y
-'''获取切片文字
-'''
+
 def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
+    '''获取切片文字
+    '''
     if reel.reel_no <= 0 or vol_page == 0:
         return ''
     cut_filename = "%s/logs/%s%s.%s" % (settings.BASE_DIR, reel.image_prefix(), vol_page, suffix)
@@ -436,8 +439,10 @@ def rebuild_reel_pagerects(reel):
     Schedule.create_reels_pptasks(reel)
 
 def compute_accurate_cut(reel, process_cut=True):
+    print("[compute_accurate_cut]",reel.id,"start")
     use_original_cut = reel.sutra.tripitaka.use_original_cut
     sid = reel.sutra.sid
+    #ocr分片文本
     pagetexts = []
     if not use_original_cut:
         try:
@@ -445,6 +450,8 @@ def compute_accurate_cut(reel, process_cut=True):
         except:
             return None
         pagetexts = reel_ocr_text.text[2:].split('\np\n')
+    print("[compute_accurate_cut]",reel.id,"reel_ocr_text","\np\n".join(pagetexts))
+    #校正过的分片文本
     reel_correct_text = ReelCorrectText.objects.filter(reel=reel).order_by('-id').first()
     correct_pagetexts = []
     if reel_correct_text:
@@ -452,15 +459,19 @@ def compute_accurate_cut(reel, process_cut=True):
         if text[:2] == 'p\n':
             text = text[2:]
         correct_pagetexts = text.split('\np\n')
+    print("[compute_accurate_cut]",reel.id,"reel_correct_text","\np\n".join(correct_pagetexts))
     page_count = reel.end_vol_page - reel.start_vol_page + 1
     correct_page_count = len(correct_pagetexts)
 
+    #page_set在哪里定义的???
     reel.page_set.all().delete()
     for i in range(page_count):
         page_no = i + 1
         vol_page = reel.start_vol_page + i
+        # pid是在本卷内的页号
         # 最后一位是栏号，如果有分栏，需用a/b；无分栏，用0
         pid = '%s_%03d_%02d_%s' % (sid, reel.reel_no, page_no, '0') # YB000860_001_01_0
+        # page_code是在整部经中的页号
         # 如果有分栏，最后一位是栏号，需用a/b；无分栏，为空
         page_code = '%s_%s_%s%s' % (sid[0:2], reel.path_str(), vol_page, '') # YB_1_1
         cut_file = fetch_cut_file(reel, vol_page)

@@ -18,6 +18,10 @@ import re, json
 
 def save_reel_with_correct_text(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
     path1='', path2='', path3=''):
+    '''create and save:
+        1.sutra/reel/reelocrtext (if they do not exist)
+        2.reelcorrecttext
+    '''
     reel, reel_ocr_text = save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page, \
     path1, path2, path3)
     try:

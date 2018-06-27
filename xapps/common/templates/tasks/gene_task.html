@@ -64,14 +64,12 @@
               <div class="block">
                 <div style="display:inline-block; width:600px;height:500px;border:1px solid;">
                   <el-checkbox-group v-model="checkList" @change="handleCheckedReelsChange">
-                    <el-checkbox v-for="reel in current_reels" :label="reel" :key="reel.id" border
-                                 @change="handleCheckChange" v-if="reel.text_ready || reel.ocr_ready">第{[reel.reel_no]卷
+                    <el-checkbox v-for="reel in current_reels" :label="reel" :key="reel.id" border :disabled="selectDisabled(reel)"
+                                 @change="handleCheckChange">第{[reel.reel_no]卷
                     </el-checkbox>
                     {#                    <el-checkbox v-for="reel in current_reels" :label="reel" :key="reel.id" border#}
                     {#                                 @change="handleCheckChange">第{[reel.reel_no]卷#}
                     {#                    </el-checkbox>#}
-                    <el-checkbox border disabled v-else>第{[reel.reel_no]卷
-                    </el-checkbox>
                   </el-checkbox-group>
                 </div>
                 <el-pagination
@@ -313,6 +311,9 @@
       },
       computed: {},
       methods: {
+        selectDisabled: function(reel) {
+          return !reel.correct_ready && !reel.ocr_ready;
+        },
         fetchSutraList: function (tp) {
           if (tp == 'search' || tp == 'tripitaka') {
             this.page = 1;

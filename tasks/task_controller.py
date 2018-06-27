@@ -171,8 +171,6 @@ def get_correct_base_reel_lst(lqsutra, reel_no):
         # 记录错误
         print(sutra.sid + 'no base sutra')
         return base_reel_lst, sutra_to_body
-    if not base_sutra_lst[0].sid.startswith('CB'):
-        base_sutra_lst[0], base_sutra_lst[1] = base_sutra_lst[1], base_sutra_lst[0]
     for base_sutra in base_sutra_lst:
         try:
             base_reel = Reel.objects.get(sutra=base_sutra, reel_no=reel_no)
@@ -244,25 +242,10 @@ mark_times = 0, mark_verify_times = 0):
                 sutra_lst.append(sutra)
 
         # 先得到base_reel，CBETA
-        base_sutra_lst = []
-        for sutra in sutra_lst:
-            if sutra.sid.startswith('CB'):
-                base_sutra_lst.append(sutra)
-                if sutra.id not in sutra_to_body:
-                    sutra_to_body[sutra.id] = get_sutra_body(sutra)
-        if not base_sutra_lst:
-            # 记录错误
-            print('no base sutra')
+        base_reel_lst, sutra_to_body = get_correct_base_reel_lst(lqsutra, reel_no)
+        if not base_reel_lst:
+            print('no base sutra:', lqsutra.sid)
             continue
-        if not base_sutra_lst[0].sid.startswith('CB'):
-            base_sutra_lst[0], base_sutra_lst[1] = base_sutra_lst[1], base_sutra_lst[0]
-        base_reel_lst = []
-        for sutra in base_sutra_lst:
-            try:
-                reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
-                base_reel_lst.append(reel)
-            except:
-                pass
 
         for sutra in sutra_lst:
             try:
@@ -322,27 +305,10 @@ mark_times = 0, mark_verify_times = 0):
             pass
         else:
             print("tripitaka.cut_ready is False.")
-        base_sutra_lst = []
-        sutra_to_body = {}
-        # 先得到两个base_reel，CBETA和高丽藏
-        for s in sutra.lqsutra.sutra_set.all():
-            if s.sid.startswith('CB') or s.sid.startswith('GL'):
-                base_sutra_lst.append(s)
-                if s.id not in sutra_to_body.keys():
-                    sutra_to_body[s.id] = get_sutra_body(s)
-        if not base_sutra_lst:
-            # 记录错误
-            print(sutra.sid + 'no base sutra')
+        base_reel_lst, sutra_to_body = get_correct_base_reel_lst(sutra.lqsutra, reel_no)
+        if not base_reel_lst:
+            print('no base sutra:', sutra.lqsutra.sid)
             continue
-        if not base_sutra_lst[0].sid.startswith('CB'):
-            base_sutra_lst[0], base_sutra_lst[1] = base_sutra_lst[1], base_sutra_lst[0]
-        base_reel_lst = []
-        for base_sutra in base_sutra_lst:
-            try:
-                base_reel = Reel.objects.get(sutra=base_sutra, reel_no=reel_no)
-                base_reel_lst.append(base_reel)
-            except:
-                pass
         try:
             reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
         except:
@@ -992,7 +958,7 @@ def publish_judge_result(task):
 
             # 检查是否有未就绪的定本标点任务，如果有，状态设为READY
             Task.objects.filter(lqreel=task.lqreel, typ=Task.TYPE_LQPUNCT, status=Task.STATUS_NOT_READY)\
-            .update(lqtext=reeltext, result=task_puncts, status=Task.STATUS_READY)
+            .update(lqtext=reeltext, result='[]', status=Task.STATUS_READY)
             Task.objects.filter(lqreel=task.lqreel, typ=Task.TYPE_LQPUNCT_VERIFY, status=Task.STATUS_NOT_READY)\
             .update(lqtext=reeltext)
 

@@ -48,7 +48,7 @@ def save_reel(lqsutra, sid, reel_no, start_vol, start_vol_page, end_vol_page,
         ocr_ready=ocr_ready, correct_ready=correct_ready)
         reel.save()
     
-    #create reel ocr text if it does not exist
+    #create reelocrtext if it does not exist
     try:
         reel_ocr_text = ReelOCRText.objects.get(reel=reel)
     except:

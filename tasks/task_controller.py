@@ -958,7 +958,7 @@ def publish_judge_result(task):
 
             # 检查是否有未就绪的定本标点任务，如果有，状态设为READY
             Task.objects.filter(lqreel=task.lqreel, typ=Task.TYPE_LQPUNCT, status=Task.STATUS_NOT_READY)\
-            .update(lqtext=reeltext, result=task_puncts, status=Task.STATUS_READY)
+            .update(lqtext=reeltext, result='[]', status=Task.STATUS_READY)
             Task.objects.filter(lqreel=task.lqreel, typ=Task.TYPE_LQPUNCT_VERIFY, status=Task.STATUS_NOT_READY)\
             .update(lqtext=reeltext)
 

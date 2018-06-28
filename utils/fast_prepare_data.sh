@@ -5,7 +5,7 @@ if [ "$1" != '' ]; then
 fi
 echo prepare data for $sid
 ./utils/initdb.sh
-mkdir -p logs
+mkdir -p logs log
 
 ./manage.py loaddata ./data/initial_fixtures/demo_auth.json
 ./manage.py loaddata ./data/initial_fixtures/cbeta_gl_60huayan.json

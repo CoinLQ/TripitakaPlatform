@@ -2,6 +2,8 @@ import os, json
 import traceback
 import requests
 from requests.exceptions import RequestException
+import logging
+logger = logging.getLogger(__name__)
 
 class AutoPunct:
     AUTO_PUNCT_URL = os.environ.get('AUTO_PUNCT_URL', '')
@@ -14,10 +16,10 @@ class AutoPunct:
             response = r.json()
             return response[0]['pred']
         except RequestException:
-            traceback.print_exc()
+            logger.exception('auto punct failed.')
             return None
-        except ValueError:
-            traceback.print_exc()
+        except:
+            logger.exception('auto punct failed.')
             return None
     
     PUNCT_CHARACTERS = '：，。；、！“”‘’？\n'

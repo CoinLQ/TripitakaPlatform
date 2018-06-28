@@ -23,8 +23,8 @@ from jwt_auth.models import UserManagement, UserAuthentication
 User = get_user_model()
 
 class HorizontalRadioRenderer(forms.RadioSelect):
-   def render(self):
-     return mark_safe(u'\n'.join([u'%s\n' % w for w in self]))
+    def render(self):
+        return mark_safe(u'\n'.join([u'%s\n' % w for w in self]))
 
 class UserChangeBaseForm(forms.ModelForm):
     error_messages = {

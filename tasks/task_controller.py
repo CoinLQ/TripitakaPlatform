@@ -29,10 +29,10 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_
     if reel.sutra.sid.startswith('CB') or reel.sutra.sid.startswith('GL'): # 不对CBETA, GL生成任务
         return
     # Correct Task
-    print('create_correct_tasks: ', reel.sutra.sid, reel.reel_no)
+    logger.info('create_correct_tasks: %s, %d', reel.sutra.sid, reel.reel_no)
     reel_ocr_texts = list(ReelOCRText.objects.filter(reel=reel))
     if len(reel_ocr_texts) == 0:
-        print('no ocr text for reel: ', reel.sutra.sid, reel.reel_no)
+        logger.error('no ocr text for reel: %s, %d', reel.sutra.sid, reel.reel_no)
         return None
     reel_ocr_text = reel_ocr_texts[0]
     ocr_text = OCRCompare.preprocess_ocr_text(reel_ocr_text.text)
@@ -40,7 +40,7 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_
     for base_reel in base_reel_lst:
         base_reel_correct_text = ReelCorrectText.objects.filter(reel=base_reel).order_by('-id').first()
         if not base_reel_correct_text:
-            print('no base text.')
+            logger.error('no base text.')
             return None
         base_text_lst = [base_reel_correct_text.head]
         base_text_lst.append(sutra_to_body[base_reel.sutra_id])
@@ -169,7 +169,7 @@ def get_correct_base_reel_lst(lqsutra, reel_no):
                 sutra_to_body[s.id] = get_sutra_body(s)
     if not base_sutra_lst:
         # 记录错误
-        print(sutra.sid + 'no base sutra')
+        logger.error('no base sutra: %s', sutra.sid)
         return base_reel_lst, sutra_to_body
     for base_sutra in base_sutra_lst:
         try:
@@ -244,7 +244,7 @@ mark_times = 0, mark_verify_times = 0):
         # 先得到base_reel，CBETA
         base_reel_lst, sutra_to_body = get_correct_base_reel_lst(lqsutra, reel_no)
         if not base_reel_lst:
-            print('no base sutra:', lqsutra.sid)
+            logger.error('no base sutra: %s', lqsutra.sid)
             continue
 
         for sutra in sutra_lst:
@@ -263,7 +263,7 @@ mark_times = 0, mark_verify_times = 0):
             base_reel = base_reel_lst[0]
             create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_times)
         except:
-            print('create judge task failed: ', lqsutra.sid, reel_no)
+            logger.fatal('create judge task failed: %s, %d', lqsutra.sid, reel_no)
         if lqreel:
             create_lqpunct_tasks(batchtask, lqreel, lqpunct_times, lqpunct_verify_times)
 
@@ -304,10 +304,11 @@ mark_times = 0, mark_verify_times = 0):
         if sutra.tripitaka.cut_ready:
             pass
         else:
-            print("tripitaka.cut_ready is False.")
+            logger.info("tripitaka %s cut_ready is False.", sutra.tripitaka.name)
+            continue
         base_reel_lst, sutra_to_body = get_correct_base_reel_lst(sutra.lqsutra, reel_no)
         if not base_reel_lst:
-            print('no base sutra:', sutra.lqsutra.sid)
+            logger.error('no base sutra: %s', sutra.lqsutra.sid)
             continue
         try:
             reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
@@ -332,7 +333,7 @@ def calculate_abnormal_line_count(reel_correct_text):
     if text.startswith('p\n'):
         text = text[2:]
     else:
-        print('reel correct text not start with "p\n": ', reel.sutra.sid, reel.reel_no)
+        logger.error('reel correct text not start with "p\n": %s, %d', reel.sutra.sid, reel.reel_no)
     page_texts = text.split('\np\n')
     page_count = len(page_texts)
     for reel_page_no in range(1, page_count + 1):
@@ -359,7 +360,7 @@ def publish_correct_result(task):
     '''
     发布文字校对的结果，供校勘判取使用
     '''
-    print('publish_correct_result')
+    logger.info('publish_correct_result')
     sutra = task.reel.sutra
     reel_no = task.reel.reel_no
     reel_correct_text = None
@@ -417,7 +418,7 @@ def publish_correct_result(task):
             try:
                 compute_accurate_cut(reel)
             except Exception:
-                traceback.print_exc()
+                logger.exception('compute_accurate_cut failed: %s', reel)
 
         # 如果与下一卷有重叠，且下一卷已完成，生成下一卷的精确切分。
         if reel.reel_no < reel.sutra.total_reels:
@@ -439,7 +440,7 @@ def publish_correct_result(task):
                     try:
                         compute_accurate_cut(next_reel)
                     except Exception:
-                        traceback.print_exc()
+                        logger.exception('compute_accurate_cut failed: %s', next_reel)
             except:
                 pass
 
@@ -464,7 +465,7 @@ def publish_correct_result(task):
 CORRECT_RESULT_FILTER = re.compile('[ 　ac-oq-zA-Z0-9.?\-",/，。、：]')
 MULTI_LINEFEED = re.compile('\n\n+')
 def generate_correct_result(task):
-    print('generate_correct_result')
+    logger.info('generate_correct_result')
     text_lst = []
     last_ch_linefeed = False
     last_not_empty_correctseg = None
@@ -493,7 +494,7 @@ def correct_submit(task):
     '''
     文字校对提交结果
     '''
-    print('correct_submit')
+    logger.info('correct_submit')
     generate_correct_result(task)
     key = 'correct_%d' % task.task_no
     setattr(task.reel, key, True)
@@ -547,7 +548,7 @@ def correct_submit(task):
             correct_verify_task.save(update_fields=['status'])
 
 def correct_verify_submit(task):
-    print('correct_verify_submit')
+    logger.info('correct_verify_submit')
     key = 'correct_verify'
     setattr(task.reel, key, True)
     task.reel.save(update_fields=[key])
@@ -578,7 +579,7 @@ def correct_verify_submit(task):
         publish_correct_result(task)
 
 def correct_difficult_submit(task):
-    print('correct_difficult_submit')
+    logger.info('correct_difficult_submit')
     key = 'correct_difficult'
     setattr(task.reel, key, True)
     task.reel.save(update_fields=[key])
@@ -603,7 +604,7 @@ def correct_update(task):
             reel_correct_text.save()
 
 def mark_submit(task):
-    print('mark_submit')
+    logger.info('mark_submit')
     key = 'mark_%d' % task.task_no
     setattr(task.reel, key, True)
     task.reel.save(update_fields=[key])
@@ -659,7 +660,7 @@ def mark_submit(task):
 def try_create_judge_data(lqsutra):
     judge_tasks = list(Task.objects.filter(lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE))
     if len(judge_tasks) == 0:
-        print('no judge task')
+        logger.info('no judge task')
         return
     base_sutra = judge_tasks[0].base_reel.sutra
     judge_task_not_ready = (judge_tasks[0].status == Task.STATUS_NOT_READY)
@@ -685,9 +686,9 @@ def try_create_judge_data(lqsutra):
             create_new_data_for_judge_tasks(lqsutra, base_sutra, lqsutra.total_reels)
 
 def mark_verify_submit(task):
-    print('mark_verify_submit')
+    logger.info('mark_verify_submit')
     if task.mark.publisher:
-        print('already submitted.')
+        logger.info('already submitted.')
         return
     key = 'mark_verify'
     setattr(task.reel, key, True)
@@ -702,8 +703,7 @@ def mark_verify_submit(task):
     lqsutra = reel.sutra.lqsutra
     batchtask = task.batchtask
     if not lqsutra:
-        print('no lqsutra')
-        logging.error('no lqsutra')
+        logger.error('no lqsutra: %s', reel.sutra.sid)
         return None
     try_create_judge_data(lqsutra)
 
@@ -716,18 +716,18 @@ def regenerate_correctseg(reel, initial_updated_pages):
     '''
     由于卷中某些页有增加或更新，需要重新生成此卷的文字校对任务的CorrectSeg数据
     '''
-    print('regenerate_correctseg: ', reel.sutra.sid, reel.reel_no)
+    logger.info('regenerate_correctseg: %s, %d', reel.sutra.sid, reel.reel_no)
     if reel.sutra.sid.startswith('CB') or reel.sutra.sid.startswith('GL'): # 不对CBETA, GL生成任务
         return
     # 更新ReelOCRText
     try:
         reel_ocr_text = ReelOCRText.objects.get(reel_id = reel.id)
     except:
-        print('no ocr text for reel: ', reel.sutra.sid, reel.reel_no)
+        logger.error('no ocr text for reel: %s, %d', reel.sutra.sid, reel.reel_no)
         return
     text = get_reel_text(reel, force_download=True)
     if not text:
-        print('no ocr text online.')
+        logger.error('no ocr text online.')
         return
     reel_ocr_text.text = text
     reel_ocr_text.save(update_fields=['text'])
@@ -738,7 +738,7 @@ def regenerate_correctseg(reel, initial_updated_pages):
     for base_reel in base_reel_lst:
         base_reel_correct_text = ReelCorrectText.objects.filter(reel=base_reel).order_by('-id').first()
         if not base_reel_correct_text:
-            print('no base text.')
+            logger.error('no base text.')
             return None
         base_text_lst = [base_reel_correct_text.head]
         base_text_lst.append(sutra_to_body[base_reel.sutra_id])
@@ -785,7 +785,7 @@ def regenerate_correctseg(reel, initial_updated_pages):
                     seg_count += 1
             if seg_count == 0:
                 updated_pages.append(page_no)
-        print('updated_pages:', updated_pages)
+        logger.info('updated_pages: %s', updated_pages)
         correctsegs_new = []
         for correctseg in correctsegs_old:
             if correctseg.tag != CorrectSeg.TAG_P and correctseg.page_no in updated_pages:
@@ -804,13 +804,13 @@ def regenerate_correctseg(reel, initial_updated_pages):
         CorrectSeg.objects.bulk_create(correctsegs_new)
     Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT, picker=None).update(status=Task.STATUS_READY)
     Task.objects.filter(reel=reel, typ=Task.TYPE_CORRECT).exclude(picker=None).update(status=Task.STATUS_PROCESSING)
-    print('regenerate_correctseg done:', reel.sutra.sid, reel.reel_no)
+    logger.info('regenerate_correctseg done: %s, %d', reel.sutra.sid, reel.reel_no)
 
 def judge_submit(task):
     '''
     校勘判取提交结果
     '''
-    print('judge_submit')
+    logger.info('judge_submit')
     lqreel = task.lqreel
     judge_tasks = list(Task.objects.filter(batchtask_id=task.batchtask_id, lqreel_id=lqreel.id, typ=Task.TYPE_JUDGE).all())
     task_count = len(judge_tasks)
@@ -875,7 +875,7 @@ def judge_verify_submit(task):
     '''
     校勘判取审定任务提交结果
     '''
-    print('judge_verify_submit')
+    logger.info('judge_verify_submit')
     doubt_diffsegresult = DiffSegResult.objects.filter(task=task, doubt=True).first()
     if doubt_diffsegresult: # 有存疑，则生成校勘判取难字任务
         difficult_task = Task(batchtask=task.batchtask,
@@ -901,7 +901,7 @@ def judge_difficult_submit(task):
     '''
     校勘判取难字任务提交结果
     '''
-    print('judge_difficult_submit')
+    logger.info('judge_difficult_submit')
     not_selected_diffsegresult = DiffSegResult.objects.filter(task=task, selected=False).first()
     if not_selected_diffsegresult is None:
         publish_judge_result(task)
@@ -910,13 +910,13 @@ def publish_judge_result(task):
     '''
     发布校勘判取结果
     '''
-    print('publish_judge_result')
+    logger.info('publish_judge_result')
     if task.status != Task.STATUS_FINISHED:
-        print('task status is not finished.')
+        logger.error('task status is not finished.')
         return
     lqreeltext_count = LQReelText.objects.filter(task_id=task.id).count()
     if lqreeltext_count != 0:
-        print('this task already published.')
+        logger.error('this task already published.')
         return
     base_correct_text = task.reeldiff.base_text
     base_text = clean_separators(base_correct_text.body)
@@ -926,7 +926,7 @@ def publish_judge_result(task):
     diffsegresults = list(DiffSegResult.objects.filter(task_id=task.id).order_by('diffseg__base_pos'))
     for diffsegresult in diffsegresults:
         if not diffsegresult.selected:
-            print('not selected')
+            logger.error('not selected')
             return
         base_pos = diffsegresult.diffseg.base_pos
         base_length = diffsegresult.diffseg.base_length
@@ -934,14 +934,14 @@ def publish_judge_result(task):
             text_lst.append( base_text[base_index: base_pos] )
             base_index = base_pos
         if base_index != base_pos:
-            print('error')
+            logger.error('error')
             return
         text_lst.append(diffsegresult.selected_text)
         base_index += base_length
     if base_index < base_text_length:
         text_lst.append( base_text[base_index: base_text_length] )
     else:
-        print('error')
+        logger.error('error')
         return
     with transaction.atomic():
         lqreeltext_count = LQReelText.objects.filter(task_id=task.id).count()
@@ -963,7 +963,7 @@ def publish_judge_result(task):
             .update(lqtext=reeltext)
 
 def punct_submit_result(task):
-    print('punct_submit_result')
+    logger.info('punct_submit_result')
     verify_tasks = list(Task.objects.filter(batchtask=task.batchtask, typ=Task.TYPE_PUNCT_VERIFY, reel=task.reel))
     if len(verify_tasks) == 0:
         publish_punct_result(task)
@@ -976,7 +976,7 @@ def punct_submit_result(task):
         verify_task.save(update_fields=['status', 'result'])
 
 def publish_punct_result(task):
-    print('publish_punct_result')
+    logger.info('publish_punct_result')
     count = Punct.objects.filter(task=task).count()
     if count == 0:
         punct = Punct(reel=task.reel, reeltext=task.reeltext, \
@@ -984,7 +984,7 @@ def publish_punct_result(task):
         punct.save()
 
 def lqpunct_submit_result(task):
-    print('lqpunct_submit_result')
+    logger.info('lqpunct_submit_result')
     verify_tasks = list(Task.objects.filter(batchtask=task.batchtask, typ=Task.TYPE_LQPUNCT_VERIFY, lqreel=task.lqreel))
     if len(verify_tasks) == 0:
         publish_lqpunct_result(task)
@@ -997,7 +997,7 @@ def lqpunct_submit_result(task):
         verify_task.save(update_fields=['status', 'result'])
 
 def publish_lqpunct_result(task):
-    print('publish_lqpunct_result')
+    logger.info('publish_lqpunct_result')
     count = LQPunct.objects.filter(task=task).count()
     if count == 0:
         punct = LQPunct(lqreel=task.lqreel, reeltext=task.lqtext, \
@@ -1107,7 +1107,7 @@ def revoke_overdue_task_async(task_id):
     except:
         return
     if task.status == Task.STATUS_PROCESSING:
-        print('task %s is overdue, to be revoked.' % task_id)
+        logger.info('task %s is overdue, to be revoked.', task_id)
         task.picker = None
         task.picked_at = None
         task.status = Task.STATUS_READY
@@ -1121,7 +1121,7 @@ def revoke_overdue_pagetask_async(task_id):
     except:
         return
     if task.status == 5:
-        print('pagetask %s is overdue, to be revoked.' % task_id)
+        logger.info('pagetask %s is overdue, to be revoked.', task_id)
         task.owner = None
         task.obtain_date = None
         task.status = 1

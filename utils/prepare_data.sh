@@ -5,7 +5,7 @@ if [ "$1" != '' ]; then
 fi
 echo prepare data for $sid
 ./utils/initdb.sh
-mkdir -p logs
+mkdir -p logs log
 
 ./manage.py create_configuration
 ./manage.py import_tripitaka_list

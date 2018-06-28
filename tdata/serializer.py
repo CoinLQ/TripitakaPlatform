@@ -29,7 +29,7 @@ class LQSutraSerializer(serializers.ModelSerializer):
 class ReelSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reel
-        fields = ('id', 'reel_no','ocr_ready','start_vol','start_vol_page','end_vol','end_vol_page')
+        fields = ('id', 'reel_no','ocr_ready','start_vol','start_vol_page','end_vol','end_vol_page', 'correct_ready')
 
 class SutraSerializer(serializers.ModelSerializer):
     reel_set = ReelSimpleSerializer(many=True)
@@ -40,10 +40,17 @@ class SutraSerializer(serializers.ModelSerializer):
         read_only_fields = ('id','sid', 'name', 'total_reels', 'reel_set')        
 
 class TripitakaSerializer(serializers.ModelSerializer):    
+    withvol = serializers.SerializerMethodField()
     class Meta:
         model = Tripitaka
-        fields = ('code', 'name')
-        read_only_fields =('code', 'name')
+        fields = ('code', 'name', 'withvol')
+        read_only_fields =('code', 'name', 'withvol')
+
+    def get_withvol(self, obj):
+        if obj.code in ['GL', 'LC', 'JX']:
+            return False
+        else:
+            return True
 
 class VolumeSerializer(serializers.ModelSerializer):    
      class Meta:
@@ -100,20 +107,19 @@ class TripitakaPageSerializer(serializers.ModelSerializer):
             ocr_txt = get_page_text(cut_dict)
             ocr_cuts = cut_dict['char_data']
         except Exception as e:
-            ocr_txt = ['无OCR文本……']
+            ocr_txt = []
             ocr_cuts = []
         try:
             task = Task.objects.filter(typ=1, task_no=1, reel=obj.reel)
             first_correct_txt = task.result.split('\n')
         except:
-            first_correct_txt = ['无一校文本……']
+            first_correct_txt = []
         try:
             task = Task.objects.filter(typ=1, task_no=2, reel=obj.reel)
             second_correct_txt = task.result.split('\n')
         except:
-            second_correct_txt = ['无二校文本……']
+            second_correct_txt = []
         try:
-            # task = Task.objects.filter(typ=2, reel=obj.reel, status=4)[0]
             reelcorrects = ReelCorrectText.objects.filter(reel=obj.reel).order_by("created_at")
             reelcorrect = list(reelcorrects)[-1]
             reelcorrectid = reelcorrect.id
@@ -144,7 +150,7 @@ class TripitakaPageSerializer(serializers.ModelSerializer):
             # page_txt = whole_text.split('p')[obj.reel_page_no]
             # verify_txt = whole_text.split('\n')
         except:
-            verify_txt = ['无审定文本……']
+            verify_txt = []
             reelcorrectid = -1
 
         if obj.cut_info:

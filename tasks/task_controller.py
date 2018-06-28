@@ -161,9 +161,9 @@ def get_correct_base_reel_lst(lqsutra, reel_no):
     base_sutra_lst = []
     sutra_to_body = {}
     base_reel_lst = []
-    # 先得到两个base_reel，CBETA和高丽藏
+    # 先得到base_reel，CBETA
     for s in lqsutra.sutra_set.all():
-        if s.sid.startswith('CB') or s.sid.startswith('GL'):
+        if s.sid.startswith('CB'):
             base_sutra_lst.append(s)
             if s.id not in sutra_to_body.keys():
                 sutra_to_body[s.id] = get_sutra_body(s)
@@ -171,8 +171,6 @@ def get_correct_base_reel_lst(lqsutra, reel_no):
         # 记录错误
         print(sutra.sid + 'no base sutra')
         return base_reel_lst, sutra_to_body
-    if not base_sutra_lst[0].sid.startswith('CB'):
-        base_sutra_lst[0], base_sutra_lst[1] = base_sutra_lst[1], base_sutra_lst[0]
     for base_sutra in base_sutra_lst:
         try:
             base_reel = Reel.objects.get(sutra=base_sutra, reel_no=reel_no)
@@ -243,26 +241,11 @@ mark_times = 0, mark_verify_times = 0):
             if sutra.tripitaka.cut_ready or sutra.sid.startswith('CB'):
                 sutra_lst.append(sutra)
 
-        # 先得到两个base_reel，CBETA和高丽藏
-        base_sutra_lst = []
-        for sutra in sutra_lst:
-            if sutra.sid.startswith('CB') or sutra.sid.startswith('GL'):
-                base_sutra_lst.append(sutra)
-                if sutra.id not in sutra_to_body:
-                    sutra_to_body[sutra.id] = get_sutra_body(sutra)
-        if not base_sutra_lst:
-            # 记录错误
-            print('no base sutra')
+        # 先得到base_reel，CBETA
+        base_reel_lst, sutra_to_body = get_correct_base_reel_lst(lqsutra, reel_no)
+        if not base_reel_lst:
+            print('no base sutra:', lqsutra.sid)
             continue
-        if not base_sutra_lst[0].sid.startswith('CB'):
-            base_sutra_lst[0], base_sutra_lst[1] = base_sutra_lst[1], base_sutra_lst[0]
-        base_reel_lst = []
-        for sutra in base_sutra_lst:
-            try:
-                reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
-                base_reel_lst.append(reel)
-            except:
-                pass
 
         for sutra in sutra_lst:
             try:
@@ -322,27 +305,10 @@ mark_times = 0, mark_verify_times = 0):
             pass
         else:
             print("tripitaka.cut_ready is False.")
-        base_sutra_lst = []
-        sutra_to_body = {}
-        # 先得到两个base_reel，CBETA和高丽藏
-        for s in sutra.lqsutra.sutra_set.all():
-            if s.sid.startswith('CB') or s.sid.startswith('GL'):
-                base_sutra_lst.append(s)
-                if s.id not in sutra_to_body.keys():
-                    sutra_to_body[s.id] = get_sutra_body(s)
-        if not base_sutra_lst:
-            # 记录错误
-            print(sutra.sid + 'no base sutra')
+        base_reel_lst, sutra_to_body = get_correct_base_reel_lst(sutra.lqsutra, reel_no)
+        if not base_reel_lst:
+            print('no base sutra:', sutra.lqsutra.sid)
             continue
-        if not base_sutra_lst[0].sid.startswith('CB'):
-            base_sutra_lst[0], base_sutra_lst[1] = base_sutra_lst[1], base_sutra_lst[0]
-        base_reel_lst = []
-        for base_sutra in base_sutra_lst:
-            try:
-                base_reel = Reel.objects.get(sutra=base_sutra, reel_no=reel_no)
-                base_reel_lst.append(base_reel)
-            except:
-                pass
         try:
             reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
         except:
@@ -690,27 +656,7 @@ def mark_submit(task):
             MarkUnit.objects.bulk_create(base_units)
             mark_verify_task.save(update_fields=['status'])
 
-def mark_verify_submit(task):
-    print('mark_verify_submit')
-    if task.mark.publisher:
-        print('already submitted.')
-        return
-    key = 'mark_verify'
-    setattr(task.reel, key, True)
-    task.reel.save(update_fields=[key])
-
-    task.mark.publisher = task.picker
-    task.mark.save(update_fields=['publisher'])
-    reel = task.reel
-    reel.mark_ready = True
-    reel.save(update_fields=['mark_ready'])
-    # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
-    lqsutra = reel.sutra.lqsutra
-    batchtask = task.batchtask
-    if not lqsutra:
-        print('no lqsutra')
-        logging.error('no lqsutra')
-        return None
+def try_create_judge_data(lqsutra):
     judge_tasks = list(Task.objects.filter(lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE))
     if len(judge_tasks) == 0:
         print('no judge task')
@@ -737,6 +683,29 @@ def mark_verify_submit(task):
                     status=Task.STATUS_NOT_READY).update(status=Task.STATUS_READY)
             # 已有校勘判取任务被领取，需要复制已有的判取结果
             create_new_data_for_judge_tasks(lqsutra, base_sutra, lqsutra.total_reels)
+
+def mark_verify_submit(task):
+    print('mark_verify_submit')
+    if task.mark.publisher:
+        print('already submitted.')
+        return
+    key = 'mark_verify'
+    setattr(task.reel, key, True)
+    task.reel.save(update_fields=[key])
+
+    task.mark.publisher = task.picker
+    task.mark.save(update_fields=['publisher'])
+    reel = task.reel
+    reel.mark_ready = True
+    reel.save(update_fields=['mark_ready'])
+    # 针对龙泉藏经这一卷查找是否有未就绪的校勘判取任务
+    lqsutra = reel.sutra.lqsutra
+    batchtask = task.batchtask
+    if not lqsutra:
+        print('no lqsutra')
+        logging.error('no lqsutra')
+        return None
+    try_create_judge_data(lqsutra)
 
 def new_base_pos(pos, correctseg):
     if correctseg.tag in [CorrectSeg.TAG_DIFF, CorrectSeg.TAG_EQUAL]:
@@ -989,7 +958,7 @@ def publish_judge_result(task):
 
             # 检查是否有未就绪的定本标点任务，如果有，状态设为READY
             Task.objects.filter(lqreel=task.lqreel, typ=Task.TYPE_LQPUNCT, status=Task.STATUS_NOT_READY)\
-            .update(lqtext=reeltext, result=task_puncts, status=Task.STATUS_READY)
+            .update(lqtext=reeltext, result='[]', status=Task.STATUS_READY)
             Task.objects.filter(lqreel=task.lqreel, typ=Task.TYPE_LQPUNCT_VERIFY, status=Task.STATUS_NOT_READY)\
             .update(lqtext=reeltext)
 
@@ -1133,7 +1102,10 @@ def regenerate_correctseg_async(reel_id_lst_json):
 
 @background(schedule=timedelta(days=7))
 def revoke_overdue_task_async(task_id):
-    task = Task.objects.get(pk=task_id)
+    try:
+        task = Task.objects.get(pk=task_id)
+    except:
+        return
     if task.status == Task.STATUS_PROCESSING:
         print('task %s is overdue, to be revoked.' % task_id)
         task.picker = None

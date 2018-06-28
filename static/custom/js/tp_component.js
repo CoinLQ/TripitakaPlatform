@@ -232,7 +232,8 @@ Vue.component('correct-feedback-list', {
         <el-table-column v-if="processor==0 && !processed"
           fixed="right"
           label="操作"
-          width="120">
+          width="120"
+          key="a">
           <template slot-scope="scope">
             <el-button
               @click="processfb(2)"
@@ -265,9 +266,8 @@ Vue.component('correct-feedback-list', {
       axios.patch('/api/correctfeedback/' + this.fb_id + '/', {
         'response': re_type,
       }).then(function (response) {
-        //this.$emit('update:processor', this.processor);
         this.processed = true;
-        alert(response.data);
+        this.$emit('update:cut_data', response.data);
       }.bind(this))
           .catch(function (error) {
             console.log(error)

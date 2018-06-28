@@ -169,7 +169,7 @@ def get_correct_base_reel_lst(lqsutra, reel_no):
                 sutra_to_body[s.id] = get_sutra_body(s)
     if not base_sutra_lst:
         # 记录错误
-        logger.error('no base sutra: %s', sutra.sid)
+        logger.error('no base sutra: %s', lqsutra.sid)
         return base_reel_lst, sutra_to_body
     for base_sutra in base_sutra_lst:
         try:

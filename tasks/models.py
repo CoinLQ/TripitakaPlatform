@@ -7,17 +7,6 @@ from tdata.models import *
 from tdata.lib.image_name_encipher import get_image_url
 import re, json
 
-# # class SutraStatus(models.Model):
-# #     sutra = models.ForeignKey(LQSutra, on_delete=models.CASCADE)
-# #     reel_no = models.SmallIntegerField('卷序号')
-# #     text_correction = models.BooleanField('已发布文字校对任务', default=False)
-# #     judgement = models.BooleanField('已发布校勘判取任务', default=False)
-# #     punct = models.BooleanField('已发布标点任务', default=False)
-# #     mark = models.BooleanField('已发布格式标注任务', default=False)
-
-# #     class Meta:
-# #         unique_together = (('sutra', 'reel_no'),)
-
 class TaskBase(object):
     PRIORITY_CHOICES = (
         (1, '低'),

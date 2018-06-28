@@ -344,3 +344,34 @@ UPLOAD_COLUMN_IMAGE = True
 
 FRONT_HOST = 'test.lqdzj.cn'
 PUBLIC_HOST = 'work.lqdzj.cn'
+
+# logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '%(levelname)s %(asctime)s %(name)s.%(funcName)s:%(lineno)s - %(message)s'
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'formatter': 'simple',
+            'filename': os.path.join(BASE_DIR, 'log/info.log'),
+            'backupCount': 12,
+            'when': 'd',
+            'interval': 30,
+        }
+    },
+    'loggers': {
+        'botocore': {
+            'level': 'ERROR',
+        },
+    },
+    'root': {
+        'handlers': ['file'],
+        'level': 'INFO'
+    },
+}

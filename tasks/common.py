@@ -17,6 +17,9 @@ from django.conf import settings
 
 SEPARATORS_PATTERN = re.compile('[pb\n]')
 
+import logging
+logger = logging.getLogger(__name__)
+
 def compact_json_dumps(obj):
     return json.dumps(obj, separators=(',', ':'))
 
@@ -248,7 +251,7 @@ def get_accurate_cut(text1, text2, cut_json, pid):
     try:
         cut = json.loads(cut_json)
     except Exception as err:
-        print('cut_json: ', cut_json)
+        logger.error('cut_json: %s', cut_json)
         raise err
     old_char_lst = cut['char_data']
     for char_data in old_char_lst:
@@ -348,8 +351,7 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                 char_data['x'] = x
                 char_data['w'] = w
             except:
-                traceback.print_exc()
-                print('get_accurate_cut except: ', json.dumps(char_data))
+                logger.exception('get_accurate_cut except: %s', json.dumps(char_data))
     return char_lst, line_count, column_count, char_count_lst, add_count, wrong_count, confirm_count
 
 def get_char_region_cord(char_lst):
@@ -384,13 +386,13 @@ def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
             if data:
                 return data
     cut_url = get_cut_url(reel, vol_page, suffix)
-    print('wget ', cut_url)
+    logger.info('wget ', cut_url)
     try:
         with urllib.request.urlopen(cut_url) as f:
-            print('fetch done: %s, %d, page: %s' % (reel.sutra.sid, reel.reel_no, vol_page))
+            logger.info('fetch done: %s, %d, page: %s', reel.sutra.sid, reel.reel_no, vol_page)
             data = f.read()
     except:
-       print('no data: ', cut_url)
+       logger.error('no data: %s', cut_url)
        return ''
     # '' 串不写
     if data:
@@ -410,7 +412,7 @@ def rebuild_reel_pagerects_for_s3(reel):
             pagerect.save()
             pagerect.rebuild_rect()
         except:
-            traceback.print_exc()
+            logger.exception('rebuild_reel_pagerects_for_s3 failed.')
     reel.image_ready = True
     reel.save(update_fields=['image_ready'])
     Schedule.create_reels_pptasks(reel)
@@ -426,7 +428,7 @@ def rebuild_reel_pagerects(reel):
             pagerect.save()
             pagerect.rebuild_rect()
         except:
-            traceback.print_exc()
+            logger.exception('rebuild_reel_pagerects error.')
     reel.image_ready = True
     reel.save(update_fields=['image_ready'])
     Schedule.create_reels_pptasks(reel)
@@ -485,7 +487,7 @@ def compute_accurate_cut(reel, process_cut=True):
                 cut_verify_count=cut_verify_count,
                 page_code = page_code)
             except:
-                print('get_accurate_cut failed: %s\n' % pid, traceback.print_exc())
+                logger.exception('get_accurate_cut failed: %s', pid)
                 use_original_cut = True
         if use_original_cut:
             cut_info_json = cut_file
@@ -530,7 +532,7 @@ def compute_accurate_cut(reel, process_cut=True):
         try:
             crop_col_online(img_path, image_url, column_lst)
         except:
-           print('Crop image column failed: ', traceback.print_exc())
+           logger.exception('Crop image column failed.')
         columns = []
         for col in column_lst:
             column = Column(id = col['col_id'], page=page, x=col['x'], y=col['y'], x1=col['x1'], y1=col['y1'])
@@ -539,7 +541,7 @@ def compute_accurate_cut(reel, process_cut=True):
             with transaction.atomic():
                 Column.objects.bulk_create(columns)
         except:
-            print('save Column failed: ', traceback.print_exc())
+            logger.exception('save Column failed.')
 
     # cut related
     if process_cut and not reel.cut_ready:
@@ -648,7 +650,7 @@ def get_reel_text_from_cut(reel, force_download=False):
                 last_char_no = 0
             total_x += x
             if char_no != last_char_no + 1:
-                print('%s char_no error: ' % reel, reel.reel_no, vol_page, line_no, char_no)
+                logger.error('%s char_no error: %d, %d, %d, %d', reel, reel.reel_no, vol_page, line_no, char_no)
                 last_line_no = 0
                 chars = ['p']
                 break

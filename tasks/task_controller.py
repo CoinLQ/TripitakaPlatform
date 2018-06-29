@@ -28,6 +28,11 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_
         return
     if reel.sutra.sid.startswith('CB') or reel.sutra.sid.startswith('GL'): # 不对CBETA, GL生成任务
         return
+    typ_lst = [Task.TYPE_CORRECT, Task.TYPE_CORRECT_VERIFY, Task.TYPE_CORRECT_DIFFICULT]
+    task_count = Task.objects.filter(reel=reel, typ__in=typ_lst).count()
+    if task_count > 0:
+        logger.error('correct task for reel %s already exists.', reel)
+        return
     # Correct Task
     logger.info('create_correct_tasks: %s, %d', reel.sutra.sid, reel.reel_no)
     reel_ocr_texts = list(ReelOCRText.objects.filter(reel=reel))
@@ -71,6 +76,11 @@ def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_
 def create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_times):
     if judge_times == 0:
         return
+    typ_lst = [Task.TYPE_JUDGE, Task.TYPE_JUDGE_VERIFY, Task.TYPE_JUDGE_DIFFICULT]
+    task_count = Task.objects.filter(lqreel=lqreel, typ__in=typ_lst).count()
+    if task_count > 0:
+        logger.error('judge task for lqreel %s already exists.', lqreel)
+        return
     for task_no in range(1, judge_times + 1):
         task = Task(batchtask=batchtask, typ=Task.TYPE_JUDGE, lqreel=lqreel,
         base_reel=base_reel, task_no=task_no, status=Task.STATUS_NOT_READY,
@@ -85,6 +95,11 @@ def create_judge_tasks(batchtask, lqreel, base_reel, judge_times, judge_verify_t
 
 def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
     if punct_times == 0:
+        return
+    typ_lst = [Task.TYPE_PUNCT, Task.TYPE_PUNCT_VERIFY]
+    task_count = Task.objects.filter(reel=reel, typ__in=typ_lst).count()
+    if task_count > 0:
+        logger.error('punct task for reel %s already exists.', reel)
         return
     reelcorrecttext = None
     status = Task.STATUS_NOT_READY
@@ -109,6 +124,11 @@ def create_punct_tasks(batchtask, reel, punct_times, punct_verify_times):
 
 def create_mark_tasks(batchtask, reel, mark_times, mark_verify_times):
     if mark_times == 0:
+        return
+    typ_lst = [Task.TYPE_MARK, Task.TYPE_MARK_VERIFY]
+    task_count = Task.objects.filter(reel=reel, typ__in=typ_lst).count()
+    if task_count > 0:
+        logger.error('mark task for reel %s already exists.', reel)
         return
     reelcorrecttext = None
     status = Task.STATUS_NOT_READY
@@ -136,6 +156,11 @@ def create_mark_tasks(batchtask, reel, mark_times, mark_verify_times):
 
 def create_lqpunct_tasks(batchtask, lqreel, lqpunct_times, lqpunct_verify_times):
     if lqpunct_times == 0:
+        return
+    typ_lst = [Task.TYPE_LQPUNCT, Task.TYPE_LQPUNCT_VERIFY]
+    task_count = Task.objects.filter(lqreel=lqreel, typ__in=typ_lst).count()
+    if task_count > 0:
+        logger.error('lqpunct task for lqreel %s already exists.', lqreel)
         return
     for task_no in range(1, lqpunct_times + 1):
         task = Task(batchtask=batchtask, typ=Task.TYPE_LQPUNCT, lqreel=lqreel,
@@ -251,7 +276,7 @@ mark_times = 0, mark_verify_times = 0):
             try:
                 reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
             except:
-                # TODO: 记录错误
+                logger.error('no reel: %s, %d', sutra.sid, reel_no)
                 continue
             if reel.ocr_ready:
                 create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
@@ -313,7 +338,7 @@ mark_times = 0, mark_verify_times = 0):
         try:
             reel = Reel.objects.get(sutra=sutra, reel_no=reel_no)
         except:
-            # TODO: 记录错误
+            logger.error('no reel: %s, %d', sutra.sid, reel_no)
             continue
         create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times)
         create_mark_tasks(batchtask, reel, mark_times, mark_verify_times)

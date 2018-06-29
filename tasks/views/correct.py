@@ -11,8 +11,6 @@ from tasks.models import *
 import json, re
 from operator import attrgetter, itemgetter
 
-# TODO: 检查权限
-#@login_required
 def do_correct_task(request, task_id):
     task = get_object_or_404(Task, pk=task_id)
     if task.typ not in [Task.TYPE_CORRECT, Task.TYPE_CORRECT_VERIFY, Task.TYPE_CORRECT_DIFFICULT]:

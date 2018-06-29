@@ -532,7 +532,7 @@ def compute_accurate_cut(reel, process_cut=True):
         try:
             crop_col_online(img_path, image_url, column_lst)
         except:
-           logger.exception('Crop image column failed.')
+            logger.exception('Crop image column failed.')
         columns = []
         for col in column_lst:
             column = Column(id = col['col_id'], page=page, x=col['x'], y=col['y'], x1=col['x1'], y1=col['y1'])

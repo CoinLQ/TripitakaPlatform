@@ -600,9 +600,13 @@ class ScheduleAdmin(object):
 
 @xadmin.sites.register(PageTask)
 class PageTaskAdmin(object):
+    def modify(self, instance):
+        return '修改'
+    modify.short_description = '操作'
+
     list_display = ("number", "schedule", "ttype", "status",
-                    "update_date", "page_set", "owner")
-    list_display_links = ("number",)
+                    "update_date", "page_set", "owner", "modify")
+    list_display_links = ("modify")
     list_filter = ("number", 'update_date')
     search_fields = ["owner__email", "status"]
     list_editable = ('owner', "status")
@@ -612,9 +616,12 @@ class PageTaskAdmin(object):
 
 @xadmin.sites.register(PageVerifyTask)
 class PageVerifyTaskAdmin(object):
+    def modify(self, instance):
+        return '修改'
+    modify.short_description = '操作'
     list_display = ("number", "schedule", "ttype", "status",
-                    "update_date", "page_set", "owner")
-    list_display_links = ("number",)
+                    "update_date", "page_set", "owner", "modify")
+    list_display_links = ("modify",)
     list_filter = ("number", 'update_date')
     search_fields = ["owner__email", "status"]
     list_editable = ('owner', "status")

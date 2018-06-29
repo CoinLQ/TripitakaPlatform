@@ -727,7 +727,7 @@ class PageVerifyTask(RTask):
     count = models.IntegerField("任务页的数量", default=1)
     current_x = models.IntegerField("当前块X坐标", default=0)
     current_y = models.IntegerField("当前块Y坐标", default=0)
-    owner = models.ForeignKey(Staff, null=True, blank=True, related_name='pageverity_tasks', on_delete=models.SET_NULL)
+    owner = models.ForeignKey(Staff, null=True, blank=True, related_name='pageverity_tasks', on_delete=models.SET_NULL,verbose_name="领取用户")
     pagerect = models.ForeignKey(PageRect, null=True, blank=True, on_delete=models.SET_NULL)
     page_set = JSONField(default=list, verbose_name=u'页的集合') # [page_json]
     redo_count =  models.PositiveSmallIntegerField(default=1, verbose_name=u'任务重作数')
@@ -760,7 +760,7 @@ class PageTask(RTask):
     count = models.IntegerField("任务页的数量", default=1)
     current_x = models.IntegerField("当前块X坐标", default=0)
     current_y = models.IntegerField("当前块Y坐标", default=0)
-    owner = models.ForeignKey(Staff, null=True, blank=True, related_name='page_tasks', on_delete=models.SET_NULL)
+    owner = models.ForeignKey(Staff, null=True, blank=True, related_name='page_tasks', on_delete=models.SET_NULL,verbose_name='领取用户')
     pagerect = models.ForeignKey(PageRect, null=True, blank=True, on_delete=models.SET_NULL)
     page_set = JSONField(default=list, verbose_name=u'页的集合') # [page_json]
     redo_count =  models.PositiveSmallIntegerField(default=1, verbose_name=u'任务重作数')

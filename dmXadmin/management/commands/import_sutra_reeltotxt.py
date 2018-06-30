@@ -88,6 +88,7 @@ class Command(BaseCommand):
         BASE_DIR = settings.BASE_DIR
         sutra_libs_file = '/data/xiangmu'
         xiangmu_files = self.__get_excel_file(BASE_DIR+sutra_libs_file)
+        xiangmu_files.sort()
         #藏经版本
 
         reel_lst = []
@@ -282,6 +283,7 @@ class Command(BaseCommand):
         BASE_DIR = settings.BASE_DIR
         sutra_libs_file = '/data/jingmu'
         jingmu_files = self.__get_excel_file(BASE_DIR + sutra_libs_file)
+        jingmu_files.sort()
         errorlist = []
         # load data
         keys = ['sid', 'tripitaka', 'name', 'lqsutra', 'total_reels', 'remark']

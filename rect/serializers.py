@@ -38,8 +38,7 @@ class PageTaskSerializer(TaskSerializer):
     page_info = serializers.SerializerMethodField()
     
     def get_page_info(self, obj):
-        page_id = obj.page_set[0]['page_id']
-        return str(Page.objects.get(pk=page_id))
+        return str(obj.pagerect.page)
     
     class Meta:
         model = PageTask
@@ -49,8 +48,7 @@ class PageVerifyTaskSerializer(TaskSerializer):
     page_info = serializers.SerializerMethodField()
     
     def get_page_info(self, obj):
-        page_id = obj.page_set[0]['page_id']
-        return str(Page.objects.get(pk=page_id))
+        return str(obj.pagerect.page)
     
     class Meta:
         model = PageVerifyTask

@@ -20,13 +20,13 @@ class RectBulkOpMixin(object):
         DeletionCheckItem.direct_delete_rects(rects, task)
         _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]
         for r in _rects:
-            r['page_pid'] = task.page_set[0]['page_id']
+            r['page_pid'] = task.pagerect.page.pk
             r['line_no'] =  0
             r['char_no'] = 0
         rectset = RectWriterSerializer(data=_rects, many=True)
         rectset.is_valid()
         Rect.bulk_insert_or_replace(rectset.data)
-        PageRect.reformat_rects(task.page_set[0]['page_id'])
+        PageRect.reformat_rects(task.pagerect.page.pk)
         task.done()
 
     """
@@ -39,10 +39,6 @@ class RectBulkOpMixin(object):
                 return Response({"status": -1,
                                  "msg": "No Permission!"})
         serializer = self.get_serializer(instance)
-        if isinstance(instance, CCTask):
-            return Response({"status": 0,
-                        "rects": instance.rect_set,
-                        "task_id": instance.pk})
         if isinstance(instance, PageTask):
             pagerect_ids = [page['id'] for page in instance.page_set]
             rectpages = PageRect.objects.filter(id__in=pagerect_ids).select_related('page')
@@ -166,13 +162,13 @@ class PageTaskViewSet(RectBulkOpMixin,
         DeletionCheckItem.direct_delete_rects(rects, task)
         _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]
         for r in _rects:
-            r['page_pid'] = task.page_set[0]['page_id']
+            r['page_pid'] = task.pagerect.page.pk
             r['line_no'] =  0
             r['char_no'] = 0
         rectset = RectWriterSerializer(data=_rects, many=True)
         rectset.is_valid()
         Rect.bulk_insert_or_replace(rectset.data)
-        PageRect.reformat_rects(task.page_set[0]['page_id'])
+        PageRect.reformat_rects(task.pagerect.page.pk)
         return Response({"status": 0,
                             "task_id": pk })
 
@@ -250,13 +246,13 @@ class PageVerifyTaskViewSet(RectBulkOpMixin,
         DeletionCheckItem.direct_delete_rects(rects, task)
         _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]
         for r in _rects:
-            r['page_pid'] = task.page_set[0]['page_id']
+            r['page_pid'] = task.pagerect.page.pk
             r['line_no'] =  0
             r['char_no'] = 0
         rectset = RectWriterSerializer(data=_rects, many=True)
         rectset.is_valid()
         Rect.bulk_insert_or_replace(rectset.data)
-        PageRect.reformat_rects(task.page_set[0]['page_id'])
+        PageRect.reformat_rects(task.pagerect.page.pk)
         task.redo()
         return Response({"status": 0,
                             "task_id": pk })

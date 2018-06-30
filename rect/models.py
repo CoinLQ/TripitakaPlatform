@@ -781,7 +781,7 @@ class PageTask(RTask):
         return result[0]
 
     def roll_new_task(self):
-        page_pid = self.page_set[0]['page_id']
+        page_pid = self.pagerect.page.pk
         pagerect = PageRect.objects.filter(page_id=page_pid).first()
         
         pagerect.pptask_count = pagerect.pptask_count + 1
@@ -793,7 +793,7 @@ class PageTask(RTask):
         pagerect.save(update_fields=['pptask_count'])
     
     def create_new_pagetask_verify(self):
-        page_pid = self.page_set[0]['page_id']
+        page_pid = self.pagerect.page.pk
         pagerect = PageRect.objects.filter(page_id=page_pid).first()
         if not PageVerifyTask.objects.filter(schedule=self.schedule, pagerect=pagerect).first():
             task_no = "%s_%s_%05X" % (self.number.split('_')[0], self.number.split('_')[1], self.task_id())

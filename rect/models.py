@@ -98,7 +98,7 @@ class TaskStatus:
         (EXPIRED, u'已过期'),
         (ABANDON, u'已放弃'),
         (EMERGENCY, u'加急'),
-        (HANDLING, u'处理中'),
+        (HANDLING, u'进行中'),
         (COMPLETED, u'已完成'),
         (DISCARD, u'已作废'),
     )

@@ -17,6 +17,7 @@ import os, sys
 
 from tdata.lib.fields import JSONField
 from tdata.models import *
+from rect.models import *
 
 import inspect
 class PrePage(models.Model):
@@ -43,6 +44,13 @@ class PrePageColVerifyTask(RTask):
         list_display_fields = ('number', 'result', 'created_at')
         list_form_fields = list_display_fields
         search_fields = ('number', 'page__reel__sutra__name', 'page__reel__sutra__tripitaka__name', 'page__reel__sutra__tripitaka__code', '=page__reel__reel_no')
+    
+    def redo(self):
+        task_no = "%s_%05X" % (self.number.split('_')[0], PrePageColTask.task_id())
+        task = PrePageColTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, page=self.page, priority=PriorityLevel.HIGH,
+                                rect_set=self.rect_set, status=TaskStatus.NOT_GOT)
+        task.save()
+        self.delete()
 
 class PrePageColTask(RTask):
     schedule = models.ForeignKey(Schedule, null=True, blank=True, related_name='pagecol_tasks', on_delete=models.SET_NULL,
@@ -62,27 +70,20 @@ class PrePageColTask(RTask):
         list_display_fields = ('number', 'result', 'created_at')
         list_form_fields = list_display_fields
         search_fields = ('number', 'page__reel__sutra__name', 'page__reel__sutra__tripitaka__name', 'page__reel__sutra__tripitaka__code', '=page__reel__reel_no')
-
-    def task_id(self):
+    
+    @staticmethod
+    def task_id():
         cursor = connection.cursor()
         cursor.execute("select nextval('task_seq')")
         result = cursor.fetchone()
         return result[0]
-
-    def roll_new_task(self):
-        task_no = "%s_%s_%05X" % (self.number.split('_')[0], self.number.split('_')[1], self.task_id())
-        task = PrePageColTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, page=self.page, priority=PriorityLevel.HIGH,
-                                rect_set=self.rect_set, status=TaskStatus.NOT_GOT,
-                                redo_count=pagerect.pptask_count)
-        task.save()
-        pagerect.save(update_fields=['pptask_count'])
     
-    def create_new_pagetask_verify(self):
+    def create_new_prepagetask_verify(self):
         if not PrePageColVerifyTask.objects.filter(schedule=self.schedule, page=self.page).first():
-            task_no = "%s_%s_%05X" % (self.number.split('_')[0], self.number.split('_')[1], self.task_id())
-            task = PrePageColVerifyTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, page=self.page,
+            task_no = "%s_%s_%05X" % (self.number.split('_')[0], self.number.split('_')[1], PrePageColTask.task_id())
+            task = PrePageColVerifyTask(number=task_no, schedule=self.schedule,  page=self.page,
                                     status=TaskStatus.NOT_GOT,
-                                    rect_set=self.rect_set, redo_count=pagerect.pptask_count)
+                                    rect_set=self.rect_set)
             task.save()
     
 

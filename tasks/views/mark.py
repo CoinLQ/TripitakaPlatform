@@ -5,6 +5,7 @@ from tasks.models import *
 
 
 def do_mark_task(request, task_id):
+    print("[do_mark_task]",task_id)
     task = get_object_or_404(Task, pk=task_id)
     if task.typ == Task.TYPE_MARK:
         mark_task_ids = []

@@ -211,8 +211,11 @@ var app = new Vue({
     },
     created: function() {
       var vm = this
-      axios.get('/api/mark/' + vm.sharedata.task_id + '/')
+      var url="/api/mark/"+vm.sharedata.task_id+'/'
+      axios.get(url)
       .then(function(response) {
+        console.log("[GET]"+url)
+        console.log(response.data)
         vm.base_text = response.data.base_text;
         vm.marks = response.data.marks.sort(function(a,b) { return a.start - b.start});;
         vm.lf_postions = response.data.lf_postions;
@@ -353,6 +356,9 @@ var app = new Vue({
         }.bind(this);
         image.src = img_url;
       },
+      /**
+      
+      */
       loadImage: function() {
         this.img_url = this.image_urls[this.page_no-1];
         var cut_url = this.img_url.replace('.jpg', '.cut');

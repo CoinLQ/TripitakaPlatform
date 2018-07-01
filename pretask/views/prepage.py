@@ -151,7 +151,10 @@ class PrePageColVerifyTaskViewSet(RectBulkOpMixin,
                         "current_y": task.current_y,
                         "task_id": task.pk})
 
-
+    def exclude_keys(self, x):
+        for k in ['op', 'kselmarked', 'cc', 'wcc', 'red', 'char_id', 'char_no', 'ch']:
+            x.pop(k, None)
+        return x
 
 
     @detail_route(methods=['post'], url_path='done')
@@ -171,9 +174,9 @@ class PrePageColVerifyTaskViewSet(RectBulkOpMixin,
         task.update_date = localtime(now()).date()
         task.status = TaskStatus.COMPLETED
         task.save(update_fields=["status", "update_date", 'rect_set'])
-
-        return Response({"status": 0,
-                            "task_id": pk })
+        task.page.bar_info = list(map(lambda x: self.exclude_keys(x), task.rect_set))
+        task.page.save(update_fields='bar_info')
+        return Response({"status": 0, "task_id": pk })
 
     @detail_route(methods=['post'], url_path='redo')
     @transaction.atomic

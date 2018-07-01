@@ -11,6 +11,7 @@ from django.template import loader
 from tdata.models import *
 from tasks.models import *
 from rect.models import *
+from pretask.models import *
 from jwt_auth.models import Staff, UserManagement, UserAuthentication
 import dmXadmin.auth
 from tasks.task_controller import correct_update_async, regenerate_correctseg_async
@@ -629,6 +630,37 @@ class PageVerifyTaskAdmin(object):
     relfield_style = "fk-select"
     model_icon = 'fa fa-edit'
 
+@xadmin.sites.register(PrePageColTask)
+class PrePageColTaskAdmin(object):
+    def modify(self, instance):
+        return '修改'
+    modify.short_description = '操作'
+
+    list_display = ("number", "schedule", "ttype", "status",
+                    "update_date", "owner", "modify")
+    list_display_links = ("modify")
+    list_filter = ("number", 'update_date')
+    search_fields = ["owner__email", "status"]
+    list_editable = ('owner', "status")
+    date_hierarchy = 'update_date'  # 详细时间分层筛选
+    relfield_style = "fk-select"
+    model_icon = 'fa fa-edit'
+
+@xadmin.sites.register(PrePageColVerifyTask)
+class PrePageColVerifyTaskAdmin(object):
+    def modify(self, instance):
+        return '修改'
+    modify.short_description = '操作'
+    list_display = ("number", "schedule", "status",
+                    "update_date", "owner", "modify")
+    list_display_links = ("modify",)
+    list_filter = ("number", 'update_date')
+    search_fields = ["owner__email", "status"]
+    list_editable = ('owner', "status")
+    date_hierarchy = 'update_date'  # 详细时间分层筛选
+    relfield_style = "fk-select"
+    model_icon = 'fa fa-edit'
+
 
 #####################################################################################
 
@@ -715,6 +747,17 @@ class GlobalSetting(object):
                         ReelTaskProgress, 'changelist'), 'icon': 'fa fa-book', },
         ]}, ]
 
+    def prepocess_task_menu(self):
+        return [{
+                'title': u'藏经预处理数据管理',
+                'icon': 'fa fa-cloud',
+                'menus': [
+                    {'title': u'切分预处理', 'url': self.get_model_url(
+                        PrePageColTask, 'changelist'), 'icon': 'fa fa-book', },
+                    {'title': u'切分预处理审定',  'url': self.get_model_url(
+                        PrePageColVerifyTask, 'changelist'), 'icon': 'fa fa-book', },
+        ]}, ]
+
     def user_mana_menu(self):
         return [{
                 'title': u'用户中心',
@@ -743,6 +786,7 @@ class GlobalSetting(object):
         self.add_nav_menu(menus, self.collation_menu())
         self.add_nav_menu(menus, self.data_mana_menu())
         self.add_nav_menu(menus, self.user_mana_menu())
+        self.add_nav_menu(menus, self.prepocess_task_menu())
         return menus
 
     menu_style = 'accordion'

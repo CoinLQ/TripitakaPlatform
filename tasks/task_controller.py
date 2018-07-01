@@ -826,14 +826,14 @@ def regenerate_correctseg(reel):
         logger.info('updated_pages: %s', updated_pages)
         correctsegs_new = []
         for correctseg in correctsegs_old:
-            if correctseg.tag != CorrectSeg.TAG_P and correctseg.page_no in updated_pages:
+            if correctseg.page_no in updated_pages and correctseg.text2 != 'p':
                 continue
             correctsegs_new.append(correctseg)
             if correctseg.tag == CorrectSeg.TAG_P:
                 page_no = correctseg.page_no + 1
                 if page_no in updated_pages:
                     for seg in correctsegs:
-                        if seg.page_no == page_no and seg.tag != CorrectSeg.TAG_P:
+                        if seg.page_no == page_no and seg.text2 != 'p':
                             correctsegs_new.append(seg)
         for correctseg in correctsegs_new:
             correctseg.task = task

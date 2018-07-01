@@ -737,7 +737,7 @@ def new_base_pos(pos, correctseg):
         pos += len(correctseg.text1)
     return pos
 
-def regenerate_correctseg(reel, initial_updated_pages):
+def regenerate_correctseg(reel):
     '''
     由于卷中某些页有增加或更新，需要重新生成此卷的文字校对任务的CorrectSeg数据
     '''
@@ -754,6 +754,19 @@ def regenerate_correctseg(reel, initial_updated_pages):
     if not text:
         logger.error('no ocr text online.')
         return
+    initial_updated_pages = []
+    old_text = reel_ocr_text.text
+    pagetexts = text.lstrip('p\n').split('\np\n')
+    old_pagetexts = old_text.lstrip('p\n').split('\np\n')
+    page_count = len(pagetexts)
+    old_page_count = len(old_pagetexts)
+    for page_no in range(1, min(page_count, old_page_count) + 1):
+        if pagetexts[page_no-1] != old_pagetexts[page_no-1]:
+            initial_updated_pages.append(page_no)
+    if page_count != old_page_count:
+        for page_no in range(min(page_count, old_page_count) + 1, max(page_count, old_page_count) + 1):
+            initial_updated_pages.append(page_no)
+
     reel_ocr_text.text = text
     reel_ocr_text.save(update_fields=['text'])
     #　生成CorrectSeg
@@ -813,14 +826,14 @@ def regenerate_correctseg(reel, initial_updated_pages):
         logger.info('updated_pages: %s', updated_pages)
         correctsegs_new = []
         for correctseg in correctsegs_old:
-            if correctseg.tag != CorrectSeg.TAG_P and correctseg.page_no in updated_pages:
+            if correctseg.page_no in updated_pages and correctseg.text2 != 'p':
                 continue
             correctsegs_new.append(correctseg)
             if correctseg.tag == CorrectSeg.TAG_P:
                 page_no = correctseg.page_no + 1
                 if page_no in updated_pages:
                     for seg in correctsegs:
-                        if seg.page_no == page_no and seg.tag != CorrectSeg.TAG_P:
+                        if seg.page_no == page_no and seg.text2 != 'p':
                             correctsegs_new.append(seg)
         for correctseg in correctsegs_new:
             correctseg.task = task
@@ -1121,7 +1134,7 @@ def regenerate_correctseg_async(reel_id_lst_json):
     for reel_id in reel_id_lst:
         try:
             reel = Reel.objects.get(id=reel_id)
-            regenerate_correctseg(reel, [])
+            regenerate_correctseg(reel)
         except:
             pass
 

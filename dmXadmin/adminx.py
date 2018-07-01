@@ -143,7 +143,7 @@ class ReelAdmin(object):
 class ReelTaskProgressAdmin:
     def tripitaka_link(self, obj):
         return '<a href="/tripitaka/%s/?reel_id=%d" target="_blank" >查看</a>' % (obj.sutra.tripitaka.code, obj.id)
-    tripitaka_link.short_description = '实体藏页面'
+    tripitaka_link.short_description = '实体藏经'
     tripitaka_link.allow_tags = True
     list_display = ['sutra', 'reel_no', 'correct_1', 'correct_2', 'correct_3', 'correct_4', 'correct_verify', 'correct_difficult',
                     'mark_1', 'mark_2', 'mark_verify', 'finished_cut_proportion', 'tripitaka_link']

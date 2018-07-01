@@ -2,7 +2,7 @@ from rest_framework import mixins, viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
-from rect.serializers import ScheduleSerializer, CCTaskSerializer, ClassifyTaskSerializer, \
+from rect.serializers import ScheduleSerializer, CCTaskSerializer, \
                 PageTaskSerializer
 from ccapi.serializer import PageRectSerializer, RectSerializer
 from rect.models import Page, PageRect, Rect, \

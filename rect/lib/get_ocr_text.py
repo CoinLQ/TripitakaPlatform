@@ -45,7 +45,7 @@ def jsonToNewJson(jsonData):
                              'h': groupDataList[x][3] - groupDataList[x][1]}
                 vectorList.append(vectorDic)
         else:
-            print('数据不是4的整数倍。')
+            print('Data is not 4X。')
         # 获取置信度数据, 获取文字数据
         confList = jsonData['data']['confList']
         labelList = jsonData['data']['labelList']
@@ -56,6 +56,6 @@ def jsonToNewJson(jsonData):
                 vectorDic['ch'] = labelList[x]
 
     else:
-        print('数据报错：', jsonData['message'])
+        print('Error：', jsonData['message'])
     return vectorList
 

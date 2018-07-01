@@ -1,17 +1,12 @@
 from rest_framework import mixins, viewsets
 from tdata.lib.image_name_encipher import get_image_url
-from rect.serializers import CCTaskSerializer, DelTaskSerializer, ClassifyTaskSerializer, \
-                PageTaskSerializer, PageVerifyTaskSerializer
-from ccapi.serializer import RectSerializer, PageRectSerializer, DeletionCheckItemSerializer, \
-                RectWriterSerializer
-from rect.models import CCTask, PageTask, Rect, PageRect, OpStatus, \
-                        DeletionCheckItem, TaskStatus, PageVerifyTask
+from rect.serializers import PageTaskSerializer, PageVerifyTaskSerializer
+from ccapi.serializer import RectSerializer, PageRectSerializer, RectWriterSerializer
+from rect.models import PageTask, Rect, PageRect, OpStatus, TaskStatus, PageVerifyTask, DeletionCheckItem
 from rest_framework.response import Response
 from rest_framework.decorators import detail_route, list_route
-from ccapi.utils.task import retrieve_cctask, retrieve_classifytask, \
-                           retrieve_pagetask, retrieve_deltask
+from ccapi.utils.task import retrieve_pageverifytask, retrieve_pagetask
 from django.db import transaction
-from rest_framework.permissions import AllowAny
 from rest_framework.decorators import permission_classes
 from functools import reduce
 
@@ -25,13 +20,13 @@ class RectBulkOpMixin(object):
         DeletionCheckItem.direct_delete_rects(rects, task)
         _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]
         for r in _rects:
-            r['page_pid'] = task.page_set[0]['page_id']
+            r['page_pid'] = task.pagerect.page.pk
             r['line_no'] =  0
             r['char_no'] = 0
         rectset = RectWriterSerializer(data=_rects, many=True)
         rectset.is_valid()
         Rect.bulk_insert_or_replace(rectset.data)
-        PageRect.reformat_rects(task.page_set[0]['page_id'])
+        PageRect.reformat_rects(task.pagerect.page.pk)
         task.done()
 
     """
@@ -44,10 +39,6 @@ class RectBulkOpMixin(object):
                 return Response({"status": -1,
                                  "msg": "No Permission!"})
         serializer = self.get_serializer(instance)
-        if isinstance(instance, CCTask):
-            return Response({"status": 0,
-                        "rects": instance.rect_set,
-                        "task_id": instance.pk})
         if isinstance(instance, PageTask):
             pagerect_ids = [page['id'] for page in instance.page_set]
             rectpages = PageRect.objects.filter(id__in=pagerect_ids).select_related('page')
@@ -93,57 +84,6 @@ class RectBulkOpMixin(object):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-
-
-class CCTaskViewSet(RectBulkOpMixin,
-                    mixins.RetrieveModelMixin,
-                    viewsets.GenericViewSet):
-    queryset = CCTask.objects.all()
-    serializer_class = CCTaskSerializer
-
-    @detail_route(methods=['post'], url_path='done')
-    @transaction.atomic
-    def tobe_done(self, request, pk):
-        task = CCTask.objects.get(pk=pk)
-
-        if (task.owner != request.user):
-            return Response({"status": -1,
-                             "msg": "No Permission!"})
-        ids = [x['id'] for x in  task.rect_set]
-        req_ids = [x['id'] for x in  request.data['rects']]
-        if ilen(filter(lambda x: x not in ids, req_ids)) != 0:
-            return Response({"status": -1,
-                             "msg": u"有些字块不属于你的任务!"})
-        rects = request.data['rects']
-        task.rect_set = request.data['rects']
-        task.save()
-        self.task_done(rects, task)
-        return Response({"status": 0,
-                            "task_id": pk })
-
-
-    @detail_route(methods=['post'], url_path='emergen')
-    def emergen(self, request, pk):
-        task = CCTask.objects.get(pk=pk)
-        if (task.owner != request.user):
-            return Response({"status": -1,
-                             "msg": "No Permission!"})
-        task.emergen()
-        return Response({
-            "status": 0,
-            "task_id": pk
-        })
-
-    @list_route( methods=['get'], url_path='obtain')
-    def obtain(self, request):
-        staff = request.user
-        task = retrieve_cctask(staff)
-        if not task:
-            return Response({"status": -1,
-                             "msg": "All tasks have been done!"})
-        return Response({"status": 0,
-                        "rects": task.rect_set,
-                        "task_id": task.pk})
 
 
 
@@ -222,13 +162,13 @@ class PageTaskViewSet(RectBulkOpMixin,
         DeletionCheckItem.direct_delete_rects(rects, task)
         _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]
         for r in _rects:
-            r['page_pid'] = task.page_set[0]['page_id']
+            r['page_pid'] = task.pagerect.page.pk
             r['line_no'] =  0
             r['char_no'] = 0
         rectset = RectWriterSerializer(data=_rects, many=True)
         rectset.is_valid()
         Rect.bulk_insert_or_replace(rectset.data)
-        PageRect.reformat_rects(task.page_set[0]['page_id'])
+        PageRect.reformat_rects(task.pagerect.page.pk)
         return Response({"status": 0,
                             "task_id": pk })
 
@@ -244,7 +184,7 @@ class PageVerifyTaskViewSet(RectBulkOpMixin,
     @list_route(methods=['get'], url_path='obtain')
     def obtain(self, request):
         staff = request.user
-        task = retrieve_pagetask(staff)
+        task = retrieve_pageverifytask(staff)
         if not task:
             return Response({"status": -1,
                              "msg": "All tasks have been done!"})
@@ -306,13 +246,13 @@ class PageVerifyTaskViewSet(RectBulkOpMixin,
         DeletionCheckItem.direct_delete_rects(rects, task)
         _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]
         for r in _rects:
-            r['page_pid'] = task.page_set[0]['page_id']
+            r['page_pid'] = task.pagerect.page.pk
             r['line_no'] =  0
             r['char_no'] = 0
         rectset = RectWriterSerializer(data=_rects, many=True)
         rectset.is_valid()
         Rect.bulk_insert_or_replace(rectset.data)
-        PageRect.reformat_rects(task.page_set[0]['page_id'])
+        PageRect.reformat_rects(task.pagerect.page.pk)
         task.redo()
         return Response({"status": 0,
                             "task_id": pk })

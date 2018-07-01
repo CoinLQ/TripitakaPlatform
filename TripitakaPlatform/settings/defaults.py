@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'tdata.apps.TdataConfig',
     'tasks.apps.TasksConfig',
     'rect.apps.RectConfig',
+    'pretask.apps.PreTaskConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

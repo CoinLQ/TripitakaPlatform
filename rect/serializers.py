@@ -34,19 +34,11 @@ class CCTaskSerializer(TaskSerializer):
         fields =  ("tid", "schedule_no", "number", "desc", "status", "priority", "obtain_date", "update_date", "count")
 
 
-class ClassifyTaskSerializer(TaskSerializer):
-    class Meta:
-        model = ClassifyTask
-        fields = ("tid", "schedule_no", "number", "desc", "status", "priority", "obtain_date", "update_date", "count")
-
-
-
 class PageTaskSerializer(TaskSerializer):
     page_info = serializers.SerializerMethodField()
     
     def get_page_info(self, obj):
-        page_id = obj.page_set[0]['page_id']
-        return str(Page.objects.get(pk=page_id))
+        return str(obj.pagerect.page)
     
     class Meta:
         model = PageTask
@@ -56,18 +48,12 @@ class PageVerifyTaskSerializer(TaskSerializer):
     page_info = serializers.SerializerMethodField()
     
     def get_page_info(self, obj):
-        page_id = obj.page_set[0]['page_id']
-        return str(Page.objects.get(pk=page_id))
+        return str(obj.pagerect.page)
     
     class Meta:
         model = PageVerifyTask
         fields = ("tid", "schedule_no", "page_info", "number", "desc", "status", "priority", "obtain_date", "update_date", "count")
 
-class DelTaskSerializer(TaskSerializer):
-    class Meta:
-        model = DelTask
-        fields = ("tid", "schedule_no", "number", "desc", "status", "priority", "obtain_date", "update_date", "count")
-
 
 class ScheduleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -75,7 +61,3 @@ class ScheduleSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ScheduleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Schedule
-        fields = '__all__'

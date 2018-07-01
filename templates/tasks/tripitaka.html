@@ -797,7 +797,7 @@
         });
         ;
         if (vm.reel_id != -1) {
-          var url = '/api/sutra/{{ sutraid }}/';
+          var url = '/api/sutra/{{ sutra_id }}/';
           axios.get(url).then(function (response) {
             vm.sutra_list = [response.data];
             vm.sutra_page_count = 1;

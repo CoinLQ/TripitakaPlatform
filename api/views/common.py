@@ -242,7 +242,7 @@ class CommonHistoryAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
         serialize_name = self.model.__name__ + 'Serializer'
         if (self.model_name in TASK_MODELS):
             serialize_name = underscore_to_camelcase(self.model_name) + 'TaskSerializer'
-        #print(serialize_name)
+        print("[CommonHistoryAPIView.get_serializer_class]",serialize_name)
         module_str = '%s.serializers' % self.app_name
         serializer_module = sys.modules[module_str]
 
@@ -279,6 +279,8 @@ class CommonHistoryAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
     
     def detail_task(self, request, pk):
         task = Task.objects.get(pk=pk)
+        print("[CommonHistoryAPIView.detail_task]",pk,str(task))
+
         if task.typ in [Task.TYPE_JUDGE, Task.TYPE_JUDGE_VERIFY, Task.TYPE_JUDGE_DIFFICULT,
                         Task.TYPE_LQPUNCT, Task.TYPE_LQPUNCT_VERIFY]:
             desc = "%s / 第%d卷" % (task.lqreel.lqsutra.name, task.lqreel.reel_no)

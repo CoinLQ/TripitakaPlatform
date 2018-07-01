@@ -27,6 +27,7 @@ class MarkTaskDetail(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
     
     def get(self, request, task_id, format=None):
+        print("[MarkTaskDetail]",task_id,str(request))
         reeltext = self.task.mark.reeltext
         base_text = re.compile('[pb]').sub("\n", reeltext.text)
         base_text = reeltext.text
@@ -59,6 +60,7 @@ class FinishMarkTask(APIView):
     permission_classes = (IsTaskPickedByCurrentUser, )
 
     def put(self, request, task_id, format=None):
+        print("[FinishMarkTask]put",task_id,str(request))
         # 审定任务已开始，提交将失效
         task = self.task
         mark_verify_task = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_MARK_VERIFY).first()
@@ -68,7 +70,9 @@ class FinishMarkTask(APIView):
         task.mark.markunit_set.all().delete()
         marks = request.data['marks']
         new_marks = []
+        print("[FinishMarkTask]put",task_id,"marks")
         for mark in marks:
+            print("[FinishMarkTask]put",task_id,"mark",mark,"task",task)
             new_marks.append(MarkUnit(mark=task.mark, typ=mark['typ'], mark_typ=mark['mark_typ'], start=mark['start'], end=mark['end']))
         MarkUnit.objects.bulk_create(new_marks)
 
@@ -76,6 +80,7 @@ class FinishMarkTask(APIView):
 
     def post(self, request, task_id, format=None):
         # 审定任务已开始，提交将失效
+        print("[FinishMarkTask]post",task_id,str(request))
         task = self.task
         mark_verify_task = Task.objects.filter(reel=task.reel, batchtask=task.batchtask, typ=Task.TYPE_MARK_VERIFY).first()
         if mark_verify_task and task.typ != Task.TYPE_MARK_VERIFY and mark_verify_task.status > Task.STATUS_READY:

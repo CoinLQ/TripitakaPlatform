@@ -32,16 +32,26 @@ class Command(BaseCommand):
                 try:
                     r = requests.get(cut_url)
                     if r.status_code != 200:
-                        print('%s_%03d: cut not exists.' % (sutra.sid, reel.reel_no), url, r.status_code)
+                        print('%s_%03d: cut not exists.' % (sutra.sid, reel.reel_no), cut_url, r.status_code)
                     else:
                         try:
                             cut_json = json.loads(r.content)
                             if not cut_json.get('char_data', []):
-                                print('%s_%03d: no char data.' % (sutra.sid, reel.reel_no), url)
+                                print('%s_%03d: no char data.' % (sutra.sid, reel.reel_no), cut_url)
                         except:
-                            print('%s_%03d: not json format.' % (sutra.sid, reel.reel_no), url)
+                            print('%s_%03d: not json format.' % (sutra.sid, reel.reel_no), cut_url)
                 except:
-                    print('%s_%03d: check cut exception.' % (sutra.sid, reel.reel_no), url, r.status_code)
+                    print('%s_%03d: check cut exception.' % (sutra.sid, reel.reel_no), cut_url, r.status_code)
+                txt_url = url.replace('jpg', 'txt')
+                txt_exists = False
+                try:
+                    r = requests.get(cut_url)
+                    if r.status_code == 200:
+                        txt_exists = True
+                except:
+                    pass
+                if not txt_exists:
+                    print('%s_%03d: txt not exists.' % (sutra.sid, reel.reel_no), txt_url, r.status_code)
 
     def handle(self, *args, **options):
         for sutra_reel in options['sutra_reel']:

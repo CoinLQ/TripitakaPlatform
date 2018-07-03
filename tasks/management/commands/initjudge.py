@@ -85,13 +85,13 @@ class Command(BaseCommand):
                 reel.mark_ready = True
                 reel.save(update_fields=['mark_ready'])
                 create_mark_tasks(batchtask, reel, 2, 1)
-                Task.objects.filter(reel=reel, typ__in=[Task.TYPE_MARK, Task.TYPE_MARK_VERIFY])\
-                .update(status=Task.STATUS_FINISHED, picker=admin, picked_at=timezone.now())
                 for task in Task.objects.filter(reel=reel, typ__in=[Task.TYPE_MARK, Task.TYPE_MARK_VERIFY]):
-                    mark = Mark(reel=task.reel, reeltext=reel_correct_text, task=task)
+                    mark = Mark.objects.get(reel=task.reel, reeltext=reel_correct_text, task=task)
                     if task.typ == Task.TYPE_MARK_VERIFY:
                         mark.publisher = admin
                     mark.save()
+                Task.objects.filter(reel=reel, typ__in=[Task.TYPE_MARK, Task.TYPE_MARK_VERIFY])\
+                    .update(status=Task.STATUS_FINISHED, picker=admin, picked_at=timezone.now())
             create_judge_tasks(batchtask, lqreel, base_reel, 2, 1)
         judge_tasks = create_data_for_judge_tasks(lqsutra, base_sutra, 2)
 

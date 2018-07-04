@@ -632,7 +632,7 @@ def get_reel_text(reel, force_download=False):
         data = fetch_cut_file(reel, vol_page, 'txt', force_download)
         if type(data) is bytes:
             data = data.decode()
-        print("reel text",vol_page,data)
+        # print("reel text",vol_page,data)
         pages.append('p')
         pages.append(data)
     return '\n'.join(pages)

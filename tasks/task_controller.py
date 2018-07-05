@@ -7,9 +7,9 @@ from django.db.models import Q
 from jwt_auth.models import Staff
 from tdata.models import *
 from tasks.models import *
-from rect.models import PageTask
+from rect.models import PageTask, TaskStatus
 from tasks.common import SEPARATORS_PATTERN, judge_merge_text_punct, \
-clean_separators, clean_jiazhu, compute_accurate_cut, get_reel_text
+clean_separators, clean_jiazhu, compute_accurate_cut, get_reel_text, create_pages_for_reel
 from tasks.ocr_compare import OCRCompare
 from tasks.utils.auto_punct import AutoPunct
 # 下一行不能删除，用来自动生成Punct.body_punctuation
@@ -24,6 +24,9 @@ from datetime import timedelta
 logger = logging.getLogger(__name__)
 
 def create_correct_tasks(batchtask, reel, base_reel_lst, sutra_to_body, correct_times, correct_verify_times):
+    if not reel.ocr_ready:
+        return
+    create_pages_for_reel(reel)
     if correct_times == 0:
         return
     if reel.sutra.sid.startswith('CB') or reel.sutra.sid.startswith('GL'): # 不对CBETA, GL生成任务
@@ -486,6 +489,8 @@ def publish_correct_result(task):
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK, status=Task.STATUS_FINISHED).update(
             status=Task.STATUS_READY, picker=None, picked_at=None)
         Task.objects.filter(reel=task.reel, typ=Task.TYPE_MARK_VERIFY).exclude(status=Task.STATUS_NOT_READY).update(status=Task.STATUS_NOT_READY)
+
+        PageTask.objects.filter(pagerect__reel=task.reel).update(status=TaskStatus.NOT_GOT)
 
 CORRECT_RESULT_FILTER = re.compile('[ 　ac-oq-zA-Z0-9.?\-",/，。、：]')
 MULTI_LINEFEED = re.compile('\n\n+')

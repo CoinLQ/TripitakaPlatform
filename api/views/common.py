@@ -84,7 +84,7 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
         elif model_name == 'correctfeedback':
             return model.objects.filter(response=model.RESPONSE_UNPROCESSED, processor=None)
         elif model_name == 'pagetask':
-            return PageTask.objects.filter(status__lt=TaskStatus.ABANDON)
+            return PageTask.objects.filter(status__in=[TaskStatus.NOT_GOT, TaskStatus.EXPIRED])
         elif model_name == 'pageverifytask':
             return PageVerifyTask.objects.filter(status__lt=TaskStatus.ABANDON)
         elif model_name == 'prepagecoltask':

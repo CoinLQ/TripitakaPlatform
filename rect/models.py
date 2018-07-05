@@ -1091,7 +1091,7 @@ class PerpageAllocateTask(AllocateTask):
             if len(page_set) == count:
                 task_no = "%s_%d_%05X" % (self.schedule.schedule_no, reel.id, self.task_id())
                 task = PageTask(number=task_no, schedule=self.schedule, ttype=SliceType.PPAGE, count=1, pagerect=pagerect,
-                                  status=TaskStatus.NOT_GOT,
+                                  status=TaskStatus.NOT_READY,
                                   page_set=list(page_set))
                 page_set.clear()
                 task_set.append(task)

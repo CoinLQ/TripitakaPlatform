@@ -134,7 +134,7 @@ class PageTaskViewSet(RectBulkOpMixin,
     @transaction.atomic
     def tobe_done(self, request, pk):
         task = PageTask.objects.get(pk=pk)
-        if (task.owner != request.user):
+        if (task.status != TaskStatus.NOT_READY and task.owner != request.user) or request.user:
             return Response({"status": -1,
                              "msg": "No Permission!"})
         if PageVerifyTask.objects.filter(schedule=task.schedule, pagerect=task.pagerect, status__gte=TaskStatus.HANDLING).first():
@@ -149,7 +149,7 @@ class PageTaskViewSet(RectBulkOpMixin,
     @transaction.atomic
     def temp_save(self, request, pk):
         task = PageTask.objects.get(pk=pk)
-        if (task.owner != request.user):
+        if (task.status != TaskStatus.NOT_READY and task.owner != request.user) or request.user:
             return Response({"status": -1,
                              "msg": "No Permission!"})
         if PageVerifyTask.objects.filter(schedule=task.schedule, pagerect=task.pagerect, status__gte=TaskStatus.HANDLING).first():

@@ -278,14 +278,20 @@ class OCRCompare(object):
             slice1=text1[i1:i2]
             slice2=text2[j1:j2]
             if tag == 'delete':
-                correctseg = CorrectSeg(tag=CorrectSeg.TAG_DIFF, position=pos, \
-                text1=text1[i1:i2], text2='', selected_text=None, \
-                page_no=page_no, line_no=line_no, char_no=char_no)
+                correctseg = CorrectSeg(tag=CorrectSeg.TAG_DIFF, position=pos, text1=text1[i1:i2], text2='',
+                                        selected_text=None, page_no=page_no, line_no=line_no, char_no=char_no)
                 correctsegs.append(correctseg)
                 pos += len(correctseg.text1)
                 print(f"delete:{slice1}")
                 print(f"\tcorrectseg:{correctseg.key_info()}")
                 continue
+            # 使用tag作为最上层的分支判断,逻辑更加清晰
+            # if tag == 'equal':
+            #     pass
+            # elif tag == 'replace':
+            #     pass
+            # elif tag == 'insert':
+            #     pass
             base_index = j1
             # text1[i1:i2]中已处理的文本长度
             consumed_text_len = 0
@@ -298,9 +304,8 @@ class OCRCompare(object):
                 text_tag = text_seg['tag']
                 result = text_seg['text']
                 result_len = len(result)
-                correctseg = CorrectSeg(tag=text_tag, position=pos, \
-                text1=result, text2=None, selected_text=None, \
-                page_no=page_no, line_no=line_no, char_no=char_no)
+                correctseg = CorrectSeg(tag=text_tag, position=pos, text1=result, text2=None, selected_text=None,
+                                        page_no=page_no, line_no=line_no, char_no=char_no)
                 if result in 'pb\n':
                     correctseg.selected_text = result
                     print("分隔符")
@@ -328,9 +333,10 @@ class OCRCompare(object):
     @classmethod
     def merge_correctseg_for_verify(cls, correctsegs, correctsegs_add, task_no):
         """
-        合并两组文本切片。每一组切片都来自于两次校对结果的合并
-        :param correctsegs:
-        :param correctsegs_add:
+        合并两组文本切片。每一组切片都来自于两次校对结果的合并。
+        主要是计算text1,text2,text3,text4这4个字段
+        :param correctsegs:     correct_tasks[0].result与correct_tasks[1].result对比的结果
+        :param correctsegs_add: correct_tasks[0].result与correct_tasks[2].result对比的结果
         :param task_no:
         :return:
         """

@@ -9,6 +9,7 @@ from rest_framework import status
 from django.utils import timezone
 from tdata.models import *
 from tasks.models import *
+from rect.models import PageTask
 from jkapi.serializers import *
 from jkapi.permissions import *
 from tasks.task_controller import correct_submit_async, correct_verify_submit_async, correct_difficult_submit_async
@@ -27,7 +28,8 @@ class CorrectTaskDetail(APIView):
         for vol_page in range(self.task.reel.start_vol_page, self.task.reel.end_vol_page + 1):
             url = get_image_url(self.task.reel, vol_page)
             urls.append(url)
-
+        pagetask_numbers = [t.number for t in PageTask.objects.filter(
+            pagerect__reel=self.task.reel).order_by('pagerect__page')]
         correct_task_count = 2
         if self.task.typ == Task.TYPE_CORRECT_VERIFY:
             correct_task_count = Task.objects.filter(reel=self.task.reel, \
@@ -45,6 +47,7 @@ class CorrectTaskDetail(APIView):
             'result': self.task.result,
             'cur_focus': self.task.cur_focus,
             'image_urls': urls,
+            'pagetask_numbers': pagetask_numbers,
             'bar_line_count': bar_line_count,
             }
         return Response(response)

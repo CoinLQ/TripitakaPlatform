@@ -280,6 +280,9 @@ class CorrectSeg(models.Model):
     #存疑相关
     doubt_comment = models.TextField('存疑意见', default='', blank=True)
 
+    def key_info(self):
+        return f"{self.tag},{self.position},{self.text1},{self.text2},{self.selected_text}"
+
 class DoubtSeg(models.Model):
     task = models.ForeignKey(Task, related_name='doubt_segs', on_delete=models.CASCADE)
     page_no = models.SmallIntegerField('Seg卷中页序号', default=-1)

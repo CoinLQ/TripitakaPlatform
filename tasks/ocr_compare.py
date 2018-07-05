@@ -12,6 +12,19 @@ from tasks.utils.variant_map import VariantManager
 class SeparatorManager(object):
 
     def extract_ocr_separators(self, text):
+        """
+        例如，输入为以下字符串：
+        p\n大方廣\n東晉b\n世間淨\n
+           0 1 2  3 4   5 6 7
+        这个函数的作用是把分隔符收集起来。其输出为
+        [
+            (0,"p\n"),
+            (3,"\n"),
+            (5,"b\n"),
+            (8,"\n")
+        ]
+        元组第一个是文本字符下标。分隔符不计入下标的统计
+        """
         if text == '':
             return []
         separators = []
@@ -44,10 +57,12 @@ class SeparatorManager(object):
         self.get_separator_pos()
 
     def merge_text_separator(self, text, start_pos, end_pos, text_tag):
-        '''
+        """
+        根据分隔符所在位置，把分隔符和当前的文本单元合并起来
+
         start_pos是text对应的起始index
         end_pos是text对应的结束index
-        '''
+        """
         if text_tag == 'equal':
             text_tag = CorrectSeg.TAG_EQUAL
         else:
@@ -246,6 +261,7 @@ class OCRCompare(object):
         """
         用于文字校对审定前的文本比对
         text1是校一；text2是校二、校三或校四。
+
         """
         SEPARATORS_PATTERN = re.compile('[pb\n]')
         separator_manager = SeparatorManager(text1)
@@ -256,18 +272,28 @@ class OCRCompare(object):
         page_no = 0
         line_no = 0
         char_no = 0
+        # 'p'/'b'/'\n'三个分隔符不参与对比
         opcodes = SequenceMatcher(lambda x: x in 'pb\n', text1, text2, False).get_opcodes()
         for tag, i1, i2, j1, j2 in opcodes:
+            slice1=text1[i1:i2]
+            slice2=text2[j1:j2]
             if tag == 'delete':
                 correctseg = CorrectSeg(tag=CorrectSeg.TAG_DIFF, position=pos, \
                 text1=text1[i1:i2], text2='', selected_text=None, \
                 page_no=page_no, line_no=line_no, char_no=char_no)
                 correctsegs.append(correctseg)
                 pos += len(correctseg.text1)
+                print(f"delete:{slice1}")
+                print(f"\tcorrectseg:{correctseg.key_info()}")
                 continue
             base_index = j1
+            # text1[i1:i2]中已处理的文本长度
             consumed_text_len = 0
+            print(f"\n=================处理:{tag},{i1}:{i2},{slice1},{j1}:{j2},{slice2}")
             text_lst = separator_manager.merge_text_separator(text1[i1:i2], i1, i2, tag)
+            if len(text_lst)<=0:
+                # 如果是insert类型,则slice2的文本就会被丢掉
+                print("从text1产生的text_lst是空的")
             for text_seg in text_lst:
                 text_tag = text_seg['tag']
                 result = text_seg['text']
@@ -277,23 +303,37 @@ class OCRCompare(object):
                 page_no=page_no, line_no=line_no, char_no=char_no)
                 if result in 'pb\n':
                     correctseg.selected_text = result
+                    print("分隔符")
                 else:
                     if tag == 'equal':
                         correctseg.selected_text = result
+                        print(f"equal:{result}")
                     elif tag == 'replace':
                         consumed_text_len += result_len
                         if consumed_text_len == (i2 - i1):
                             end_index = j2
                         else:
                             end_index = min(base_index + result_len, j2)
+                        # 上面的代码保证了end_index<=j2,所以text2[base_index:end_index]不会溢出
                         correctseg.text2 = text2[base_index : end_index]
                         base_index = end_index
+                        print(f"replace:{result} with {correctseg.text2}")
+                    else:
+                        print("[ERROR]未处理的tag类型")
+                print(f"\tcorrectseg:{correctseg.key_info()}")
                 correctsegs.append(correctseg)
                 pos += result_len
         return correctsegs
 
     @classmethod
     def merge_correctseg_for_verify(cls, correctsegs, correctsegs_add, task_no):
+        """
+        合并两组文本切片。每一组切片都来自于两次校对结果的合并
+        :param correctsegs:
+        :param correctsegs_add:
+        :param task_no:
+        :return:
+        """
         sep_tags = [CorrectSeg.TAG_P, CorrectSeg.TAG_LINEFEED]
         length = len(correctsegs)
         length_add = len(correctsegs_add)

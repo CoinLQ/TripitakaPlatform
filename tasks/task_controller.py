@@ -1050,6 +1050,7 @@ def publish_lqpunct_result(task):
 @background(schedule=0)
 def correct_submit_async(task_id):
     task = Task.objects.get(pk=task_id)
+    logger.info("correct_submit_async%s",task)
     correct_submit(task)
 
 @background(schedule=0)

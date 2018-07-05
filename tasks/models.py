@@ -280,6 +280,9 @@ class CorrectSeg(models.Model):
     #存疑相关
     doubt_comment = models.TextField('存疑意见', default='', blank=True)
 
+    def __str__(self):
+        return self.key_info()
+
     def key_info(self):
         return f"{self.tag},{self.position},{self.text1},{self.text2},{self.selected_text}"
 

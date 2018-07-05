@@ -942,6 +942,14 @@ table {
     position: relative;
 }
 
+.correct .right .hd span i.qzjd {
+    background-image: url(../imgs/correct/qzjd_normal.png);
+}
+
+.correct .right .hd span i.qzjd:hover {
+    background-image: url(../imgs/correct/qzjd_over.png);
+}
+
 .correct .right .hd span i.jtleft {
     background-image: url(../imgs/correct/jtleft_normal.png);
 }

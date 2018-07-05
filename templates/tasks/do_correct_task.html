@@ -46,7 +46,7 @@
               </div>
               <div class="left-tool fr">
                 <div class="btns">
-                    <span @click="goPageTask"><i  title="切分校对" class="sc"></i></span>
+                    <span @click="goPageTask"><i title="切字校对" class="qzjd"></i></span>
                     <span @click="RemoveLine"><i  :title="remove_btn_text" class="sc"></i></span>
                     <span @click="openDoubtForm"><i  title="存疑" class="cy"></i></span>
                     <span :disabled="premitSubmit" @click="checkLinefeed"><i  title="检查" class="jc"></i></span>
@@ -161,6 +161,8 @@
       char_no: 1,
       isOnComposition: false,
       current_char_no: 1,
+      sid: '{{ task.reel.sutra.sid }}',
+      reel_no: {{ task.reel.reel_no }},
       sharedata: {task_id: {{ task.id }}, task_typ: {{task.typ}}, status: 0, correctsegs: []  },
       doubt:{ 
         formVisible: false,
@@ -173,6 +175,7 @@
       },
       current_doubt: {},
       doubts: [],
+      pagetask_urls: [],
       scale: 1,
       img_url: '',
       x: 0,
@@ -225,6 +228,9 @@
       },
       kw_class: function() {
         return this.display_space ? 'kw' : 'nokw';
+      },
+      pagetask_url: function() {
+        return this.pagetask_urls[this.page_no - 1];
       }
     },
     watch: {
@@ -277,6 +283,11 @@
         vm.correct_task_count = response.data.correct_task_count;
         vm.segid = response.data.cur_focus;
         vm.image_urls = response.data.image_urls;
+        vm.pagetask_urls = [];
+        response.data.pagetask_numbers.forEach(function(number) {
+          var url = '{{ host }}' + '/collate/pagetask/' + number;
+          vm.pagetask_urls.push(url);
+        });
         vm.bar_line_count = response.data.bar_line_count;
         this.loadCorrectSegs();
       }.bind(this));
@@ -298,7 +309,8 @@
     },
     methods: {
       goPageTask: function () {
-
+        console.log(this.pagetask_urls)
+        window.open(this.pagetask_urls[this.page_no - 1], "_blank");
       },
       handleTagClick: function(tab, event){
         if ( tab.paneName == "seg_check_tab") {
@@ -617,10 +629,12 @@
       },
       loadImage: function() {
         this.img_url = this.image_urls[this.page_no-1];
-        var cut_url = this.img_url.replace('.jpg', '.cut');
+        var cut_url = '/api/page/' + this.sid + '_' + pad(this.reel_no, 3)
+        + '_' + pad(this.page_no, 2) + '_0';
         var vm = this;
         axios.get(cut_url).then(function(response) {
-          var char_data = response.data['char_data'];
+          var cut_info = JSON.parse(response.data.cut_info);
+          var char_data = cut_info['char_data'];
           v = _.find(char_data, function(v) { return v['line_no']  == vm.new_line_no && v['char_no'] == vm.new_char_no })
           // 结尾缺字
           if (!v) {

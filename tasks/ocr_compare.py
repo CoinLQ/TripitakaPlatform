@@ -335,10 +335,17 @@ class OCRCompare(object):
         """
         合并两组文本切片。每一组切片都来自于两次校对结果的合并。
         主要是计算text1,text2,text3,text4这4个字段
-        :param correctsegs:     correct_tasks[0].result与correct_tasks[1].result对比的结果
-        :param correctsegs_add: correct_tasks[0].result与correct_tasks[2].result对比的结果
-        :param task_no:
-        :return:
+        如果taskno=3
+            r_correctseg.text1: correctseg.text1(correctseg_add.text1==correctseg.text1)
+            r_correctseg.text2: correctseg.text2
+            r_correctseg.text3: correctseg_add.text2
+            r_correctseg.text4: None
+        如果taskno=4
+            r_correctseg.text1: correctseg.text1(correctseg_add.text1==correctseg.text1)
+            r_correctseg.text2: correctseg.text2
+            r_correctseg.text3: correctseg.text3
+            r_correctseg.text4: correctseg_add.text2
+        这段代码如果以taskno为最上层分支，逻辑会比较清楚
         """
         sep_tags = [CorrectSeg.TAG_P, CorrectSeg.TAG_LINEFEED]
         length = len(correctsegs)
@@ -351,6 +358,12 @@ class OCRCompare(object):
         while i < length and j < length_add:
             correctseg = correctsegs[i]
             correctseg_add = correctsegs_add[j]
+            remained = len(correctseg.text1) - offset
+            remained_add = len(correctseg_add.text1) - offset_add
+            add_length = min(remained, remained_add)
+            textA1=correctseg.text1[offset:(offset + add_length)]
+            textB1=correctseg_add.text1[offset_add:(offset_add+add_length)]
+            print(f"处理:correctseg1 {textA1} correctseg2 {textB1}")
             if correctseg.tag in sep_tags and correctseg_add.tag in sep_tags and \
                 correctseg.position == correctseg_add.position:
                 result_correctsegs.append(correctseg)
@@ -358,20 +371,25 @@ class OCRCompare(object):
                 j += 1
                 offset = 0
                 offset_add = 0
+                print(f"\t遇到分隔符,直接生成新seg")
                 continue
-            remained = len(correctseg.text1) - offset
-            remained_add  = len(correctseg_add.text1) - offset_add
-            add_length = min(remained, remained_add)
             r_correctseg = CorrectSeg()
             r_correctseg.position = correctseg.position + offset
             if correctseg.tag == CorrectSeg.TAG_EQUAL and correctseg_add.tag == CorrectSeg.TAG_EQUAL:
+                # 是否会出现这种情况：
+                #   correctseg.text1[offset:(offset+add_length)]!=correctseg_add[offset_add:(offset_add+add_length)]
                 r_correctseg.tag = CorrectSeg.TAG_EQUAL
-                r_correctseg.text1 = correctseg.text1[offset:(offset+add_length)]
+                r_correctseg.text1 = textA1
                 r_correctseg.selected_text = r_correctseg.text1
+                print(f"\t两个tag都是equal,直接使用correctseg生存新seg")
             else:
+                print(f"\ttag设置为diff,text1={textA1}")
                 r_correctseg.tag = CorrectSeg.TAG_DIFF
-                r_correctseg.text1 = correctseg.text1[offset:(offset+add_length)]
+                r_correctseg.text1 = textA1
+                # 根据correctseg.text1/correctseg.text2来计算 r_correctseg.text2
                 if correctseg.tag == CorrectSeg.TAG_EQUAL:
+                    # tasks[0].result和tasks[1].result是 equal的，所以，可以直接把text1的值设置到text2
+                    print(f"\ttext2={r_correctseg.text1}")
                     r_correctseg.text2 = r_correctseg.text1
                     if task_no == 4:
                         r_correctseg.text3 = r_correctseg.text1
@@ -387,6 +405,7 @@ class OCRCompare(object):
                             r_correctseg.text3 = correctseg.text3[offset:(offset+add_length)]
                 text_add = ''
                 if correctseg_add.tag == CorrectSeg.TAG_EQUAL:
+                    # tasks[0].result和tasks[2].result是 equal的，所以，可以直接取text1的数值
                     text_add = r_correctseg.text1
                 else:
                     if offset_add + add_length == len(correctseg_add.text1):

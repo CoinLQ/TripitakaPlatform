@@ -561,6 +561,8 @@ def create_pages_for_reel(reel):
         # 如果有分栏，最后一位是栏号，需用a/b；无分栏，为空
         page_code = '%s_%s_%s%s' % (sid[0:2], reel.path_str(), vol_page, '') # YB_1_1
         cut_info_json = fetch_cut_file(reel, vol_page)
+        if type(cut_info_json) is bytes:
+            cut_info_json = cut_info_json.decode()
         if not cut_info_json:
             cut_info = {
                 'page_code': page_code,

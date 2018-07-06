@@ -442,6 +442,7 @@ def create_reeldiff(lqsutra, base_sutra):
     return reeldiff_lst
 
 def create_diffsegresults_for_judge_task(reeldiff_lst, lqsutra, base_sutra, max_reel_no):
+    max_reel_no=1 # TODO仅测试用
     all_judge_tasks = []
     for reel_no in range(1, max_reel_no + 1):
         diffsegresult_lst = []

@@ -391,7 +391,7 @@ def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
                 print(cut_filename,"exist")
                 return data
     cut_url = get_cut_url(reel, vol_page, suffix)
-    logger.info('wget ', cut_url)
+    logger.info(f'wget {cut_url}')
     try:
         with urllib.request.urlopen(cut_url) as f:
             logger.info('fetch done: %s, %d, page: %s', reel.sutra.sid, reel.reel_no, vol_page)

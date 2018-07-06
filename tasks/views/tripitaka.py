@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404, render, redirect
+from django.conf import settings
 from tdata.models import Reel
 
 def index(request, tcode):
@@ -21,4 +22,5 @@ def ebook(request):
     return render(request, 'tasks/ebook.html')
 
 def tripitakalist(request):
-    return render(request, 'tasks/tripitaka_list.html')
+    host = 'http://' + settings.FRONT_HOST
+    return render(request, 'tasks/tripitaka_list.html', {'host': host})

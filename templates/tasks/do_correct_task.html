@@ -702,27 +702,28 @@
       },
       blockthem: function(evt) {
         if (evt.keyCode == 46){
-          var selection = window.getSelection(),
-          range = selection.getRangeAt(0);
-          let is_tail = false;
-          // delete键按在列尾
-          if (range.startContainer.length == range.startOffset) {
-            is_tail = true;
-          }
-          newline = _.findLast(this.sharedata.correctsegs, function(v) { return v['line_no']  == this.current_seg.line_no && v['page_no']  == this.current_seg.page_no }.bind(this))
-          last_tags = _.filter(this.sharedata.correctsegs, function(v) { return v['line_no']  == this.current_seg.line_no && v['page_no']  == this.current_seg.page_no && v.tag != 4 && v.position > this.current_seg.position }.bind(this))
-          let all_selected_text = _.reduce(last_tags, function(sum, n) { return sum + n.selected_text;}, '');
-          //console.log('all:', all_selected_text)
-          // 余下所有非回车tag，内容都有空
-          if (all_selected_text == "" && is_tail) {
-            // 最后一个的内容是回车
-            if (newline.selected_text == '\n') {
-              let idx = _.find(this.sharedata.correctsegs, function(v) { return v.position == newline.position});
-              newline.selected_text = ''
-              this.updateCorrectSeg(newline);
-              this.$set(this.sharedata.correctsegs, idx, newline)
-            }
-          }
+          // 不再需要删除换行seg.tag == 4的情况 
+          // var selection = window.getSelection(),
+          // range = selection.getRangeAt(0);
+          // let is_tail = false;
+          // // delete键按在列尾
+          // if (range.startContainer.length == range.startOffset) {
+          //   is_tail = true;
+          // }
+          // newline = _.findLast(this.sharedata.correctsegs, function(v) { return v['line_no']  == this.current_seg.line_no && v['page_no']  == this.current_seg.page_no }.bind(this))
+          // last_tags = _.filter(this.sharedata.correctsegs, function(v) { return v['line_no']  == this.current_seg.line_no && v['page_no']  == this.current_seg.page_no && v.tag != 4 && v.position > this.current_seg.position }.bind(this))
+          // let all_selected_text = _.reduce(last_tags, function(sum, n) { return sum + n.selected_text;}, '');
+          // console.log('all:', all_selected_text)
+          // //余下所有非回车tag，内容都有空
+          // if (all_selected_text == "" && is_tail) {
+          //   // 最后一个的内容是回车
+          //   if (newline.selected_text == '\n') {
+          //     let idx = _.find(this.sharedata.correctsegs, function(v) { return v.position == newline.position});
+          //     newline.selected_text = ''
+          //     this.updateCorrectSeg(newline);
+          //     this.$set(this.sharedata.correctsegs, idx, newline)
+          //   }
+          // }
           this.$nextTick(function () {
             // DOM is now updated
             // `this` is bound to the current instance

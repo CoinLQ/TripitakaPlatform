@@ -1,0 +1,335 @@
+{% extends base_template %}
+{% load i18n l10n %}
+
+{% load xadmin_tags %}
+{% block extrastyle %}
+  <title>s3数据管理</title>
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/static/css/element-ui.css">
+  <link rel="stylesheet" href="/static/css/bootstrap-theme.min.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <style>
+    table {
+      width: 100%
+    }
+
+    tr, td {
+      border: 1px solid;
+      padding-left: 6px;
+      padding-right: 6px;
+      padding-top: 2px;
+      padding-bottom: 2px;
+      border-radius: 10px;
+    }
+    img {
+      width: 40vw;
+    }
+    input.el-upload__input, div.navbar.content-navbar.navbar-default.navbar-xs {
+      display: none;
+    }
+
+    .showarea {
+      border: solid 1px;
+      border-radius: 10px;
+      padding: 10px;
+      height: 76vh;
+      overflow-y: auto;
+    }
+
+    #s3manage {
+      overflow-y: auto;
+      height: calc(100%) !important;
+    }
+
+    .sutra-tree {
+      float: left;
+      width: 100%;
+      height: 73vh;
+      overflow-y: auto;
+    }
+  </style>
+
+{% endblock %}
+{% block breadcrumbs %}
+  <ul class="breadcrumb">
+    <li><a href="{% url 'xadmin:index' %}">{% trans 'Home' %}</a></li>
+    <li><a href="../">s3数据管理</a></li>
+    <li>s3数据管理</li>
+  </ul>
+{% endblock %}
+{% block nav_title %}s3数据管理{% endblock %}
+{% block content %}
+  <div id="s3manage">
+    <el-container>
+      <el-aside width="400px">
+        <el-tabs v-model="action">
+          <el-tab-pane label="浏览存储桶" name="view">
+            <div class="sutra-tree" id="sutra-tree">
+              <el-tree :data="buckets" :props="tree_props" accordion :default-expanded-keys='expandlist'
+                       @node-click="clickNode" node-key="key" ref="tree"></el-tree>
+            </div>
+          </el-tab-pane>
+          <el-tab-pane label="搜索" name="search">
+            <div class="sutra-tree">
+            <el-input placeholder="请输入code" v-model="searchcode" width="20">
+              <el-button slot='append' icon="el-icon-search" @click="searchS3file"></el-button>
+            </el-input>
+
+              <table>
+                <thead>
+                <tr>
+                  <td>名称</td>
+                  <td>操作</td>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="p in path_lst">
+                  <td><label>${p.label}</label></td>
+                  <td>
+                    <el-button type="text" size="mini" @click="viewSource(p.path)">预览</el-button>
+                    <el-button type="text" size="mini" @click="handleRep(p.path)">更新</el-button>
+                    <el-button type="text" @click="handelDel(p.path)" size="mini">删除</el-button>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+      </el-aside>
+      <el-main style="overflow: auto;">
+        <div class="showarea">
+          <img v-if='showpic' :src='source_path'/>
+          <p v-else v-for="line in text" v-html="line"></p>
+        </div>
+      </el-main>
+    </el-container>
+    <el-dialog
+        title="删除资源"
+        :visible.sync="del_pop"
+        width="30%">
+      <span>确定删除</span><br/>
+      <span>${ del_path }？</span>
+      <span slot="footer" class="dialog-footer">
+    <el-button @click="del_pop = false">取 消</el-button>
+    <el-button type="primary" @click="delSource">确 定</el-button>
+  </span>
+    </el-dialog>
+    <el-dialog
+        title="更新资源"
+        :visible.sync="rep_pop"
+        width="30%"
+        @close="cancleRep">
+      <span>确定更新</span><br/>
+      <span>${ rep_path }？</span>
+      <el-row>
+        <el-upload
+            action="post"
+            class="upload-demo"
+            list-type="picture"
+            :before-upload="beforeupload"
+        >
+          <el-button size="small" type="primary">选择文件</el-button>
+          ${file_name}
+        </el-upload>
+      </el-row>
+      <span slot="footer" class="dialog-footer">
+          <el-button size="small" type="primary" @click="cancleRep">取 消</el-button>
+          <el-button style="margin-left: 10px;" size="small" type="success" @click="replaceSource">确定更新</el-button>
+  </span>
+    </el-dialog>
+  </div>
+{% endblock %}
+{% block extrabody %}
+  <script src="/static/js/jquery-latest.js" charset="utf-8"></script>
+  <script src="/static/js/bootstrap-slider.js"></script>
+  <script src="/static/js/vue.js"></script>
+  <script src="/static/js/axios.min.js"></script>
+  <script src="/static/js/element-ui.js"></script>
+  <script src="/static/js/lodash.min.js"></script>
+  <script>
+    var app = new Vue({
+      el: '#s3manage',
+      delimiters: ['${', '}'],
+      data: {
+        buckets: [],
+        cur_bucket: '',
+        cur_key: '',
+        source_path: '',
+        path_lst: [],
+        showpic: true,
+        action: 'search',
+        searchcode: 'YB_27_1',
+        text: [],
+        del_pop: false,
+        rep_pop: false,
+        del_path: '',
+        rep_path: '',
+        file_name: '',
+        param: '',
+        cur_data: [],
+        expandlist: [],
+        cur_node: {},
+        ct: '',
+        tree_props: {
+          label: 'Prefix',
+          children: 'children',
+          isLeaf: 'leaf',
+          key: 'key',
+          showtype: 'suffix'
+        },
+      },
+
+      watch: {
+        source_path: function (val) {
+          this.showSource(val);
+        },
+      },
+      created: function () {
+        var vm = this;
+        axios.get('/api/s3manage/buckets/').then(function (response) {
+          vm.buckets = response.data.bucketnames;
+        });
+      },
+      methods: {
+        cancleRep(){
+          this.rep_pop = false;
+          this.param = '';
+          this.file_name = '';
+        },
+        beforeupload(file) {
+          this.param = new FormData();
+          this.param.append('file', file, file.name);
+          this.file_name = file.name;
+          return false;
+        },
+        handleRep(p){
+          this.rep_path = p;
+          this.rep_pop = true;
+        },
+        handelDel(p){
+          this.del_path = p;
+          this.del_pop = true;
+        },
+        handleClose(done) {
+          this.$confirm('确认关闭？')
+              .then(_ => {
+                done();
+              })
+              .catch(_ => {
+              });
+        },
+        showSource: function (path) {
+          var vm = this;
+          var source_splt = path.split('.');
+          var sourcetype = source_splt[source_splt.length - 1]
+          if (sourcetype == 'jpg') {
+            vm.showpic = true;
+          }
+          else {
+            vm.showpic = false;
+            axios.get(
+                path
+            ).then(function (response) {
+              if (sourcetype == 'txt') {
+                vm.text = response.data.split('\n');
+              }
+              else {
+                vm.text = response.data;
+              }
+            }).catch(function (error) {
+            });
+          }
+        },
+        delSource: function () {
+          var vm = this;
+          var p = vm.del_path.replace("https://s3.cn-north-1.amazonaws.com.cn/", "")
+          axios.get('/api/s3manage/delsource/?p=' + encodeURIComponent(p)).then(function (response) {
+            vm.searchS3file();
+          }).catch(function (response) {
+          });
+          vm.del_pop = false;
+        },
+        replaceSource: function () {
+          var config = {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          };
+          var vm = this;
+          var p = vm.rep_path.replace("https://s3.cn-north-1.amazonaws.com.cn/", "");
+          axios.post('/api/s3manage/replacesource/?p=' + encodeURIComponent(p), this.param, config).then(function (response) {
+            vm.searchS3file();
+          }).catch(function (response) {
+          });
+          vm.rep_pop = false;
+        },
+        clickNode: function (data, node, s) {
+          var vm = this;
+          vm.cur_node = node;
+          vm.cur_data = node.parent.data.children;
+          if (node.data.Prefix === '...') {
+            axios.get('/api/s3manage/buckets/' + vm.cur_bucket + '/?key=' + node.parent.data.key + '&ct=' + encodeURIComponent(vm.ct)).then(function (response) {
+              vm.cur_data.pop(-1);
+              vm.cur_data = vm.cur_data.concat(response.data.contents);
+              vm.ct = response.data.ct;
+              if (response.data.ct != '') {
+                vm.cur_data.push(
+                    {
+                      'Prefix': '...'
+                    }
+                )
+              }
+              node.parent.data.children = vm.cur_data;
+            });
+
+          }
+          else if (node.level === 0) {
+          }
+          else if (data.leaf) {
+            vm.source_path = data.path;
+          }
+          else {
+            var cur_data = [];
+            if (node.level === 1) {
+              vm.cur_bucket = node.label;
+              vm.cur_key = '';
+            }
+            else {
+              vm.cur_key = node.data.key;
+            }
+            axios.get('/api/s3manage/buckets/' + vm.cur_bucket + '/?key=' + vm.cur_key + '&ct=').then(function (response) {
+              cur_data = response.data.contents;
+              vm.ct = response.data.ct;
+              if (response.data.ct != '') {
+                cur_data.push(
+                    {
+                      'Prefix': '...'
+                    }
+                )
+              }
+              if (!data.children) {
+                vm.$set(data, 'children', []);
+              }
+              data.children = data.children.concat(cur_data);
+              data.expanded = true;
+            });
+          }
+
+          if (data.leaf) {
+
+          }
+        },
+        searchS3file(){
+          var vm = this;
+          axios.get('/api/s3manage/searchcode/' + vm.searchcode + '/').then(function (response) {
+            vm.path_lst = response.data;
+          });
+        },
+        viewSource(path){
+          this.source_path = path;
+        }
+      },
+    });
+  </script>
+{% endblock %}

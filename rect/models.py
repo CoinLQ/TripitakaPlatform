@@ -274,6 +274,10 @@ class PageRect(models.Model):
         pagerect.line_count = max(map(lambda Y: Y['line_no'], rect_list))
         pagerect.column_count = max(map(lambda Y: Y['char_no'], rect_list))
         pagerect.save()
+        page = Page.objects.get(pk=pagerect.page_id)
+        rects = [rect.serialize_set for rect in Rect.objects.filter(page_pid=page.pk).all().order_by('line_no', 'char_no')]
+        page.cut_info = json.dumps({"char_data": rects})
+        page.save(update_fields=['cut_info'])
         return ret
 
     def make_annotate(self):
@@ -749,7 +753,7 @@ class PageVerifyTask(RTask):
     def submit_result(self):
         page = Page.objects.get(pk=self.pagerect.page_id)
         rects = [rect.serialize_set for rect in Rect.objects.filter(page_pid=page.pk).all().order_by('line_no', 'char_no')]
-        page.cut_info = json.dumps(rects)
+        page.cut_info = json.dumps({"char_data": rects})
         page.save(update_fields=['cut_info'])
         page.reel.finished_cut_count = PageVerifyTask.objects.filter(pagerect__reel=page.reel, status=TaskStatus.COMPLETED).count()
         page.reel.save(update_fields=['finished_cut_count'])

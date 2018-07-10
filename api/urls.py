@@ -16,7 +16,7 @@ JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected, DiffSegDe
 from jkapi.views.punct import PunctTaskDetail
 from jkapi.views.mark import MarkTaskDetail, FinishMarkTask
 from jkapi.views.lqtripitaka import LQSutraViewSet, LQReelTextDetail
-from jkapi.views.tripitaka import SutraViewSet, SutraText,TripitakaViewSet, RedoPageRect
+from jkapi.views.tripitaka import SutraViewSet, SutraText,TripitakaViewSet, RedoPageRect, TripitakaImageList
 from jkapi.views.punct_feedback import LQPunctFeedbackList, MyLQPunctFeedbackList, LQPunctFeedbackDetail, LQPunctFeedbackTask
 from jkapi.views.volumn import VolumeViewSet
 from jkapi.views.judge_feedback import JudgeFeedbackList, MyJudgeFeedbackList, JudgeFeedbackDetail, JudgeFeedbackTask
@@ -85,5 +85,5 @@ urlpatterns = [
     url(r'^s3manage/searchcode/(?P<code>[\w-]+)/$', s3manage.SourceSearch.as_view()),
     url(r'^s3manage/delsource/$', s3manage.DelSource.as_view()),
     url(r'^s3manage/replacesource/$', s3manage.RepSource.as_view()),
-
+    url(r'^coverlist/$', TripitakaImageList.as_view()),
 ]

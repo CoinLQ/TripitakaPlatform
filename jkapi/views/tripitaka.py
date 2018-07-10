@@ -342,3 +342,17 @@ class TripitakaVolumeList(APIView):
             'result': result[start:end],
             'count': count
         })
+
+class TripitakaImageList(APIView):
+    def get(self, request, format=None):
+        tripitaka_list = Tripitaka.objects.all()
+        items = []
+        host = 'http://' + settings.FRONT_HOST
+        for t in list(tripitaka_list):
+            items.append({
+                'image': "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-images/cover/cover_{}.jpg".format(t.code),
+                'name': t.name,
+                'code': t.code,
+                'url': "{}/tripitaka/{}/".format(host, t.code)
+            })
+        return Response(items)

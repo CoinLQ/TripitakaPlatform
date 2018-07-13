@@ -35,14 +35,19 @@ class Command(BaseCommand):
             line = line.strip()
             try:
                 with urllib.request.urlopen(line) as f:
-                    print("read line content: %s" % (line))
+                    # print("read line content: %s" % (line))
+                    print("ok")
                     data = f.read()
             except:
                 print('no data: ', line)
                 next
 
             if data:
-                cut_json = json.loads(data)
+                try:
+                    cut_json = json.loads(data)
+                except:
+                    print('json data error: %s' % (line))
+                    next
                 page_dicts = {'image_url': line.replace('.cut', '.jpg'), 'bar_info': cut_json["char_data"]}
                 page = PrePage.objects.create(**page_dicts)
                 task_no = "%s_%05X" % (schedule.schedule_no, PrePageColTask.task_id())

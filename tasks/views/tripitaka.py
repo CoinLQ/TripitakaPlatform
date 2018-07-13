@@ -22,5 +22,4 @@ def ebook(request):
     return render(request, 'tasks/ebook.html')
 
 def tripitakalist(request):
-    host = 'http://' + settings.FRONT_HOST
-    return render(request, 'tasks/tripitaka_list.html', {'host': host})
+    return render(request, 'tasks/tripitaka_list.html')

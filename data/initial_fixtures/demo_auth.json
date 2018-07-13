@@ -140,6 +140,20 @@
     }
 },
 {
+    "model": "jwt_auth.role",
+    "pk": 21,
+    "fields": {
+        "name": "预处理校对审定员"
+    }
+},
+{
+    "model": "jwt_auth.role",
+    "pk": 22,
+    "fields": {
+        "name": "预处理校对员"
+    }
+},
+{
     "model": "jwt_auth.menu",
     "pk": 1,
     "fields": {
@@ -387,6 +401,30 @@
         "menu_paths": [
             "/collate_tasks/lqpunctfeedback",
             "/collate_history/lqpunctfeedback"
+        ],
+        "is_active": true
+    }
+},
+{
+    "model": "jwt_auth.menu",
+    "pk": 21,
+    "fields": {
+        "name": "预处理校对审定员",
+        "menu_paths": [
+            "/collate_tasks/pageverifytask",
+            "/collate_history/prepageverifytask"
+        ],
+        "is_active": true
+    }
+},
+{
+    "model": "jwt_auth.menu",
+    "pk": 22,
+    "fields": {
+        "name": "预处理校对员",
+        "menu_paths": [
+            "/collate_tasks/prepagetask",
+            "/collate_history/prepage_tasks"
         ],
         "is_active": true
     }
@@ -711,6 +749,32 @@
         "resources": [],
         "roles": [
             20
+        ]
+    }
+},
+{
+    "model": "jwt_auth.permission",
+    "pk": 21,
+    "fields": {
+        "name": "预处理审定校对权限",
+        "menu": 21,
+        "is_active": true,
+        "resources": [],
+        "roles": [
+            21
+        ]
+    }
+},
+{
+    "model": "jwt_auth.permission",
+    "pk": 22,
+    "fields": {
+        "name": "预处理审定校对权限",
+        "menu": 22,
+        "is_active": true,
+        "resources": [],
+        "roles": [
+            22
         ]
     }
 }

@@ -48,7 +48,7 @@ class Command(BaseCommand):
                 except:
                     print('json data error: %s' % (line))
                     next
-                page_dicts = {'image_url': line.replace('.cut', '.jpg'), 'bar_info': cut_json["char_data"]}
+                page_dicts = {'image_url': cut_json["imgname"], 'bar_info': cut_json["char_data"]}
                 page = PrePage.objects.create(**page_dicts)
                 task_no = "%s_%05X" % (schedule.schedule_no, PrePageColTask.task_id())
                 for r in page.bar_info:

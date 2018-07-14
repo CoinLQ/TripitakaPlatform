@@ -1,9 +1,107 @@
 {% extends "base.html" %}
 {% block title %}龙泉藏经{% endblock %}
 {% block content %}
+<style>
+
+  .left {
+    float: left;
+    width: 310px;
+    height: 680px;
+    
+  }
+  .left-pane {
+    float: left;
+    width: 300px;
+    height: 100%;
+    border: 1px solid lightgray;
+    border-radius: 8px;
+  }
+  .right {
+    margin-left: 310px;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .right-pane {
+    margin-left: 10px;
+    width: 80%;
+    height: 100%;
+    border: 1px solid lightgray;
+    border-radius: 8px;
+    overflow: hidden;
+    text-overflow:ellipsis; 
+  }
+  .line {
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid lightgray;
+    padding: 5px 0 ;
+    outline: 0;
+  }
+  .popContainer{  
+    position: fixed;  
+    top: 0;  
+    left: 0;  
+    right: 0;  
+    bottom: 0;  
+    background: lightgray;  
+    /* 垂直水平居中 */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+  }
+</style>
+<style>
+  #book {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      margin-left: -325px;
+      margin-top: -300px;
+      height: 600px;
+      width: 750px;
+      transform-style: preserve-3d;
+      transform: perspective(1000px) rotateX(60deg) rotateY(0deg);
+      transition: 1s;
+  }
+  #book:hover {
+      transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+  }
+  #book div {
+      height: 600px;
+      width: 750px;
+      text-align: center;
+      line-height: 600px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform-origin: left;
+      transition: 1s;
+  }
+  #book div:nth-of-type(odd) {
+      background: orange;
+  }
+  #book div:nth-of-type(even) {
+      background: yellow;
+  }
+  #book:after {
+      content: "";
+      position: absolute;
+      width: 600px;
+      height: 5px;
+      background: rgba(0, 0, 0, 0.8);
+      left: 75px;
+      z-index: -2;
+      bottom: -10px;
+      border-radius: 70%;
+      box-shadow: 0px 0px 25px 15px rgba(0, 0, 0, 0.8);
+  }
+</style>
 <div id="lqtripitaka">
-  <div class="row">
-    <div class="col-md-3">
+  <div class="left">
+    <div class="left-pane">
       <div class="row">
         <div class="text-center"><input type="text" class="sutra-searchbox" v-model="searchword" placeholder="搜索经名" /></div>
       </div>
@@ -20,12 +118,44 @@
         </div>
       </div>
     </div>
-    <div class="col-md-8 lqtripitaka-text" id="lqtripitaka-text" @mouseup="userSelectionChanged">
-      <span v-for="e in merged_text" is="lqtripitaka-sutra-unit" :data="e" :sharedata="sharedata">
-      </span>
+  </div>
+  
+  <div class="right">
+    <div class="right-pane">
+      <div class="tpd-right-header" style="padding: 5px;">
+        <el-breadcrumb>
+          <el-breadcrumb-item v-if="lqsutra_name!=''">{{ lqsutra_name }}</el-breadcrumb-item>
+          <el-breadcrumb-item v-if="current_sutra_name!=''">{{ current_sutra_name }}</el-breadcrumb-item>
+          <el-breadcrumb-item v-if="current_reel_no>0">第{{ current_reel_no }}卷</el-breadcrumb-item>
+        </el-breadcrumb>
+      </div>
+      <div class="line">
+        <line class="line" id="line" />
+      </div>
+      <div class="col-md-8 lqtripitaka-text" id="lqtripitaka-text" @mouseup="userSelectionChanged">
+        <span v-for="e in merged_text" is="lqtripitaka-sutra-unit" :data="e" :sharedata="sharedata">
+        </span>
+      </div>
+      <ul class="popup-menu" v-show="popupMenuShown" :style="popupMenuStyle">
+        <li><button @click="punctFeedback()">反馈标点</button></li>
+      </ul>
     </div>
-    <ul class="popup-menu" v-show="popupMenuShown" :style="popupMenuStyle">
-      <li><button @click="punctFeedback()">反馈标点</button></li>
+  </div>
+  <!-- 弹出框 -->
+  <div id = 'popContainer' class='popContainer' v-show="showPopReadModel" v-on:click="hideReadModel($event)">
+    <net-read-dialog :text="text" v-if="readModel == '网页模式'"></net-read-dialog>
+    <focus-read-dialog :text="text" v-if="readModel == '护眼模式'"></focus-read-dialog>
+    <turn-page-dialog :text="text" v-if="readModel == '翻页模式'"></turn-page-dialog>
+    <sutra-book-dialog :text="text" v-if="readModel == '经书模式'"></sutra-book-dialog>
+    </div>
+  <!-- 侧边菜单栏 -->
+  <div class="side">
+    <ul>
+      <li><a href="#"><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon01.png') }}" >网页模式</div></a></li>
+      <li><a href="#"><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon02.png') }}">护眼模式</div></a></li>
+      <li><a href="#" ><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon03.png') }}">翻页模式</div></a></li>
+      <li><a href="#" ><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon04.png') }}">经书模式</div></a></li>
+      <li style="border:none;"><a href="#" class="sidetop" v-on:click="hideReadModel($event)"><img src="{{ static('custom/imgs/side_icon05.png') }}"></a></li>
     </ul>
   </div>
   <div is="judge-result-dialog" :sharedata="sharedata"></div>

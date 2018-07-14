@@ -4,18 +4,29 @@
   <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-    <title>Insert title here</title>
+    <title>实体藏经浏览页面</title>
     <style>
-      .col-md-10_col-xs-10 {
-        float: left;
-        margin-left: 80px;
+      .text-center input {
+        width: 40px;
       }
 
-      #tripitaka .scale-op {
+      #tripitaka .scale-operation {
+        position: absolute;
+        right: -75px;
+        top: 0px;
+        z-index: 100;
+      }
+
+      #tripitaka .relative {
         position: relative;
-        right: -451px;
-        z-index: 2;
-        top: 30px;
+        width: 500px;
+      }
+
+      #tripitaka .cutbox {
+        right: -126px;
+        bottom: 67px;
+        position: absolute;
+        z-index: 100;
       }
 
       #tripitaka .el-icon-arrow-left {
@@ -32,52 +43,11 @@
         z-index: 1;
       }
 
-      .col-md-9_col-xs-9 {
-        float: left;
-        margin-left: 10px;
-      }
-
-      .dropdown-menu {
-        float: left;
-        margin-left: 10px;
-        height: 200px;
-        overflow-y: auto;
-      }
-
       .sutra-tree {
         float: left;
         width: 100%;
         height: 75%;
         overflow-y: auto;
-      }
-
-      .sutra-image {
-        float: left;
-        height: 80%;
-        margin-top: 0px;
-        overflow-y: auto;
-        overflow-x: hidden；
-      }
-
-      .sutra-text {
-        float: left;
-        margin-left: 0px;
-        height: 80%;
-        width: 350px;
-        overflow-y: auto;
-        overflow-x: hidden；
-      }
-
-      .switcher {
-        transition: left 0.8s;
-      }
-
-      .left {
-        left: 0px;
-      }
-
-      .right {
-        left: 50px;
       }
 
       #tripitaka {
@@ -88,46 +58,18 @@
         font-size: 14px;
       }
 
-      #tripitaka .tpd-header {
-        text-align: right;
-        margin-bottom: 20px;
-      }
-
-      #tripitaka .tpd-header {
-        text-align: right;
-      }
-
-      #tripitaka .input {
-        box-sizing: border-box;
-        width: 100%;
-        height: 26px;
-        border-radius: 13px;
-        padding: 0 15px;
-        outline: none;
-        border: 1px solid #ddd;
-      }
-
-      #tripitaka .el-input__inner[readonly="readonly"] {
-        width: 120px;
-      }
-
       #tripitaka .input-group {
-        position: relative;
         display: inline-block;
         width: 100%;
       }
 
       #tripitaka .el-aside {
         overflow: auto;
+        height: calc(100% - 178px) !important;
       }
 
       #tripitaka .el-main {
         overflow: hidden;
-      }
-
-      #tripitaka .tpd-header-input {
-        width: 20%;
-        display: inline-block;
       }
 
       #tripitaka .tpd-left-input {
@@ -137,36 +79,11 @@
         border-bottom: 1px solid #ddd;
       }
 
-      #tripitaka .input-group .icon {
-        box-sizing: border-box;
-        display: inline-block;
-        position: absolute;
-        right: 10px;
-        top: 5px;
-        background-image: url(../imgs/tripidata/search.png);
-        background-repeat: no-repeat;
-        width: 16px;
-        height: 16px;
-      }
-
-      #tripitaka .tpd-main {
-        height: calc(100% - 30px);
-        vertical-align: top;
-      }
-
-      #tripitaka .tpd-left {
-        vertical-align: top;
-        box-sizing: border-box;
-        height: calc(100%);
-        width: 30%;
-        display: inline-block;
-      }
-
       #tripitaka .tpd-left-content {
         border: 1px solid #ddd;
         border-radius: 10px;
         height: calc(100%);
-        position: relative;
+
       }
 
       #tripitaka .tpd-right {
@@ -189,77 +106,11 @@
 
       #tripitaka .tpd-right .tpd-right-header {
         display: block;
-        padding: 10px;
+        padding: 9px;
         border-bottom: 1px solid #ddd;
-      }
-
-      #tripitaka .tpd-right .el-breadcrumb {
-        width: 40%;
-        display: inline-block;
-      }
-
-      #tripitaka .tpd-right .tpd-right-btngroup {
-        width: 50%;
-        display: inline-block;
-        text-align: right;
-      }
-
-      #tripitaka .tpd-right .tpd-right-btngroup .cut-box {
-        display: inline-block;
-        margin-left: 10px;
-        vertical-align: middle;
-      }
-
-      #tripitaka .tpd-right .tpd-right-btngroup .el-switch {
-        display: inline-block;
-        vertical-align: middle;
-      }
-
-      #tripitaka .tpd-right .tpd-right-btngroup .tpd-pagination {
-        display: inline-block;
-        vertical-align: middle;
-      }
-
-      #tripitaka .tpd-right .tpd-right-btngroup .tpd-pagination input {
-        box-sizing: border-box;
-        display: inline-block;
-        height: 28px;
-        padding: 0 10px;
-        border: 1px solid #ddd;
-        border-radius: 14px;
-        text-align: center;
-        outline: none;
-        width: 52px;
-      }
-
-      #tripitaka .tpd-main-st {
-        height: calc(100% - 25px) !important;
-      }
-
-      #tripitaka .tpd-main-st .tpd-left {
-        height: calc(100%) !important;
-      }
-
-      #tripitaka .tpd-main-st .el-tabs {
-        height: calc(100% - 10px) !important;
-      }
-
-      #tripitaka .tpd-main-st .tpd-left-content {
-        border: none;
-      }
-
-      #tripitaka .tpd-main-st .el-tabs__content {
-        height: calc(100% - 30px) !important;
-        border-top: 1px solid #ddd;
-        border: 1px solid #ddd;
-      }
-
-      #tripitaka .tpd-main-st .tpd-right {
-        height: calc(100% - 10px) !important;
-      }
-
-      #tripitaka .tpd-main-st .tpd-right-content {
-        height: calc(100% - 60px) !important;
+        width: 100%;
+        color: #64666a;
+        font-family: initial;
       }
 
       #tripitaka .tpd-tree {
@@ -298,99 +149,6 @@
         border-color: #409eff;
       }
 
-      #tripitaka .sub-funeral-list {
-        box-sizing: border-box;
-        width: 100%;
-        height: 100%;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        overflow-y: auto;
-        padding: 10px;
-      }
-
-      #tripitaka .sub-funeral-list .el-col {
-        margin: 1%;
-        width: 18%;
-        box-sizing: border-box;
-      }
-
-      #tripitaka .sub-funeral-list .sub-funeral-item {
-        width: 100%;
-        text-align: center;
-      }
-
-      #tripitaka .sub-funeral-list .sub-funeral-item img {
-        width: 100%;
-      }
-
-      .right-click-menu {
-        position: absolute;
-        display: none;
-        top: 10%;
-        left: 50%;
-        width: 400px;
-        box-shadow: 4px 4px 4px #ddd;
-      }
-
-      .right-click-menu .right-click-content {
-        border: 1px solid #ddd;
-        padding: 15px;
-        background: #fff;
-      }
-
-      .right-click-menu .right-click-triangle {
-        display: inline-block;
-        border-top: 1px solid #ddd;
-        border-left: 1px solid #ddd;
-        position: absolute;
-        z-index: 999;
-        top: -10px;
-        left: 50%;
-        margin-left: -10px;
-        width: 20px;
-        height: 20px;
-        transform: rotate(45deg);
-        background-color: #fff;
-      }
-
-      .right-click-menu li {
-        cursor: pointer;
-        line-height: 25px;
-      }
-
-      .right-click-menu li i {
-        margin-right: 5px;
-      }
-
-      .right-click-menu .el-row {
-        border-left: 1px solid #ddd;
-        border-bottom: 1px solid #ddd;
-        text-align: center;
-      }
-
-      .right-click-menu .el-row .el-col {
-        line-height: 50px;
-        border-right: 1px solid #ddd;
-        border-top: 1px solid #ddd;
-      }
-
-      .right-click-menu .modal-fankui {
-        margin: 10px;
-      }
-
-      .right-click-menu .modal-text {
-        line-height: 30px;
-      }
-
-      .right-click-menu .modal-btngroup {
-        margin: 10px;
-        text-align: center;
-      }
-
-      .right-click-menu2 {
-        left: 70%;
-      }
-
       .text-center {
         padding: 6px 10px;
       }
@@ -404,11 +162,30 @@
     <el-row>
       <el-col :span="6">
         <div class="tpd-left-content">
-          <div class="tpd-left-main">
-            <div v-if="!tripitakawithvol">
+          <div v-if="!tripitakawithvol">
+            <div class="tpd-left-input">
+              <el-input placeholder="请输入经名" v-model="searchword">
+                <el-button slot="append" icon="el-icon-search"></el-button>
+              </el-input>
+            </div>
+            <div class="sutra-tree tpd-tree" id="sutra-tree">
+              <el-tree :data="sutra_list" :props="tree_props" :default-expanded-keys='expandlist' node-key="id"
+                       @node-click="clickSutraTreeNode"></el-tree>
+            </div>
+            <div>
+              <div v-if="sutra_page_count>1" class="text-center">
+                <el-button round size="small" class="el-icon-arrow-left" @click="prevsutra"></el-button>
+                <input type="number" v-model.number="sutralistpage"/> / ${ sutra_page_count }
+                <el-button size="small" @click="handleSPageChange" round>GO</el-button>
+                <el-button round size="small" class="el-icon-arrow-right" @click="nextsutra"></el-button>
+              </div>
+            </div>
+          </div>
+          <el-tabs v-else v-model="viewtype" @tab-click="tabClick">
+            <el-tab-pane label="按卷浏览" name="r">
               <div class="tpd-left-input">
                 <div class="input-group">
-                  <el-input placeholder="请输入经名" v-model="searchword" class="input-with-select">
+                  <el-input placeholder="请输入经名" v-model="searchword">
                     <el-button slot="append" icon="el-icon-search"></el-button>
                   </el-input>
                 </div>
@@ -417,60 +194,39 @@
                 <el-tree :data="sutra_list" :props="tree_props" :default-expanded-keys='expandlist' node-key="id"
                          @node-click="clickSutraTreeNode"></el-tree>
               </div>
-              <div class="row">
+              <div>
                 <div v-if="sutra_page_count>1" class="text-center">
                   <el-button round size="small" class="el-icon-arrow-left" @click="prevsutra"></el-button>
-                  <input type="number" class="sutra-page-input" v-model.number="sutralistpage"/> / ${ sutra_page_count }
+                  <input type="number" v-model.number="sutralistpage"/> / ${ sutra_page_count
+                  }
                   <el-button size="small" @click="handleSPageChange" round>GO</el-button>
                   <el-button round size="small" class="el-icon-arrow-right" @click="nextsutra"></el-button>
                 </div>
               </div>
-            </div>
-            <el-tabs v-else v-model="viewtype" @tab-click="tabClick">
-              <el-tab-pane label="按卷浏览" name="r">
-                <div class="tpd-left-input">
-                  <div class="input-group">
-                    <el-input placeholder="请输入经名" v-model="searchword" class="input-with-select">
-                      <el-button slot="append" icon="el-icon-search"></el-button>
-                    </el-input>
-                  </div>
+            </el-tab-pane>
+            <el-tab-pane label="按册浏览" name="v">
+              <div class="sutra-tree tpd-tree" id="sutra-tree">
+                <el-tree :data="volume_list" :props="volume_props"
+                         @node-click="clickVolumeTreeNode"></el-tree>
+              </div>
+              <div>
+                <div v-if="volume_page_count>1" class="text-center">
+                  <el-button round size="small" class="el-icon-arrow-left" @click="prevv"></el-button>
+                  <input type="number" v-model.number="volumepage"/> / ${ volume_page_count }
+                  <el-button size="small" @click="handleVPageChange" round>GO</el-button>
+                  <el-button round size="small" class="el-icon-arrow-right" @click="nextv"></el-button>
                 </div>
-                <div class="sutra-tree tpd-tree" id="sutra-tree">
-                  <el-tree :data="sutra_list" :props="tree_props" :default-expanded-keys='expandlist' node-key="id"
-                           @node-click="clickSutraTreeNode"></el-tree>
-                </div>
-                <div class="row">
-                  <div v-if="sutra_page_count>1" class="text-center">
-                    <el-button round size="small" class="el-icon-arrow-left" @click="prevsutra"></el-button>
-                    <input type="number" class="sutra-page-input" v-model.number="sutralistpage"/> / ${ sutra_page_count
-                    }
-                    <el-button size="small" @click="handleSPageChange" round>GO</el-button>
-                    <el-button round size="small" class="el-icon-arrow-right" @click="nextsutra"></el-button>
-                  </div>
-                </div>
-              </el-tab-pane>
-              <el-tab-pane label="按册浏览" name="v">
-                <div class="sutra-tree tpd-tree" id="sutra-tree">
-                  <el-tree :data="volume_list" :props="volume_props"
-                           @node-click="clickVolumeTreeNode"></el-tree>
-                </div>
-                <div class="row">
-                  <div v-if="volume_page_count>1" class="text-center">
-                    <el-button round size="small" class="el-icon-arrow-left" @click="prevv"></el-button>
-                    <input type="number" class="sutra-page-input" v-model.number="volumepage"/> / ${ volume_page_count }
-                    <el-button size="small" @click="handleVPageChange" round>GO</el-button>
-                    <el-button round size="small" class="el-icon-arrow-right" @click="nextv"></el-button>
-                  </div>
-                </div>
-              </el-tab-pane>
-            </el-tabs>
-          </div>
+              </div>
+            </el-tab-pane>
+          </el-tabs>
         </div>
       </el-col>
+
       <el-col :span="18">
         <el-row class="tpd-right">
           <div class="tpd-right-header">
-            <el-breadcrumb v-if="viewtype=='r'" separator="/">
+            <label style="font-weight:inherit;">${ breadcrumb }</label>
+            <!--<el-breadcrumb v-if="viewtype=='r'" separator="/">
               <el-breadcrumb-item>${cur_tripitaka.name}</el-breadcrumb-item>
               <el-breadcrumb-item v-if="sutra_name!=''">${sutra_name}</el-breadcrumb-item>
               <el-breadcrumb-item v-if="reel_no>0">第${reel_no}卷</el-breadcrumb-item>
@@ -480,77 +236,63 @@
               <el-breadcrumb-item>${cur_tripitaka.name}</el-breadcrumb-item>
               <el-breadcrumb-item v-if="volume_no>0">第${volume_no}冊</el-breadcrumb-item>
               <el-breadcrumb-item v-if="volume_no>0">第${curreelpage}页</el-breadcrumb-item>
-            </el-breadcrumb>
+            </el-breadcrumb>-->
           </div>
-          <el-row>
-            <el-container>
-              <el-main>
-                <div class='scale-op'>
-                  <el-button-group>
-                    <el-button plain size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
-                    <el-button plain size="mini" round>${ scale_rate }</el-button>
-                    <el-button plain size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
-                  </el-button-group>
-                  <div class="block" style="display:none;width: 30%;margin-left: 50px;">
-                    <span class="demonstration">图片大小</span>
-                    <el-slider
-                        v-model="scale"
-                        :step="1"
-                        :max="5"
-                        :min="1"
-                        show-stops>
-                    </el-slider>
-                  </div>
+          <div class="relative">
+            <div class='scale-operation'>
+              <el-button-group>
+                <el-button plain size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
+                <el-button plain size="mini" round>${ scale_rate }</el-button>
+                <el-button plain size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
+              </el-button-group>
+            </div>
+          </div>
+
+          <el-container>
+            <el-aside width="600">
+              <div>
+                <canvas id="page-canvas"></canvas>
+              </div>
+            </el-aside>
+            <el-main style="height: calc(100% - 178px) !important; overflow: auto">
+              <div style="font-size: 16px; color: #606266;">
+                <div class="tpd-right-content" @mouseup="userSelectionChanged">
+                  <ul v-if="show_verify">
+                    <li v-for="item in cur_page.page_data[chose_txt_type]">
+                      <span v-if="s.char!='b'" v-for="s in item" :position="s.no">${ s.char }</span>
+                      <span v-else><br/></span>
+                    </li>
+                  </ul>
+                  <p v-else v-for="line in cur_page.page_data[chose_txt_type]" v-html="line"></p>
                 </div>
-                <el-container direction="horizontal">
-                  <el-aside width="600" style="height: calc(100% - 178px) !important;">
-                    <div style="height: calc(100% - 140px) !important; width:calc(30%-40px) !important;">
-                      <div>
-                        <canvas id="page-canvas"></canvas>
-                      </div>
-                    </div>
-                  </el-aside>
-                  <div style="left:900; bottom:-23px; position:absolute;z-index:100;">
-                    <el-select :disabled="cur_page.page_data.reelcorrectid==-1" v-model="chose_txt_type">
-                      <el-option
-                          v-for="item in txt_type"
-                          :key="item.value"
-                          :label="item.label"
-                          :value="item.value">
-                      </el-option>
-                    </el-select>
-                  </div>
-                  <div style="left:398; bottom:0; position:absolute;z-index:100;">
-                    <el-checkbox :disabled="cur_page.page_data.reelcorrectid==-1" v-model="final_cut">审定切分框
-                    </el-checkbox>
-                    <el-checkbox :disabled="cur_page.page_data.reelcorrectid==-1" v-model="ocr_cut">OCR切分框</el-checkbox>
-                  </div>
-                  <el-main style="height: calc(100% - 178px) !important; overflow: auto">
-                    <div style="font-size: 16px; color: #606266;">
-                      <div class="diff-text-pane" @mouseup="userSelectionChanged">
-                        <ul v-if="show_verify">
-                          <li v-for="item in cur_page.page_data[chose_txt_type]">
-                            <span v-if="s.char!='b'" v-for="s in item" :position="s.no">${ s.char }</span>
-                            <span v-else><br/></span>
-                          </li>
-                        </ul>
-                        <p v-else v-for="line in cur_page.page_data[chose_txt_type]" v-html="line"></p>
-                      </div>
-                    </div>
-                  </el-main>
-                </el-container>
-              </el-main>
-            </el-container>
-          </el-row>
+              </div>
+            </el-main>
+          </el-container>
         </el-row>
         <el-row style="text-align:center;">
-          <div class="tpd-pagination" style="margin-top:-42px">
+          <div class="tpd-pagination" style="margin-top:-87px">
             <div v-if="reelpage_count>1" class="text-center">
               <el-button round size="small" class="el-icon-arrow-left" @click="prevpage"></el-button>
-              <input type="number" style="width:40" v-model.number="curreelpage"/> / ${ reelpage_count }
+              <input type="number" style="width:40px" v-model.number="curreelpage"/> / ${ reelpage_count }
               <el-button size="small" @click="handleCurrentChange" round>GO</el-button>
               <el-button round size="small" class="el-icon-arrow-right" @click="nextpage"></el-button>
             </div>
+          </div>
+          <div class="relative">
+            <div class="cutbox">
+              <el-checkbox :disabled="cur_page.page_data.reelcorrectid==-1" v-model="final_cut">审定切分框</el-checkbox>
+              <el-checkbox :disabled="cur_page.page_data.reelcorrectid==-1" v-model="ocr_cut">OCR切分框</el-checkbox>
+            </div>
+          </div>
+          <div style="width: 8em; right:20px; bottom:120px; position:fixed;z-index:100;">
+            <el-select :disabled="cur_page.page_data.reelcorrectid==-1" v-model="chose_txt_type">
+              <el-option
+                  v-for="item in txt_type"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+              </el-option>
+            </el-select>
           </div>
         </el-row>
         <!-- 反馈 @贤抚-->
@@ -749,19 +491,20 @@
             if (response.data.results[0]) {
               vm.cur_page.page_data = response.data.results[0].page_data;
               var cp = vm.cur_page.page_data;
-              if(cp.verify_txt==[]){
-                if(cp.first_correct_txt==[]){
-                  if(cp.second_correct_txt==[]){
+              if (cp.verify_txt == []) {
+                if (cp.first_correct_txt == []) {
+                  if (cp.second_correct_txt == []) {
                     vm.show_txt = 'ocr_txt'
                   }
-                  else{
+                  else {
                     vm.show_txt = 'second_correct_txt'
                   }
                 }
-                else{
+                else {
                   vm.show_txt = 'first_correct_txt'
                 }
-              };
+              }
+              ;
             }
             else {
               vm.cur_page.page_data = {
@@ -773,7 +516,8 @@
                 'ocr_cuts': [],
                 'reelcorrectid': -1,
               };
-            };
+            }
+            ;
             vm.sharedata.reelcorrectid = vm.cur_page.page_data.reelcorrectid;
             vm.setImg();
           });
@@ -783,6 +527,24 @@
       computed: {
         scale_rate: function () {
           return "1:" + this.scale
+        },
+        breadcrumb: function () {
+          var vm = this;
+          var bread = vm.cur_tripitaka.name
+          if (vm.viewtype == 'r') {
+            if (vm.sutra_name != '') {
+              bread += ' / ' + vm.sutra_name;
+            }
+            if (vm.reel_no > 0) {
+              bread += ' / 第' + vm.reel_no + '卷 / 第' + vm.curreelpage + '页'
+            }
+          }
+          else {
+            if (vm.volume_no > 0) {
+              bread += ' / 第' + vm.volume_no + '卷 / 第' + vm.curreelpage + '页'
+            }
+          }
+          return bread;
         },
       },
       created: function () {
@@ -1010,7 +772,9 @@
           else {
             vm.sutra_name = data.name;
             var s = _.find(vm.sutra_list, {'id': data.id});
-            s.reel_set = _.sortBy(s.reel_set, function(n){return n.reel_no})
+            s.reel_set = _.sortBy(s.reel_set, function (n) {
+              return n.reel_no
+            })
           }
         },
         clickVolumeTreeNode: function (data) {

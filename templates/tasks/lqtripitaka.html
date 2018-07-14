@@ -147,7 +147,7 @@
     <focus-read-dialog :text="text" v-if="readModel == '护眼模式'"></focus-read-dialog>
     <turn-page-dialog :text="text" v-if="readModel == '翻页模式'"></turn-page-dialog>
     <sutra-book-dialog :text="text" v-if="readModel == '经书模式'"></sutra-book-dialog>
-    </div>
+  </div>
   <!-- 侧边菜单栏 -->
   <div class="side">
     <ul>
@@ -163,8 +163,30 @@
 </div>
 {% endblock %}
 {% block foot_script %}
+<script src="{{ static('js/vue.js') }}"></script>
+<script src="{{ static('js/element-ui.js') }}"></script>
 <script src="{{ static('custom/js/punct.js') }}"></script>
 <script src="{{ static('custom/js/lqtripitaka.js') }}"></script>
+
+<!-- 侧栏菜单样式 -->
+<script type="text/javascript">
+$(document).ready(function(){
+
+  $(".side ul li").hover(function(){
+    $(this).find(".sidebox").stop().animate({"width":"124px"},200).css({"opacity":"1","filter":"Alpha(opacity=100)","background":"#ae1c1c"})	
+  },function(){
+    $(this).find(".sidebox").stop().animate({"width":"54px"},200).css({"opacity":"0.8","filter":"Alpha(opacity=80)","background":"#000"})	
+  });
+  
+});
+
+//回到顶部
+function goTop(){
+  $('html,body').animate({'scrollTop':0},600);
+}
+
+</script>
+<!-- 处理vue数据 -->
 <script>
   var app = new Vue({
     el: '#lqtripitaka',
@@ -190,6 +212,11 @@
           return false;
         }
       },
+      lqsutra_name: '龙泉大藏经',
+      current_sutra_name: '',
+      current_reel_no: 0,
+      showPopReadModel:false,
+      readModel:'',
       text: '',
       punct_lst: [],
       diffsegresult_pos_lst: [],
@@ -245,7 +272,7 @@
           vm.page = 1;
         });
       },
-      clickLQSutraTreeNode: function(data) {
+      clickLQSutraTreeNode: function(data, node) {
         if (data.reel_no != undefined && data.text_ready) {
           var lqreel_id = data.id;
           var url = '/api/lqreeltext/?lqreel_id=' + lqreel_id;
@@ -256,6 +283,8 @@
             vm.text = response.data.text;
             vm.punct_lst = response.data.punct_lst;
             vm.diffsegresult_pos_lst = response.data.diffsegresult_pos_lst;
+            vm.current_sutra_name = node.parent.data.name;
+            vm.current_reel_no = data.reel_no;
             vm.loadSutraText();
           });
         }
@@ -300,7 +329,19 @@
       },
       punctFeedback: function() {
         this.sharedata.punctFeedbackDialogVisible = true;
-      }
+      },
+      showReadModel: function(event) {
+        console.log('show'+event.currentTarget.innerHTML.split('>')[1]);
+        model = event.currentTarget.innerHTML.split('>')[1];
+        this.readModel = model;
+        this.showPopReadModel = true;
+      },
+      hideReadModel: function(event) {
+        console.log(event.currentTarget.children[0].id);
+        if (event.target.type != 'textarea' && event.currentTarget.children[0].id != "book") {
+          this.showPopReadModel = false;
+        }
+      },
     }
   });
 </script>

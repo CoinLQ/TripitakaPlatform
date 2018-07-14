@@ -318,3 +318,192 @@ Vue.component('punct-feedback-dialog', {
         }
     }
 })
+
+Vue.component('net-read-dialog', {
+    name: 'net-read-dialog',
+    props: ['text'],
+    template: `
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgb(181,229,181) ; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
+        <textarea style=" width: 50%;height: 100%; padding: 10px ;border-radius: 0px;border-width: 1px;border-color: lightgray; text-align:center; font-size:24px; resize: none;" readonly="readonly">{{ text }}</textarea>
+    </div>
+    `,
+    methods: {
+    }
+})
+
+Vue.component('focus-read-dialog', {
+    name: 'focus-read-dialog',
+    props: ['text'],
+    template: `
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgb(181,229,181) ; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
+        <textarea style=" width: 60%;height: 80%; padding: 0px;border-radius: 8px;border-width: 1px;border-color: lightgray; text-align:center; font-size:24px; background: rgb(199,237,204); " readonly="readonly">{{ text }}</textarea>
+    </div>
+    `,
+    methods: {
+    }
+})
+
+Vue.component('turn-page-dialog', {
+    name: 'turn-page-dialog',
+    props: ['text'],
+    template: `
+    <div id="book">
+        <div><span v-html="page4"></span></div>
+        <div>{{page3}}</div>
+        <div>{{page2}}</div>
+		<div>{{page1}}</div>
+	</div>
+	`,
+	data: function () {
+        return {
+			page_lst:[],
+			page1:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			page2:"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+			page3:"cccccccccccccccccccccccccccccccccccccccccccccccc",
+            page4:"ddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            pageNumber:1,
+        }
+	},
+	created: function() {
+        let vm = this;
+		vm.reloadText();
+		this.$nextTick(function(){
+        
+			var book = document.getElementById("book");
+			var pages = book.getElementsByTagName("div");
+			var pageNumber = 1;
+            var rota = -180;
+            console.log("create");
+			book.onclick = function () {
+                
+				book.style.left = "65%";
+				// pages[pageNumber].style.transform = "rotateY(" + rota + "deg)";
+				// pageNumber--;
+                // rota += 10;
+                
+                var roundFlag = Math.ceil(pageNumber/4);
+               
+                console.log("roundFlag:"+roundFlag);
+                if (pageNumber == 1) {
+                    pages[3].style.transform = "rotateY(" + rota*roundFlag + "deg)";//当前页
+                }else if (pageNumber == 2) {
+                    pages[3].style.transform = "rotateY(" + (rota*roundFlag-0.1) + "deg)";//前一页
+                    pages[2].style.transform = "rotateY(" + rota*roundFlag + "deg)";//当前页
+                }else if (pageNumber == 3) {
+                    pages[3].style.transform = "rotateY(" + (rota*(roundFlag+1)+0.1) + "deg)";//前二页
+                    pages[2].style.transform = "rotateY(" + (rota*roundFlag-0.1) + "deg)";//前一页
+                    pages[1].style.transform = "rotateY(" + (rota*roundFlag) + "deg)";//当前页
+                }else if (pageNumber == 4) {
+                    //roundFlag == 1
+                    pages[3].style.transform = "rotateY(" + rota*(roundFlag+1) + "deg)";//前三页
+                    pages[2].style.transform = "rotateY(" + (rota*(roundFlag+1)+0.1) + "deg)";//前二页
+                    pages[1].style.transform = "rotateY(" + (rota*roundFlag-0.1) + "deg)";//前一页
+                    pages[0].style.transform = "rotateY(" + (rota*roundFlag) + "deg)";//当前页
+                }else if (pageNumber > 4) {
+                    //roundFlag == 2
+                    var currentPageFlag = 4 - (pageNumber+1) % 4 - 1;//pages[currentPageFlag]的参数
+                    
+                    var page3Flag = rota*([pageNumber/2]);
+                    var page2Flag = rota*([(pageNumber-1)/2]);
+                    var page1Flag = rota*([(pageNumber-2)/2]);
+                    var page0Flag = rota*([(pageNumber-3)/2]);
+                    var pageThinDeg1 =-89.9;
+                    var pageThinDeg2 =0;
+                    console.log("pageNumber:"+pageNumber+"--currentPageFlag:"+currentPageFlag);
+        
+                    if (currentPageFlag == 0) {
+                        pages[3].style.transform = "rotateY(" + (page3Flag+pageThinDeg2) + "deg)";//前三页
+                        pages[2].style.transform = "rotateY(" + (page2Flag+pageThinDeg1) + "deg)";//前二页
+                        pages[1].style.transform = "rotateY(" + (page1Flag) + "deg)";//前一页
+                        pages[0].style.transform = "rotateY(" + (page0Flag) + "deg)";//当前页
+                    }else if (currentPageFlag == 1) {
+                        pages[0].style.transform = "rotateY(" + (page0Flag+pageThinDeg2) + "deg)";//前三页
+                        pages[3].style.transform = "rotateY(" + (page3Flag+pageThinDeg1) + "deg)";//前二页
+                        pages[2].style.transform = "rotateY(" + (page2Flag) + "deg)";//前一页
+                        pages[1].style.transform = "rotateY(" + (page1Flag) + "deg)";//当前页
+                    }else if (currentPageFlag == 2) {
+                        pages[1].style.transform = "rotateY(" + (page1Flag) + "deg)";//前三页
+                        pages[0].style.transform = "rotateY(" + (page0Flag+pageThinDeg1) + "deg)";//前二页
+                        pages[3].style.transform = "rotateY(" + (page3Flag+pageThinDeg2) + "deg)";//前一页
+                        pages[2].style.transform = "rotateY(" + (page2Flag) + "deg)";//当前页
+                    }else if (currentPageFlag == 3) {
+                        pages[2].style.transform = "rotateY(" + (page2Flag+pageThinDeg2) + "deg)";//前三页
+                        pages[1].style.transform = "rotateY(" + (page1Flag+pageThinDeg1) + "deg)";//前二页
+                        pages[0].style.transform = "rotateY(" + (page0Flag) + "deg)";//前一页
+                        pages[3].style.transform = "rotateY(" + (page3Flag) + "deg)";//当前页
+                    }
+                }
+
+                
+                pageNumber++;
+                vm.pageNumber = pageNumber;
+				// if (pageNumber < 0) {
+				// 	for (var i = 0; i < pages.length; i++) {
+				// 		pages[i].style.transform = "rotateY(0deg)";
+				// 	}
+				// 	book.style.left = "50%";
+				// 	pageNumber = 3;
+				// 	rota = -180;
+				// }
+			}
+		})
+    },
+    watch: {
+        text: function(val,oldVal){
+            if (oldVal != val) {
+                let vm = this;
+                vm.pageNumber =1;
+                vm.reloadText();
+                this.$nextTick(function(){
+                    var book = document.getElementById("book");
+                    var pages = book.getElementsByTagName("div");
+                    pages[3].style.transform = "rotateY(" + 0 + "deg)";
+                    pages[2].style.transform = "rotateY(" + 0 + "deg)";
+                    pages[1].style.transform = "rotateY(" + 0 + "deg)";
+                    pages[0].style.transform = "rotateY(" + 0 + "deg)";
+                })
+            }
+        },
+        pageNumber: function(val,oldVal){
+            
+            if (oldVal != val) {
+                var index = 4*(Math.ceil((val+1)/4)-1);
+                console.log("index:"+index);
+                val++;
+                if ((val-2)%4 == 0){//page1 reload
+                    this.page1 = this.page_lst[this.pageNumber-1]+this.pageNumber;
+                }else if ((val-3)%4 == 0){
+                    this.page2 = this.page_lst[this.pageNumber-1]+this.pageNumber;
+                }else if ((val-4)%4 == 0){
+                    this.page3 = this.page_lst[this.pageNumber-1]+this.pageNumber;
+                }else if ((val-5)%4 == 0){
+                    this.page4 = this.page_lst[this.pageNumber-1]+this.pageNumber;
+                }
+            }
+            
+        }
+    },
+    methods: {
+		reloadText: function () {
+            
+            this.page_lst = this.text.split("\n");
+            this.page1 = this.page_lst[0];
+            this.page2 = this.page_lst[1];
+            this.page3 = this.page_lst[2];
+            this.page4 = this.page_lst[3];
+        },
+	}
+      
+})
+
+Vue.component('sutra-book-dialog', {
+    name: 'sutra-book-dialog',
+    props: ['text'],
+    template: `
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgb(181,229,181) ; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
+        <textarea style=" width: 60%;height: 80%; padding: 0px;border-radius: 8px;border-width: 1px;border-color: lightgray; text-align:center; font-size:24px; background: rgb(199,237,204); " readonly="readonly">{{ text }}</textarea>
+    </div>
+    `,
+    methods: {
+    }
+})

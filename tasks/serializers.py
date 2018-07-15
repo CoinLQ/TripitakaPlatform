@@ -12,7 +12,7 @@ class DateTimeTzAwareField(serializers.DateTimeField):
 
 class TaskSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
-    picked_at = DateTimeTzAwareField(format='%Y-%m-%d %H:%M:%S')
+    picked_at   = DateTimeTzAwareField(format='%Y-%m-%d %H:%M:%S')
     finished_at = DateTimeTzAwareField(format='%Y-%m-%d %H:%M:%S')
 
 

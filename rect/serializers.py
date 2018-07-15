@@ -10,8 +10,8 @@ class TaskSerializer(serializers.ModelSerializer):
     schedule_no = serializers.SerializerMethodField()
     number = serializers.SerializerMethodField()
     tid = serializers.SerializerMethodField()
-    obtain_date=DateTimeTzAwareField(format="%Y-%m-%d %H:%M:%S")
     obtain_date = DateTimeTzAwareField(format="%Y-%m-%d %H:%M:%S")
+    update_date = DateTimeTzAwareField(format="%Y-%m-%d %H:%M:%S")
 
     def get_status(self, obj):
         return obj.get_status_display()

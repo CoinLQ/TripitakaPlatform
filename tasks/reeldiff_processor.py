@@ -326,6 +326,7 @@ def get_multireeltext(sutra, variant_manager=None):
         end = 0
         for markunit in MarkUnit.objects.filter(mark=mark).order_by('start'):
             if not markunit.in_body():
+                # 把非正文的文本部分排除掉？？？
                 end = markunit.start
                 if start < end and reel_text[start:end] not in ['p\n', 'b\n', '\n']:
                     multireeltext.add_reeltext(reel, reel_text[start:end], reel_text[:start])
@@ -337,13 +338,17 @@ def get_multireeltext(sutra, variant_manager=None):
     return multireeltext
 
 class ReelText(object):
+    """
+    一个Reelext由一个MarkUnit变形而来。它指向一段文本。这段文本分两部分：head和MarkUnit文本。
+    """
     def __init__(self, reel, text_len, head_text, separators):
-        self.reel = reel
-        self.text_len = text_len
-        self.sid = self.reel.sutra.sid
-        self.separators = separators
-        self.head_text_len = len(SEPARATORS_PATTERN.sub('', head_text))
-        self.start_count_p = head_text.count('p')
+        self.sid = reel.sutra.sid  # 实体经编号
+        self.reel = reel    # 实体经的卷
+        self.text_len = text_len  # ReelText所指向的卷中文本的长度
+
+        self.separators = separators  # 分隔符列表
+        self.head_text_len = len(SEPARATORS_PATTERN.sub('', head_text))  # head部分文本长度
+        self.start_count_p = head_text.count('p')  # head文本中符号p的数量
         self.start_count_n = head_text.count('\n')
 
     def get_char_position(self, index):
@@ -384,10 +389,17 @@ class ReelText(object):
         return char_pos
 
 class MultiReelText(object):
+    """
+    包含一部实体经的所有卷的标注数据。构造函数：def get_multireeltext()
+    """
     def __init__(self, tripitaka_id):
+        # reeltext_lst : ReelText的列表
         self.reeltext_lst = []
+        # 实体经文本
         self.text = ''
+        # 实体经文本长度
         self.text_len = 0
+        # 实体藏
         self.tripitaka_id = tripitaka_id
         self.tripitaka = Tripitaka.objects.get(id=self.tripitaka_id)
 
@@ -426,7 +438,7 @@ def create_reeldiff(lqsutra, base_sutra):
     variant_manager = VariantManager()
     variant_manager.load_variant_map(multireeltexts[0].text)
     for sutra in sutra_lst[1:]:
-        multireeltexts.append( get_multireeltext(sutra, variant_manager) )
+        multireeltexts.append(get_multireeltext(sutra, variant_manager) )
     reeldiff_lst = []
     for reel in Reel.objects.filter(sutra=sutra_lst[0]).order_by('reel_no'):
         reelcorrecttext = ReelCorrectText.objects.filter(reel=reel).order_by('-id').first()
@@ -439,6 +451,9 @@ def create_reeldiff(lqsutra, base_sutra):
     # get skip_ranges_lst
     skip_ranges_lst = get_skip_ranges_lst(sutra_lst, multireeltexts)
     generate_text_diff(multireeltexts, reeldiff_lst, skip_ranges_lst)
+
+
+
     return reeldiff_lst
 
 def create_diffsegresults_for_judge_task(reeldiff_lst, lqsutra, base_sutra, max_reel_no):
@@ -546,8 +561,7 @@ def create_new_diffsegresults_for_judge_task(reeldiff_lst, lqsutra, base_sutra, 
 
 def create_data_for_judge_tasks(lqsutra, base_sutra, max_reel_no):
     reeldiff_lst = create_reeldiff(lqsutra, base_sutra)
-    return create_diffsegresults_for_judge_task(reeldiff_lst, lqsutra, base_sutra, \
-    max_reel_no)
+    return create_diffsegresults_for_judge_task(reeldiff_lst, lqsutra, base_sutra, max_reel_no)
 
 def create_new_data_for_judge_tasks(lqsutra, base_sutra, max_reel_no):
     Task.objects.filter(lqreel__lqsutra=lqsutra, typ=Task.TYPE_JUDGE,
@@ -576,6 +590,11 @@ def create_new_data_for_judge_tasks(lqsutra, base_sutra, max_reel_no):
     status=Task.STATUS_NOT_READY).update(status=Task.STATUS_READY)
 
 def is_sutra_ready_for_judge(lqsutra):
+    """
+    满足下面的条件，才能进行校勘判取：
+    所有的实体经，其参与校对的所有卷，都已经做完了格式标注、格式标注审定的工作。
+    """
+    # lqsutra这部经目对应的所有实体经，例如华严经
     sutra_lst = list(lqsutra.sutra_set.all())
     for sutra in sutra_lst:
         for reel in sutra.reel_set.all():

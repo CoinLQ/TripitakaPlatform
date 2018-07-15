@@ -2,6 +2,7 @@
 
 from .models import *
 from rest_framework import serializers
+from tasks.serializers import DateTimeTzAwareField
 
 class TaskSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
@@ -9,6 +10,8 @@ class TaskSerializer(serializers.ModelSerializer):
     schedule_no = serializers.SerializerMethodField()
     number = serializers.SerializerMethodField()
     tid = serializers.SerializerMethodField()
+    obtain_date=DateTimeTzAwareField(format="%Y-%m-%d %H:%M:%S")
+    obtain_date = DateTimeTzAwareField(format="%Y-%m-%d %H:%M:%S")
 
     def get_status(self, obj):
         return obj.get_status_display()

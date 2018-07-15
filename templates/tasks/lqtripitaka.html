@@ -132,12 +132,12 @@
       <div class="line">
         <line class="line" id="line" />
       </div>
-      <div class="col-md-8 lqtripitaka-text" style="height: 80%;" id="lqtripitaka-text" @mouseup="userSelectionChanged">
+      <div class="col-md-8 lqtripitaka-text" style="height: 90%;width: 90%;" id="lqtripitaka-text" @mouseup="userSelectionChanged">
         <span v-for="e in merged_text" is="lqtripitaka-sutra-unit" :data="e" :sharedata="sharedata">
         </span>
       </div>
       <ul class="popup-menu" v-show="popupMenuShown" :style="popupMenuStyle">
-        <li><button @click="punctFeedback()">反馈标点</button></li>
+        <li><button style="background:yellow;" @click="punctFeedback()">反馈标点</button></li>
       </ul>
     </div>
   </div>

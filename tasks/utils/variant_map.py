@@ -5,6 +5,14 @@ class VariantManager(object):
         self.variant_map = None
 
     def load_variant_map(self, text=''):
+        """每一行都是一组异体字
+        下𠄟丅
+        上丄
+        亥𢁳𠀅𠦇
+        衛𠀄卫衞䘙
+        丈𠀋
+        丑丒𠃠
+        """
         if self.variant_map:
             return
         ch_set = set(text)

@@ -151,9 +151,10 @@ class PageTaskViewSet(RectBulkOpMixin,
     def temp_save(self, request, pk):
         task = PageTask.objects.get(pk=pk)
         if (task.status != TaskStatus.NOT_READY and task.owner != request.user) or \
-        (task.status == TaskStatus.NOT_READY and request.user.is_authenticated) or not request.user.is_admin:
-            return Response({"status": -1,
-                             "msg": "No Permission!"})
+        (task.status == TaskStatus.NOT_READY and request.user.is_authenticated):
+            if not request.user.is_admin:
+                return Response({"status": -1,
+                                "msg": "No Permission!"})
         if PageVerifyTask.objects.filter(schedule=task.schedule, pagerect=task.pagerect, status__gte=TaskStatus.HANDLING).first():
             return Response({"status": -1, "msg": "审定任务已开始，保存已屏蔽!"})
         if 'current_x' in request.data:

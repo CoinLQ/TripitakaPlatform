@@ -302,7 +302,7 @@
         "name": "切分校对审定员",
         "menu_paths": [
             "/collate_tasks/pageverifytask",
-            "/collate_history/pageverifytask"
+            "/collate_history/pageverify_tasks"
         ],
         "is_active": true
     }
@@ -314,7 +314,7 @@
         "name": "切分校对员",
         "menu_paths": [
             "/collate_tasks/pagetask",
-            "/collate_history/pagetask"
+            "/collate_history/page_tasks"
         ],
         "is_active": true
     }
@@ -411,8 +411,8 @@
     "fields": {
         "name": "预处理校对审定员",
         "menu_paths": [
-            "/collate_tasks/pageverifytask",
-            "/collate_history/prepageverifytask"
+            "/collate_tasks/prepageverifytask",
+            "/collate_history/prepageverify_tasks"
         ],
         "is_active": true
     }

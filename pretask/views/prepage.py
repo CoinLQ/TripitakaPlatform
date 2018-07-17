@@ -100,7 +100,7 @@ class PrePageColTaskViewSet(RectBulkOpMixin,
         rects = request.data['rects']
         _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]
         task.rect_set = _rects
-        task.update_date = localtime(now()).date()
+        task.update_date = localtime(now())
         task.status = TaskStatus.COMPLETED
         task.save(update_fields=["status", "update_date", 'rect_set'])
         task.create_new_prepagetask_verify()
@@ -171,11 +171,11 @@ class PrePageColVerifyTaskViewSet(RectBulkOpMixin,
         rects = request.data['rects']
         _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]
         task.rect_set = _rects
-        task.update_date = localtime(now()).date()
+        task.update_date = localtime(now())
         task.status = TaskStatus.COMPLETED
         task.save(update_fields=["status", "update_date", 'rect_set'])
         task.page.bar_info = list(map(lambda x: self.exclude_keys(x), task.rect_set))
-        task.page.save(update_fields='bar_info')
+        task.page.save(update_fields=['bar_info'])
         return Response({"status": 0, "task_id": pk })
 
     @detail_route(methods=['post'], url_path='redo')

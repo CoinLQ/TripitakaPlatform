@@ -632,8 +632,8 @@ class RTask(models.Model):
         verbose_name=u'任务优先级',
         db_index=True,
     )
-    update_date = models.DateField(null=True, verbose_name=u'最近处理时间')
-    obtain_date = models.DateField(null=True, verbose_name=u'领取时间')
+    update_date = models.DateTimeField(null=True, verbose_name=u'最近处理时间')
+    obtain_date = models.DateTimeField(null=True, verbose_name=u'领取时间')
     def __str__(self):
         return self.number
 
@@ -668,7 +668,7 @@ class RTask(models.Model):
 
     @activity_log
     def done(self):
-        self.update_date = localtime(now()).date()
+        self.update_date = localtime(now())
         self.tasks_increment()
         self.status = TaskStatus.COMPLETED
         return self.save(update_fields=["status", "update_date"])
@@ -685,7 +685,7 @@ class RTask(models.Model):
 
     @activity_log
     def obtain(self, user):
-        self.obtain_date = localtime(now()).date()
+        self.obtain_date = localtime(now())
         self.status = TaskStatus.HANDLING
         self.owner = user
         self.save()

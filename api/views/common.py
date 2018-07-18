@@ -177,24 +177,24 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
             .update(processor=request.user, processed_at=timezone.now(), status=LQPunctFeedback.STATUS_PROCESSING)
         elif self.model_name == 'pagetask':
             count = PageTask.objects.filter(pk=pk, owner=None, status__lt=TaskStatus.HANDLING)\
-            .update(owner=request.user, obtain_date=localtime(now()).date(), status=TaskStatus.HANDLING)
+            .update(owner=request.user, obtain_date=localtime(now()), status=TaskStatus.HANDLING)
             if count == 1:
                 conf = Configuration.objects.values('task_timeout').first()
                 task_timeout = conf['task_timeout']
                 revoke_overdue_pagetask_async(pk, schedule=task_timeout)
         elif self.model_name == 'pageverifytask':
             count = PageVerifyTask.objects.filter(pk=pk, owner=None, status__lt=TaskStatus.HANDLING)\
-            .update(owner=request.user, obtain_date=localtime(now()).date(), status=TaskStatus.HANDLING)
+            .update(owner=request.user, obtain_date=localtime(now()), status=TaskStatus.HANDLING)
             if count == 1:
                 conf = Configuration.objects.values('task_timeout').first()
                 task_timeout = conf['task_timeout']
                 revoke_overdue_pagetask_async(pk, schedule=task_timeout)
         elif self.model_name == 'prepagecoltask':
             count = PrePageColTask.objects.filter(pk=pk, owner=None, status__lt=TaskStatus.HANDLING)\
-            .update(owner=request.user, obtain_date=localtime(now()).date(), status=TaskStatus.HANDLING)
+            .update(owner=request.user, obtain_date=localtime(now()), status=TaskStatus.HANDLING)
         elif self.model_name == 'prepagecolverifytask':
             count = PrePageColVerifyTask.objects.filter(pk=pk, owner=None, status__lt=TaskStatus.HANDLING)\
-            .update(owner=request.user, obtain_date=localtime(now()).date(), status=TaskStatus.HANDLING)
+            .update(owner=request.user, obtain_date=localtime(now()), status=TaskStatus.HANDLING)
         if count == 1:
             return Response({"status": 0, "task_id": pk})
         else:

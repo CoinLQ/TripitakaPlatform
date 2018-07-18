@@ -163,7 +163,8 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = False
 
-DATETIME_FORMAT = "%Y年%m月%d日 %H时%M分%S秒"
+# DATETIME_FORMAT = "%Y年%m月%d日 %H时%M分%S秒"
+DATETIME_FORMAT='%Y-%m-%d %H:%M:%S'
 from django.conf.locale.zh_Hans import formats as zh_formats
 zh_formats.DATETIME_FORMAT = "Y/m/d H:i"
 

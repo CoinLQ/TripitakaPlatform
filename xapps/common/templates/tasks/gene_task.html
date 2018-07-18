@@ -4,10 +4,14 @@
 {% load xadmin_tags %}
 {% block extrastyle %}
   <title>生成任务</title>
-  <link rel="stylesheet" href="/static/css/bootstrap.min.css">
   <link rel="stylesheet" href="/static/css/element-ui.css">
   <link rel="stylesheet" href="/static/css/bootstrap-theme.min.css">
   <link rel="stylesheet" href="/static/css/base.css">
+  <style>
+  input.el-upload__input, div.navbar.content-navbar.navbar-default.navbar-xs {
+      display: none;
+    }
+  </style>
 {% endblock %}
 {% block breadcrumbs %}
   <ul class="breadcrumb">

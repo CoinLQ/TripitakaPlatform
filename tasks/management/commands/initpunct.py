@@ -121,5 +121,4 @@ class Command(BaseCommand):
         #create_punct_task('QL000870', 1, batchtask)
         create_lqpunct_task(lqreeltext, batchtask)
 
-
         print('initpunct done')

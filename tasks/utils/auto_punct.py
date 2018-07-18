@@ -14,7 +14,7 @@ class AutoPunct:
         try:
             r = requests.post(cls.AUTO_PUNCT_URL, json=payload, timeout=60)
             response = r.json()
-            return response[0]['pred']
+            return ''.join(response[0]['pred'])
         except RequestException:
             logger.exception('auto punct failed.')
             return None

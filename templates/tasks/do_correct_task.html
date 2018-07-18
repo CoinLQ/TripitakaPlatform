@@ -46,6 +46,7 @@
               </div>
               <div class="left-tool fr">
                 <div class="btns">
+                    <span @click="goPageTask"><i title="切字校对" class="qzjd"></i></span>
                     <span @click="RemoveLine"><i  :title="remove_btn_text" class="sc"></i></span>
                     <span @click="openDoubtForm"><i  title="存疑" class="cy"></i></span>
                     <span :disabled="premitSubmit" @click="checkLinefeed"><i  title="检查" class="jc"></i></span>
@@ -149,6 +150,7 @@
       display_doubt: false,
       display_check: false,
       correct_task_count: 2,
+      pretend_texts: '',
       current_seg: {},
       selected_text:'',
       scrolled: false,
@@ -159,6 +161,8 @@
       char_no: 1,
       isOnComposition: false,
       current_char_no: 1,
+      sid: '{{ task.reel.sutra.sid }}',
+      reel_no: {{ task.reel.reel_no }},
       sharedata: {task_id: {{ task.id }}, task_typ: {{task.typ}}, status: 0, correctsegs: []  },
       doubt:{ 
         formVisible: false,
@@ -171,6 +175,7 @@
       },
       current_doubt: {},
       doubts: [],
+      pagetask_urls: [],
       scale: 1,
       img_url: '',
       x: 0,
@@ -179,7 +184,9 @@
       h: 0,
       activeTabName: '',
       segs_need_fix_linefeed: [],
-      segs_need_check: []
+      segs_need_check: [],
+      new_line_no: 1,
+      new_char_no: 1
     },
     computed: {
       premitSubmit: function (){
@@ -221,6 +228,9 @@
       },
       kw_class: function() {
         return this.display_space ? 'kw' : 'nokw';
+      },
+      pagetask_url: function() {
+        return this.pagetask_urls[this.page_no - 1];
       }
     },
     watch: {
@@ -255,6 +265,12 @@
 
           this.setImg();
         }
+      },
+      current_seg: function(val, oldVal) {
+        let segs = _.filter(this.sharedata.correctsegs, function(o) { return o.tag != 3 && o.page_no == val.page_no && o.line_no < val.line_no});
+        let other_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.tag != 3 && o.page_no == val.page_no && o.line_no == val.line_no && o.char_no < val.char_no});
+        let long_text = _.map(segs.concat(other_segs),function(n) {return n.selected_text}).join('');
+        this.pretend_texts = long_text;
       }
     },
     created: function() {
@@ -267,6 +283,11 @@
         vm.correct_task_count = response.data.correct_task_count;
         vm.segid = response.data.cur_focus;
         vm.image_urls = response.data.image_urls;
+        vm.pagetask_urls = [];
+        response.data.pagetask_numbers.forEach(function(number) {
+          var url = '{{ host }}' + '/collate/pagetask/' + number;
+          vm.pagetask_urls.push(url);
+        });
         vm.bar_line_count = response.data.bar_line_count;
         this.loadCorrectSegs();
       }.bind(this));
@@ -287,6 +308,10 @@
       window.removeEventListener('resize', this.handleChange);
     },
     methods: {
+      goPageTask: function () {
+        console.log(this.pagetask_urls)
+        window.open(this.pagetask_urls[this.page_no - 1], "_blank");
+      },
       handleTagClick: function(tab, event){
         if ( tab.paneName == "seg_check_tab") {
           if (!this.display_doubt) { this.display_check = !this.display_check} 
@@ -403,6 +428,7 @@
         }
         var userSelection = this.userSelection(),
         range = userSelection.getRangeAt(0),
+        node = userSelection.focusNode,
         orig_seg = this.current_seg;
         
         if (seg) {
@@ -414,7 +440,34 @@
           this.doubt.page_no = seg.page_no;
           this.doubt.line_no = seg.line_no;
           this.doubt.char_no = seg.char_no;
+        } else {
+          seg = orig_seg
         }
+        let segs = _.filter(this.sharedata.correctsegs, function(o) { return o.tag != 3 && o.page_no == seg.page_no && o.line_no < seg.line_no});
+        let other_segs = _.filter(this.sharedata.correctsegs, function(o) { return o.tag != 3 && o.page_no == seg.page_no && o.line_no == seg.line_no && o.char_no < seg.char_no});
+        let long_text = _.map(segs.concat(other_segs),function(n) {return n.selected_text}).join('');
+        let nodes = this.$el.querySelector('#segdiff-' + seg.id + ">span").childNodes;
+        let part_str = '';
+        for (var i=0; i< nodes.length; i++ ) {
+          let n = nodes[i];
+          
+          if (n == node) {
+            part_str += n.textContent.substr(0, userSelection.focusOffset);
+            break;
+          } else {
+            if (n.nodeName.toString().toUpperCase() == "BR") {
+              part_str += '\n';
+            } else {
+              part_str += n.textContent;
+            }
+          }
+        }
+        let content = long_text+part_str;
+        content = content.replace(/^\n/, '');
+        content = content.replace(/[\n]+/g, '\n');
+        let lines = content.split('\n');
+        this.new_line_no = lines.length;
+        this.new_char_no = lines[lines.length -1].length + 1;
 
         this.doubt.doubt_text = range.cloneContents().textContent;
         this.doubt.doubt_char_no = range.startOffset + this.doubt.char_no;
@@ -427,29 +480,31 @@
         } else {
           this.hidePopup();
         }
-      
-        this.$nextTick(function() {
-          let userSelection = this.userSelection();
-          if (userSelection.getRangeAt(0).startContainer.length == 1 && userSelection.getRangeAt(0).cloneContents().textContent == "")
-          {
-            if (seg && orig_seg != seg) {
-              var range = document.createRange();
-              userSelection = this.userSelection();
-              let node = this.inputNode(seg, e);
-              let textNode = node.childNodes[0]
+        if (!(e.keyCode && (e.keyCode ==37 || e.keyCode ==39))) {
+        // 存疑的显示功能
+          this.$nextTick(function() {
+            let userSelection = this.userSelection();
+            if (userSelection.getRangeAt(0).startContainer.length == 1 && userSelection.getRangeAt(0).cloneContents().textContent == "")
+            {
+              if (seg && orig_seg != seg) {
+                var range = document.createRange();
+                userSelection = this.userSelection();
+                let node = this.inputNode(seg, e);
+                let textNode = node.childNodes[0]
 
-              textNode = node.childNodes[0]
-              range.selectNode(textNode)
-              range.setStart(textNode, 0);
-              range.setEnd(textNode, 0);
-              
-              userSelection.removeAllRanges();
-              userSelection.addRange(range);
+                textNode = node.childNodes[0]
+                range.selectNode(textNode)
+                range.setStart(textNode, 0);
+                range.setEnd(textNode, 0);
+                
+                userSelection.removeAllRanges();
+                userSelection.addRange(range);
+              }
             }
-          }
-        }.bind(this)
-        )
-        //range.moveStart('character', 1);
+          }.bind(this)
+          )
+        }
+        
       },
       RemoveLine: function() {
         let recover_mode = false;
@@ -533,6 +588,7 @@
         }
       },
       setImg: function() {
+        this.img_url = this.image_urls[this.page_no-1];
         var img_url = this.img_url;
         var x = this.x * this.scale;
         var y = this.y * this.scale;
@@ -573,25 +629,27 @@
       },
       loadImage: function() {
         this.img_url = this.image_urls[this.page_no-1];
-        var cut_url = this.img_url.replace('.jpg', '.cut');
+        var cut_url = '/api/page/' + this.sid + '_' + pad(this.reel_no, 3)
+        + '_' + pad(this.page_no, 2) + '_0';
         var vm = this;
         axios.get(cut_url).then(function(response) {
-          var char_data = response.data['char_data'];
-          v = _.find(char_data, function(v) { return v['line_no']  == vm.line_no && v['char_no'] == vm.current_char_no })
+          var cut_info = JSON.parse(response.data.cut_info);
+          var char_data = cut_info['char_data'];
+          v = _.find(char_data, function(v) { return v['line_no']  == vm.new_line_no && v['char_no'] == vm.new_char_no })
           // 结尾缺字
           if (!v) {
-            v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no })
+            v = _.findLast(char_data, function(v) { return v['line_no']  == vm.new_line_no })
             let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
             vm.x = v['x'];
             vm.y = v['y']+ v['h'];
             vm.w = v['w'];
-            vm.h = (max_char_no['char_no'] - vm.current_char_no +1)*v['h'];
+            vm.h = (max_char_no['char_no'] - vm.new_char_no +1)*v['h'];
             vm.setImg();
             return;
           }
           // 漏框，换算
           if (!vm.current_seg.text1) {
-            let pre_v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no && v['char_no'] < vm.current_char_no })
+            let pre_v = _.findLast(char_data, function(v) { return v['line_no']  == vm.new_line_no && v['char_no'] < vm.new_char_no })
             // 当前位置缺框
             if (pre_v){
               vm.x = v['x'];
@@ -601,7 +659,7 @@
               vm.setImg();
             } else {
             // 首个字符缺框
-              let last_v = _.findLast(char_data, function(v) { return v['line_no']  == vm.line_no })
+              let last_v = _.findLast(char_data, function(v) { return v['line_no']  == vm.new_line_no })
               let max_char_no = _.maxBy(char_data, function(v) { return v['char_no']  })
               let offset = (max_char_no['char_no'] - last_v['char_no']) *v['h']
               let start_y = (v['y'] - offset < 0 ) ? 0 : v['y'] - offset;
@@ -644,27 +702,28 @@
       },
       blockthem: function(evt) {
         if (evt.keyCode == 46){
-          var selection = window.getSelection(),
-          range = selection.getRangeAt(0);
-          let is_tail = false;
-          // delete键按在列尾
-          if (range.startContainer.length == range.startOffset) {
-            is_tail = true;
-          }
-          newline = _.findLast(this.sharedata.correctsegs, function(v) { return v['line_no']  == this.current_seg.line_no && v['page_no']  == this.current_seg.page_no }.bind(this))
-          last_tags = _.filter(this.sharedata.correctsegs, function(v) { return v['line_no']  == this.current_seg.line_no && v['page_no']  == this.current_seg.page_no && v.tag != 4 && v.position > this.current_seg.position }.bind(this))
-          let all_selected_text = _.reduce(last_tags, function(sum, n) { return sum + n.selected_text;}, '');
-          //console.log('all:', all_selected_text)
-          // 余下所有非回车tag，内容都有空
-          if (all_selected_text == "" && is_tail) {
-            // 最后一个的内容是回车
-            if (newline.selected_text == '\n') {
-              let idx = _.find(this.sharedata.correctsegs, function(v) { return v.position == newline.position});
-              newline.selected_text = ''
-              this.updateCorrectSeg(newline);
-              this.$set(this.sharedata.correctsegs, idx, newline)
-            }
-          }
+          // 不再需要删除换行seg.tag == 4的情况 
+          // var selection = window.getSelection(),
+          // range = selection.getRangeAt(0);
+          // let is_tail = false;
+          // // delete键按在列尾
+          // if (range.startContainer.length == range.startOffset) {
+          //   is_tail = true;
+          // }
+          // newline = _.findLast(this.sharedata.correctsegs, function(v) { return v['line_no']  == this.current_seg.line_no && v['page_no']  == this.current_seg.page_no }.bind(this))
+          // last_tags = _.filter(this.sharedata.correctsegs, function(v) { return v['line_no']  == this.current_seg.line_no && v['page_no']  == this.current_seg.page_no && v.tag != 4 && v.position > this.current_seg.position }.bind(this))
+          // let all_selected_text = _.reduce(last_tags, function(sum, n) { return sum + n.selected_text;}, '');
+          // console.log('all:', all_selected_text)
+          // //余下所有非回车tag，内容都有空
+          // if (all_selected_text == "" && is_tail) {
+          //   // 最后一个的内容是回车
+          //   if (newline.selected_text == '\n') {
+          //     let idx = _.find(this.sharedata.correctsegs, function(v) { return v.position == newline.position});
+          //     newline.selected_text = ''
+          //     this.updateCorrectSeg(newline);
+          //     this.$set(this.sharedata.correctsegs, idx, newline)
+          //   }
+          // }
           this.$nextTick(function () {
             // DOM is now updated
             // `this` is bound to the current instance
@@ -675,7 +734,7 @@
           this.$nextTick(function () {
             // DOM is now updated
             // `this` is bound to the current instance
-            this.textSelection()
+            this.textSelection(this.current_seg, evt)
           }.bind(this))
           return
         }
@@ -821,7 +880,7 @@
             }
           }
 
-          vm.loadImage();
+          vm.setImg();
           setTimeout(function() {
             vm.moveSegDiffToView(vm.segid);
           }, 1000);
@@ -1023,8 +1082,9 @@
           }
           selection.removeAllRanges();
           selection.addRange(range);
+          this.textSelection();
         });
-        this.loadImage();
+        //this.loadImage();
       }
     }
   });

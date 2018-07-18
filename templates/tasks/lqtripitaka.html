@@ -99,25 +99,11 @@
       box-shadow: 0px 0px 25px 15px rgba(0, 0, 0, 0.8);
   }
 </style>
-
 <div id="lqtripitaka">
   <div class="left">
-      <div class="left-pane">
-        <div class="row">
-          <div class="text-center"><input type="text" class="sutra-searchbox" v-model="searchword" placeholder="搜索经名" /></div>
-        </div>
-        <div class="sutra-tree" style="margin-left: -5px;margin-right: -5px;">
-          <el-tree :data="lqsutra_list" :props="tree_props" @node-click="clickLQSutraTreeNode">
-            <span class="el-tree-node__label" slot-scope="{ node, data }" v-bind:class="{disabledtreenode: data.reel_no && !data.text_ready}">
-              <span v-text="node.label"></span>
-            </span>
-          </el-tree>
-        </div>
-        <div class="row">
-          <div class="text-center">
-            <input type="number" class="sutra-page-input" v-model="page" /> / {{ page_count }}
-          </div>
-        </div>
+    <div class="left-pane">
+      <div class="row">
+        <div class="text-center"><input type="text" class="sutra-searchbox" v-model="searchword" placeholder="搜索经名" /></div>
       </div>
       <!-- <div class="col-md-8 lqtripitaka-text" id="lqtripitaka-text" @mouseup="userSelectionChanged">
         <span v-for="e in merged_text" is="lqtripitaka-sutra-unit" :data="e" :sharedata="sharedata">
@@ -142,27 +128,55 @@
       <textarea style=" width: 70%;height: 80%; padding: 0px;border-radius: 8px;border-width: 1px;border-color: lightgray; text-align:center;" readonly="readonly">{{ text }}</textarea>
     </div>
   </div>
+  
+  <div class="right">
+    <div class="right-pane">
+      <div class="tpd-right-header" style="padding: 5px;">
+        <el-breadcrumb>
+          <el-breadcrumb-item v-if="lqsutra_name!=''">{{ lqsutra_name }}</el-breadcrumb-item>
+          <el-breadcrumb-item v-if="current_sutra_name!=''">{{ current_sutra_name }}</el-breadcrumb-item>
+          <el-breadcrumb-item v-if="current_reel_no>0">第{{ current_reel_no }}卷</el-breadcrumb-item>
+        </el-breadcrumb>
+        
+      </div>
+      <div class="line">
+        <line class="line" id="line" />
+      </div>
+      
+      <div class="col-md-8 lqtripitaka-text" style="height: 90%;width: 90%;" id="lqtripitaka-text" @mouseup="userSelectionChanged">
+        <span v-if="current_sutra_name != ''" text-align="center" style="display:block; text-align:center; -webkit-text-fill-color: red; font-size: 24;">{{ current_sutra_name }}</span>
+        <!-- <span v-if="author != ''"  style="display:block; text-align:center; -webkit-text-fill-color: gray; font-size: 16;">著作者：{{ author }}</span> -->
+        <span v-for="e in merged_text" is="lqtripitaka-sutra-unit" :data="e" :sharedata="sharedata">
+        </span>
+      </div>
+      <ul class="popup-menu" v-show="popupMenuShown" :style="popupMenuStyle">
+        <li><button style="background:yellow;" @click="punctFeedback()">反馈标点</button></li>
+      </ul>
+    </div>
+  </div>
   <!-- 弹出框 -->
   <div id = 'popContainer' class='popContainer' v-show="showPopReadModel" v-on:click="hideReadModel($event)">
-    <net-read-dialog :text="text" v-if="readModel == '网页模式'"></net-read-dialog>
-    <focus-read-dialog :text="text" v-if="readModel == '护眼模式'"></focus-read-dialog>
+    <net-read-dialog :result="merged_text" :sutraname="current_sutra_name" :author="author" v-if="readModel == '网页模式'"></net-read-dialog>
+    <focus-read-dialog :result="merged_text" :sutraname="current_sutra_name" :author="author" v-if="readModel == '护眼模式'"></focus-read-dialog>
     <turn-page-dialog :text="text" v-if="readModel == '翻页模式'"></turn-page-dialog>
-    <sutra-book-dialog :text="text" v-if="readModel == '经书模式'"></sutra-book-dialog>
-    </div>
+    <three-dimensions-dialog :result="merged_text" :sutraname="current_sutra_name" :author="author" v-if="readModel == '3D模式'"></three-dimensions-dialog>
+   
+  </div>
   <!-- 侧边菜单栏 -->
-  <div class="side">
+  <!-- <div class="side">
     <ul>
       <li><a href="#"><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon01.png') }}" >网页模式</div></a></li>
       <li><a href="#"><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon02.png') }}">护眼模式</div></a></li>
       <li><a href="#" ><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon03.png') }}">翻页模式</div></a></li>
-      <li><a href="#" ><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon04.png') }}">经书模式</div></a></li>
-      <li style="border:none;"><a href="#" class="sidetop" v-on:click="hideReadModel($event)"><img src="{{ static('custom/imgs/side_icon05.png') }}"></a></li>
+      <li><a href="#" ><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon04.png') }}">3D模式</div></a></li>
+      <li style="border:none;"><a href="#" class="sidetop" v-on:click="forceHideReadModel($event)"><img src="{{ static('custom/imgs/side_icon05.png') }}"></a></li>
     </ul>
-  </div>
+  </div> -->
+  <div is="judge-result-view" :sharedata="sharedata"></div>
+  <div is="punct-feedback-dialog" :sharedata="sharedata" v-if="sharedata.punctFeedbackDialogVisible"></div>
 </div>
 {% endblock %}
 {% block foot_script %}
-
 <script src="{{ static('js/vue.js') }}"></script>
 <script src="{{ static('js/element-ui.js') }}"></script>
 <script src="{{ static('custom/js/punct.js') }}"></script>
@@ -215,6 +229,9 @@ function goTop(){
       lqsutra_name: '龙泉大藏经',
       current_sutra_name: '',
       current_reel_no: 0,
+      author:'',
+      showPopReadModel:false,
+      readModel:'',
       text: '',
       punct_lst: [],
       orig_separators: [],
@@ -290,9 +307,9 @@ function goTop(){
             vm.text = response.data.text;
             vm.punct_lst = response.data.punct_lst;
             vm.diffsegresult_pos_lst = response.data.diffsegresult_pos_lst;
-            vm.orig_separators = response.data.orig_separators;
             vm.current_sutra_name = node.parent.data.name;
             vm.current_reel_no = data.reel_no;
+            vm.author = node.parent.data.author;
             vm.loadSutraText();
           });
         }
@@ -345,39 +362,16 @@ function goTop(){
         model = event.currentTarget.innerHTML.split('>')[1];
         this.readModel = model;
         this.showPopReadModel = true;
-        // if (this.readModel == "翻页模式"){
-        //   this.initTurnPage(event);
-        // }
       },
       hideReadModel: function(event) {
-        console.log(event.currentTarget.children[0].id);
-        if (event.target.type != 'textarea' && event.currentTarget.children[0].id != "book") {
+        console.log(event.target);
+        if (event.target.type != 'textarea' && event.currentTarget.children[0].id != "book" && event.target.id == "content") {
           this.showPopReadModel = false;
         }
       },
-      initTurnPage: function(event) {
-        var popContainer = document.getElementById("popContainer");
-        var book = popContainer.lastElementChild;
-        var pages = book.getElementsByTagName("div");
-        var pageNumber = 4, rota = -180;
-        book.onclick = function () {
-            console.log("click");
-            book.style.left = "65%";
-            pages[pageNumber].style.transform = "rotateY(" + rota + "deg)";
-            pageNumber--;
-            rota += 10;
-            console.log("pageNumber:"+pageNumber);
-            if (pageNumber < 0) {
-                for (var i = 0; i < pages.length; i++) {
-                    pages[i].style.transform = "rotateY(0deg)";
-                }
-                book.style.left = "50%";
-                pageNumber = 4;
-                rota = -180;
-            }
-        }
-      },
-
+      forceHideReadModel: function(event) {
+        this.showPopReadModel = false;
+      }
     }
   });
 </script>

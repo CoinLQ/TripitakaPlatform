@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404, render, redirect
+from django.conf import settings
 from tdata.models import Reel
 
 def index(request, tcode):

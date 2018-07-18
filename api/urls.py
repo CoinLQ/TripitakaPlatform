@@ -16,11 +16,12 @@ JudgeTaskDetail, FinishJudgeTask, MergeList, DiffSegResultAllSelected, DiffSegDe
 from jkapi.views.punct import PunctTaskDetail
 from jkapi.views.mark import MarkTaskDetail, FinishMarkTask
 from jkapi.views.lqtripitaka import LQSutraViewSet, LQReelTextDetail
-from jkapi.views.tripitaka import SutraViewSet, SutraText,TripitakaViewSet, RedoPageRect
+from jkapi.views.tripitaka import SutraViewSet, SutraText,TripitakaViewSet, RedoPageRect, TripitakaImageList
 from jkapi.views.punct_feedback import LQPunctFeedbackList, MyLQPunctFeedbackList, LQPunctFeedbackDetail, LQPunctFeedbackTask
 from jkapi.views.volumn import VolumeViewSet
 from jkapi.views.judge_feedback import JudgeFeedbackList, MyJudgeFeedbackList, JudgeFeedbackDetail, JudgeFeedbackTask
 from jkapi.views.tripitaka import CorrectFeedbackViewset, CorrectFeedbackDetailViewset, TripitakaPageData, TripitakaReelData, TripitakaVolumePage, TripitakaVolumeList, MyCorrectFeedbackList
+from jkapi.views import s3manage
 
 router = routers.DefaultRouter()
 router.register(r'pagerect', PageRectViewSet)
@@ -79,4 +80,10 @@ urlpatterns = [
     url(r'^correctfeedback/mine/$', MyCorrectFeedbackList.as_view()),
     url(r'^correctfeedback/$', CorrectFeedbackViewset.as_view()),
     url(r'^correctfeedback/(?P<pk>[0-9]+)/$', CorrectFeedbackDetailViewset.as_view()),
+    url(r'^s3manage/buckets/$', s3manage.BucketViewset.as_view()),
+    url(r'^s3manage/buckets/(?P<name>[\w-]+)/$', s3manage.BucketDetail.as_view()),
+    url(r'^s3manage/searchcode/(?P<code>[\w-]+)/$', s3manage.SourceSearch.as_view()),
+    url(r'^s3manage/delsource/$', s3manage.DelSource.as_view()),
+    url(r'^s3manage/replacesource/$', s3manage.RepSource.as_view()),
+    url(r'^coverlist/$', TripitakaImageList.as_view()),
 ]

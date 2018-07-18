@@ -392,8 +392,8 @@ def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
             logger.info('fetch done: %s, %d, page: %s', reel.sutra.sid, reel.reel_no, vol_page)
             data = f.read()
     except:
-       logger.error('no data: %s', cut_url)
-       return ''
+        logger.error('no data: %s', cut_url)
+        return ''
     # '' 串不写
     if data:
         with open(cut_filename, 'wb') as fout:
@@ -546,6 +546,40 @@ def compute_accurate_cut(reel, process_cut=True):
     # cut related
     if process_cut and not reel.cut_ready:
         rebuild_reel_pagerects(reel)
+
+def create_pages_for_reel(reel):
+    if reel.page_set.first(): # 已有page
+        return
+    sid = reel.sutra.sid
+    page_count = reel.end_vol_page - reel.start_vol_page + 1
+    pages = []
+    for i in range(page_count):
+        page_no = i + 1
+        vol_page = reel.start_vol_page + i
+        # 最后一位是栏号，如果有分栏，需用a/b；无分栏，用0
+        pid = '%s_%03d_%02d_%s' % (sid, reel.reel_no, page_no, '0') # YB000860_001_01_0
+        # 如果有分栏，最后一位是栏号，需用a/b；无分栏，为空
+        page_code = '%s_%s_%s%s' % (sid[0:2], reel.path_str(), vol_page, '') # YB_1_1
+        cut_info_json = fetch_cut_file(reel, vol_page)
+        if type(cut_info_json) is bytes:
+            cut_info_json = cut_info_json.decode()
+        if not cut_info_json:
+            cut_info = {
+                'page_code': page_code,
+                'char_data': [],
+            }
+            cut_info_json = json.dumps(cut_info, indent=None)
+            char_lst = []
+        else:
+            cut_info = json.loads(cut_info_json)
+            char_lst = cut_info['char_data']
+        page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
+                    cut_info=cut_info_json, cut_updated_at=timezone.now(),
+                    page_code=page_code)
+        page.status = PageStatus.RECT_NOTREADY
+        pages.append(page)
+    Page.objects.bulk_create(pages)
+    rebuild_reel_pagerects(reel)
 
 SUTRA_CLEAN_PATTERN = re.compile('[「」　 \r]')
 def clean_sutra_text(text):

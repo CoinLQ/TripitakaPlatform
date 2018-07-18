@@ -776,6 +776,19 @@ class GlobalSetting(object):
                     # {'title': u'权限管理', 'url': self.get_model_url(Permission, 'changelist'),'icon':'fa fa-book',},
         ]}, ]
 
+    def s3_mana_menu(self):
+        return [{
+            'title': u'S3数据管理',
+            'icon': 'fa fa-cloud',
+            'menus': [
+                {
+                    'title': u'S3数据管理',
+                    'url': '/manage/tasks/s3manage/',
+                    'icon': 'fa fa-cloud',
+                },
+                ]
+        },]
+
     def add_nav_menu(self, menus, nav_menu):
         need_admin = (lambda u: u.is_admin)
         for menu in nav_menu:
@@ -791,6 +804,7 @@ class GlobalSetting(object):
         self.add_nav_menu(menus, self.data_mana_menu())
         self.add_nav_menu(menus, self.user_mana_menu())
         self.add_nav_menu(menus, self.prepocess_task_menu())
+        self.add_nav_menu(menus, self.s3_mana_menu())
         return menus
 
     menu_style = 'accordion'

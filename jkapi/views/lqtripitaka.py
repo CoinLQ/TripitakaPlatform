@@ -12,7 +12,6 @@ from rest_framework import status
 from tdata.models import LQSutra
 from tasks.models import LQReelText, LQPunct, DiffSegResult
 from tdata.serializer import LQSutraSerializer
-from tasks.common import clean_separators, extract_line_separators
 
 class LQSutraResultsSetPagination(pagination.PageNumberPagination):
     page_size = 30
@@ -39,7 +38,6 @@ class LQReelTextDetail(APIView):
         else:
             punct_lst = []
             lqpunct_id = 0
-        orig_separators = extract_line_separators(lqreeltext.task.reeldiff.base_text.body)
         diffsegresult_pos_lst = []
         diffsegresults = list(DiffSegResult.objects.filter(
             task_id=lqreeltext.task.id).order_by('diffseg__base_pos'))
@@ -64,6 +62,5 @@ class LQReelTextDetail(APIView):
             'text': lqreeltext.text,
             'punct_lst': punct_lst,
             'diffsegresult_pos_lst': diffsegresult_pos_lst,
-            'orig_separators': orig_separators,
         }
         return Response(response)

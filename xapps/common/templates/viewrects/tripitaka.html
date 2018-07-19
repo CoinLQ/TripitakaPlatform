@@ -114,16 +114,6 @@
     
       {% endraw %}
 </div>
-
-
-
-
-
-
-
-
-
-
 <div id="correct">
     <div class="row content-container">
        
@@ -186,10 +176,10 @@
 
 {% endblock %}
 {% block foot_script %}
+<script src="{{ static('js/vue.js') }}"></script>
+<script src="{{ static('js/element-ui.js') }}"></script>
 <script src="{{ static('custom/js/punct.js') }}"></script>
 <script src="{{ static('custom/js/lqtripitaka.js') }}"></script>
-<script src="//unpkg.com/vue/dist/vue.js"></script>
-<script src="//unpkg.com/element-ui@2.3.8/lib/index.js"></script>
 <script>
   var app = new Vue({
     el: '#lqtripitaka',

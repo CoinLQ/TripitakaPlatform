@@ -24,7 +24,7 @@ class LQSutraSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LQSutra
-        fields = ('id', 'sid', 'name', 'total_reels', 'lqreel_set')
+        fields = ('id', 'sid', 'name', 'author', 'total_reels', 'lqreel_set')
 
 class ReelSimpleSerializer(serializers.ModelSerializer):
     class Meta:

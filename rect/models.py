@@ -632,8 +632,8 @@ class RTask(models.Model):
         verbose_name=u'任务优先级',
         db_index=True,
     )
-    update_date = models.DateTimeField(null=True, verbose_name=u'最近处理时间')
-    obtain_date = models.DateTimeField(null=True, verbose_name=u'领取时间')
+    update_date = models.DateTimeField(null=True, blank=True, verbose_name=u'最近处理时间')
+    obtain_date = models.DateTimeField(null=True, blank=True, verbose_name=u'领取时间')
     def __str__(self):
         return self.number
 

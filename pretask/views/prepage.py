@@ -188,3 +188,23 @@ class PrePageColVerifyTaskViewSet(RectBulkOpMixin,
         task.redo()
         return Response({"status": 0,
                             "task_id": pk })
+
+    @detail_route(methods=['post'], url_path='save')
+    @transaction.atomic
+    def temp_save(self, request, pk):
+        task = PrePageColVerifyTask.objects.get(pk=pk)
+        if (task.owner != request.user):
+            return Response({"status": -1,
+                             "msg": "No Permission!"})
+        if task.status == TaskStatus.COMPLETED:
+            return Response({"status": -1, "msg": "审定任务已完成，保存已屏蔽!"})
+        if 'current_x' in request.data:
+            task.current_x = request.data['current_x']
+            task.current_y = request.data['current_y']
+            task.save(update_fields=['current_x', 'current_y'])
+        rects = request.data['rects']
+        _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]
+        task.rect_set = _rects
+        task.save(update_fields=['rect_set'])
+        return Response({"status": 0,
+                            "task_id": pk })

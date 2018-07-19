@@ -121,15 +121,4 @@ class Command(BaseCommand):
         #create_punct_task('QL000870', 1, batchtask)
         create_lqpunct_task(lqreeltext, batchtask)
 
-        # set_result = True
-        # if set_result:
-        #     for task in judge_tasks:
-        #         for diffseg in task.reeldiff.diffseg_set.all():
-        #             diffsegtexts = list(DiffSegText.objects.filter(diffseg=diffseg, tripitaka=CB))
-        #             if len(diffsegtexts) == 1:
-        #                 diffsegresult = DiffSegResult.objects.get(task=task, diffseg=diffseg)
-        #                 diffsegresult.selected_text = diffsegtexts[0].text
-        #                 diffsegresult.selected = 1
-        #                 diffsegresult.save()
-
         print('initpunct done')

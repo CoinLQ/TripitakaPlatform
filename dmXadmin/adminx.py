@@ -302,6 +302,15 @@ class GeneTaskPlugin(BaseAdminPlugin):
 
 site.register_plugin(GeneTaskPlugin, ListAdminView)
 
+class CssPlugin(BaseAdminPlugin):
+    css_add = True
+    def block_extrahead(self, context, nodes):
+        css = '<style>' \
+              '.text-center p{ position:absolute; bottom:0; width:100%}' \
+              '</style>'
+        nodes.append(css)
+site.register_plugin(CssPlugin, views.BaseAdminView)
+
 class TaskAdmin(object):
     def modify(self, instance):
         return '修改'
@@ -327,6 +336,8 @@ class TaskAdmin(object):
                ReclaimSelectedTasksAction, RemindSelectedTasksAction,
                SetHighPriorityAction, SetMiddlePriorityAction, SetLowPriorityAction,
                UpdateTaskResultAction]
+
+
 
 class TaskAdminForReel(TaskAdmin):
     list_display = ['batchtask', 'tripitaka_name', 'sutra_name',

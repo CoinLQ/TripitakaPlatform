@@ -2,11 +2,10 @@
 {% block title %}龙泉藏经{% endblock %}
 {% block content %}
 <style>
-
   .left {
     float: left;
     width: 310px;
-    height: 680px;
+    height: 90%;
     
   }
   .left-pane {
@@ -15,11 +14,13 @@
     height: 100%;
     border: 1px solid lightgray;
     border-radius: 8px;
+    padding-bottom: 80px;
   }
   .right {
     margin-left: 310px;
     width: 100%;
     height: 100%;
+    padding-right: 100px;
   }
   
   .right-pane {
@@ -30,6 +31,7 @@
     border-radius: 8px;
     overflow: hidden;
     text-overflow:ellipsis; 
+    padding-bottom: 22px;
   }
   .line {
     width: 100%;
@@ -105,7 +107,7 @@
       <div class="row">
         <div class="text-center"><input type="text" class="sutra-searchbox" v-model="searchword" placeholder="搜索经名" /></div>
       </div>
-      <div class="sutra-tree">
+      <div class="sutra-tree" style=" height: 100%;">
         <el-tree :data="lqsutra_list" :props="tree_props" @node-click="clickLQSutraTreeNode">
           <span class="el-tree-node__label" slot-scope="{ node, data }" v-bind:class="{disabledtreenode: data.reel_no && !data.text_ready}">
             <span v-text="node.label"></span>
@@ -134,9 +136,9 @@
         <line class="line" id="line" />
       </div>
       
-      <div class="col-md-8 lqtripitaka-text" style="height: 90%;width: 90%;" id="lqtripitaka-text" @mouseup="userSelectionChanged">
+      <div class="col-md-8 lqtripitaka-text" style="height: 100%;width: 100%;" id="lqtripitaka-text" @mouseup="userSelectionChanged">
         <span v-if="current_sutra_name != ''" text-align="center" style="display:block; text-align:center; -webkit-text-fill-color: red; font-size: 24;">{{ current_sutra_name }}</span>
-        <!-- <span v-if="author != ''"  style="display:block; text-align:center; -webkit-text-fill-color: gray; font-size: 16;">著作者：{{ author }}</span> -->
+        <span v-if="author != ''"  style="display:block; text-align:center; -webkit-text-fill-color: gray; font-size: 16;">{{ author }}</span>
         <span v-for="e in merged_text" is="lqtripitaka-sutra-unit" :data="e" :sharedata="sharedata">
         </span>
       </div>
@@ -149,20 +151,20 @@
   <div id = 'popContainer' class='popContainer' v-show="showPopReadModel" v-on:click="hideReadModel($event)">
     <net-read-dialog :result="merged_text" :sutraname="current_sutra_name" :author="author" v-if="readModel == '网页模式'"></net-read-dialog>
     <focus-read-dialog :result="merged_text" :sutraname="current_sutra_name" :author="author" v-if="readModel == '护眼模式'"></focus-read-dialog>
-    <turn-page-dialog :text="text" v-if="readModel == '翻页模式'"></turn-page-dialog>
+    <!-- <turn-page-dialog :text="text" v-if="readModel == '翻页模式'"></turn-page-dialog> -->
     <three-dimensions-dialog :result="merged_text" :sutraname="current_sutra_name" :author="author" v-if="readModel == '3D模式'"></three-dimensions-dialog>
    
   </div>
   <!-- 侧边菜单栏 -->
-  <!-- <div class="side">
+  <div class="side">
     <ul>
       <li><a href="#"><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon01.png') }}" >网页模式</div></a></li>
       <li><a href="#"><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon02.png') }}">护眼模式</div></a></li>
-      <li><a href="#" ><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon03.png') }}">翻页模式</div></a></li>
+      <!-- <li><a href="#" ><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon03.png') }}">翻页模式</div></a></li> -->
       <li><a href="#" ><div class="sidebox" v-on:click="showReadModel($event)"><img src="{{ static('custom/imgs/side_icon04.png') }}">3D模式</div></a></li>
       <li style="border:none;"><a href="#" class="sidetop" v-on:click="forceHideReadModel($event)"><img src="{{ static('custom/imgs/side_icon05.png') }}"></a></li>
     </ul>
-  </div> -->
+  </div> 
   <div is="judge-result-view" :sharedata="sharedata"></div>
   <div is="punct-feedback-dialog" :sharedata="sharedata" v-if="sharedata.punctFeedbackDialogVisible"></div>
 </div>
@@ -189,7 +191,6 @@ $(document).ready(function(){
 function goTop(){
   $('html,body').animate({'scrollTop':0},600);
 }
-
 </script>
 <!-- 处理vue数据 -->
 <script>
@@ -244,10 +245,13 @@ function goTop(){
         punct_result: [],
         punctseg_lst: [],
         show_refpunct: false
-      }
+      },
     },
     watch: {
       searchword: function(value, oldValue) {
+        if (value != oldValue){
+          this.page = 1;
+        }
         this.fetchSutraList();
       },
       page: function(value, oldValue) {

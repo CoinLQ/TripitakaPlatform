@@ -325,10 +325,13 @@ Vue.component('judge-result-view', {
     <el-dialog title="校勘记" :visible.sync="sharedata.judgeResultDialogVisible" width="30%" @open="handleOpen" :before-close="handleCancel">
         <table class="table table-bordered">
             <thead>
-            <tr><th>版本</th><th>用字</th></tr>
+            <tr><th>选定</th><th>版本</th><th>用字</th></tr>
             </thead>
             <tbody>
             <tr v-for="(diffsegtexts, text) in text_to_diffsegtexts">
+                <td>
+                    <li v-if="text == diffsegresult.selected_text">&radic;</li>
+                </td>
                 <td>{{ joinTnames(diffsegtexts) }}</td>
                 <td>{{ text }}</td>
             </tr>
@@ -354,6 +357,7 @@ Vue.component('judge-result-view', {
                     <textarea class="form-control" rows="3" v-model="fb_comment"></textarea>
                     <span slot="footer" class="dialog-footer">
                         <span class="alert alert-danger" v-if="error">{{ error }}</span>
+                        <span><br/></span>
                         <el-button type="primary" @click="handleOK">确定</el-button>
                         <el-button @click="handleCancel">取消</el-button>
                     </span>
@@ -446,6 +450,7 @@ Vue.component('net-read-dialog', {
     <div id = "content"  style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgb(181,229,181) ; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
         <div id="netread"  style=" width: 50%;height: 100%; padding: 10px ;border-radius: 0px;border-width: 1px;border-color: lightgray; background:white;text-align:left; overflow: scroll;">
             <span v-if="sutraname != ''" text-align="center" style="display:block; text-align:center; -webkit-text-fill-color: red; font-size: 24;">{{ sutraname }}</span>
+            <span v-if="author != ''"  style="display:block; text-align:center; -webkit-text-fill-color: gray; font-size: 16;">{{ author }}</span>
             <span style="font-size:24px;">{{ merged_text }}</span>
         </div>
     </div>
@@ -480,6 +485,7 @@ Vue.component('focus-read-dialog', {
     <div id = "content" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgb(181,229,181) ; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
         <div id="netread"  style=" width: 60%;height: 80%; padding: 10px ;border-radius: 0px;border-width: 1px;border-color: lightgray; background:white;text-align:left; overflow: scroll; background: rgb(199,237,204); ">
             <span v-if="sutraname != ''" text-align="center" style="display:block; text-align:center; -webkit-text-fill-color: red; font-size: 24;">{{ sutraname }}</span>
+            <span v-if="author != ''"  style="display:block; text-align:center; -webkit-text-fill-color: gray; font-size: 16;">{{ author }}</span>
             <span style="font-size:24px;">{{ merged_text }}</span>
         </div>
     </div>
@@ -665,9 +671,10 @@ Vue.component('three-dimensions-dialog', {
     props: ['result','sutraname','author'],
     template: `
     <div id = "content" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgb(181,229,181) ; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
-        <div id="box" style="overflow: scroll;">
+        <div id="box" style="overflow: scroll; width: 70%;">
             <p id="flashlight"> 
                 <span id="flash" v-if="sutraname != ''" text-align="center" style="display:block; text-align:center; -webkit-text-fill-color: red;">{{ sutraname }}</span>
+                <span id="flash" v-if="author != ''"  style="display:block; text-align:center; -webkit-text-fill-color: gray; font-size: 20;">{{ author }}</span>
                 <span id="flash" style="-webkit-text-fill-color: yellow;">{{ merged_text }}</span> 
             </p>
         </div>

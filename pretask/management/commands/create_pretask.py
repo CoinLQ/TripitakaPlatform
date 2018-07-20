@@ -23,7 +23,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
 
-        schedule = Schedule(name='预处理计划任务1', status=ScheduleStatus.ACTIVE, schedule_no="pretask_schedule1")
+        schedule = Schedule(name='预处理计划任务2', status=ScheduleStatus.ACTIVE, schedule_no="pretask_schedule1")
         schedule.save()
         schedule.refresh_from_db()
         

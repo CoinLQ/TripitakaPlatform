@@ -259,3 +259,32 @@ class PageVerifyTaskViewSet(RectBulkOpMixin,
         task.redo()
         return Response({"status": 0,
                             "task_id": pk })
+
+    @detail_route(methods=['post'], url_path='save')
+    @transaction.atomic
+    def temp_save(self, request, pk):
+        task = PageVerifyTask.objects.get(pk=pk)
+        if (task.status != TaskStatus.NOT_READY and task.owner != request.user) or \
+        (task.status == TaskStatus.NOT_READY and request.user.is_authenticated):
+            if not request.user.is_admin:
+                return Response({"status": -1,
+                                "msg": "No Permission!"})
+        if task.status==TaskStatus.COMPLETED:
+            return Response({"status": -1, "msg": "审定任务已完成，保存已屏蔽!"})
+        if 'current_x' in request.data:
+            task.current_x = request.data['current_x']
+            task.current_y = request.data['current_y']
+            task.save(update_fields=['current_x', 'current_y'])
+        rects = request.data['rects']
+        DeletionCheckItem.direct_delete_rects(rects, task)
+        _rects = [rect for rect in filter(lambda x: x['op'] != 3, rects)]
+        for r in _rects:
+            r['page_pid'] = task.pagerect.page.pk
+            r['line_no'] =  0
+            r['char_no'] = 0
+        rectset = RectWriterSerializer(data=_rects, many=True)
+        rectset.is_valid()
+        Rect.bulk_insert_or_replace(rectset.data)
+        PageRect.reformat_rects(task.pagerect.page.pk)
+        return Response({"status": 0,
+                            "task_id": pk })

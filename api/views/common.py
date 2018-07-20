@@ -195,6 +195,8 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
         elif self.model_name == 'prepagecolverifytask':
             count = PrePageColVerifyTask.objects.filter(pk=pk, owner=None, status__lt=TaskStatus.HANDLING)\
             .update(owner=request.user, obtain_date=localtime(now()), status=TaskStatus.HANDLING)
+        elif self.model_name == 'correctfeedback':
+            count = CorrectFeedback.objects.filter(pk=pk, processor=None).update(processor=request.user, processed_at=timezone.now())
         if count == 1:
             return Response({"status": 0, "task_id": pk})
         else:

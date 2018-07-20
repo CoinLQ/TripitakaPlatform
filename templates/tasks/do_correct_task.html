@@ -17,9 +17,9 @@
         <div class="left fl">
             <div class="hd">
               <div class="pager tr">
-                <span @click="scale -=1">-</span>
+                <span @click="scaleSmall">-</span>
                 <span ><em>1</em>:<em></em>{{scale}}</em></span>
-                <span @click="scale +=1">+</span>
+                <span @click="scaleBig">+</span>
               </div>
             </div>
             <div class="bd">
@@ -177,6 +177,8 @@
       doubts: [],
       pagetask_urls: [],
       scale: 1,
+      scales: [0.25,0.5,1,2,3,4,5],
+      scaleIndex: 2,
       img_url: '',
       x: 0,
       y: 0,
@@ -253,14 +255,14 @@
         this.handleChange()
       },
       scale: function (val, oldVal) {
-        if (val > 5){
-          this.scale = 5
-          return
-        } 
-        if (val < 1){
-          this.scale = 1
-          return;
-        }
+        // if (val > 5){
+        //   this.scale = 5
+        //   return
+        // }
+        // if (val < 1){
+        //   this.scale = 1
+        //   return;
+        // }
         if (val != oldVal) {
 
           this.setImg();
@@ -308,6 +310,14 @@
       window.removeEventListener('resize', this.handleChange);
     },
     methods: {
+      scaleSmall:function(){
+          this.scaleIndex=Math.max(0,this.scaleIndex-1);
+          this.scale=this.scales[this.scaleIndex];
+      },
+      scaleBig:function(){
+          this.scaleIndex=Math.min(this.scales.length-1,this.scaleIndex+1);
+          this.scale=this.scales[this.scaleIndex];
+      },
       goPageTask: function () {
         console.log(this.pagetask_urls)
         window.open(this.pagetask_urls[this.page_no - 1], "_blank");

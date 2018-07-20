@@ -8,19 +8,19 @@
       </div>
       <div class='scale-op'>
         <el-button-group>
-          <el-button plain size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
+          <el-button plain size="mini" icon="el-icon-minus" @click="scaleSmall" round></el-button>
           <el-button plain size="mini" round>{{ scale_rate }}</el-button>
-          <el-button plain size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
+          <el-button plain size="mini" icon="el-icon-plus" @click="scaleBig" round></el-button>
         </el-button-group>
-        <div class="block" style="display:none;width: 30%;margin-left: 50px;">
-          <span class="demonstration">图片大小</span>
-          <el-slider
-              v-model="scale"
-              :step="1"
-              :max="5"
-              :min="1"
-              show-stops>
-          </el-slider>
+        <!--<div class="block" style="display:none;width: 30%;margin-left: 50px;">-->
+          <!--<span class="demonstration">图片大小</span>-->
+          <!--<el-slider-->
+              <!--v-model="scale"-->
+              <!--:step="1"-->
+              <!--:max="5"-->
+              <!--:min="1"-->
+              <!--show-stops>-->
+          <!--</el-slider>-->
         </div>
       </div>
     </div>
@@ -57,6 +57,8 @@
         cut_data: [],
         process_data: [],
         scale: 1,
+          scales: [0.25,0.5,1,2,3,4,5],
+        scaleIndex: 2,
         img_url: '',
         x: 0,
         y: 0,
@@ -72,14 +74,14 @@
       },
       watch: {
         scale: function (val, oldVal) {
-          if (val > 5) {
-            this.scale = 5;
-            return
-          }
-          if (val < 1) {
-            this.scale = 1;
-            return;
-          }
+          // if (val > 5) {
+          //   this.scale = 5;
+          //   return
+          // }
+          // if (val < 1) {
+          //   this.scale = 1;
+          //   return;
+          // }
           if (val != oldVal) {
             this.setImg();
           }
@@ -99,6 +101,14 @@
             }.bind(this));
       },
       methods: {
+        scaleSmall:function(){
+          this.scaleIndex=Math.max(0,this.scaleIndex-1);
+          this.scale=this.scales[this.scaleIndex];
+        },
+        scaleBig:function(){
+          this.scaleIndex=Math.min(this.scales.length-1,this.scaleIndex+1);
+          this.scale=this.scales[this.scaleIndex];
+        },
         submitForm: function (formName) {
           this.$refs[formName].validate((valid) => {
             if (valid) {

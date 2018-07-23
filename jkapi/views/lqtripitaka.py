@@ -12,6 +12,7 @@ from rest_framework import status
 from tdata.models import LQSutra
 from tasks.models import LQReelText, LQPunct, DiffSegResult
 from tdata.serializer import LQSutraSerializer
+from tasks.common import extract_line_separators
 
 class LQSutraResultsSetPagination(pagination.PageNumberPagination):
     page_size = 30

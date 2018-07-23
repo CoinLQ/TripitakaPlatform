@@ -1266,7 +1266,7 @@ a,img {
 /* 3d文字 */
 #box { 
     padding: 100px; 
-    text-align: center; 
+    text-align: left; 
     min-width: 500px; 
     font-size: 3em; 
     font-weight: bold; 

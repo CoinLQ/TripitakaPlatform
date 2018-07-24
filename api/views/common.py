@@ -154,12 +154,12 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
     def obtain_task(self, request, pk):
         if self.model_name in TASK_MODELS:
             task = Task.objects.get(pk=pk)
-            if self._exist_task_by_samepicker(task, request.user):
-                if task.typ in [Task.TYPE_CORRECT, Task.TYPE_JUDGE]:
-                    msg = "同一用户不能同时领取校一、校二"
-                elif task.typ in [Task.TYPE_PUNCT, Task.TYPE_LQPUNCT, Task.TYPE_MARK]:
-                    msg = "同一用户不能同时领取标一、标二"
-                return Response({"status": -1, "task_id": pk, "msg": msg})
+            # if self._exist_task_by_samepicker(task, request.user):
+            #     if task.typ in [Task.TYPE_CORRECT, Task.TYPE_JUDGE]:
+            #         msg = "同一用户不能同时领取校一、校二"
+            #     elif task.typ in [Task.TYPE_PUNCT, Task.TYPE_LQPUNCT, Task.TYPE_MARK]:
+            #         msg = "同一用户不能同时领取标一、标二"
+            #     return Response({"status": -1, "task_id": pk, "msg": msg})
             count = Task.objects.filter(pk=pk, status=Task.STATUS_READY, picker=None)\
             .update(
                 picker=request.user,

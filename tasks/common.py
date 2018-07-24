@@ -384,6 +384,18 @@ def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
     if reel.reel_no <= 0 or vol_page == 0:
         return ''
     cut_filename = "%s/logs/%s%s.%s" % (settings.BASE_DIR, reel.image_prefix(), vol_page, suffix)
+    '''
+    eg. GL_79_1_10.cut
+        GL: tripitaka code 
+        79: number of sid.(GL000790)
+        1:  reel_no in this sutra
+        10: page number in this reel
+        
+    eg. PL_1114_8.cut
+        PL: tripitaka code 毘卢藏
+        1114: start volumn 
+        8: page number in this volun
+    '''
     if not force_download and os.path.exists( cut_filename ):
         with open(cut_filename, 'r') as f:
             data = f.read()
@@ -483,8 +495,7 @@ def compute_accurate_cut(reel, process_cut=True):
             try:
                 #print('vol_page: ', vol_page)
                 #print('%s\n----------\n%s\n----------' % (correct_pagetexts[i], pagetexts[i]))
-                char_lst, line_count, column_count, char_count_lst, cut_add_count, cut_wrong_count, cut_confirm_count = \
-                get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
+                char_lst, line_count, column_count, char_count_lst, cut_add_count, cut_wrong_count, cut_confirm_count = get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
                 min_x, min_y, max_x, max_y = get_char_region_cord(char_lst)
                 cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count
                 cut_info = {
@@ -496,11 +507,12 @@ def compute_accurate_cut(reel, process_cut=True):
                     'char_data': char_lst,
                 }
                 cut_info_json = json.dumps(cut_info, indent=None)
-                page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
-                text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
-                cut_add_count=cut_add_count, cut_wrong_count=cut_wrong_count, cut_confirm_count=cut_confirm_count,
-                cut_verify_count=cut_verify_count,
-                page_code = page_code)
+                page = Page(
+                    pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
+                    text=correct_pagetexts[i], cut_info=cut_info_json, cut_updated_at=timezone.now(),
+                    cut_add_count=cut_add_count, cut_wrong_count=cut_wrong_count, cut_confirm_count=cut_confirm_count,
+                    cut_verify_count=cut_verify_count,
+                    page_code = page_code)
             except:
                 logger.exception('get_accurate_cut failed: %s', pid)
                 use_original_cut = True
@@ -528,9 +540,10 @@ def compute_accurate_cut(reel, process_cut=True):
                 }
                 cut_info_json = json.dumps(cut_info, indent=None)
                 char_lst = []
-            page = Page(pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
-            cut_info=cut_info_json, cut_updated_at=timezone.now(),
-            page_code=page_code)
+            page = Page(
+                pid=pid, reel_id=reel.id, reel_page_no=i+1, page_no=vol_page,
+                cut_info=cut_info_json, cut_updated_at=timezone.now(),
+                page_code=page_code)
             if correct_pagetexts and i < correct_page_count:
                 page.text = correct_pagetexts[i]
         page.char_count_lst = json.dumps(char_count_lst, separators=(',', ':'))

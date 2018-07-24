@@ -175,7 +175,13 @@ class Reel(models.Model):
         return s
 
     def image_prefix(self):
-        '''图片名前半部分：${tcode}_${path1}_${path2}_${path3}_'''
+        '''图片名前半部分：${tcode}_${path1}_${path2}_${path3}_
+        eg. GL_79_1_10.cut
+        GL: tripitaka code
+        79: number of sid.(GL000790)
+        1:  reel_no in this sutra
+        10: page number in this reel
+        '''
         tcode = self.sutra.sid[0:2]
         filename_str = self.path_str()
         s = '%s_%s_' % (tcode, filename_str)

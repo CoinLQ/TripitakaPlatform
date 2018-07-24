@@ -14,14 +14,12 @@ class AutoPunct:
         try:
             r = requests.post(cls.AUTO_PUNCT_URL, json=payload, timeout=60)
             response = r.json()
+            logger.info(f"request {cls.AUTO_PUNCT_URL} for AUTO PUNCT Service:{response}")
             return ''.join(response[0]['pred'])
-        except RequestException:
-            logger.exception('auto punct failed.')
-            return None
         except:
-            logger.exception('auto punct failed.')
+            logger.exception(f'auto punct failed.{cls.AUTO_PUNCT_URL}')
             return None
-    
+
     PUNCT_CHARACTERS = '：，。；、！“”‘’？\n'
     @classmethod
     def extract_punct(cls, punct_text):

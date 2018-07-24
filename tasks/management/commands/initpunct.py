@@ -45,15 +45,18 @@ def save_lqreeltext(lqsutra, reel_no):
     admin = get_or_create_admin()
     try:
         lqreeltext = LQReelText.objects.get(lqreel=lqreel)
+        # logger.info(f"{lqreeltext} already exist, no need to create")
     except:
         lqreeltext = LQReelText(lqreel=lqreel, publisher=admin)
         filename = os.path.join(settings.BASE_DIR, 'data/sutra_text/%s_%03d.txt' % (lqsutra.sid, reel_no))
         with open(filename, 'r', encoding='utf-8') as f:
             text = f.read()
             lqreeltext.set_text(text)
+        logger.info(f"read text from {filename} into LQReelText:{lqreeltext.text}")
         lqreeltext.save()
         lqreel.text_ready = True
         lqreel.save(update_fields=['text_ready'])
+        # logger.info(f"created {lqreeltext}")
     return lqreeltext
 
 def create_lqpunct_task(lqreeltext, batchtask):
@@ -64,17 +67,24 @@ def create_lqpunct_task(lqreeltext, batchtask):
         task_puncts = AutoPunct.get_puncts_str(clean_separators(lqreeltext.text))
         lqpunct = LQPunct(lqreel=lqreel, reeltext=lqreeltext, punctuation=task_puncts)
         lqpunct.save()
+    logger.info(f"created LQPunct:{lqpunct}")
 
+    #Create 2 LQPUNCT Tasks
     for task_no in [1, 2]:
-        task = Task(batchtask=batchtask, typ=Task.TYPE_LQPUNCT, lqreel=lqreel,
-        lqtext=lqreeltext, result='[]',
-        task_no=task_no, status=Task.STATUS_READY,
-        publisher=batchtask.publisher)
+        task = Task(
+            batchtask=batchtask, typ=Task.TYPE_LQPUNCT, lqreel=lqreel,
+            lqtext=lqreeltext, result='[]',
+            task_no=task_no, status=Task.STATUS_READY,
+            publisher=batchtask.publisher)
         task.save()
-    task = Task(batchtask=batchtask, typ=Task.TYPE_LQPUNCT_VERIFY, lqreel=lqreel,
-    lqtext=lqreeltext,
-    task_no=0, status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
+        logger.info(f"created Task:{task}")
+    #Create 1 LQPUNCT_VERIFY Task
+    task = Task(
+        batchtask=batchtask, typ=Task.TYPE_LQPUNCT_VERIFY, lqreel=lqreel,
+        lqtext=lqreeltext,
+        task_no=0, status=Task.STATUS_NOT_READY, publisher=batchtask.publisher)
     task.save()
+    logger.info(f"created Task:{task}")
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
@@ -85,6 +95,7 @@ class Command(BaseCommand):
         # get LQSutra
         lqsutra = LQSutra.objects.get(sid='LQ003100') #大方廣佛華嚴經60卷
         lqreeltext = save_lqreeltext(lqsutra, 1)
+        logger.info(f"save_lqreeltext:{lqreeltext}")
 
         # CBETA第1卷
         CB = Tripitaka.objects.get(code='CB')
@@ -96,6 +107,7 @@ class Command(BaseCommand):
         # create BatchTask
         batchtask = BatchTask(priority=2, publisher=admin)
         batchtask.save()
+        logger.info(f"created batch task:{batchtask}")
 
         # 标点
         # Task.objects.filter(batchtask=batchtask, typ=Task.TYPE_PUNCT).delete()

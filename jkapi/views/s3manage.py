@@ -132,8 +132,9 @@ class BucketDetail(APIView):
                 ct = result['ct']
                 lst = [{
                            'key': ele['Prefix'],
-                           'Prefix': ele['Prefix'].split('/')[-2]
+                           'Prefix': int(ele['Prefix'].split('/')[-2]) if ele['Prefix'].split('/')[-2].isdigit() else ele['Prefix'].split('/')[-2]
                        } for ele in lst]
+                lst = sorted(lst, key=lambda X: X['Prefix'])
                 return (Response({'contents': lst, 'ct': ct}))
             else:
                 result = get_part_contents('Contents', key, name, ct)
@@ -144,11 +145,12 @@ class BucketDetail(APIView):
             ct = result['ct']
             lst = [{
                        'key': ele['Key'],
-                       'Prefix': ele['Key'].split('/')[-1],
+                       'Prefix': int(ele['Key'].split('/')[-1]) if ele['Key'].split('/')[-1].isdigit() else ele['Key'].split('/')[-1],
                        'leaf': True,
                        'path': 'https://s3.cn-north-1.amazonaws.com.cn/{}/{}'.format(name, ele['Key']),
                        'suffix': ele['Key'].split('.')[-1]
                    } for ele in lst]
+            lst = sorted(lst, key=lambda X: X['Prefix'])
         else:
             lst = []
             ct = ''

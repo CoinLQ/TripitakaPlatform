@@ -20,9 +20,11 @@
       padding-bottom: 2px;
       border-radius: 10px;
     }
+
     img {
-      width: 40vw;
+      width: auto;
     }
+
     input.el-upload__input, div.navbar.content-navbar.navbar-default.navbar-xs {
       display: none;
     }
@@ -70,9 +72,9 @@
           </el-tab-pane>
           <el-tab-pane label="搜索" name="search">
             <div class="sutra-tree">
-            <el-input placeholder="请输入code" v-model="searchcode" width="20">
-              <el-button slot='append' icon="el-icon-search" @click="searchS3file"></el-button>
-            </el-input>
+              <el-input placeholder="请输入code：例如YB_27_1" v-model="searchcode" width="20">
+                <el-button slot='append' icon="el-icon-search" @click="searchS3file"></el-button>
+              </el-input>
 
               <table>
                 <thead>
@@ -147,6 +149,10 @@
   <script src="/static/js/element-ui.js"></script>
   <script src="/static/js/lodash.min.js"></script>
   <script>
+    function a() {
+      console.log('hhhh');
+    }
+    ;
     var app = new Vue({
       el: '#s3manage',
       delimiters: ['${', '}'],
@@ -157,8 +163,8 @@
         source_path: '',
         path_lst: [],
         showpic: true,
-        action: 'search',
-        searchcode: 'YB_27_1',
+        action: 'view',
+        searchcode: '',
         text: [],
         del_pop: false,
         rep_pop: false,
@@ -186,9 +192,17 @@
       },
       created: function () {
         var vm = this;
+        const loading = this.$loading({
+              lock: true,
+              text: '数据加载中',
+              spinner: 'el-icon-loading',
+              background: 'rgba(0, 0, 0, 0.7)'
+            });
         axios.get('/api/s3manage/buckets/').then(function (response) {
           vm.buckets = response.data.bucketnames;
+          loading.close();
         });
+
       },
       methods: {
         cancleRep(){
@@ -263,25 +277,36 @@
           });
           vm.rep_pop = false;
         },
-        clickNode: function (data, node, s) {
+        upNode: function () {
           var vm = this;
-          vm.cur_node = node;
+          var node = vm.click_node;
+          var data = vm.click_data;
           vm.cur_data = node.parent.data.children;
           if (node.data.Prefix === '...') {
-            axios.get('/api/s3manage/buckets/' + vm.cur_bucket + '/?key=' + node.parent.data.key + '&ct=' + encodeURIComponent(vm.ct)).then(function (response) {
-              vm.cur_data.pop(-1);
-              vm.cur_data = vm.cur_data.concat(response.data.contents);
-              vm.ct = response.data.ct;
-              if (response.data.ct != '') {
-                vm.cur_data.push(
-                    {
-                      'Prefix': '...'
-                    }
-                )
-              }
-              node.parent.data.children = vm.cur_data;
+            const loading = this.$loading({
+              lock: true,
+              text: '数据加载中',
+              spinner: 'el-icon-loading',
+              background: 'rgba(0, 0, 0, 0.7)'
             });
-
+            axios.get('/api/s3manage/buckets/' + vm.cur_bucket + '/?key=' + node.parent.data.key + '&ct=' + encodeURIComponent(vm.ct)).then(function (response) {
+              var newdata = response.data.contents;
+              if (vm.cur_data.indexOf(newdata[0]) == -1) {
+                vm.cur_data.pop(-1);
+                vm.cur_data = vm.cur_data.concat(newdata);
+                vm.cur_data = _.sortBy(vm.cur_data, function(n){return n.Prefix});
+                vm.ct = response.data.ct;
+                if (response.data.ct != '') {
+                  vm.cur_data.push(
+                      {
+                        'Prefix': '...'
+                      }
+                  )
+                }
+                node.parent.data.children = vm.cur_data;
+                loading.close();
+              }
+            });
           }
           else if (node.level === 0) {
           }
@@ -297,27 +322,48 @@
             else {
               vm.cur_key = node.data.key;
             }
-            axios.get('/api/s3manage/buckets/' + vm.cur_bucket + '/?key=' + vm.cur_key + '&ct=').then(function (response) {
-              cur_data = response.data.contents;
-              vm.ct = response.data.ct;
-              if (response.data.ct != '') {
-                cur_data.push(
-                    {
-                      'Prefix': '...'
-                    }
-                )
-              }
-              if (!data.children) {
-                vm.$set(data, 'children', []);
-              }
-              data.children = data.children.concat(cur_data);
-              data.expanded = true;
-            });
+            if(!data.children) {
+              const loading = this.$loading({
+                lock: true,
+                text: '数据加载中',
+                spinner: 'el-icon-loading',
+                background: 'rgba(0, 0, 0, 0.7)'
+              });
+
+              axios.get('/api/s3manage/buckets/' + vm.cur_bucket + '/?key=' + vm.cur_key + '&ct=').then(function (response) {
+                cur_data = response.data.contents;
+                vm.ct = response.data.ct;
+                if (response.data.ct != '') {
+                  cur_data.push(
+                      {
+                        'Prefix': '...'
+                      }
+                  )
+                }
+                if (!data.children) {
+                  vm.$set(data, 'children', []);
+                  data.children = data.children.concat(cur_data);
+                  data.expanded = true;
+                }
+                else {
+
+                }
+                loading.close();
+              });
+            }
+
           }
 
           if (data.leaf) {
 
           }
+        },
+        clickNode: function (data, node, s) {
+          var vm = this;
+          vm.click_data = data;
+          vm.click_node = node;
+          //if(data.children==[])
+          vm.upNode();
         },
         searchS3file(){
           var vm = this;

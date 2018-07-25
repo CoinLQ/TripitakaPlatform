@@ -24,7 +24,31 @@ def compact_json_dumps(obj):
     return json.dumps(obj, separators=(',', ':'))
 
 def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
-    char_lst = []
+    '''
+    生成校对之后的单字切分数据。每一个单字切分数据如下所示：
+    {
+        "h": 39.83,
+        "w": 40.81,
+        "x": 794.31,
+        "y": 156.95,
+        "cc": 0.009674,
+        "ch": "當",
+        "wcc": 0.003142,
+        "char_id": "c67001n01",
+        "char_no": 1,
+        "line_no": 1
+    }
+    如果opcode==equal，则直接取old_char_lst中的单字，加入到char_lst中。
+    如果opcode==delete，表示text1比text2多出了一些文字，这些文字需要添加到char_lst中。这个函数在添加的时候，没有从old_char_lst中复制坐标数据，这个问题以后可以再看。TODO
+    如果opcode==replace，表示text1中的文字要替换掉text2中的文字。即从old_char_lst取出单字，替换其中的'ch' field。
+    如果opcode==insert，表示text2比text1多出了一些文字，这些文字不需要加入到char_lst中，需要跳过。这一段代码，做了一个need_confirm的标记，没有看懂。TODO
+
+    :param text1: Manually Corrected text
+    :param text2: OCR Recognized text
+    :param old_char_lst:  这个单字切分数据中，只包含藏经图片的文字，不包含字符如换行符等。
+    :param debug:
+    :return:
+    '''
     old_char_lst_length = len(old_char_lst)
     i = 0
     for ch in text2:
@@ -33,10 +57,14 @@ def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
         if ch != '\n':
             old_char_lst[i]['ch'] = ch
             i += 1
+
+    char_index = 0 # 下一个从old_char_lst要取出的字
+
+    char_lst = []
+    char_lst_length = 0
     line_no = 1
     char_no = 1
-    char_index = 0 # 下一个从old_char_lst要取出的字
-    char_lst_length = 0
+
     opcodes = SequenceMatcher(None, text1, text2, False).get_opcodes()
     for tag, i1, i2, j1, j2 in opcodes:
         if debug:
@@ -44,7 +72,7 @@ def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
         if tag == 'equal':
             i = i1
             while i < i2:
-                if text1[i] == '\n':
+                if text1[i] == '\n':#skip new line
                     line_no += 1
                     char_no = 1
                 else:
@@ -89,7 +117,7 @@ def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
                         temp_char_index += 1
                     j += 1
                 i += 1
-
+            #跳过这段文字
             for ch in text2[j1:j2]:
                 if ch != '\n':
                     char_index += 1
@@ -133,7 +161,7 @@ def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
             add_count = i2 -i1
             for i in range(add_count):
                 ch = text1[i1 + i]
-                if ch == '\n':
+                if ch == '\n': #skip new line
                     line_no += 1
                     char_no = 1
                 else:
@@ -352,6 +380,10 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                 char_data['w'] = w
             except:
                 logger.exception('get_accurate_cut except: %s', json.dumps(char_data))
+    # line_count:line count of this page
+    # column_count: column count of this page
+    # char_count_lst: char count of each line
+    # add_count: ===0 in this function
     return char_lst, line_count, column_count, char_count_lst, add_count, wrong_count, confirm_count
 
 def get_char_region_cord(char_lst):
@@ -456,15 +488,7 @@ def compute_accurate_cut(reel, process_cut=True):
     print("[compute_accurate_cut]",reel.id,"start")
     use_original_cut = reel.sutra.tripitaka.use_original_cut
     sid = reel.sutra.sid
-    #ocr分片文本
-    pagetexts = []
-    if not use_original_cut:
-        try:
-            reel_ocr_text = ReelOCRText.objects.get(reel_id = reel.id)
-        except:
-            return None
-        pagetexts = reel_ocr_text.text[2:].split('\np\n')
-    print("[compute_accurate_cut]",reel.id,"reel_ocr_text","\np\n".join(pagetexts))
+
     #校正过的分片文本
     reel_correct_text = ReelCorrectText.objects.filter(reel=reel).order_by('-id').first()
     correct_pagetexts = []
@@ -477,7 +501,6 @@ def compute_accurate_cut(reel, process_cut=True):
     page_count = reel.end_vol_page - reel.start_vol_page + 1
     correct_page_count = len(correct_pagetexts)
 
-    #page_set在哪里定义的???
     reel.page_set.all().delete()
     for i in range(page_count):
         page_no = i + 1
@@ -493,8 +516,13 @@ def compute_accurate_cut(reel, process_cut=True):
             use_original_cut = True
         if not use_original_cut:
             try:
-                #print('vol_page: ', vol_page)
-                #print('%s\n----------\n%s\n----------' % (correct_pagetexts[i], pagetexts[i]))
+                # ocr分片文本
+                pagetexts = []
+                try:
+                    reel_ocr_text = ReelOCRText.objects.get(reel_id=reel.id)
+                except:
+                    return None
+                pagetexts = reel_ocr_text.text[2:].split('\np\n')
                 char_lst, line_count, column_count, char_count_lst, cut_add_count, cut_wrong_count, cut_confirm_count = get_accurate_cut(correct_pagetexts[i], pagetexts[i], cut_file, pid)
                 min_x, min_y, max_x, max_y = get_char_region_cord(char_lst)
                 cut_verify_count = cut_add_count + cut_wrong_count + cut_confirm_count

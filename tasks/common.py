@@ -176,6 +176,32 @@ def generate_accurate_chars(text1, text2, old_char_lst, debug=False):
     return char_lst
 
 def count_line_char_count(text):
+    """
+    :param text:
+        b
+        大方廣佛華嚴經卷第一湯一
+        東晉天竺三藏佛陀跋陀羅等譯
+        世間淨眼品第一之一
+        如是我聞一時佛在摩竭提國寂滅道場始
+        成正覺其地金剛具足嚴淨衆寳雜華以爲
+        莊飾上妙寳輪圓滿清淨無量妙色種種莊
+        嚴猶如大海寳幢旛蓋光明照耀妙香花鬘
+        周市圍遶七寳羅網彌覆其上雨無盡寳顯
+        現自在諸雜寳樹華葉光茂佛神力故令此
+        場地廣博嚴淨光明普照一切奇特妙寳積
+        聚無量善根莊嚴道場其菩提樹高顯殊特
+        清淨瑠璃以爲其幹妙寳枝條莊嚴清淨寳
+        葉垂布猶如重雲雜色寳華間錯其間如意
+        摩尼以爲其果樹光普照十方世界種種現
+        化施作佛事不可盡極普現大乗菩薩道教
+    :return:
+        bars:[
+                [],
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+            ]
+        line_char_count:
+            {1: 12, 2: 13, 3: 9, 4: 17, 5: 17, 6: 17, 7: 17, 8: 17, 9: 17, 10: 17, 11: 17, 12: 17, 13: 17, 14: 17, 15: 17}
+    """
     line_char_count = {}
     lines = text.split('\n')
     line_no = 1
@@ -230,6 +256,11 @@ def get_bar_cord_lst(bars, line_char_count, char_map):
     return bar_cord_lst
 
 def get_line_cord_lst(char_lst):
+    '''
+    计算每一行的平均X坐标、宽度
+    :param char_lst:
+    :return:
+    '''
     line_cord_lst = [] # 每行的平均x,w
     total_x = 0
     total_w = 0
@@ -295,6 +326,13 @@ def get_accurate_cut(text1, text2, cut_json, pid):
         print('pid: ', pid)
     char_lst = generate_accurate_chars(clean_text1, clean_text2, old_char_lst, debug)
 
+    '''
+    计算
+        line_count
+        column_count
+        char_count_lst
+        char_map
+    '''
     column_count = 0
     if not char_lst:
         return char_lst, 0, 0, [], 0, 0, 0
@@ -382,7 +420,7 @@ def get_accurate_cut(text1, text2, cut_json, pid):
                 logger.exception('get_accurate_cut except: %s', json.dumps(char_data))
     # line_count:line count of this page
     # column_count: column count of this page
-    # char_count_lst: char count of each line
+    # char_count_lst: array,char count of each line
     # add_count: ===0 in this function
     return char_lst, line_count, column_count, char_count_lst, add_count, wrong_count, confirm_count
 

@@ -419,6 +419,9 @@ def rebuild_reel_pagerects_for_s3(reel):
 
 def rebuild_reel_pagerects(reel):
     for page in reel.page_set.all():
+        if Rect.objects.filter(page_pid=page.pk).first() and page.pagerects.first():
+            break
+        print(page.pk)
         Rect.objects.filter(page_pid=page.pk).all().delete()
         page.pagerects.all().delete()
 

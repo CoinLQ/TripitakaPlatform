@@ -16,9 +16,8 @@ import traceback
 import re, json
 
 
-tcode_lst1 = ['PL', 'SX', 'YB', 'QL', 'ZH', 'QS', 'ZC']
-tcode_lst2 = ['GL', 'LC']
-
+tcode_lst = ['PL', 'SX',  'QL', 'ZH', 'YB', 'QS', 'ZC', 'GL', 'LC']
+tcode_lst = ['PL']
 # LQ003100
 
 class Command(BaseCommand):
@@ -30,8 +29,10 @@ class Command(BaseCommand):
         
         for sid in options['LQSutra_sid']:
             lqsutra = LQSutra.objects.get(sid=sid)
-            tripitaka = Tripitaka.objects.get(code='YB') 
-            sutra = Sutra.objects.get(lqsutra=lqsutra, tripitaka=tripitaka)
-            for reel in sutra.reel_set.all():
-                rebuild_reel_pagerects_for_s3(reel)
-                
+            for tcode in tcode_lst:
+                tripitaka = Tripitaka.objects.get(code=tcode) 
+                sutra = Sutra.objects.get(lqsutra=lqsutra, tripitaka=tripitaka)
+                for reel in sutra.reel_set.all():
+                    if not reel.page_set.first().pagerects.first():
+                        rebuild_reel_pagerects(reel)
+                    

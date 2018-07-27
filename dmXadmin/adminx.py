@@ -307,7 +307,7 @@ class CssPlugin(BaseAdminPlugin):
     css_add = True
     def block_extrahead(self, context, nodes):
         css = '<style>' \
-              '.text-center p{ position:absolute; bottom:0; width:100%}' \
+              '.text-center p{ position:fixed; bottom:0; width:100%}' \
               '</style>'
         nodes.append(css)
 site.register_plugin(CssPlugin, views.BaseAdminView)

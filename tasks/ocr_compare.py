@@ -3,7 +3,6 @@ from cdifflib import CSequenceMatcher
 SequenceMatcher=CSequenceMatcher
 import re, sys
 
-from tdata.models import Configuration
 from tasks.models import CorrectSeg
 from tasks.common import clean_separators
 from tasks.utils.text_align import get_align_pos

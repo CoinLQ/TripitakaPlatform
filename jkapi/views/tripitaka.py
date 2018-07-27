@@ -1,4 +1,5 @@
 from django.shortcuts import get_list_or_404
+from django.conf import settings
 from rest_framework import viewsets, generics, filters
 from rest_framework import pagination
 from rest_framework.views import APIView
@@ -254,7 +255,7 @@ s3c = boto3.client('s3')
 class TripitakaVolumePage(APIView):
     def get(self, request, key, format=None):
         result_lst = []
-        v_code_url = 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-image/vcode/' + key.split('_')[0] + '/' + key + '.txt'
+        v_code_url = settings.FILE_URL_PREFIX + '/lqdzj-image/vcode/' + key.split('_')[0] + '/' + key + '.txt'
         try:
             page_code_lst = json.loads(urllib.request.urlopen(v_code_url).readlines()[0])
         except Exception as e:
@@ -350,7 +351,7 @@ class TripitakaImageList(APIView):
         host = 'http://' + settings.FRONT_HOST
         for t in list(tripitaka_list):
             items.append({
-                'image': "https://s3.cn-north-1.amazonaws.com.cn/lqdzj-images/cover/cover_{}.jpg".format(t.code),
+                'image': "{}/lqdzj-images/cover/cover_{}.jpg".format(settings.FILE_URL_PREFIX, t.code),
                 'name': t.name,
                 'code': t.code,
                 'url': "{}/tripitaka/{}/".format(host, t.code)

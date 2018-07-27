@@ -733,3 +733,15 @@ class AbnormalLineCountTask(models.Model):
         verbose_name = '异常文本行数检查任务'
         verbose_name_plural = '异常文本行数检查任务'
 
+class Configuration(models.Model):
+    code = models.CharField('代码', primary_key=True, max_length=64)
+    key = models.CharField('名称', max_length=256)
+    value = models.TextField('值')
+    remark = models.TextField('备注', blank=True, default='')
+
+    class Meta:
+        verbose_name = '系统配置'
+        verbose_name_plural = '系统配置'
+
+    def __str__(self):
+        return self.key

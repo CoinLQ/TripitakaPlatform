@@ -180,8 +180,9 @@ STATICFILES_DIRS = [
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
-PAGE_IMAGE_URL_PREFIX = 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-images'
-COL_IMAGE_URL_PREFIX = 'https://s3.cn-north-1.amazonaws.com.cn/lqdzj-col'
+FILE_URL_PREFIX = 'https://s3.cn-north-1.amazonaws.com.cn'
+PAGE_IMAGE_URL_PREFIX = FILE_URL_PREFIX + '/lqdzj-images'
+COL_IMAGE_URL_PREFIX = FILE_URL_PREFIX + '/lqdzj-col'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated', ),

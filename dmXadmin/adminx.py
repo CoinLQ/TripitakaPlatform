@@ -160,8 +160,9 @@ class ConfigurationAdmin:
     def modify(self, instance):
         return '修改'
     modify.short_description = '操作'
-    list_display = ['task_timeout', 'modify']
+    list_display = ['key', 'code', 'value', 'remark', 'modify']
     list_display_links = ('modify',)
+    fields = ('key', 'value', 'remark')
     remove_permissions = ['add', 'delete']
 
 xadmin.site.register(LQSutra, LQSutraAdmin)

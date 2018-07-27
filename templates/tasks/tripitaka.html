@@ -241,9 +241,9 @@
           <div class="relative">
             <div class='scale-operation'>
               <el-button-group>
-                <el-button plain size="mini" icon="el-icon-plus" @click="scale +=1" round></el-button>
+                <el-button plain size="mini" icon="el-icon-plus" @click="scaleSmall" round></el-button>
                 <el-button plain size="mini" round>${ scale_rate }</el-button>
-                <el-button plain size="mini" icon="el-icon-minus" @click="scale -=1" round></el-button>
+                <el-button plain size="mini" icon="el-icon-minus" @click="scaleBig" round></el-button>
               </el-button-group>
             </div>
           </div>
@@ -310,12 +310,9 @@
   </div>
 {% endblock %}
 {% block foot_script %}
-<script src="{{ static('js/vue.js') }}"></script>
 <script src="{{ static('js/element-ui.js') }}"></script>
 <script src="{{ static('custom/js/punct.js') }}"></script>
 <script src="{{ static('custom/js/lqtripitaka.js') }}"></script>
-<script src="/static/js/element-ui.js"></script>
-
   <script>
     var app = new Vue({
       el: '#tripitaka',
@@ -408,6 +405,8 @@
         },
         page_lst: [],
         scale: 1,
+        scales: [0.25,0.5,1,2,3,4,5],
+        scaleIndex: 2,
         //展开数组
         expandlist: [],
         checkedlist: [],
@@ -478,14 +477,14 @@
           this.fetchVolumeList();
         },
         scale: function (val, oldVal) {
-          if (val > 5) {
-            this.scale = 5;
-            return
-          }
-          if (val < 1) {
-            this.scale = 1;
-            return;
-          }
+          // if (val > 5) {
+          //   this.scale = 5;
+          //   return
+          // }
+          // if (val < 1) {
+          //   this.scale = 1;
+          //   return;
+          // }
           if (val != oldVal) {
             this.setImg();
           }
@@ -597,6 +596,14 @@
         vm.setImg();
       },
       methods: {
+          scaleSmall:function(){
+          this.scaleIndex=Math.max(0,this.scaleIndex-1);
+          this.scale=this.scales[this.scaleIndex];
+      },
+      scaleBig:function(){
+          this.scaleIndex=Math.min(this.scales.length-1,this.scaleIndex+1);
+          this.scale=this.scales[this.scaleIndex];
+      },
         tabClick()
         {
 

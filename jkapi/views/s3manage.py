@@ -2,6 +2,7 @@ import boto3
 from rest_framework.views import APIView
 from rest_framework.response import Response
 import tdata.lib.image_name_encipher as encipher
+from django.conf import settings
 
 s3c = boto3.client('s3')
 
@@ -77,12 +78,12 @@ class SourceSearch(APIView):
                     key = gen_key(code) + suffix
                     signed_key = gen_signed_key(code) + suffix
                     s3c.get_object_acl(Bucket=bucket, Key=key)
-                    result_lst.append('https://s3.cn-north-1.amazonaws.com.cn/{}/{}'.format(bucket, key))
+                    result_lst.append('{}/{}/{}'.format(settings.FILE_URL_PREFIX, bucket, key))
                 except:
                     pass
                 try:
                     s3c.get_object_acl(Bucket=bucket, Key=signed_key)
-                    result_lst.append('https://s3.cn-north-1.amazonaws.com.cn/{}/{}'.format(bucket, signed_key))
+                    result_lst.append('{}/{}/{}'.format(settings.FILE_URL_PREFIX, bucket, signed_key))
                 except:
                     pass
         if result_lst:
@@ -108,7 +109,6 @@ class DelSource(APIView):
 class RepSource(APIView):
     def post(self, request, format=None):
         path = request.query_params['p']
-        # path = path.replace('https://s3.cn-north-1.amazonaws.com.cn/', '')
         split_pos = path.find('/')
         bucket = path[:split_pos]
         key = path[split_pos+1:]
@@ -132,8 +132,9 @@ class BucketDetail(APIView):
                 ct = result['ct']
                 lst = [{
                            'key': ele['Prefix'],
-                           'Prefix': ele['Prefix'].split('/')[-2]
+                           'Prefix': int(ele['Prefix'].split('/')[-2]) if ele['Prefix'].split('/')[-2].isdigit() else ele['Prefix'].split('/')[-2]
                        } for ele in lst]
+                lst = sorted(lst, key=lambda X: X['Prefix'])
                 return (Response({'contents': lst, 'ct': ct}))
             else:
                 result = get_part_contents('Contents', key, name, ct)
@@ -144,11 +145,12 @@ class BucketDetail(APIView):
             ct = result['ct']
             lst = [{
                        'key': ele['Key'],
-                       'Prefix': ele['Key'].split('/')[-1],
+                       'Prefix': int(ele['Key'].split('/')[-1]) if ele['Key'].split('/')[-1].isdigit() else ele['Key'].split('/')[-1],
                        'leaf': True,
-                       'path': 'https://s3.cn-north-1.amazonaws.com.cn/{}/{}'.format(name, ele['Key']),
+                       'path': '{}/{}/{}'.format(settings.FILE_URL_PREFIX, name, ele['Key']),
                        'suffix': ele['Key'].split('.')[-1]
                    } for ele in lst]
+            lst = sorted(lst, key=lambda X: X['Prefix'])
         else:
             lst = []
             ct = ''

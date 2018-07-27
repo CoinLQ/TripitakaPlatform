@@ -1,4 +1,4 @@
-from tdata.models import Configuration
+from tasks.models import Configuration
 
 class VariantManager(object):
     def __init__(self):
@@ -8,9 +8,10 @@ class VariantManager(object):
         if self.variant_map:
             return
         ch_set = set(text)
-        config = Configuration.objects.first()
+        variant_conf = Configuration.objects.filter(code='variant').first()
+        variant = variant_conf.value
         variant_map = {}
-        for line in config.variant.split('\n'):
+        for line in variant.split('\n'):
             line = line.strip()
             if not line:
                 continue

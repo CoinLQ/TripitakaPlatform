@@ -359,18 +359,6 @@ class Column(models.Model):
     x1 = models.SmallIntegerField('X1坐标', default=0)
     y1 = models.SmallIntegerField('Y1坐标', default=0)
 
-class Configuration(models.Model):
-    id = models.PositiveSmallIntegerField(primary_key=True, editable=False)
-    variant = models.TextField('异体字列表', default='')
-    task_timeout = models.IntegerField('校勘任务自动回收时间（秒）', default=86400*7)
-
-    class Meta:
-        verbose_name = '系统配置'
-        verbose_name_plural = '系统配置'
-
-    def __str__(self):
-        return '当前配置'
-
 class EmailVerifycode(models.Model):
     # 验证码
     code = models.CharField(max_length=20, verbose_name=u"验证码")

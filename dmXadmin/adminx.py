@@ -7,6 +7,7 @@ from xadmin.views.base import filter_hook
 from xadmin.views.list import COL_LIST_VAR
 from django.template.response import TemplateResponse
 from django.template import loader
+from django.conf import settings
 
 from tdata.models import *
 from tasks.models import *
@@ -620,11 +621,15 @@ class PageTaskAdmin(object):
     def modify(self, instance):
         return '修改'
     modify.short_description = '操作'
+    def task_link(self, instance):
+        return '<a target="_blank" href="http://%s/collate/pagetask/%s/">查看</a>' % (settings.FRONT_HOST, instance.number)
+    task_link.allow_tags = True
+    task_link.short_description = '查看'
 
     list_display = ("number", "schedule", "ttype", "status",
-                    "update_date", "page_set", "owner", "modify")
+                    "update_date", "page_set", "owner", "task_link", "modify")
     list_display_links = ("modify")
-    list_filter = ("number", 'update_date')
+    list_filter = ("number", 'update_date', "status")
     search_fields = ["owner__email", "status"]
     list_editable = ('owner', "status")
     date_hierarchy = 'update_date'  # 详细时间分层筛选
@@ -636,10 +641,14 @@ class PageVerifyTaskAdmin(object):
     def modify(self, instance):
         return '修改'
     modify.short_description = '操作'
+    def task_link(self, instance):
+        return '<a target="_blank" href="http://%s/collate/pagetask/%s/">查看</a>' % (settings.FRONT_HOST, instance.number)
+    task_link.allow_tags = True
+    task_link.short_description = '查看'
     list_display = ("number", "schedule", "ttype", "status",
-                    "update_date", "page_set", "owner", "modify")
+                    "update_date", "page_set", "owner", "task_link", "modify")
     list_display_links = ("modify",)
-    list_filter = ("number", 'update_date')
+    list_filter = ("number", 'update_date', "status")
     search_fields = ["owner__email", "status"]
     list_editable = ('owner', "status")
     date_hierarchy = 'update_date'  # 详细时间分层筛选

@@ -51,10 +51,7 @@ def send_verifycode_email(email, send_type, username):
         miwen = miwenToNew(miwen)
         mingwen = miwenToOld(miwen)
         mingwen = bianma(jiemi_key, mingwen)
-        if settings.DEBUG:
-            host_url = settings.FRONT_HOST + "/activate"
-        else:
-            host_url = settings.PUBLIC_HOST + "/activate"
+        host_url = settings.FRONT_HOST + "/activate"
         active_url = "http://" + '/'.join([host_url, miwen])
         # 发送邮件
         from_email = settings.EMAIL_FROM

@@ -627,7 +627,7 @@ class PageTaskAdmin(object):
     task_link.short_description = '查看'
 
     list_display = ("number", "schedule", "ttype", "status",
-                    "update_date", "page_set", "owner", "task_link", "modify")
+                    "update_date", "owner", "task_link", "modify")
     list_display_links = ("modify")
     list_filter = ("number", 'update_date', "status")
     search_fields = ["owner__email", "status"]
@@ -646,7 +646,7 @@ class PageVerifyTaskAdmin(object):
     task_link.allow_tags = True
     task_link.short_description = '查看'
     list_display = ("number", "schedule", "ttype", "status",
-                    "update_date", "page_set", "owner", "task_link", "modify")
+                    "update_date", "owner", "task_link", "modify")
     list_display_links = ("modify",)
     list_filter = ("number", 'update_date', "status")
     search_fields = ["owner__email", "status"]

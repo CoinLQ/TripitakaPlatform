@@ -402,6 +402,9 @@ def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
 
 def rebuild_reel_pagerects_for_s3(reel):
     for page in reel.page_set.all():
+        if Rect.objects.filter(page_pid=page.pk).first() and page.pagerects.first():
+            break
+        print(page.pk)
         Rect.objects.filter(page_pid=page.pk).all().delete()
         page.pagerects.all().delete()
         cut_file = fetch_cut_file(reel, page.page_no, force_download=True)

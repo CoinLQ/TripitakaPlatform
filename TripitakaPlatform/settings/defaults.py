@@ -346,7 +346,6 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 100000
 UPLOAD_COLUMN_IMAGE = True 
 
 FRONT_HOST = 'work.lqdzj.cn'
-PUBLIC_HOST = 'work.lqdzj.cn'
 
 # logging
 LOGGING = {

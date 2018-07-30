@@ -36,6 +36,5 @@ class Command(BaseCommand):
                     # 如果卷下有页，残卷无页要略过
                     if reel.page_set.first():
                         # 如果有页但是没有切分方案，重建切分方案
-                        if not reel.page_set.first().pagerects.first():
-                            rebuild_reel_pagerects(reel)
+                        rebuild_reel_pagerects(reel)
                     

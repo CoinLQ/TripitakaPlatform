@@ -401,10 +401,11 @@ def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
     return data
 
 def rebuild_reel_pagerects_for_s3(reel):
+    schedule = Schedule.objects.filter(reel=reel).first()
+    if schedule:
+        for sched in Schedule.objects.filter(reel=reel):
+            PageTask.objects.filter(schedule=sched).all().delete()
     for page in reel.page_set.all():
-        if Rect.objects.filter(page_pid=page.pk).first() and page.pagerects.first():
-            break
-        print(page.pk)
         Rect.objects.filter(page_pid=page.pk).all().delete()
         page.pagerects.all().delete()
         cut_file = fetch_cut_file(reel, page.page_no, force_download=True)
@@ -422,8 +423,8 @@ def rebuild_reel_pagerects_for_s3(reel):
 
 def rebuild_reel_pagerects(reel):
     for page in reel.page_set.all():
-        if Rect.objects.filter(page_pid=page.pk).first() and page.pagerects.first():
-            break
+        if Rect.objects.filter(page_pid=page.pk).first():
+            continue
         print(page.pk)
         Rect.objects.filter(page_pid=page.pk).all().delete()
         page.pagerects.all().delete()

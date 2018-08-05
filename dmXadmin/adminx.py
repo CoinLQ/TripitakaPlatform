@@ -16,9 +16,10 @@ from pretask.models import *
 from jwt_auth.models import Staff, UserManagement, UserAuthentication
 import dmXadmin.auth
 from tasks.task_controller import correct_update_async, regenerate_correctseg_async
+from dmXadmin.plugin import ImportDataFromFilePlugin
 
 # 龙泉经目 LQSutra
-
+site.register_plugin(ImportDataFromFilePlugin, ListAdminView)
 
 class LQSutraAdmin(object):
     def modify(self, instance):
@@ -35,6 +36,7 @@ class LQSutraAdmin(object):
 
 
 class TripitakaAdmin(object):
+    enableImport=True
     list_display = ['name', 'shortname', 'code', 'modify']
 
     def modify(self, instance):

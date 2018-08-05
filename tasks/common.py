@@ -399,6 +399,31 @@ def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
             fout.write(data)
     return data
 
+def rebuild_page_pagerects_for_s3(page):
+    reel = page.reel
+    schedule = Schedule.objects.filter(reels=reel).first()
+    if schedule:
+        for sched in Schedule.objects.filter(reels=reel):
+            PageTask.objects.filter(schedule=sched, pagerect=page.pagerects.first()).all().delete()
+            PageVerifyTask.objects.filter(schedule=sched, pagerect=page.pagerects.first()).all().delete()
+    Rect.objects.filter(page_pid=page.pk).all().delete()
+    page.pagerects.all().delete()
+    cut_file = fetch_cut_file(reel, page.page_no, force_download=True)        
+    try:
+        print(page.pk)
+        page.cut_info=cut_file
+        page.save()
+        cut_info_dict = json.loads(cut_file)
+        pagerect = PageRect(page=page, reel=page.reel, rect_set=cut_info_dict['char_data'])
+        pagerect.save()
+        pagerect.rebuild_rect()
+    except:
+        logger.exception('rebuild_reel_pagerects_for_s3 failed.')
+    task_no = "%s_%05X" % (schedule.schedule_no, PageTask().task_id())    
+    task = PageTask.objects.create(number=task_no, schedule=schedule, ttype=SliceType.PPAGE, count=1, pagerect=pagerect,
+                                  status=TaskStatus.NOT_GOT, page_set=[page.pk])
+    #task.save()
+
 def rebuild_reel_pagerects_for_s3(reel):
     schedule = Schedule.objects.filter(reels=reel).first()
     if schedule:

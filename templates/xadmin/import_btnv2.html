@@ -1,0 +1,44 @@
+<div class="btn-group layout-btns">
+
+    <!--<form enctype='multipart/form-data' action='/xadmin-api/import_tripitaka_from_excel' method='POST'>-->
+    <button class="btn btn-primary btn-sm" onclick="onBrowseFS()"><span>选择Excel文件</span></button>
+        <input type='file' name='excel_file' class="btn btn-default btn-sm" style="display: none" id="input_excel_file"/>
+        <!--<div class="btn-group layout-btns">-->
+
+        <!--<button type='submit' class="btn btn-default btn-sm"><span>导入</span>-->
+        <!--</button>-->
+        <!--</div>-->
+    <!--</form>-->
+</div>
+<div class="btn-group layout-btns">
+    <button class="btn btn-default btn-sm" id="btn_submit" onclick="uploadExcel()"><span>导入</span></button>
+    <!--<form enctype='multipart/form-data' action='/xadmin-api/import_tripitaka_from_excel' method='POST'>-->
+        <!--<div class="btn-group layout-btns">-->
+
+        <!--<button type='submit' class="btn btn-default btn-sm"><span>导入</span>-->
+        <!--</button>-->
+        <!--</div>-->
+    <!--</form>-->
+</div>
+<script>
+function onBrowseFS() {
+    $("#input_excel_file").click();
+}
+function uploadExcel(){
+    var formData = new FormData();
+    formData.append('excel_file', $('#input_excel_file')[0].files[0]);
+    $.ajax({
+        url: '/xadmin-api/import_tripitaka_from_excel',
+        type: 'POST',
+        cache: false,
+        data: formData,
+        processData: false,
+        contentType: false
+    }).done(function(res) {
+        console.log(res);
+    }).fail(function(res) {
+        console.log(res);
+    });
+
+}
+</script>

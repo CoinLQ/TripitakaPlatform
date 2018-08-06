@@ -16,8 +16,15 @@ class ImportDataFromFilePlugin(BaseAdminPlugin):
     def get_media(self, media):
         # if self.request.GET.get(REFRESH_VAR):
             # 放页面处于自动刷新状态时，加入自己的 js 制定刷新逻辑
-        for jsFile in [self.static('js/element-ui.js'),self.static('js/vue.js'),self.static('js/xadmin/import_data.js'),]:
+        for jsFile in [
+            self.static('js/element-ui.js'),
+            self.static('js/vue.js'),
+            self.static('js/xadmin/import_data.js'),]:
             media._js.insert(0, jsFile)
+        # for cssFile in [
+        #     self.static('css/element-ui.css'),
+        # ]:
+        #     media._css.insert(0, jsFile)
         return media
 
     # Block Views
@@ -26,5 +33,5 @@ class ImportDataFromFilePlugin(BaseAdminPlugin):
         # current_refresh = self.request.GET.get(REFRESH_VAR)
         # context.update({})
         # 可以将 HTML 片段加入 nodes 参数中
-        nodes.append(loader.render_to_string('xadmin/import_btn.html'))
+        nodes.insert(0,loader.render_to_string('xadmin/import_btnv2.html'))
 # 注册插件

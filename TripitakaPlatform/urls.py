@@ -27,11 +27,13 @@ from tools.views import *
 from tdata.views import email_vericode,reset_password,home_reset_password
 import xadmin
 import tdata
+import dmXadmin
 
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('backend/', admin.site.urls),
     path('manage/', xadmin.site.urls),
+    path('xadmin-api/',include('dmXadmin.urls')),
     url(r'^auth/', include("jwt_auth.urls", namespace="api-auth")),
     url(r'^api/', include('api.urls')),
     url(r'^auth/api-vericode/', email_vericode),

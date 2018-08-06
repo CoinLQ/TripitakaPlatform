@@ -101,10 +101,7 @@ def active_user(request, token):
                 EmailVerifycode.objects.filter(email=email, send_type = 'register').delete()  
             except Exception as e:
                 pass
-            if settings.DEBUG:
-                host_url = "http://" +  settings.FRONT_HOST 
-            else:
-                host_url = "http://" +  settings.PUBLIC_HOST 
+            host_url = "http://" +  settings.FRONT_HOST
             active_url = '/'.join([host_url + "/activate", miwen])
             return render(request, 'active_success.html', {'message': '激活成功请登录', 'url': host_url})
         else:

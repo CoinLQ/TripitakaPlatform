@@ -7,8 +7,7 @@ import traceback
 from tdata.models import *
 from tdata.lib.image_name_encipher import get_cut_url
 from tasks.models import *
-from rect.models import Schedule
-from rect.models import PageRect, Rect
+from rect.models import *
 
 from tasks.utils.cut_column import gene_new_col, crop_col_online
 
@@ -401,12 +400,21 @@ def fetch_cut_file(reel, vol_page, suffix='cut', force_download=False):
     return data
 
 def rebuild_reel_pagerects_for_s3(reel):
+    schedule = Schedule.objects.filter(reels=reel).first()
+    if schedule:
+        for sched in Schedule.objects.filter(reels=reel):
+            PageTask.objects.filter(schedule=sched).all().delete()
+            PageVerifyTask.objects.filter(schedule=sched).all().delete()
+            sched.delete()
     for page in reel.page_set.all():
+        print(page.pk)
         Rect.objects.filter(page_pid=page.pk).all().delete()
         page.pagerects.all().delete()
         cut_file = fetch_cut_file(reel, page.page_no, force_download=True)
         
         try:
+            page.cut_info=cut_file
+            page.save()
             cut_info_dict = json.loads(cut_file)
             pagerect = PageRect(page=page, reel=page.reel, rect_set=cut_info_dict['char_data'])
             pagerect.save()
@@ -419,6 +427,9 @@ def rebuild_reel_pagerects_for_s3(reel):
 
 def rebuild_reel_pagerects(reel):
     for page in reel.page_set.all():
+        if Rect.objects.filter(page_pid=page.pk).first():
+            continue
+        print(page.pk)
         Rect.objects.filter(page_pid=page.pk).all().delete()
         page.pagerects.all().delete()
 

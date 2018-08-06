@@ -495,7 +495,7 @@ class Schedule(models.Model, ModelDiffMixin):
         schedule.reels.add(reel)
         schedule.reels.update(cut_ready=True)
         Schedule_Task_Statistical(schedule=schedule).save()
-        Reel_Task_Statistical.gen_pptask_by_plan_sync()
+        allocateTasks(schedule, reel, SliceType.PPAGE)
 
     class Meta:
         verbose_name = u"切分计划"
@@ -566,7 +566,7 @@ class Reel_Task_Statistical(models.Model):
                     if rtask.amount_of_pptasks != -1:
                         continue
                     count = allocateTasks(stask.schedule, rtask.reel, SliceType.PPAGE)
-                    rtask.amount_of_pptasks = count * 2
+                    rtask.amount_of_pptasks = count
                     rtask.save(update_fields=['amount_of_pptasks'])
                 # 检查每卷大于-1，开启总计划，更新任务数。
                 quertset = Reel_Task_Statistical.objects.filter(schedule=stask.schedule)

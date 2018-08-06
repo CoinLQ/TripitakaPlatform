@@ -14,7 +14,7 @@ import re, json
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        zip_file_url = 'https://s3.cn-north-1.amazonaws.com.cn/sutra-text/GL.zip'
+        zip_file_url = settings.FILE_URL_PREFIX + '/sutra-text/GL.zip'
         local_file = '%s/logs/GL.zip' % settings.BASE_DIR
         if os.path.exists(local_file):
             with open(local_file, 'rb') as f:

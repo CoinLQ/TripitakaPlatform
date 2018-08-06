@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from .models import BatchTask, Task, CorrectSeg,\
 ReelDiff, DiffSeg, DiffSegText, DiffSegResult, ReelCorrectText, LQReelText,\
-Punct, LQPunct, JudgeFeedback, LQPunctFeedback, Mark, MarkUnit
+Punct, LQPunct, JudgeFeedback, LQPunctFeedback, Mark, MarkUnit, Configuration
 
 admin.site.register(BatchTask)
 admin.site.register(Task)
@@ -20,6 +20,7 @@ admin.site.register(Punct)
 admin.site.register(LQPunct)
 admin.site.register(Mark)
 admin.site.register(MarkUnit)
+admin.site.register(Configuration)
 
 class JudgeFeedbackAdmin(admin.ModelAdmin):
     list_display = ['lqsutra_name', 'reel_no']

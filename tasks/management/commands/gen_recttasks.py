@@ -16,9 +16,8 @@ import traceback
 import re, json
 
 
-tcode_lst1 = ['PL', 'SX', 'YB', 'QL', 'ZH', 'QS', 'ZC']
-tcode_lst2 = ['GL', 'LC']
-
+tcode_lst = ['PL', 'SX',  'QL', 'ZH', 'YB', 'QS', 'ZC', 'GL', 'LC']
+tcode_lst = ['PL']
 # LQ003100
 
 class Command(BaseCommand):
@@ -30,8 +29,12 @@ class Command(BaseCommand):
         
         for sid in options['LQSutra_sid']:
             lqsutra = LQSutra.objects.get(sid=sid)
-            tripitaka = Tripitaka.objects.get(code='YB') 
-            sutra = Sutra.objects.get(lqsutra=lqsutra, tripitaka=tripitaka)
-            for reel in sutra.reel_set.all():
-                rebuild_reel_pagerects_for_s3(reel)
-                
+            for tcode in tcode_lst:
+                tripitaka = Tripitaka.objects.get(code=tcode) 
+                sutra = Sutra.objects.get(lqsutra=lqsutra, tripitaka=tripitaka)
+                for reel in sutra.reel_set.all():
+                    # 如果卷下有页，残卷无页要略过
+                    if reel.page_set.first():
+                        # 如果有页但是没有切分方案，重建切分方案
+                        rebuild_reel_pagerects_for_s3(reel)
+                    

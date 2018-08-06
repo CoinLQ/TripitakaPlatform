@@ -4,7 +4,7 @@ from dotmap import DotMap
 class Line(object):
     @classmethod
     def _pick_rtop_rectangle(cls, rects, height, width):
-        x1 = max(map(lambda Y: int(Y['x']), rects))
+        x1 = max(map(lambda Y: Y['x'], rects))
         return {'x': x1, 'y': 0, 'w': width, 'h': height}
 
     @staticmethod
@@ -26,6 +26,13 @@ class Line(object):
                 return False
 
 
+    @staticmethod
+    def _equal_with(_large_rect, _rect2):
+        _large_rect, rect2 = DotMap(_large_rect), DotMap(_rect2)
+        if (_large_rect.x == rect2.x):
+                return True
+        else:
+                return False
 
     @staticmethod
     def dequefilter(_rects, condition):
@@ -51,12 +58,20 @@ class Line(object):
         return inner_func
 
     @classmethod
+    def equal_with(cls, rect):
+        def inner_func(rect2):
+            return cls._equal_with(rect, rect2)
+        return inner_func
+
+    @classmethod
     def _pick_one_column(cls, cut_result):
-        max_height = max(map(lambda Y: int(Y['y']) + int(Y['h']), cut_result))
+        max_height = max(map(lambda Y: Y['y'] + Y['h'], cut_result))
         mean_width = int(np.mean(list(map(lambda X: int(X['w']), cut_result))))
         _rect = cls._pick_rtop_rectangle(cut_result, max_height, mean_width)
         col_rect = cls.dequefilter(cut_result, cls.intersect_with(_rect))
         if not col_rect:
             col_rect = cls.dequefilter(cut_result, cls.inside_with(_rect))
+            if not col_rect:
+                col_rect = cls.dequefilter(cut_result, cls.equal_with(_rect))
             print("Hint: inner case!")
         return sorted(col_rect, key=lambda Y: int(Y['y']))

@@ -8,7 +8,7 @@ from ccapi.pagination import CommonPageNumberPagination
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 from django.contrib.contenttypes.models import ContentType
-from tdata.models import Configuration
+from tasks.models import Configuration
 from tasks.serializers import TaskSerializer
 from tasks.models import Task, FeedbackBase, JudgeFeedback, LQPunctFeedback
 from tasks.task_controller import revoke_overdue_task_async, revoke_overdue_pagetask_async
@@ -166,8 +166,11 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
                 picked_at=timezone.now(),
                 status=Task.STATUS_PROCESSING)
             if count == 1:
-                conf = Configuration.objects.values('task_timeout').first()
-                task_timeout = conf['task_timeout']
+                try:
+                    task_timeout_conf = Configuration.objects.filter(code='task_timeout').first()
+                    task_timeout = int(task_timeout_conf.value)
+                except:
+                    task_timeout = 86400*7
                 revoke_overdue_task_async(pk, schedule=task_timeout)
         elif self.model_name == 'judgefeedback':
             count = JudgeFeedback.objects.filter(pk=pk, processor=None)\
@@ -179,15 +182,21 @@ class CommonListAPIView(ListCreateAPIView, RetrieveUpdateAPIView):
             count = PageTask.objects.filter(pk=pk, owner=None, status__lt=TaskStatus.HANDLING)\
             .update(owner=request.user, obtain_date=localtime(now()), status=TaskStatus.HANDLING)
             if count == 1:
-                conf = Configuration.objects.values('task_timeout').first()
-                task_timeout = conf['task_timeout']
+                try:
+                    task_timeout_conf = Configuration.objects.filter(code='task_timeout').first()
+                    task_timeout = int(task_timeout_conf.value)
+                except:
+                    task_timeout = 86400*7
                 revoke_overdue_pagetask_async(pk, schedule=task_timeout)
         elif self.model_name == 'pageverifytask':
             count = PageVerifyTask.objects.filter(pk=pk, owner=None, status__lt=TaskStatus.HANDLING)\
             .update(owner=request.user, obtain_date=localtime(now()), status=TaskStatus.HANDLING)
             if count == 1:
-                conf = Configuration.objects.values('task_timeout').first()
-                task_timeout = conf['task_timeout']
+                try:
+                    task_timeout_conf = Configuration.objects.filter(code='task_timeout').first()
+                    task_timeout = int(task_timeout_conf.value)
+                except:
+                    task_timeout = 86400*7
                 revoke_overdue_pagetask_async(pk, schedule=task_timeout)
         elif self.model_name == 'prepagecoltask':
             count = PrePageColTask.objects.filter(pk=pk, owner=None, status__lt=TaskStatus.HANDLING)\

@@ -29,7 +29,7 @@ class ImportDataFromFilePlugin(BaseAdminPlugin):
 
     # Block Views
     # 在页面中插入 HTML 片段，显示导入按钮。
-    def block_top_btns(self, context, nodes):
+    def block_top_toolbar(self, context, nodes):
         # current_refresh = self.request.GET.get(REFRESH_VAR)
         # context.update({})
         # 可以将 HTML 片段加入 nodes 参数中

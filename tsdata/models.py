@@ -112,8 +112,8 @@ class LQReel(BaseData):
     start_vol = models.SmallIntegerField('起始册')
     start_vol_page = models.SmallIntegerField('起始页码')
     end_vol = models.SmallIntegerField('终止册')
-    end_vol_page = models.SmallIntegerField('终止页码')
-    is_exist = models.BooleanField(verbose_name='卷是否存在', default=True)
+    end_vol_page = models.SmallIntegerField('终止页码')    
+    is_existed= models.BooleanField(verbose_name='卷是否存在', default=True)
     remark = models.TextField('备注', blank=True, default='')
 
     class Meta:

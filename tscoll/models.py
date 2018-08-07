@@ -39,7 +39,7 @@ class BaseTask(models.Model):
     executor = models.ForeignKey(Staff, null=True, blank=True, on_delete=models.SET_NULL, related_name='executor')
     picked_at = models.DateTimeField(verbose_name='执行时间', null=True, blank=True)
     finished_at = models.DateTimeField(verbose_name='完成时间', null=True, blank=True)
-    creator = models.ForeignKey(Staff, verbose_name='创建人', blank=True, null=True)
+    creator = models.ForeignKey(Staff, verbose_name='创建人', blank=True, null=True,on_delete=models.CASCADE)
     created_at = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)
     class Meta:
        abstract = True

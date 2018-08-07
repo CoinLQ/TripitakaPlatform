@@ -1,11 +1,52 @@
 from django.db import models
 from tsdata.models import Page,Tripitaka,Reel,LQReel,Sutra,LQSutra
+from jwt_auth.models import Staff
+
+class TaskStatus(object):
+    STATUS_NOT_READY = 1
+    STATUS_READY = 2
+    STATUS_PROCESSING = 3
+    STATUS_FINISHED = 4
+    STATUS_PAUSED = 5
+    STATUS_REMINDED = 6
+    STATUS_REVOKED = 7
+    STATUS_SYSTEM_PAUSED = 8
+    CHOICES = (
+        (STATUS_NOT_READY, '未就绪'),
+        (STATUS_READY, '待领取'),
+        (STATUS_PROCESSING, '进行中'),
+        (STATUS_PAUSED, '已暂停'),
+        (STATUS_FINISHED, '已完成'),
+        (STATUS_REMINDED, '已催单'),
+        (STATUS_REVOKED, '已回收'),
+        (STATUS_SYSTEM_PAUSED, '系统内暂停'),
+    )
+
+class PriorityLevel(object):
+    LOW = 1
+    MIDDLE = 2
+    HIGH = 3
+
+    CHOICES = (
+        (LOW, u'低'),
+        (MIDDLE, u'中'),
+        (HIGH, u'高'),
+    )
+
+class BaseTask(models.Model):
+    status = models.SmallIntegerField(verbose_name='状态', choices=TaskStatus.CHOICES, default=TaskStatus.STATUS_NOT_READY)
+    priority = models.SmallIntegerField(verbose_name='优先级', choices=PriorityLevel.CHOICES, default=PriorityLevel.LOW)
+    executor = models.ForeignKey(Staff, null=True, blank=True, on_delete=models.SET_NULL, related_name='executor')
+    picked_at = models.DateTimeField(verbose_name='执行时间', null=True, blank=True)
+    finished_at = models.DateTimeField(verbose_name='完成时间', null=True, blank=True)
+    creator = models.ForeignKey(Staff, verbose_name='创建人', blank=True, null=True)
+    created_at = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)
 
 # Create your models here.
 
-#【proofread】 标记: 文字校对  
+#【proofread】 标记: 文字校对
 class proofread_reelstatus(models.Model):
-    reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False)        
+    reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False)
     initial_1st_status = models.SmallIntegerField(verbose_name='初较状态')
     initial_2nd_status = models.SmallIntegerField(verbose_name='二较状态')
     initial_3rd_status = models.SmallIntegerField(verbose_name='三较状态')

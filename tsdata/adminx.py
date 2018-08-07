@@ -37,7 +37,7 @@ class TripitakaAdmin(object):
     search_fields = ['name'] #可以搜索的字段
     list_filter = ['name']
     ordering = ['id', ]
-
+    use_related_menu = False
 
 
 # 实体经  Sutra

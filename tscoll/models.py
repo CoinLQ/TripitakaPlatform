@@ -36,10 +36,10 @@ class PriorityLevel(object):
 class BaseTask(models.Model):
     status = models.SmallIntegerField(verbose_name='状态', choices=TaskStatus.CHOICES, default=TaskStatus.STATUS_NOT_READY)
     priority = models.SmallIntegerField(verbose_name='优先级', choices=PriorityLevel.CHOICES, default=PriorityLevel.LOW)
-    executor = models.ForeignKey(Staff, null=True, blank=True, on_delete=models.SET_NULL, related_name='executor')
+    executor = models.ForeignKey(Staff, null=True, blank=True, on_delete=models.SET_NULL, related_name='%(app_label)s_%(class)s_executor')
     picked_at = models.DateTimeField(verbose_name='执行时间', null=True, blank=True)
     finished_at = models.DateTimeField(verbose_name='完成时间', null=True, blank=True)
-    creator = models.ForeignKey(Staff, verbose_name='创建人', blank=True, null=True)
+    creator = models.ForeignKey(Staff, verbose_name='创建人', blank=True, null=True, on_delete=models.SET_NULL, related_name='%(app_label)s_%(class)s_creator')
     created_at = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)
     class Meta:
        abstract = True

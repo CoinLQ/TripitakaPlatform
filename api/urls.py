@@ -22,11 +22,13 @@ from jkapi.views.volumn import VolumeViewSet
 from jkapi.views.judge_feedback import JudgeFeedbackList, MyJudgeFeedbackList, JudgeFeedbackDetail, JudgeFeedbackTask
 from jkapi.views.tripitaka import CorrectFeedbackViewset, CorrectFeedbackDetailViewset, TripitakaPageData, TripitakaReelData, TripitakaVolumePage, TripitakaVolumeList, MyCorrectFeedbackList
 from jkapi.views import s3manage
+from testing.views import TestViewSet
 
 router = routers.DefaultRouter()
 router.register(r'pagerect', PageRectViewSet)
 router.register(r'rect', RectViewSet)
 router.register(r'schedule', ScheduleViewSet)
+router.register(r'test', TestViewSet)
 
 router.register(r'pagetask', PageTaskViewSet)
 router.register(r'pageverifytask', PageVerifyTaskViewSet)

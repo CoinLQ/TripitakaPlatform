@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'xadmin',
     'crispy_forms',
     'xapps',
+    'testing'
 ]
 
 MIDDLEWARE = [
@@ -133,8 +134,8 @@ DATABASES = {
         'NAME': 'tripitaka_platform',
         'USER': 'lqzj',
         'PASSWORD': 'lqdzjsql',
-        #'HOST': '192.168.2.10'
-        'HOST': 'localhost'
+        'HOST': '192.168.2.10'
+        #'HOST': '10.1.1.152'
     }
 }
 

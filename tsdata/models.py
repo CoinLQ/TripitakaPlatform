@@ -48,45 +48,7 @@ class Volume(BaseData):
 
     def __str__(self):
         return '%s: 第%s册' % (self.tripitaka.name, self.vol_no)
-
-
-class LQSutra(BaseData):
-    sid = models.CharField(verbose_name='龙泉经号', max_length=8, unique=True)  # （为"LQ"+ 经序号 + 别本号）
-    code = models.CharField(verbose_name='龙泉经目编码', max_length=5, blank=False)
-    variant_code = models.CharField(verbose_name='别本号', max_length=1, default='0')
-    name = models.CharField(verbose_name='龙泉经名', max_length=64, blank=False)
-    total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
-    cur_reels = models.IntegerField(verbose_name='实际卷数', blank=True, default=1)
-    author = models.CharField(verbose_name='著译者', max_length=255, blank=True)
-    remark = models.TextField('备注', blank=True, default='')
-
-    class Meta:
-        verbose_name = u"龙泉经目"
-        verbose_name_plural = u"龙泉经目"
-
-    def __str__(self):
-        return '%s: %s' % (self.sid, self.name)
-
-
-class LQReel(BaseData):
-    lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', on_delete=models.CASCADE)
-    reel_no = models.SmallIntegerField('卷序号')
-    start_vol = models.SmallIntegerField('起始册')
-    start_vol_page = models.SmallIntegerField('起始页码')
-    end_vol = models.SmallIntegerField('终止册')
-    end_vol_page = models.SmallIntegerField('终止页码')
-    is_exist = models.BooleanField(verbose_name='卷是否存在', default=True)
-    remark = models.TextField('备注', blank=True, default='')
-
-    class Meta:
-        verbose_name = '龙泉藏经卷'
-        verbose_name_plural = '龙泉藏经卷'
-        unique_together = (('lqsutra', 'reel_no'),)
-        ordering = ('id',)
-
-    def __str__(self):
-        return '%s (第%s卷)' % (self.lqsutra, self.reel_no)
-
+ 
 
 class LQSutra(BaseData):
     sid = models.CharField(verbose_name='龙泉经号', max_length=8, unique=True)  # （为"LQ"+ 经序号 + 别本号）
@@ -112,8 +74,8 @@ class LQReel(BaseData):
     start_vol = models.SmallIntegerField('起始册')
     start_vol_page = models.SmallIntegerField('起始页码')
     end_vol = models.SmallIntegerField('终止册')
-    end_vol_page = models.SmallIntegerField('终止页码')
-    is_exist = models.BooleanField(verbose_name='卷是否存在', default=True)
+    end_vol_page = models.SmallIntegerField('终止页码')    
+    is_existed= models.BooleanField(verbose_name='卷是否存在', default=True)
     remark = models.TextField('备注', blank=True, default='')
 
     class Meta:

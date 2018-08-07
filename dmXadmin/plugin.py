@@ -1,14 +1,14 @@
 from django.template import loader
 
-from xadmin.sites import site
-from xadmin.views import BaseAdminPlugin, ListAdminView
+from xadmin.views import BaseAdminPlugin
 
 REFRESH_VAR = '_refresh'
 
 # 该插件：加了一个导入按钮
 class ImportDataFromFilePlugin(BaseAdminPlugin):
 
-    enableImport = False
+    enableImport = True
+
     def init_request(self, *args, **kwargs):
         return bool(self.enableImport)
 

@@ -41,6 +41,8 @@ class BaseTask(models.Model):
     finished_at = models.DateTimeField(verbose_name='完成时间', null=True, blank=True)
     creator = models.ForeignKey(Staff, verbose_name='创建人', blank=True, null=True)
     created_at = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)
+    class Meta:
+       abstract = True
 
 # Create your models here.
 

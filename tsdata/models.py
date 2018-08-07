@@ -16,6 +16,8 @@ class BaseData(models.Model):
     created_at = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)
     updater = models.ForeignKey(Staff, null=True, blank=True, on_delete=models.SET_NULL, related_name='updater')
     update_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+    class Meta:
+        abstract = True
 
 
 class Tripitaka(BaseData):

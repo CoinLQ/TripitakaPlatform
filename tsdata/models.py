@@ -14,7 +14,7 @@ from jwt_auth.models import Staff
 class BaseData(models.Model):
     creator = models.ForeignKey(Staff, verbose_name='创建人', blank=True, null=True, on_delete=models.SET_NULL, related_name='%(app_label)s_%(class)s_creator')
     created_at = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)
-    updater = models.ForeignKey(Staff, null=True, blank=True, on_delete=models.SET_NULL, related_name='%(app_label)s_%(class)s_updater')
+    updater = models.ForeignKey(Staff, verbose_name='更新人', null=True, blank=True, on_delete=models.SET_NULL, related_name='%(app_label)s_%(class)s_updater')
     update_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
     class Meta:
         abstract = True

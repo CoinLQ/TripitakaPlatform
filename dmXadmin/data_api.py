@@ -56,7 +56,7 @@ class ImportTripiFromExcel(APIView):
             code, name, shortname=row[code_index], row[name_index], row[shortname_index]
             remark = row[remark_index] if remark_index >= 0 else ''
             try:
-                tripitaka = Tripitaka(code=code, name=name, shortname=shortname, remark=remark)
+                tripitaka = Tripitaka(code=code, name=name, shortname=shortname, remark=remark,creator=request._user)
                 tripitaka.save()
                 tripitakaLst.append({
                     '藏经':name,

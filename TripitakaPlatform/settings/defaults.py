@@ -38,9 +38,14 @@ ALLOWED_HOSTS = ['*']
 
 # Application definition
 
+
 INSTALLED_APPS = [
-    'dmXadmin.apps.DmxadminConfig',
+    'dmXadmin.apps.DmxadminConfig',            
+    'tsdata.apps.TsdataConfig',
+    'tsrect.apps.TsrectConfig',
+    'tscoll.apps.TscollConfig',
     'tdata.apps.TdataConfig',
+    'tsbdata.apps.BdataConfig',
     'tasks.apps.TasksConfig',
     'rect.apps.RectConfig',
     'pretask.apps.PreTaskConfig',

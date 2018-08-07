@@ -13,9 +13,9 @@ from jwt_auth.models import Staff
 
 class BaseData(models.Model):
     creator = models.ForeignKey(Staff, verbose_name='创建人', blank=True, null=True)
-    created_at = models.DateTimeField(verbose_name='更新时间', auto_now_add=True)
+    created_at = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)
     updater = models.ForeignKey(Staff, null=True, blank=True, on_delete=models.SET_NULL, related_name='updater')
-    update_at = models.DateTimeField(auto_now=True)
+    update_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
 
 
 class Tripitaka(BaseData):

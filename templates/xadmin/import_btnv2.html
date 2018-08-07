@@ -1,0 +1,68 @@
+<div class="btn-group layout-btns">
+    <div class="row">
+        <button class="btn btn-primary btn-sm" onclick="onBrowseFS()"><span>选择Excel文件</span></button>
+    </div>
+    <input type='file' name='excel_file' onchange="onSelectedFile()" class="btn btn-default btn-sm"
+           style="display: none" id="input_excel_file"/>
+    <div class="row">
+        <span id="span_file_name" style="color: green;">未选择文件</span>
+    </div>
+</div>
+<div class="btn-group layout-btns">
+
+</div>
+<div class="btn-group layout-btns" style="margin-right: 10px;">
+    <button class="btn btn-default btn-sm" id="btn_submit" onclick="uploadExcel()"><span>导入</span></button>
+</div>
+
+<!-- 模态框（Modal） -->
+<div class="modal fade" id="modal_upload_rsult" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">导入结果</h4>
+            </div>
+            <pre class="modal-body" id="div_response"></pre>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+<script>
+    function onBrowseFS() {
+        $("#input_excel_file").click();
+    }
+
+    function onSelectedFile() {
+        var filename = $("#input_excel_file")[0].value.replace(/^.*[\\\/]/, '')
+
+        // var path_array=$("#input_excel_file")[0].value.split("/");
+        // console.log(path_array);
+        $("#span_file_name")[0].textContent = "已选："+filename
+        $("#span_file_name").css("color","red");
+    }
+
+
+    function uploadExcel() {
+        var formData = new FormData();
+        formData.append('excel_file', $('#input_excel_file')[0].files[0]);
+        $.ajax({
+            url: '/xadmin-api/import_tripitaka_from_excel',
+            type: 'POST',
+            cache: false,
+            data: formData,
+            processData: false,
+            contentType: false
+        }).done(function (res) {
+            $("#div_response")[0].textContent = JSON.stringify(res, null, 2);
+            // $("#modal_upload_rsult").modal('toggle');
+            window.open('/static/' + res.result_file_name, '_blank');
+        }).fail(function (res) {
+            console.log(res);
+        });
+
+    }
+</script>

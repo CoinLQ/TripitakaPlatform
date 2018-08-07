@@ -27,11 +27,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         BASE_DIR = settings.BASE_DIR
 
-        schedule = Schedule(name='预处理计划任务1', status=ScheduleStatus.ACTIVE, schedule_no="pretask_schedule1")
+        schedule = Schedule.objects.filter(name='预处理计划任务3').first()
         prepage_queryset = PrePageColTask.objects.all()
         prepageverify_queryset = PrePageColVerifyTask.objects.all()
         if prepage_queryset.filter(status=TaskStatus.COMPLETED).count() == prepage_queryset.count() and \
-           prepageverify_queryset.filter(status=TaskStatus.COMPLETED).count() == prepageverify_queryset.count():
+           prepageverify_queryset.filter(status=TaskStatus.COMPLETED,schedule=schedule).count() == prepageverify_queryset.count():
            print('all done!')
         
         output_pretask_list = "%s/data/output_pretask_list.txt" % (BASE_DIR,)

@@ -35,5 +35,7 @@ class ImportDataFromFilePlugin(BaseAdminPlugin):
         # context.update({})
         # 可以将 HTML 片段加入 nodes 参数中
         # context.update({'modelName':self.modelName})
-        nodes.insert(0,loader.render_to_string('xadmin/import_btnv2.html', context={'modelName':self.modelName}))
+        if self.modelName:
+            self.modelName = self.modelName.lower()
+        nodes.insert(0, loader.render_to_string('xadmin/import_btnv2.html', context={'modelName': self.modelName}))
 # 注册插件

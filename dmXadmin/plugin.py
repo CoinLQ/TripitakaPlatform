@@ -8,6 +8,7 @@ REFRESH_VAR = '_refresh'
 class ImportDataFromFilePlugin(BaseAdminPlugin):
 
     enableImport = True
+    modelName = None
 
     def init_request(self, *args, **kwargs):
         return bool(self.enableImport)
@@ -33,5 +34,6 @@ class ImportDataFromFilePlugin(BaseAdminPlugin):
         # current_refresh = self.request.GET.get(REFRESH_VAR)
         # context.update({})
         # 可以将 HTML 片段加入 nodes 参数中
-        nodes.insert(0,loader.render_to_string('xadmin/import_btnv2.html'))
+        # context.update({'modelName':self.modelName})
+        nodes.insert(0,loader.render_to_string('xadmin/import_btnv2.html', context={'modelName':self.modelName}))
 # 注册插件

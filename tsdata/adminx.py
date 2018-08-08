@@ -30,6 +30,8 @@ class LQSutraAdmin(object):
 class TripitakaAdmin(object):
     list_display = ['name', 'shortname', 'code', 'modify']
 
+    modelName = "tripitaka"
+
     def modify(self, instance):
         return '修改'
     modify.short_description = '操作'

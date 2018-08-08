@@ -31,6 +31,7 @@ class TripitakaAdmin(object):
     list_display = ['name', 'shortname', 'code', 'modify']
 
     modelName = "tripitaka"
+    buttonName = '导入实体藏'
 
     def modify(self, instance):
         return '修改'
@@ -82,6 +83,7 @@ class SutraAdmin(object):
 
 class VolumeAdmin(object):
     modelName = 'Volume'
+    buttonName = '导入实体册'
 
     def modify(self, instance):
         return '修改'

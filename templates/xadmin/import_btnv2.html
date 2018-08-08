@@ -50,7 +50,7 @@
         var formData = new FormData();
         formData.append('excel_file', $('#input_excel_file')[0].files[0]);
         $.ajax({
-            url: '/xadmin-api/import_tripitaka_from_excel',
+            url: "/xadmin-api/import_{{modelName}}_from_excel",
             type: 'POST',
             cache: false,
             data: formData,
@@ -60,6 +60,7 @@
             $("#div_response")[0].textContent = JSON.stringify(res, null, 2);
             // $("#modal_upload_rsult").modal('toggle');
             window.open('/static/' + res.result_file_name, '_blank');
+            window.location.reload(true);
         }).fail(function (res) {
             console.log(res);
         });

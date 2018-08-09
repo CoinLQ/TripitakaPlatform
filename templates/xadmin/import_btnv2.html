@@ -1,9 +1,9 @@
 <div class="btn-group layout-btns">
     <div class="row">
-        <button class="btn btn-primary btn-sm" onclick="onBrowseFS()"><span>选择Excel文件</span></button>
+        <button class="btn btn-primary btn-sm" onclick="onBrowseFS()"><span>{{modelName}}</span></button>
     </div>
     <input type='file' name='excel_file' onchange="onSelectedFile()" class="btn btn-default btn-sm"
-           style="display: none" id="input_excel_file"/>
+    multiple="multiple" id="input_excel_file"/>
     <div class="row">
         <span id="span_file_name" style="color: green;">未选择文件</span>
     </div>
@@ -34,21 +34,42 @@
 <script>
     function onBrowseFS() {
         $("#input_excel_file").click();
-    }
+            }
 
     function onSelectedFile() {
-        var filename = $("#input_excel_file")[0].value.replace(/^.*[\\\/]/, '')
+        console.log("on select file ");
+      
+        console.log( $('#input_excel_file')[0].files.length );
+            
+        console.log("end")
+
+        // var filename = $("#input_excel_file")[0].value.replace(/^.*[\\\/]/, '')
+        // console.log( $("#input_excel_file"));
 
         // var path_array=$("#input_excel_file")[0].value.split("/");
         // console.log(path_array);
-        $("#span_file_name")[0].textContent = "已选："+filename
-        $("#span_file_name").css("color","red");
+        // $("#span_file_name")[0].textContent = "已选："+filename
+        // $("#span_file_name").css("color","red");
+        uploadExcel();
     }
 
 
     function uploadExcel() {
+        console.log(" uploadExcel ");
         var formData = new FormData();
-        formData.append('excel_file', $('#input_excel_file')[0].files[0]);
+        var file = $('#input_excel_file')[0].files;
+        if ( file  == undefined )
+        {
+            console.log('没有选择文件')
+            return ;
+        }
+        formData.append('filecount',file.length);
+        formData.append('excel_file', file[0]);
+        for(i=1;i<file.length;i++){    
+            formData.append("excel_file["+i+"]", file[i]);            
+            console.log("excel_file["+i+"]",file[i])
+        }
+        
         $.ajax({
             url: "/xadmin-api/import_{{modelName}}_from_excel",
             type: 'POST',
@@ -58,7 +79,7 @@
             contentType: false
         }).done(function (res) {
             $("#div_response")[0].textContent = JSON.stringify(res, null, 2);
-            // $("#modal_upload_rsult").modal('toggle');
+            $("#modal_upload_rsult").modal('toggle');
             window.open('/static/' + res.result_file_name, '_blank');
             window.location.reload(true);
         }).fail(function (res) {

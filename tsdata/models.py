@@ -10,6 +10,15 @@ import json
 import urllib.request
 from jwt_auth.models import Staff
 
+class PageTyp(object):
+    COVER = 1
+    BODY = 2
+    BACK = 3
+    PAGETYPCHOICES = (
+        (COVER, '封面'),
+        (BODY, '经文'),
+        (BACK, '封底')
+    )
 
 class BaseData(models.Model):
     creator = models.ForeignKey(Staff, verbose_name='创建人', blank=True, null=True, on_delete=models.SET_NULL, related_name='%(app_label)s_%(class)s_creator')
@@ -36,6 +45,7 @@ class Tripitaka(BaseData):
 
 class Volume(BaseData):
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE, verbose_name='藏名')
+    vid = models.CharField(verbose_name='册编码', max_length=12, blank=True, null=True)
     vol_no = models.SmallIntegerField(verbose_name='册序号')
     total_pages = models.IntegerField(verbose_name='册页数')
     cur_pages = models.IntegerField(verbose_name='实际页数')
@@ -187,6 +197,7 @@ class ReelExtra(BaseData):
 
 class Page(BaseData):
     pid = models.CharField(verbose_name='实体藏经页级总编码', max_length=21, blank=True, null=True)
+    typ = models.SmallIntegerField(verbose_name='页类型', choices=PageTyp.PAGETYPCHOICES, default=PageTyp.BODY)
     page_code = models.CharField(max_length=23, blank=False, verbose_name='页代码')
     volume = models.ForeignKey(Volume, verbose_name='实体藏经册', on_delete=models.CASCADE, editable=False)
     reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False, null=True, blank=True)

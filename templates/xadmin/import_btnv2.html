@@ -67,11 +67,11 @@
         $("#input_excel_file").click();
     }
 
-    function onSelectedFile() {        
+    function onSelectedFile() {
         var fileFullPath = $("#input_excel_file")[0].value;
         var filename = fileFullPath.replace(/^.*[\\\/]/, '');
-        // var path_array=$("#input_excel_file")[0].value.split("/");        
-        // console.log(path_array);        
+        // var path_array=$("#input_excel_file")[0].value.split("/");
+        // console.log(path_array);
         $("#span_file_name")[0].textContent = "已选："+fileFullPath;
         uploadExcel();
     }
@@ -85,7 +85,7 @@
         $("#btn_status").addClass(cssClass);
     }
 
-    function uploadExcel() {        
+    function uploadExcel() {
         var formData = new FormData();
         var file = $('#input_excel_file')[0].files;
         if ( file  == undefined )
@@ -111,7 +111,7 @@
             data: formData,
             processData: false,
             contentType: false
-        }).done(function (res) {            
+        }).done(function (res) {
             if(res.status==0){
                 setProgressBar(100,"progress-bar-success");
                 showResult('/static/' + res.result_file_name,"查看导入结果");

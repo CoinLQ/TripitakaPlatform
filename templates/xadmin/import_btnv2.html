@@ -112,6 +112,7 @@
             processData: false,
             contentType: false
         }).done(function (res) {
+            stopProgress();
             if(res.status==0){
                 setProgressBar(100,"progress-bar-success");
                 showResult('/static/' + res.result_file_name,"查看导入结果");
@@ -125,12 +126,29 @@
             // window.location.reload(true);
         }).fail(function (res) {
             console.log(res);
+            stopProgress();
             setProgressBar(100,"progress-bar-danger");
             showResult("#",res.statusText, true);
         });
 
 
     }
+
+    var progressTimer;
+    var step=1;
+
+    function makeProgress(progressv) {
+        if(progressv>=100){
+            progressv=98;
+        }
+        setProgressBar(progressv,"progress-bar-info");
+        progressTimer = setTimeout(function(){makeProgress(progressv+step)}, 1000);
+    }
+
+    function stopProgress() {
+        clearTimeout(progressTimer);
+    }
+
     function showResult(url,textContent,disable=false){
         $("#btn_result_file")[0].href = url;
         $("#btn_result_file")[0].textContent=textContent;

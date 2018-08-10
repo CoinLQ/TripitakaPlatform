@@ -54,7 +54,7 @@ class ImportSutraFromExcel(APIView):
 
 
         
-#FUNC_3 ImportSutra 导入经目
+    #FUNC_3 ImportSutra 导入经目
     #class Sutra(models.Model, TripiMixin):
     # lqsutra       对应模板第一列
     # sid =         对应模板第二列    

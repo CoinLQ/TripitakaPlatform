@@ -10,10 +10,15 @@ from django.template import loader
 from django.conf import settings
 
 from tsdata.models import * 
- 
+
+
 ##########################################################
 # 龙泉经目 LQSutra
 class LQSutraAdmin(object):
+
+    modelName = "lqsutra"
+    buttonName = '导入龙泉经'
+
     def modify(self, instance):
         return '修改'
     modify.short_description = '操作'

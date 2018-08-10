@@ -42,7 +42,6 @@ class ImportTripiFromExcel(APIView):
             file_obj = request.FILES['excel_file'].file
             data =xlrd.open_workbook(file_contents=file_obj.getvalue())
             table = data.sheets()[0]
-            tripitakaLst = []
             #读第一行，确定 实体藏编号、实体藏名称、实体藏简称 的位置
             code_index, name_index, shortname_index, remark_index = self.getColIndexes(table.row_values(0))
             if code_index < 0 or name_index < 0 or shortname_index < 0:
@@ -60,22 +59,12 @@ class ImportTripiFromExcel(APIView):
                 try:
                     tripitaka = Tripitaka(code=code, name=name, shortname=shortname, remark=remark,creator=request._user)
                     tripitaka.save()
-                    tripitakaLst.append({
-                        '藏经':name,
-                        'status':'导入成功'
-                    })
                     write_row(result_sheet, i, [code, name, shortname, remark, '成功'])
                 except Exception as e:
                     logger.info(f"tripitaka insert fail:{tripitaka.code}")
-                    tripitakaLst.append({
-                        '藏经': name,
-                        'status': '跳过'
-                    })
                     write_row(result_sheet, i, [code, name, shortname, remark, '失败'])
             r_file_name = f"实体藏导入结果{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.xlsx"
             result_file.save(f"{settings.EXCEL_DIR}/{r_file_name}")
-            # response = HttpResponse(result_file, content_type='application/vnd.ms-excel')
-            # response['Content-Disposition'] = f"attachment; filename={r_file_name}"
             return Response(status=200, data={
                 'status': 0, 'result_file_name': r_file_name
             })

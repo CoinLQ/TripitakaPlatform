@@ -141,14 +141,20 @@ class PageAdmin(object):
     list_display = ['pid', 'page_code', 'volume', 'reel','reel_page_no', 'volume_page_no', 'is_existed']  # 自定义显示这两个字段
     search_fields = ['reel']  # 可以搜索的字段
     list_filter = ['volume']
-    ordering = ['pid', ] 
+    ordering = ['pid', ]
+
 
 class LQReelAdmin(object):
+    # 龙泉卷不需要导入功能，自动生成。
+    enableImport = False
+
     def modify(self, instance):
         return '修改'
+
     modify.short_description = '操作'
     list_display_links = ('modify',)
-    list_display = ['lqsutra', 'reel_no',  'start_vol','start_vol_page','end_vol','is_existed','remark']  # 自定义显示这两个字段
+    list_display = ['lqsutra', 'reel_no', 'start_vol', 'start_vol_page', 'end_vol', 'is_existed',
+                    'remark']  # 自定义显示这两个字段
     search_fields = ['lqsutra__name', ]  # 可以搜索的字段
     list_filter = ['lqsutra__name']
     ordering = ['id', ] 

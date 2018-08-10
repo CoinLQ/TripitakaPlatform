@@ -15,16 +15,15 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 def myTestprint(info):
-    try:
-        print(info)
-    except:
-        print('myprintError.')
+    # try:
+    #     print(info)
+    # except:
+    #     print('myprintError.')
     return None
 
 
 class ImportSutraFromExcel(APIView):
-    def post(self, request, format=None):
-        print (' ========================ImportSutraFromExcel ====================')
+    def post(self, request, format=None):        
         file_obj = request.FILES['excel_file'].file                
         data =xlrd.open_workbook(file_contents=file_obj.getvalue())
         table = data.sheets()[0]
@@ -86,6 +85,8 @@ class ImportSutraFromExcel(APIView):
             errorlist.append(str(nrows))
             ncols = table.ncols
             tripitaka_id=''#藏只有一次
+            print('导入 rows:',table.nrows)
+
             #解析属性
             for i in range(nrows):
                 if i  >0   :

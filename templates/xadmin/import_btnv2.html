@@ -25,7 +25,7 @@
                     <button class="btn btn-primary btn-sm col-md-4" onclick="onBrowseFS()"><span>选择Excel文件</span></button>
                     <span class="col-md-6" id="span_file_name" style="color: green;"></span>
                     <!--<button class="btn btn-md-3 btn-danger" id="btn_status" style="display: none;">正在导入...</button>-->
-                    <input type='file' multiple="multiple" name='excel_file' onchange="onSelectedFile()" class="btn btn-default btn-sm"
+                    <input type='file' {{multisel}} name='excel_file' onchange="onSelectedFile()" class="btn btn-default btn-sm"
                        style="display: none" id="input_excel_file"/>
                 </div>
                 <div class="row" style="margin-top: 10px;">

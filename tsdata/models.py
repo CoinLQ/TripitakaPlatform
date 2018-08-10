@@ -70,6 +70,8 @@ class LQSutra(BaseData):
 
 class LQReel(BaseData):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', on_delete=models.CASCADE)
+    # LQ000010_002
+    rid = models.CharField(verbose_name='卷编码', editable=True, max_length=20, unique=True)
     reel_no = models.SmallIntegerField('卷序号')
     start_vol = models.SmallIntegerField('起始册')
     start_vol_page = models.SmallIntegerField('起始页码')
@@ -111,12 +113,15 @@ class Sutra(BaseData):
 
 class Reel(BaseData):
     sutra = models.ForeignKey(Sutra, verbose_name='实体经', on_delete=models.CASCADE, editable=False)
+    # YB000860_001
+    rid = models.CharField(verbose_name='卷编码', editable=True, max_length=20, unique=True)
     reel_no = models.SmallIntegerField('卷序号')
     start_vol = models.SmallIntegerField('起始册')
     start_vol_page = models.SmallIntegerField('起始页码')
     end_vol = models.SmallIntegerField('终止册')
     end_vol_page = models.SmallIntegerField('终止页码')
     remark = models.TextField('备注', blank=True, default='')
+    has_extra = models.BooleanField(verbose_name='是否有内部结构',default=False)
 
     class Meta:
         verbose_name = '实体卷'
@@ -138,6 +143,47 @@ class Reel(BaseData):
             return True
         return False
 
+
+class ReelExtraType:
+    # 正文
+    TYPE_BODY = 0
+    # 序
+    TYPE_PREFACE = 1
+    # 跋
+    TYPE_EPILOGUE = 2
+
+    CHOICES = ((TYPE_BODY, "正文"), (TYPE_PREFACE, "序"), (TYPE_EPILOGUE, "跋"))
+
+    value_to_desc = {
+        TYPE_BODY: '正文',
+        TYPE_PREFACE: '序',
+        TYPE_EPILOGUE: '跋'
+    }
+
+    @classmethod
+    def get_type_desc(cls, type):
+        cls.value_to_desc.get(type, '无效类型')
+
+
+class ReelExtra(BaseData):
+    reel = models.ForeignKey(Reel, verbose_name='实体卷', on_delete=models.CASCADE, editable=False)
+    typ = models.SmallIntegerField(verbose_name='卷内类型', choices=ReelExtraType.CHOICES, default=ReelExtraType.TYPE_BODY)
+    inner_no = models.IntegerField('内部序号')
+    name = models.CharField(verbose_name='标题', max_length=100)
+    start_vol = models.SmallIntegerField('起始册')
+    start_vol_page = models.SmallIntegerField('起始页码')
+    end_vol = models.SmallIntegerField('终止册')
+    end_vol_page = models.SmallIntegerField('终止页码')
+    remark = models.TextField('备注', blank=True, default='')
+
+    class Meta:
+        verbose_name = '实体卷内部结构'
+        verbose_name_plural = '实体卷内部结构'
+        unique_together = (('reel', 'typ', 'inner_no'),)
+        ordering = ('id',)
+
+    def __str__(self):
+        return '%s/%s/%d' % (self.reel, ReelExtraType.get_type_desc(self.typ), self.inner_no)
 
 class Page(BaseData):
     pid = models.CharField(verbose_name='实体藏经页级总编码', max_length=21, blank=True, null=True)

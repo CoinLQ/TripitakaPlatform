@@ -87,6 +87,7 @@
 
     function uploadExcel() {
         var formData = new FormData();
+        //formData.append('excel_file', $('#input_excel_file')[0].files[0]);
         var file = $('#input_excel_file')[0].files;
         if ( file  == undefined )
         {
@@ -98,10 +99,9 @@
         for(i=1;i<file.length;i++){    
             formData.append("excel_file["+i+"]", file[i]);            
             console.log("excel_file["+i+"]",file[i])
-        }
+        }        
         
-        //formData.append('excel_file', $('#input_excel_file')[0].files[0]);
-        setProgressBar(10,"progress-bar-info");
+        makeProgress(10); 
         clearResult();
 
         $.ajax({

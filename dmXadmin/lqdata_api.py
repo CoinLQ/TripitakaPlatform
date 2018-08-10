@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from tsdata.models import LQSutra
+from dmXadmin.bgtask import create_lqreels_for_lqsutras
 from rest_framework.response import Response
-
 import xlrd
 import xlwt
 from dmXadmin.data_api import write_row
@@ -38,9 +38,10 @@ class ImportLQSutraFromExcel(APIView):
     def post(self, request, format=None):
         file_obj = request.FILES['excel_file'].file
         workbook = xlrd.open_workbook(file_contents=file_obj.getvalue())
-        return self.import_lqsutra(workbook,request._user)
+        return self.import_lqsutra(workbook, request._user)
 
     def import_lqsutra(self, workbook, user):
+        new_lqsutra_list = []
         try:
             table = workbook.sheets()[0]
             nrows = table.nrows
@@ -75,15 +76,19 @@ class ImportLQSutraFromExcel(APIView):
                                       remark=remark, creator=user)
                     lqsutra.save()
                     write_row(result_sheet, i, [sid, name, author, treels, creels, remark, '成功'])
+                    new_lqsutra_list.append(lqsutra)
+                    logger.info(f"event=insert-new-lqsutra v={lqsutra}")
                 except:
                     write_row(result_sheet, i, [sid, name, author, treels, creels, remark, '跳过'])
 
             r_file_name = f"龙泉经导入结果{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.xlsx"
             result_file.save(f"{settings.EXCEL_DIR}/{r_file_name}")
+            create_lqreels_for_lqsutras([x.sid for x in new_lqsutra_list])
             return Response(status=200, data={
                 'status': 0, 'result_file_name': r_file_name
             })
         except Exception as e:
+            create_lqreels_for_lqsutras([x.sid for x in new_lqsutra_list])
             logger.error(str(e), exec_info=True)
             return Response(status=200, data={
                 'status': -1, 'msg': str(e)

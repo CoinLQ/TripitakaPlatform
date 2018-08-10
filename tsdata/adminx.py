@@ -160,7 +160,6 @@ class LQReelAdmin(object):
     ordering = ['id', ] 
 
 
-
 xadmin.site.register(Tripitaka, TripitakaAdmin)
 xadmin.site.register(Volume, VolumeAdmin)
 

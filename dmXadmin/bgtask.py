@@ -31,11 +31,11 @@ def create_lqreels_for_sutra(sid):
             lqreel = LQReel(
                 lqsutra=lqsutra,
                 reel_no=reel_no,
-                rid="%s_%3d" % (lqsutra.sid, reel_no),
                 start_vol=0, start_vol_page=0,
                 end_vol=0, end_vol_page=0,
                 is_existed=False
             )
+            lqreel.rid = "%s_%s" % (lqsutra.sid, str(reel_no).zfill(3))
             lqreel_lst.append(lqreel)
     lqreels = LQReel.objects.bulk_create(lqreel_lst)
     logger.info(f"event=created_lqreels sutra={lqsutra} new_reels={lqreel_lst}")

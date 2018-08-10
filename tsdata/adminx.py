@@ -31,6 +31,7 @@ class TripitakaAdmin(object):
     list_display = ['name', 'shortname', 'code', 'modify']
 
     modelName = "tripitaka"
+    buttonName = '导入实体藏'
 
     def modify(self, instance):
         return '修改'
@@ -47,6 +48,7 @@ class SutraAdmin(object):
     list_display = ['tripitaka', 'name', 'total_reels', 'Real_reels', 'sid',
                     'lqsutra_name', 'lqsutra_sid', 'remark', 'modify']  # 自定义显示这两个字段
     modelName = "Sutra"
+    buttonName = '导入实体经'
     def Real_reels(self, obj):
         return Reel.objects.filter(sutra=obj.id).count()
 
@@ -81,6 +83,9 @@ class SutraAdmin(object):
 
 
 class VolumeAdmin(object):
+    modelName = 'Volume'
+    buttonName = '导入实体册'
+
     def modify(self, instance):
         return '修改'
     modify.short_description = '操作'
@@ -124,13 +129,15 @@ class ReelAdmin(object):
     
 #
 class PageAdmin(object):
+    modelName = 'Page'
+
     def modify(self, instance):
         return '修改'
     modify.short_description = '操作'
     list_display_links = ('modify',)
-    list_display = ['pid', 'page_code',  'volumn','reel','reel_page_no','volume_page_no','is_existed']  # 自定义显示这两个字段
+    list_display = ['pid', 'page_code', 'volume', 'reel','reel_page_no', 'volume_page_no', 'is_existed']  # 自定义显示这两个字段
     search_fields = ['reel']  # 可以搜索的字段
-    list_filter = ['volumn']
+    list_filter = ['volume']
     ordering = ['pid', ] 
 
 class LQReelAdmin(object):

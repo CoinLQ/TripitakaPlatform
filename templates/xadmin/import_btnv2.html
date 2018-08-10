@@ -1,58 +1,90 @@
-<div class="btn-group layout-btns">
-    <div class="row">
-        <button class="btn btn-primary btn-sm" onclick="onBrowseFS()"><span>{{modelName}}</span></button>
-    </div>
-    <input type='file' name='excel_file' onchange="onSelectedFile()" class="btn btn-default btn-sm"
-    multiple="multiple" id="input_excel_file"/>
-    <div class="row">
-        <span id="span_file_name" style="color: green;">未选择文件</span>
-    </div>
-</div>
-<div class="btn-group layout-btns">
-
-</div>
 <div class="btn-group layout-btns" style="margin-right: 10px;">
-    <button class="btn btn-default btn-sm" id="btn_submit" onclick="uploadExcel()"><span>导入</span></button>
+    <button class="btn btn-primary btn-sm" onclick="showDialog()"><span>{{buttonName}}</span></button>
+    <!--<input type='file' name='excel_file' onchange="onSelectedFile()" class="btn btn-default btn-sm"-->
+    <!--style="display: none" id="input_excel_file"/>-->
+    <!--<div class="row">-->
+    <!---->
+    <!--</div>-->
 </div>
+<!--<div class="btn-group layout-btns" style="margin-right: 10px;">-->
+<!--<button class="btn btn-default btn-sm" id="btn_submit" onclick="uploadExcel()"><span>导入</span></button>-->
+<!--</div>-->
 
 <!-- 模态框（Modal） -->
-<div class="modal fade" id="modal_upload_rsult" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+<div class="modal fade" id="modal_upload_dialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
      aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="myModalLabel">导入结果</h4>
+                <h4 class="modal-title" id="myModalLabel">{{buttonName}}数据</h4>
             </div>
-            <pre class="modal-body" id="div_response"></pre>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-1"></div>
+                    <button class="btn btn-primary btn-sm col-md-4" onclick="onBrowseFS()"><span>选择Excel文件</span></button>
+                    <span class="col-md-6" id="span_file_name" style="color: green;"></span>
+                    <!--<button class="btn btn-md-3 btn-danger" id="btn_status" style="display: none;">正在导入...</button>-->
+                    <input type='file' multiple="multiple" name='excel_file' onchange="onSelectedFile()" class="btn btn-default btn-sm"
+                       style="display: none" id="input_excel_file"/>
+                </div>
+                <div class="row" style="margin-top: 10px;">
+                    <div class="col-md-1"></div>
+                    <!--<div class="loader col-md-4" id="btn_status"></div>-->
+                    <div class="progress col-md-4" style="padding-left: 0px;padding-right: 0px;">
+                        <div class="progress-bar" role="progressbar" aria-valuenow="0"
+                            aria-valuemin="0" aria-valuemax="100" style="width: 0%;" id="btn_status">
+                            <span class="sr-only">40% 完成</span>
+                        </div>
+                    </div>
+                    <a  id="btn_result_file" class="col-md-6" style="display: none;" target="_blank">查看导入结果</a>
+                </div>
+            </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal" onclick="onCloseDialog()">关闭</button>
             </div>
         </div><!-- /.modal-content -->
     </div><!-- /.modal -->
 </div>
+
 <script>
+    var barClasses=["progress-bar-danger","progress-bar-success","progress-bar-info"];
+
+    function showDialog() {
+        resetDialog();
+        $("#modal_upload_dialog").modal('toggle');
+    }
+    function onCloseDialog(){
+        resetDialog();
+    }
+    function resetDialog() {
+        clearResult();
+        setProgressBar(0,"progress-bar-info");
+        $("#span_file_name")[0].textContent = '';
+    }
+
     function onBrowseFS() {
         $("#input_excel_file").click();
-            }
+    }
 
     function onSelectedFile() {
-        console.log("on select file ");
-      
-        console.log( $('#input_excel_file')[0].files.length );
-            
-        console.log("end")
-
-        // var filename = $("#input_excel_file")[0].value.replace(/^.*[\\\/]/, '')
-        // console.log( $("#input_excel_file"));
-
+        //var fileFullPath = $("#input_excel_file")[0].value;
+        //var filename = fileFullPath.replace(/^.*[\\\/]/, '');
         // var path_array=$("#input_excel_file")[0].value.split("/");
         // console.log(path_array);
-        // $("#span_file_name")[0].textContent = "已选："+filename
+        //$("#span_file_name")[0].textContent = "已选："+fileFullPath;
         // $("#span_file_name").css("color","red");
         uploadExcel();
     }
 
+
+    function setProgressBar(progress, cssClass) {
+        $("#btn_status").css('width',progress+'%');
+        for(var i in barClasses){
+            $("#btn_status").removeClass(barClasses[i]);
+        }
+        $("#btn_status").addClass(cssClass);
+    }
 
     function uploadExcel() {
         console.log(" uploadExcel ");
@@ -69,7 +101,13 @@
             formData.append("excel_file["+i+"]", file[i]);            
             console.log("excel_file["+i+"]",file[i])
         }
-        
+        //主线修改 开始
+        //formData.append('excel_file', $('#input_excel_file')[0].files[0]);
+        setProgressBar(10,"progress-bar-info");
+        clearResult();
+        //主线修改 结束
+        console.log(" uploadExcel end 1");
+
         $.ajax({
             url: "/xadmin-api/import_{{modelName}}_from_excel",
             type: 'POST',
@@ -78,13 +116,43 @@
             processData: false,
             contentType: false
         }).done(function (res) {
-            $("#div_response")[0].textContent = JSON.stringify(res, null, 2);
-            $("#modal_upload_rsult").modal('toggle');
-            window.open('/static/' + res.result_file_name, '_blank');
-            window.location.reload(true);
+            // $("#div_response")[0].textContent = JSON.stringify(res, null, 2);
+            // $("#modal_upload_rsult").modal('toggle');
+            // window.open('/static/' + res.result_file_name, '_blank');
+            // window.location.reload(true);
+            if(res.status==0){
+                setProgressBar(100,"progress-bar-success");
+                showResult('/static/' + res.result_file_name,"查看导入结果");
+            }else{
+                setProgressBar(100,"progress-bar-danger");
+                showResult('#', res.msg, true);
+            }
+            console.log(res);
+            // $("#div_response")[0].textContent = JSON.stringify(res, null, 2);
+            // window.open('/static/' + res.result_file_name, '_blank');
+            // window.location.reload(true);
         }).fail(function (res) {
             console.log(res);
+            setProgressBar(100,"progress-bar-danger");
+            showResult("#",res.statusText, true);
         });
+
+
+    }
+    function showResult(url,textContent,disable=false){
+        $("#btn_result_file")[0].href = url;
+        $("#btn_result_file")[0].textContent=textContent;
+        if(disable){
+            $("#btn_result_file").css("pointer-events",'none');
+        }else{
+            $("#btn_result_file").css("pointer-events",'auto');
+        }
+        $("#btn_result_file").show();
+    }
+    function clearResult() {
+        $("#btn_result_file")[0].href = '#';
+         $("#btn_result_file")[0].textContent='';
+        $("#btn_result_file").hide();
 
     }
 </script>

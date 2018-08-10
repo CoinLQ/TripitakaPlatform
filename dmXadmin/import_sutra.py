@@ -24,6 +24,7 @@ def myTestprint(info):
 
 class ImportSutraFromExcel(APIView):
     def post(self, request, format=None):
+        print (' ========================ImportSutraFromExcel ====================')
         file_obj = request.FILES['excel_file'].file                
         data =xlrd.open_workbook(file_contents=file_obj.getvalue())
         table = data.sheets()[0]
@@ -48,8 +49,9 @@ class ImportSutraFromExcel(APIView):
                 print('rows:',table.nrows)
 
         self.ImportSutra(jingmufils)
-        response = {  }
-        return Response(response)
+        return Response(status=200, data={
+                'status': 0, 'result_file_name': ''
+            })
 
 
         

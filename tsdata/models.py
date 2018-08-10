@@ -140,11 +140,11 @@ class Reel(BaseData):
 
 
 class Page(BaseData):
-    pid = models.CharField(verbose_name='实体藏经页级总编码', max_length=21, blank=False, primary_key=True)
-    page_code = models.CharField(max_length=23, blank=False)
-    volumn = models.ForeignKey(Volume, verbose_name='实体藏经册', on_delete=models.CASCADE, editable=False)
-    reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False)
-    reel_page_no = models.SmallIntegerField('卷中页序号')
+    pid = models.CharField(verbose_name='实体藏经页级总编码', max_length=21, blank=True, null=True)
+    page_code = models.CharField(max_length=23, blank=False, verbose_name='页代码')
+    volume = models.ForeignKey(Volume, verbose_name='实体藏经册', on_delete=models.CASCADE, editable=False)
+    reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False, null=True, blank=True)
+    reel_page_no = models.SmallIntegerField('卷中页序号', null=True, blank=True)
     volume_page_no = models.SmallIntegerField('页序号')
     is_existed = models.BooleanField(verbose_name='页是否存在', default=True)
 

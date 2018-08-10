@@ -39,7 +39,7 @@ class Tripitaka(BaseData):
 
 class Volume(BaseData):
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE, verbose_name='藏名')
-    vol_no = models.SmallIntegerField(verbose_name='序号')
+    vol_no = models.SmallIntegerField(verbose_name='册序号')
     total_pages = models.IntegerField(verbose_name='总页数')
     cur_pages = models.IntegerField(verbose_name='实际页数')
     remark = models.TextField('备注', default='')
@@ -55,7 +55,7 @@ class Volume(BaseData):
 
 class LQSutra(BaseData):
     sid = models.CharField(verbose_name='编码', max_length=8, unique=True)  # （为"LQ"+ 经序号 + 别本号）
-    sutra_no = models.CharField(verbose_name='序号', max_length=5, blank=False)
+    sutra_no = models.CharField(verbose_name='经序号', max_length=5, blank=False)
     sutra_variant_no = models.CharField(verbose_name='别本号', max_length=1, default='0')
     name = models.CharField(verbose_name='经名', max_length=64, blank=False)
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
@@ -98,7 +98,7 @@ class Sutra(BaseData):
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE, verbose_name='藏名')
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经编码', null=True,
                                 blank=True, on_delete=models.SET_NULL)  # （为"LQ"+ 经序号 + 别本号）
-    sutra_no = models.CharField(verbose_name='实体经序号', max_length=5, blank=False)
+    sutra_no = models.CharField(verbose_name='经序号', max_length=5, blank=False)
     variant_variant_no = models.CharField(verbose_name='别本号', max_length=1, default='0')
     name = models.CharField(verbose_name='经名', max_length=64, blank=True)
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)

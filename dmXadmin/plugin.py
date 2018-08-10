@@ -3,13 +3,14 @@ from django.template import loader
 from xadmin.views import BaseAdminPlugin
 
 REFRESH_VAR = '_refresh'
-
+MULTISEL_MODELS= ['sutra','reel']
 # 该插件：加了一个导入按钮
 class ImportDataFromFilePlugin(BaseAdminPlugin):
 
     enableImport = True
     modelName = ''
     buttonName = '导入XX'
+    multisel = ''
 
     def init_request(self, *args, **kwargs):
         return bool(self.enableImport)
@@ -38,5 +39,10 @@ class ImportDataFromFilePlugin(BaseAdminPlugin):
         # context.update({'modelName':self.modelName})
         if self.modelName:
             self.modelName = self.modelName.lower()
-        nodes.insert(0, loader.render_to_string('xadmin/import_btnv2.html', context={'modelName': self.modelName, 'buttonName': self.buttonName}))
+        if self.modelName in MULTISEL_MODELS:
+            self.multisel =  'multiple=\'multiple\''
+        nodes.insert(0, loader.render_to_string('xadmin/import_btnv2.html', 
+        context={'modelName': self.modelName, 
+        'buttonName': self.buttonName, 
+        'multisel': self.multisel}))
 # 注册插件

@@ -39,6 +39,7 @@ class Tripitaka(BaseData):
 
 class Volume(BaseData):
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE, verbose_name='藏名')
+    vid = models.CharField(verbose_name='册编码', max_length=12, blank=True, null=True)
     vol_no = models.SmallIntegerField(verbose_name='册序号')
     total_pages = models.IntegerField(verbose_name='总页数')
     cur_pages = models.IntegerField(verbose_name='实际页数')
@@ -189,10 +190,20 @@ class ReelExtra(BaseData):
         return '%s/%s/%d' % (self.reel, ReelExtraType.get_type_desc(self.typ), self.inner_no)
 
 
+class PageTyp(object):
+    COVER = 1
+    BODY = 2
+    BACK = 3
+    PAGETYPCHOICES = (
+        (COVER, '封面'),
+        (BODY, '经文'),
+        (BACK, '封底')
+    )
+
 class Page(BaseData):
     pid = models.CharField(verbose_name='编码', max_length=30, blank=True, null=True)
     page_code = models.CharField(max_length=24, blank=False, verbose_name='页代码')
-    typ = models.IntegerField('类型')  # 封面/经文/封底
+    typ = models.SmallIntegerField(verbose_name='页类型', choices=PageTyp.PAGETYPCHOICES, default=PageTyp.BODY)
     reel = models.ForeignKey(Reel, verbose_name='实体卷', on_delete=models.CASCADE, editable=False, null=True, blank=True)
     reel_page_no = models.SmallIntegerField('卷页序号', null=True, blank=True)
     volume = models.ForeignKey(Volume, verbose_name='实体册', on_delete=models.CASCADE, editable=False)

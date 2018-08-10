@@ -2,7 +2,8 @@ from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.parsers import BaseParser, FileUploadParser, MultiPartParser
 from rest_framework.response import Response
-from tsdata.models import Tripitaka, Volume, Page
+from tsdata.models import * 
+from dmXadmin.import_sutra import ImportSutraFromExcel
 import logging
 import xlrd
 import xlwt

@@ -45,14 +45,15 @@ class TripitakaAdmin(object):
     search_fields = ['name'] #可以搜索的字段
     list_filter = ['name']
     ordering = ['id', ]
-
+    use_related_menu = False
 
 
 # 实体经  Sutra
 class SutraAdmin(object):
     list_display = ['tripitaka', 'name', 'total_reels', 'Real_reels', 'sid',
                     'lqsutra_name', 'lqsutra_sid', 'remark', 'modify']  # 自定义显示这两个字段
-
+    modelName = "Sutra"
+    buttonName = '导入实体经'
     def Real_reels(self, obj):
         return Reel.objects.filter(sutra=obj.id).count()
 
@@ -101,6 +102,7 @@ class VolumeAdmin(object):
  
 
 class ReelAdmin(object):
+    modelName = "Reel"
     def tripitaka_name(self, obj):  # 藏名
         t = Tripitaka.objects.get(code=obj.sutra.tripitaka.code)
         s = t.__str__()

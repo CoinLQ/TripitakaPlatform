@@ -57,11 +57,11 @@ class ImportTripiFromExcel(APIView):
                 code, name, shortname=row[code_index], row[name_index], row[shortname_index]
                 remark = row[remark_index] if remark_index >= 0 else ''
                 try:
-                    tripitaka = Tripitaka(code=code, name=name, shortname=shortname, remark=remark,creator=request._user)
+                    tripitaka = Tripitaka(tid=code, name=name, shortname=shortname, remark=remark,creator=request._user)
                     tripitaka.save()
                     write_row(result_sheet, i, [code, name, shortname, remark, '成功'])
                 except Exception as e:
-                    logger.info(f"tripitaka insert fail:{tripitaka.code}")
+                    logger.info(f"tripitaka insert fail:{tripitaka.tid}")
                     write_row(result_sheet, i, [code, name, shortname, remark, '失败'])
             r_file_name = f"实体藏导入结果{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.xlsx"
             result_file.save(f"{settings.EXCEL_DIR}/{r_file_name}")
@@ -71,17 +71,6 @@ class ImportTripiFromExcel(APIView):
         except Exception as e:
             return Response(status=200, data={
                 'status': -1, 'msg': str(e)})
-        # tripitakaLst=[]
-        # for line in file_obj.readlines():
-        #     code, name, shortname = line.decode("utf-8").rstrip().split()
-        #     try:
-        #         tripitaka = Tripitaka(code=code, name=name, shortname=shortname)
-        #         tripitaka.save()
-        #         tripitakaLst.append(tripitaka)
-        #     except Exception as e:
-        #         logger.info(f"tripitaka insert fail:{tripitaka.code}")
-        # # do some stuff with uploaded file
-        # return Response(data=tripitakaLst)
 
     def getColIndexes(self, first_row):
         code_index, name_index, shortname_index, remark_index = -1, -1, -1, -1
@@ -119,7 +108,7 @@ class ImportVolFromExcel(APIView):
         for i in range(1, table.nrows):
             row = table.row_values(i)
             t_code = row[tripitaka_code_index]
-            tripitaka = Tripitaka.objects.get(code=t_code)
+            tripitaka = Tripitaka.objects.get(tid=t_code)
             vol_no, total_pages, cur_pages = row[vol_no_index], row[total_pages_index], row[cur_pages_index]
             remark = row[remark_index] if remark_index >= 0 else ''
             try:

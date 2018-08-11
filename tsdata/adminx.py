@@ -104,7 +104,7 @@ class VolumeAdmin(object):
 class ReelAdmin(object):
     modelName = "Reel"
     def tripitaka_name(self, obj):  # 藏名
-        t = Tripitaka.objects.get(code=obj.sutra.tripitaka.code)
+        t = Tripitaka.objects.get(tid=obj.sutra.tripitaka.tid)
         s = t.__str__()
         return t
 

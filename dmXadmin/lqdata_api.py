@@ -70,7 +70,7 @@ class ImportLQSutraFromExcel(APIView):
                 creels = getint_or_default(row, creels_index, 0)
                 remark = get_or_default(row, remark_index, '')
                 try:
-                    lqsutra = LQSutra(sid=sid, code=code, variant_code=variant_code,
+                    lqsutra = LQSutra(sid=sid, sutra_no=code, sutra_variant_no=variant_code,
                                       name=name, author=author,
                                       total_reels=treels, cur_reels=creels,
                                       remark=remark, creator=user)

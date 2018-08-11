@@ -22,7 +22,7 @@ class LQSutraAdmin(object):
     def modify(self, instance):
         return '修改'
     modify.short_description = '操作'
-    list_display = ['sid', 'variant_code', 'name', 'author',
+    list_display = ['sid', 'sutra_variant_no', 'name', 'author',
                     'total_reels', 'remark', 'modify']  # 自定义显示这两个字段
     list_display_links = ('modify',)
     search_fields = ['sid', 'name', 'author']
@@ -33,7 +33,7 @@ class LQSutraAdmin(object):
 
 
 class TripitakaAdmin(object):
-    list_display = ['name', 'shortname', 'code', 'modify']
+    list_display = ['name', 'shortname', 'tid', 'modify']
 
     modelName = "tripitaka"
     buttonName = '导入实体藏'
@@ -79,7 +79,7 @@ class SutraAdmin(object):
         return '修改'
     modify.short_description = '操作'
     list_display_links = ('modify',)
-    search_fields = ['name', 'tripitaka__name', 'tripitaka__code',
+    search_fields = ['name', 'tripitaka__name', 'tripitaka__tid',
                      'sid', 'total_reels', 'remark']  # 可以搜索的字段
     free_query_filter = True
     list_filter = ['name', 'sid']
@@ -104,7 +104,7 @@ class VolumeAdmin(object):
 class ReelAdmin(object):
     modelName = "Reel"
     def tripitaka_name(self, obj):  # 藏名
-        t = Tripitaka.objects.get(code=obj.sutra.tripitaka.code)
+        t = Tripitaka.objects.get(tid=obj.sutra.tripitaka.tid)
         s = t.__str__()
         return t
 

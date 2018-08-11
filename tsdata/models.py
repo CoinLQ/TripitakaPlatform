@@ -10,19 +10,12 @@ import json
 import urllib.request
 from jwt_auth.models import Staff
 import logging
+from django.core.exceptions import ObjectDoesNotExist
+
 
 logger = logging.getLogger(__name__)
 
 
-class PageTyp(object):
-    COVER = 1
-    BODY = 2
-    BACK = 3
-    PAGETYPCHOICES = (
-        (COVER, '封面'),
-        (BODY, '经文'),
-        (BACK, '封底')
-    )
 
 
 class BaseData(models.Model):
@@ -38,9 +31,9 @@ class BaseData(models.Model):
 
 
 class Tripitaka(BaseData):
-    code = models.CharField(verbose_name='编码', max_length=2, blank=False, unique=True)
-    name = models.CharField(verbose_name='藏名', max_length=32, blank=False)
-    shortname = models.CharField(verbose_name='简称（用于校勘记）', max_length=32, blank=False)
+    tid = models.CharField(verbose_name='编码', max_length=2, blank=False, unique=True)
+    name = models.CharField(verbose_name='藏名', max_length=16, blank=False)
+    shortname = models.CharField(verbose_name='简称', max_length=32, blank=False)
     remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
@@ -48,14 +41,14 @@ class Tripitaka(BaseData):
         verbose_name_plural = '实体藏'
 
     def __str__(self):
-        return '{} ({})'.format(self.name, self.code)
+        return self.name
 
 
 class Volume(BaseData):
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE, verbose_name='藏名')
     vid = models.CharField(verbose_name='册编码', max_length=12, blank=True, null=True)
     vol_no = models.SmallIntegerField(verbose_name='册序号')
-    total_pages = models.IntegerField(verbose_name='册页数')
+    total_pages = models.IntegerField(verbose_name='总页数')
     cur_pages = models.IntegerField(verbose_name='实际页数')
     remark = models.TextField('备注', default='')
 
@@ -65,25 +58,25 @@ class Volume(BaseData):
         unique_together = (('tripitaka', 'vol_no'),)
 
     def __str__(self):
-        return '%s: 第%s册' % (self.tripitaka.name, self.vol_no)
+        return '%s/第%s册' % (self.tripitaka.name, self.vol_no)
 
 
 class LQSutra(BaseData):
-    sid = models.CharField(verbose_name='龙泉经号', max_length=8, unique=True)  # （为"LQ"+ 经序号 + 别本号）
-    code = models.CharField(verbose_name='龙泉经目编码', max_length=5, blank=False)
-    variant_code = models.CharField(verbose_name='别本号', max_length=1, default='0')
-    name = models.CharField(verbose_name='龙泉经名', max_length=64, blank=False)
+    sid = models.CharField(verbose_name='编码', max_length=8, unique=True)  # （为"LQ"+ 经序号 + 别本号）
+    sutra_no = models.CharField(verbose_name='经序号', max_length=5, blank=False)
+    sutra_variant_no = models.CharField(verbose_name='别本号', max_length=1, default='0')
+    name = models.CharField(verbose_name='经名', max_length=64, blank=False)
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
     cur_reels = models.IntegerField(verbose_name='实际卷数', blank=True, default=1)
     author = models.CharField(verbose_name='著译者', max_length=255, blank=True)
     remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
-        verbose_name = u"龙泉经目"
-        verbose_name_plural = u"龙泉经目"
+        verbose_name = u"龙泉经"
+        verbose_name_plural = u"龙泉经"
 
     def __str__(self):
-        return '%s: %s' % (self.sid, self.name)
+        return self.name
 
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):
@@ -93,20 +86,20 @@ class LQSutra(BaseData):
 
 
 class LQReel(BaseData):
-    lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', on_delete=models.CASCADE)
-    # LQ000010_002
-    rid = models.CharField(verbose_name='卷编码', editable=True, max_length=20, unique=True)
+    lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经编码', on_delete=models.CASCADE)
+    # LQ000010_2
+    rid = models.CharField(verbose_name='编码', editable=True, max_length=20, unique=True)
     reel_no = models.SmallIntegerField('卷序号')
     start_vol = models.SmallIntegerField('起始册')
-    start_vol_page = models.SmallIntegerField('起始页码')
+    start_vol_page = models.SmallIntegerField('起始页')
     end_vol = models.SmallIntegerField('终止册')
     end_vol_page = models.SmallIntegerField('终止页码')
     is_existed = models.BooleanField(verbose_name='卷是否存在', default=True)
     remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
-        verbose_name = '龙泉藏经卷'
-        verbose_name_plural = '龙泉藏经卷'
+        verbose_name = '龙泉卷'
+        verbose_name_plural = '龙泉卷'
         unique_together = (('lqsutra', 'reel_no'),)
         ordering = ('id',)
 
@@ -115,16 +108,16 @@ class LQReel(BaseData):
 
 
 class Sutra(BaseData):
-    sid = models.CharField(verbose_name='经编码', editable=True, max_length=8, unique=True)
+    sid = models.CharField(verbose_name='编码', editable=True, max_length=8, unique=True)
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE, verbose_name='藏名')
-    lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', null=True,
+    lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经编码', null=True,
                                 blank=True, on_delete=models.SET_NULL)  # （为"LQ"+ 经序号 + 别本号）
-    code = models.CharField(verbose_name='实体经目编码', max_length=5, blank=False)
-    variant_code = models.CharField(verbose_name='别本编码', max_length=1, default='0')
+    sutra_no = models.CharField(verbose_name='经序号', max_length=5, blank=False)
+    sutra_variant_no = models.CharField(verbose_name='别本号', max_length=1, default='0')
     name = models.CharField(verbose_name='经名', max_length=64, blank=True)
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
     cur_reels = models.IntegerField(verbose_name='实际卷数', blank=True, default=1)
-    author = models.CharField('作译者', max_length=32, blank=True, default='')
+    author = models.CharField('著译者', max_length=32, blank=True, default='')
     remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
@@ -132,18 +125,18 @@ class Sutra(BaseData):
         verbose_name_plural = '实体经'
 
     def __str__(self):
-        return '%s / %s' % (self.tripitaka, self.name)
+        return self.name
 
 
 class Reel(BaseData):
     sutra = models.ForeignKey(Sutra, verbose_name='实体经', on_delete=models.CASCADE, editable=False)
-    # YB000860_001
+    # YB000860_1
     rid = models.CharField(verbose_name='卷编码', editable=True, max_length=20, unique=True)
     reel_no = models.SmallIntegerField('卷序号')
     start_vol = models.SmallIntegerField('起始册')
-    start_vol_page = models.SmallIntegerField('起始页码')
+    start_vol_page = models.SmallIntegerField('起始页')
     end_vol = models.SmallIntegerField('终止册')
-    end_vol_page = models.SmallIntegerField('终止页码')
+    end_vol_page = models.SmallIntegerField('终止页')
     remark = models.TextField('备注', blank=True, default='')
     has_extra = models.BooleanField(verbose_name='是否有内部结构', default=False)
 
@@ -158,7 +151,7 @@ class Reel(BaseData):
         return u"第%s卷" % (self.reel_no,)
 
     def __str__(self):
-        return '%s / 第%d卷' % (self.sutra, self.reel_no)
+        return '%s/第%d卷' % (self.sutra, self.reel_no)
 
     @classmethod
     def is_overlapping(cls, reel1, reel2):
@@ -195,9 +188,9 @@ class ReelExtra(BaseData):
     inner_no = models.IntegerField('内部序号')
     name = models.CharField(verbose_name='标题', max_length=100)
     start_vol = models.SmallIntegerField('起始册')
-    start_vol_page = models.SmallIntegerField('起始页码')
+    start_vol_page = models.SmallIntegerField('起始页')
     end_vol = models.SmallIntegerField('终止册')
-    end_vol_page = models.SmallIntegerField('终止页码')
+    end_vol_page = models.SmallIntegerField('终止页')
     remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
@@ -210,26 +203,33 @@ class ReelExtra(BaseData):
         return '%s/%s/%d' % (self.reel, ReelExtraType.get_type_desc(self.typ), self.inner_no)
 
 
+class PageTyp(object):
+    COVER = 1
+    BODY = 2
+    BACK = 3
+    PAGETYPCHOICES = (
+        (COVER, '封面'),
+        (BODY, '经文'),
+        (BACK, '封底')
+    )
+
 class Page(BaseData):
-    pid = models.CharField(verbose_name='实体藏经页级总编码', max_length=21, blank=True, null=True)
+    pid = models.CharField(verbose_name='编码', max_length=30, blank=True, null=True)
+    page_code = models.CharField(max_length=24, blank=False, verbose_name='页代码')
     typ = models.SmallIntegerField(verbose_name='页类型', choices=PageTyp.PAGETYPCHOICES, default=PageTyp.BODY)
-    page_code = models.CharField(max_length=23, blank=False, verbose_name='页代码')
-    volume = models.ForeignKey(Volume, verbose_name='实体藏经册', on_delete=models.CASCADE, editable=False)
-    reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False, null=True,
+    reel = models.ForeignKey(Reel, verbose_name='实体卷', on_delete=models.CASCADE, editable=False, null=True,
                              blank=True)
-    reel_page_no = models.SmallIntegerField('卷中页序号', null=True, blank=True)
+    reel_page_no = models.SmallIntegerField('卷页序号', null=True, blank=True)
+    volume = models.ForeignKey(Volume, verbose_name='实体册', on_delete=models.CASCADE, editable=False)
     volume_page_no = models.SmallIntegerField('页序号')
     is_existed = models.BooleanField(verbose_name='页是否存在', default=True)
 
     class Meta:
-        verbose_name = '实体藏经页'
-        verbose_name_plural = '实体藏经页'
+        verbose_name = '实体页'
+        verbose_name_plural = '实体页'
 
     def __str__(self):
-        return '%s / 第%s页' % (self.reel, self.reel_page_no)
-
-
-from django.core.exceptions import ObjectDoesNotExist
+        return '%s/第%s页' % (self.reel, self.reel_page_no)
 
 
 def create_lqreels_for_sutra(sid):

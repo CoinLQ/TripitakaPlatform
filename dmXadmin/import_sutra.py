@@ -146,7 +146,7 @@ class ImportSutraFromExcel(APIView):
                         # tripitaka     对应模板第二列，要解析前两位
                         if len(tripitaka_id)== 0 :
                             tripitaka_id=sid[0:2]
-                            s=Tripitaka.objects.filter(code=tripitaka_id)
+                            s=Tripitaka.objects.filter(tid=tripitaka_id)
                             if (len(s)>0):
                                 tripitaka=s[0]                                
                         variant_code=sid[-1]# variant_code  对应模板第二列，要解析横杠后面
@@ -181,13 +181,13 @@ class ImportSutraFromExcel(APIView):
 
                     myTestprint(lqsutra_id) ; myTestprint(lqsutra);myTestprint(sid) ; myTestprint(name); 
                     myTestprint(variant_code);myTestprint("total_reels"+str(total_reels))
-                    myTestprint('remark:'+remark)      ; myTestprint('tripitaka:'+tripitaka.code)
+                    myTestprint('remark:'+remark)      ; myTestprint('tripitaka:'+tripitaka.tid)
 
                     if sid not in sid_set:
                         sid_set.add(sid)
-                        sutra = Sutra(sid=sid,lqsutra=lqsutra, name=name,tripitaka=tripitaka,
-                        variant_code= variant_code, total_reels=total_reels,
-                        remark=remark, code =code)
+                        sutra = Sutra(sid=sid, lqsutra=lqsutra, name=name,tripitaka=tripitaka,
+                                      sutra_variant_no=variant_code, total_reels=total_reels,
+                        remark=remark, sutra_no=code)
                         #sutra.save()
                         sutra_lst.append(sutra)
                 #except:
@@ -286,7 +286,7 @@ class ImportSutraFromExcel(APIView):
             sutra_sid=str( values[1] ).strip()
             if len( sutra_sid ) >= 2 :#经号 #先处理经号不存在的情况
                 tripitaka_id = sutra_sid[0:2]                          
-                s=Tripitaka.objects.filter(code=tripitaka_id)
+                s=Tripitaka.objects.filter(tid=tripitaka_id)
                 if (len(s)>0):
                     tripitaka=s[0]
                     break                        

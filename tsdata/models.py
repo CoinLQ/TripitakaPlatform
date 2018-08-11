@@ -9,6 +9,10 @@ from io import BytesIO
 import json
 import urllib.request
 from jwt_auth.models import Staff
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class PageTyp(object):
     COVER = 1
@@ -20,11 +24,15 @@ class PageTyp(object):
         (BACK, '封底')
     )
 
+
 class BaseData(models.Model):
-    creator = models.ForeignKey(Staff, verbose_name='创建人', blank=True, null=True, on_delete=models.SET_NULL, related_name='%(app_label)s_%(class)s_creator')
+    creator = models.ForeignKey(Staff, verbose_name='创建人', blank=True, null=True, on_delete=models.SET_NULL,
+                                related_name='%(app_label)s_%(class)s_creator')
     created_at = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)
-    updater = models.ForeignKey(Staff, verbose_name='更新人', null=True, blank=True, on_delete=models.SET_NULL, related_name='%(app_label)s_%(class)s_updater')
+    updater = models.ForeignKey(Staff, verbose_name='更新人', null=True, blank=True, on_delete=models.SET_NULL,
+                                related_name='%(app_label)s_%(class)s_updater')
     update_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+
     class Meta:
         abstract = True
 
@@ -58,7 +66,7 @@ class Volume(BaseData):
 
     def __str__(self):
         return '%s: 第%s册' % (self.tripitaka.name, self.vol_no)
- 
+
 
 class LQSutra(BaseData):
     sid = models.CharField(verbose_name='龙泉经号', max_length=8, unique=True)  # （为"LQ"+ 经序号 + 别本号）
@@ -77,6 +85,11 @@ class LQSutra(BaseData):
     def __str__(self):
         return '%s: %s' % (self.sid, self.name)
 
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        result = super(BaseData, self).save(force_insert, force_update, using, update_fields)
+        create_lqreels_for_sutra(self.sid)
+
 
 class LQReel(BaseData):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经目编码', on_delete=models.CASCADE)
@@ -86,8 +99,8 @@ class LQReel(BaseData):
     start_vol = models.SmallIntegerField('起始册')
     start_vol_page = models.SmallIntegerField('起始页码')
     end_vol = models.SmallIntegerField('终止册')
-    end_vol_page = models.SmallIntegerField('终止页码')    
-    is_existed= models.BooleanField(verbose_name='卷是否存在', default=True)
+    end_vol_page = models.SmallIntegerField('终止页码')
+    is_existed = models.BooleanField(verbose_name='卷是否存在', default=True)
     remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
@@ -131,7 +144,7 @@ class Reel(BaseData):
     end_vol = models.SmallIntegerField('终止册')
     end_vol_page = models.SmallIntegerField('终止页码')
     remark = models.TextField('备注', blank=True, default='')
-    has_extra = models.BooleanField(verbose_name='是否有内部结构',default=False)
+    has_extra = models.BooleanField(verbose_name='是否有内部结构', default=False)
 
     class Meta:
         verbose_name = '实体卷'
@@ -149,7 +162,7 @@ class Reel(BaseData):
     @classmethod
     def is_overlapping(cls, reel1, reel2):
         if reel1.start_vol == reel2.start_vol and \
-                        reel1.end_vol_page >= reel2.start_vol_page:
+                reel1.end_vol_page >= reel2.start_vol_page:
             return True
         return False
 
@@ -195,12 +208,14 @@ class ReelExtra(BaseData):
     def __str__(self):
         return '%s/%s/%d' % (self.reel, ReelExtraType.get_type_desc(self.typ), self.inner_no)
 
+
 class Page(BaseData):
     pid = models.CharField(verbose_name='实体藏经页级总编码', max_length=21, blank=True, null=True)
     typ = models.SmallIntegerField(verbose_name='页类型', choices=PageTyp.PAGETYPCHOICES, default=PageTyp.BODY)
     page_code = models.CharField(max_length=23, blank=False, verbose_name='页代码')
     volume = models.ForeignKey(Volume, verbose_name='实体藏经册', on_delete=models.CASCADE, editable=False)
-    reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False, null=True, blank=True)
+    reel = models.ForeignKey(Reel, verbose_name='实体藏经卷', on_delete=models.CASCADE, editable=False, null=True,
+                             blank=True)
     reel_page_no = models.SmallIntegerField('卷中页序号', null=True, blank=True)
     volume_page_no = models.SmallIntegerField('页序号')
     is_existed = models.BooleanField(verbose_name='页是否存在', default=True)
@@ -211,3 +226,36 @@ class Page(BaseData):
 
     def __str__(self):
         return '%s / 第%s页' % (self.reel, self.reel_page_no)
+
+
+from django.core.exceptions import ObjectDoesNotExist
+
+
+def create_lqreels_for_sutra(sid):
+    """为一部 龙泉经 生产 缺失的龙泉卷数据"""
+    lqreel_lst = []
+    try:
+        lqsutra = LQSutra.objects.filter(sid=sid).first()
+    except ObjectDoesNotExist:
+        logger.error(f"event=none-exist-sid v={sid}")
+        return lqreel_lst
+    total_reels = lqsutra.total_reels  # 根据 sid从龙泉经目对象中获得
+    for reel_no in range(1, total_reels + 1):
+        try:
+            LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
+        except ObjectDoesNotExist:
+            lqreel = LQReel(
+                lqsutra=lqsutra,
+                reel_no=reel_no,
+                start_vol=0, start_vol_page=0,
+                end_vol=0, end_vol_page=0,
+                is_existed=False
+            )
+            lqreel.rid = "%s_%s" % (lqsutra.sid, str(reel_no).zfill(3))
+            lqreel_lst.append(lqreel)
+    if len(lqreel_lst) > 0:
+        lqreels = LQReel.objects.bulk_create(lqreel_lst)
+        logger.info(f"event=created_lqreels sutra={lqsutra} new_reels={lqreels}")
+        return lqreels
+    else:
+        return []

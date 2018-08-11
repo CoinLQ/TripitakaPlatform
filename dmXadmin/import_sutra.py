@@ -181,7 +181,7 @@ class ImportSutraFromExcel(APIView):
 
                     myTestprint(lqsutra_id) ; myTestprint(lqsutra);myTestprint(sid) ; myTestprint(name); 
                     myTestprint(variant_code);myTestprint("total_reels"+str(total_reels))
-                    myTestprint('remark:'+remark)      ; myTestprint('tripitaka:'+tripitaka.id)
+                    myTestprint('remark:'+remark)      ; myTestprint('tripitaka:'+tripitaka.tid)
 
                     if sid not in sid_set:
                         sid_set.add(sid)

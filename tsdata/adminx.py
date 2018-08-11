@@ -22,7 +22,7 @@ class LQSutraAdmin(object):
     def modify(self, instance):
         return '修改'
     modify.short_description = '操作'
-    list_display = ['sid', 'variant_code', 'name', 'author',
+    list_display = ['sid', 'sutra_variant_no', 'name', 'author',
                     'total_reels', 'remark', 'modify']  # 自定义显示这两个字段
     list_display_links = ('modify',)
     search_fields = ['sid', 'name', 'author']
@@ -33,7 +33,7 @@ class LQSutraAdmin(object):
 
 
 class TripitakaAdmin(object):
-    list_display = ['name', 'shortname', 'code', 'modify']
+    list_display = ['name', 'shortname', 'tid', 'modify']
 
     modelName = "tripitaka"
     buttonName = '导入实体藏'

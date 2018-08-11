@@ -79,7 +79,7 @@ class SutraAdmin(object):
         return '修改'
     modify.short_description = '操作'
     list_display_links = ('modify',)
-    search_fields = ['name', 'tripitaka__name', 'tripitaka__code',
+    search_fields = ['name', 'tripitaka__name', 'tripitaka__tid',
                      'sid', 'total_reels', 'remark']  # 可以搜索的字段
     free_query_filter = True
     list_filter = ['name', 'sid']

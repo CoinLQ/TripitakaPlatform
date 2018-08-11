@@ -9,6 +9,13 @@ from io import BytesIO
 import json
 import urllib.request
 from jwt_auth.models import Staff
+import logging
+from django.core.exceptions import ObjectDoesNotExist
+
+
+logger = logging.getLogger(__name__)
+
+
 
 
 class BaseData(models.Model):
@@ -71,6 +78,12 @@ class LQSutra(BaseData):
     def __str__(self):
         return self.name
 
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        result = super(BaseData, self).save(force_insert, force_update, using, update_fields)
+        create_lqreels_for_sutra(self.sid)
+        return result
+
 
 class LQReel(BaseData):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经编码', on_delete=models.CASCADE)
@@ -80,8 +93,8 @@ class LQReel(BaseData):
     start_vol = models.SmallIntegerField('起始册')
     start_vol_page = models.SmallIntegerField('起始页')
     end_vol = models.SmallIntegerField('终止册')
-    end_vol_page = models.SmallIntegerField('终止页')
-    is_existed = models.BooleanField(verbose_name='是否存在', default=True)
+    end_vol_page = models.SmallIntegerField('终止页码')
+    is_existed = models.BooleanField(verbose_name='卷是否存在', default=True)
     remark = models.TextField('备注', blank=True, default='')
 
     class Meta:
@@ -204,10 +217,11 @@ class Page(BaseData):
     pid = models.CharField(verbose_name='编码', max_length=30, blank=True, null=True)
     page_code = models.CharField(max_length=24, blank=False, verbose_name='页代码')
     typ = models.SmallIntegerField(verbose_name='页类型', choices=PageTyp.PAGETYPCHOICES, default=PageTyp.BODY)
-    reel = models.ForeignKey(Reel, verbose_name='实体卷', on_delete=models.CASCADE, editable=False, null=True, blank=True)
+    reel = models.ForeignKey(Reel, verbose_name='实体卷', on_delete=models.CASCADE, editable=False, null=True,
+                             blank=True)
     reel_page_no = models.SmallIntegerField('卷页序号', null=True, blank=True)
     volume = models.ForeignKey(Volume, verbose_name='实体册', on_delete=models.CASCADE, editable=False)
-    volume_page_no = models.SmallIntegerField('册页序号')
+    volume_page_no = models.SmallIntegerField('页序号')
     is_existed = models.BooleanField(verbose_name='页是否存在', default=True)
 
     class Meta:
@@ -216,3 +230,40 @@ class Page(BaseData):
 
     def __str__(self):
         return '%s/第%s页' % (self.reel, self.reel_page_no)
+
+
+def create_lqreels_for_sutra(sid):
+    """为一部 龙泉经 生产 缺失的龙泉卷数据"""
+    lqreel_lst = []
+    try:
+        lqsutra = LQSutra.objects.filter(sid=sid).first()
+    except ObjectDoesNotExist:
+        logger.error(f"event=none-exist-sid v={sid}")
+        return lqreel_lst
+
+    outofrange_reels = LQReel.objects.filter(lqsutra=lqsutra, reel_no__gt=lqsutra.total_reels,)
+    if len(outofrange_reels) > 0:
+        for reel in outofrange_reels:
+            reel.delete()
+            logger.info(f"event=delete-lqreel v={reel}")
+
+    total_reels = lqsutra.total_reels  # 根据 sid从龙泉经目对象中获得
+    for reel_no in range(1, total_reels + 1):
+        try:
+            LQReel.objects.get(lqsutra=lqsutra, reel_no=reel_no)
+        except ObjectDoesNotExist:
+            lqreel = LQReel(
+                lqsutra=lqsutra,
+                reel_no=reel_no,
+                start_vol=0, start_vol_page=0,
+                end_vol=0, end_vol_page=0,
+                is_existed=False
+            )
+            lqreel.rid = "%s_%s" % (lqsutra.sid, str(reel_no).zfill(3))
+            lqreel_lst.append(lqreel)
+    if len(lqreel_lst) > 0:
+        lqreels = LQReel.objects.bulk_create(lqreel_lst)
+        logger.info(f"event=created_lqreels sutra={lqsutra} new_reels={lqreels}")
+        return lqreels
+    else:
+        return []

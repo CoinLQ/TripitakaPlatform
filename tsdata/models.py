@@ -89,6 +89,7 @@ class LQSutra(BaseData):
              update_fields=None):
         result = super(BaseData, self).save(force_insert, force_update, using, update_fields)
         create_lqreels_for_sutra(self.sid)
+        return result
 
 
 class LQReel(BaseData):
@@ -239,6 +240,13 @@ def create_lqreels_for_sutra(sid):
     except ObjectDoesNotExist:
         logger.error(f"event=none-exist-sid v={sid}")
         return lqreel_lst
+
+    outofrange_reels = LQReel.objects.filter(lqsutra=lqsutra, reel_no__gt=lqsutra.total_reels,)
+    if len(outofrange_reels) > 0:
+        for reel in outofrange_reels:
+            reel.delete()
+            logger.info(f"event=delete-lqreel v={reel}")
+
     total_reels = lqsutra.total_reels  # 根据 sid从龙泉经目对象中获得
     for reel_no in range(1, total_reels + 1):
         try:

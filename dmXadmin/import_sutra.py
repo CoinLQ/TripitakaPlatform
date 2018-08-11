@@ -185,9 +185,9 @@ class ImportSutraFromExcel(APIView):
 
                     if sid not in sid_set:
                         sid_set.add(sid)
-                        sutra = Sutra(sid=sid,lqsutra=lqsutra, name=name,tripitaka=tripitaka,
-                        variant_code= variant_code, total_reels=total_reels,
-                        remark=remark, code =code)
+                        sutra = Sutra(sid=sid, lqsutra=lqsutra, name=name,tripitaka=tripitaka,
+                                      sutra_variant_no=variant_code, total_reels=total_reels,
+                        remark=remark, sutra_no=code)
                         #sutra.save()
                         sutra_lst.append(sutra)
                 #except:

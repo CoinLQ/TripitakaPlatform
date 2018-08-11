@@ -113,7 +113,7 @@ class Sutra(BaseData):
     lqsutra = models.ForeignKey(LQSutra, verbose_name='龙泉经编码', null=True,
                                 blank=True, on_delete=models.SET_NULL)  # （为"LQ"+ 经序号 + 别本号）
     sutra_no = models.CharField(verbose_name='经序号', max_length=5, blank=False)
-    variant_variant_no = models.CharField(verbose_name='别本号', max_length=1, default='0')
+    sutra_variant_no = models.CharField(verbose_name='别本号', max_length=1, default='0')
     name = models.CharField(verbose_name='经名', max_length=64, blank=True)
     total_reels = models.IntegerField(verbose_name='总卷数', blank=True, default=1)
     cur_reels = models.IntegerField(verbose_name='实际卷数', blank=True, default=1)

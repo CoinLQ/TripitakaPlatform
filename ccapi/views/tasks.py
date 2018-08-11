@@ -40,13 +40,12 @@ class RectBulkOpMixin(object):
                                  "msg": "No Permission!"})
         serializer = self.get_serializer(instance)
         if isinstance(instance, PageTask):
-            pagerect_ids = [page['id'] for page in instance.page_set]
-            rectpages = PageRect.objects.filter(id__in=pagerect_ids).select_related('page')
-            page_id = rectpages[0].page_id
+            pagerect = instance.pagerect
+            page_id = pagerect.page_id
             _rects = Rect.objects.filter(page_pid=page_id).all()
             rects = RectSerializer(data=_rects, many=True)
             rects.is_valid()
-            page= rectpages[0].page
+            page= pagerect.page
             image_url = get_image_url(page.reel, page.page_no)
             return Response({"status": instance.status,
                             "rects": rects.data,
@@ -56,13 +55,12 @@ class RectBulkOpMixin(object):
                             "current_y": instance.current_y,
                             "task_id": instance.pk})
         if isinstance(instance, PageVerifyTask):
-            pagerect_ids = [page['id'] for page in instance.page_set]
-            rectpages = PageRect.objects.filter(id__in=pagerect_ids).select_related('page')
-            page_id = rectpages[0].page_id
+            pagerect = instance.pagerect
+            page_id = pagerect.page_id
             _rects = Rect.objects.filter(page_pid=page_id).all()
             rects = RectSerializer(data=_rects, many=True)
             rects.is_valid()
-            page= rectpages[0].page
+            page= pagerect.page
             image_url = get_image_url(page.reel, page.page_no)
             return Response({"status": instance.status,
                             "rects": rects.data,
@@ -100,13 +98,12 @@ class PageTaskViewSet(RectBulkOpMixin,
         if not task:
             return Response({"status": -1,
                              "msg": "All tasks have been done!"})
-        pagerect_ids = [page['id'] for page in task.page_set]
-        rectpages = PageRect.objects.filter(id__in=pagerect_ids).select_related('page')
-        page_id = rectpages[0].page_id
+        pagerect = task.pagerect
+        page_id = pagerect.page_id
         _rects = Rect.objects.filter(page_pid=page_id).all()
         rects = RectSerializer(data=_rects, many=True)
         rects.is_valid()
-        page = rectpages[0].page
+        page= pagerect.page
         image_url = get_image_url(page.reel, page.page_no)
         return Response({"status": task.status,
                         "rects": rects.data,
@@ -191,13 +188,12 @@ class PageVerifyTaskViewSet(RectBulkOpMixin,
         if not task:
             return Response({"status": -1,
                              "msg": "All tasks have been done!"})
-        pagerect_ids = [page['id'] for page in task.page_set]
-        rectpages = PageRect.objects.filter(id__in=pagerect_ids).select_related('page')
-        page_id = rectpages[0].page_id
+        pagerect = task.pagerect
+        page_id = pagerect.page_id
         _rects = Rect.objects.filter(page_pid=page_id).all()
         rects = RectSerializer(data=_rects, many=True)
         rects.is_valid()
-        page = rectpages[0].page
+        page= pagerect.page
         image_url = get_image_url(page.reel, page.page_no)
         return Response({"status": task.status,
                         "rects": rects.data,

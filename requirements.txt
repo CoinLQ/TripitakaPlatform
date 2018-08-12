@@ -37,6 +37,7 @@ django-bulk-update==2.2.0
 pycurl==7.43.0 --global-option="--with-openssl"
 django-celery-beat==1.1.1
 # fix endless migrations issue
--e git+git://github.com/CoinLQ/xadmin.git@django2#egg=xadmin
+xadmin=2.0.1
+# -e git+git://github.com/CoinLQ/xadmin.git@django2#egg=xadmin
 xlrd
 xlwt

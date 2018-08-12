@@ -95,9 +95,9 @@ class VolumeAdmin(object):
         return '修改'
     modify.short_description = '操作'
     list_display_links = ('modify',)
-    list_display = ['tripitaka', 'vol_no',  'modify']  # 自定义显示这两个字段
-    search_fields = ['tripitaka__name', 'tripitaka__code', 'vol_no']  # 可以搜索的字段
-    list_filter = ['tripitaka__code']
+    list_display = ['tripitaka', 'vol_no', 'cover_pages', 'pages', 'back_cover_pages', 'cur_pages', 'modify']  # 自定义显示这两个字段
+    search_fields = ['tripitaka__name', 'tripitaka__tid', 'vol_no']  # 可以搜索的字段
+    list_filter = ['tripitaka__tid']
     ordering = ['id', ]
  
 
@@ -134,13 +134,13 @@ class ReelAdmin(object):
     
 #
 class PageAdmin(object):
-    modelName = 'Page'
+    enableImport = False
 
     def modify(self, instance):
         return '修改'
     modify.short_description = '操作'
     list_display_links = ('modify',)
-    list_display = ['pid', 'page_code', 'volume', 'reel','reel_page_no', 'volume_page_no', 'is_existed']  # 自定义显示这两个字段
+    list_display = ['pid', 'typ', 'page_code', 'volume', 'reel', 'reel_page_no', 'volume_page_no', 'is_existed']  # 自定义显示这两个字段
     search_fields = ['reel']  # 可以搜索的字段
     list_filter = ['volume']
     ordering = ['pid', ]

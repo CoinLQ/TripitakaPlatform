@@ -12,11 +12,7 @@ from jwt_auth.models import Staff
 import logging
 from django.core.exceptions import ObjectDoesNotExist
 
-
 logger = logging.getLogger(__name__)
-
-
-
 
 class BaseData(models.Model):
     creator = models.ForeignKey(Staff, verbose_name='创建人', blank=True, null=True, on_delete=models.SET_NULL,
@@ -43,12 +39,13 @@ class Tripitaka(BaseData):
     def __str__(self):
         return self.name
 
-
 class Volume(BaseData):
     tripitaka = models.ForeignKey(Tripitaka, on_delete=models.CASCADE, verbose_name='藏名')
     vid = models.CharField(verbose_name='册编码', max_length=12, blank=True, null=True)
     vol_no = models.SmallIntegerField(verbose_name='册序号')
-    total_pages = models.IntegerField(verbose_name='总页数')
+    cover_pages = models.IntegerField(verbose_name='封面页数')
+    pages = models.IntegerField(verbose_name='正文页数')
+    back_cover_pages = models.IntegerField(verbose_name='封底页数')
     cur_pages = models.IntegerField(verbose_name='实际页数')
     remark = models.TextField('备注', default='')
 
@@ -58,8 +55,8 @@ class Volume(BaseData):
         unique_together = (('tripitaka', 'vol_no'),)
 
     def __str__(self):
-        return '%s/第%s册' % (self.tripitaka.name, self.vol_no)
-
+        return '%s: 第%s册' % (self.tripitaka.name, self.vol_no)
+ 
 
 class LQSutra(BaseData):
     sid = models.CharField(verbose_name='编码', max_length=8, unique=True)  # （为"LQ"+ 经序号 + 别本号）
